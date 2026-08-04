@@ -15,6 +15,7 @@ Se complementa también con [`docs/referencia/`](../referencia/) (contratos vivo
 | [03-apps-canvas.md](03-apps-canvas.md) | Patrones técnicos que se repiten (o no) entre las 8 canvas apps: detección de usuario, navegación, componentes compartidos, invocación de flujos, colecciones. Incluye tabla app × tablas Dataverse × flujos invocados. |
 | [04-deploy-y-alm.md](04-deploy-y-alm.md) | Estrategia de despliegue entre ambientes: orden de importación, las 19 variables de entorno y cuáles defaults de dev hay que pisar, connection references, activación de flujos, grupos AAD, y el App User para despliegue automatizado vía `pac`. |
 | [05-hallazgos-y-backlog.md](05-hallazgos-y-backlog.md) | Los hallazgos de `docs/analysis/` convertidos en backlog priorizado (Seguridad / Integridad / Operación / Calidad), con evidencia, impacto y esfuerzo estimado por ítem. |
+| [06-runbook-migracion-cr140.md](06-runbook-migracion-cr140.md) | Runbook del cutover `cr140_changestatus` → `sanic_changestatus`: mapeo de valores, orden de importación, migración de datos y paso de Studio para la canvas app. |
 
 ## Cómo leer esta carpeta
 

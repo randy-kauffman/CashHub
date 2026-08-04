@@ -107,7 +107,7 @@
                     
                     UpdateContext({varShowResponseDialog: true, varResponseDialogTitle: "Confirmar aprobacion de RFC", varResponseSubtitle: "Añada un comentario justificando su decision"});
                 Text: ="Aprobar"
-                Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable))
+                Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable)) && gvarSelectedChangeRequest.'Created By'.User <> gvarUser.User
                 Width: =96
                 X: =0
                 Y: =0
@@ -147,7 +147,7 @@
                 Text: ="Rechazar"
                 Tooltip: =""
                 VerticalAlign: =""
-                Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable))
+                Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable)) && gvarSelectedChangeRequest.'Created By'.User <> gvarUser.User
                 Width: =96
                 X: =0
                 Y: =0

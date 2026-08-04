@@ -468,6 +468,13 @@ previa (ver Engram, tema `cashhub/decisiones-validacion-y-cuentas`).
 
 ## 5. PROPUESTA DE MEJORA (priorizada)
 
+> **Estado 2026-08-04 (tanda 1 implementada en fuente, pendiente de deploy)**: ✅ #1 (roles
+> `CH-SR-ClientAdminContributor`/`CH-SR-ClientAdminApprover` creados), ✅ #2 (chequeo de
+> identidad en Aprobar/Rechazar), ✅ #10/#11 (model-driven eliminada de ambas soluciones).
+> Migración `cr140_changestatus` preparada: campo nuevo en Core + 6 flujos migrados + runbook
+> ([06-runbook-migracion-cr140.md](../desarrollo/06-runbook-migracion-cr140.md)) — el cutover de
+> la canvas app se hace en Studio durante el deploy. Soluciones bumpeadas a 1.1.0.0.
+
 Convención de esfuerzo: **S** = días, cambio aislado; **M** = 1-2 sprints, toca 2-3 capas; **L**
 = rediseño de esquema o de flujo transaccional, requiere migración de datos/coordinación entre
 áreas.

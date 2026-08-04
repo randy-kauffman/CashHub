@@ -24,9 +24,9 @@ CashHub/
 
 | Solución | Versión | Contenido |
 |---|---|---|
-| CashHubCore | 1.0.0.5 | 38 tablas Dataverse (`sanic_CHTbl*`), 6 roles de seguridad (`CH-SR-*`), 3 option sets globales, 19 variables de entorno (`sanic_CHEV*`) |
-| CashHubFlow | 1.0.0.6 | 19 flujos Power Automate (`CH-Flow-*`): ingesta de correos, extracción de Excel, validaciones, RFCs de datos de cliente, notificaciones Teams |
-| CashHubApps | 1.0.0.12 | 8 canvas apps por rol (Reception, Recounting, Supervisor, Digitization, Email Validation Console, Deposits Tracker, Client Administration, Hub), 1 model-driven app y bibliotecas de componentes |
+| CashHubCore | 1.1.0.0 | 38 tablas Dataverse (`sanic_CHTbl*`), 8 roles de seguridad (`CH-SR-*`), 3 option sets globales, 19 variables de entorno (`sanic_CHEV*`) |
+| CashHubFlow | 1.1.0.0 | 19 flujos Power Automate (`CH-Flow-*`): ingesta de correos, extracción de Excel, validaciones, RFCs de datos de cliente, notificaciones Teams |
+| CashHubApps | 1.1.0.0 | 8 canvas apps por rol (Reception, Recounting, Supervisor, Digitization, Email Validation Console, Deposits Tracker, Client Administration, Hub) y bibliotecas de componentes |
 
 ## Primeros pasos
 
