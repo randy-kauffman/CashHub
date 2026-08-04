@@ -1,0 +1,198 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_onedriveforbusiness": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_AEDDConnOneDrive"
+        },
+        "api": {
+          "name": "shared_onedriveforbusiness"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "93a421a7-bb5a-4513-b228-1d1b58bb36bc"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "title": "Input",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_1": {
+                  "title": "NombreDelArchivo",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": [
+                "text",
+                "text_1"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Compose": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "dca72b4b-c879-4eb3-b471-13f78dccc052"
+          },
+          "type": "Compose",
+          "inputs": "@triggerBody()['text']"
+        },
+        "Create_file": {
+          "runAfter": {
+            "Create_CSV_table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "46664ef1-c668-479d-bd14-5ce7ab600f59"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "folderPath": "/tesoreria/",
+              "name": "@{triggerBody()['text_1']}_@{convertFromUtc(utcNow(),'Central America Standard Time','yyyy-MM-dd hh:mm')}.csv",
+              "body": "@body('Create_CSV_table')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+              "operationId": "CreateFile",
+              "connectionName": "shared_onedriveforbusiness"
+            }
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          }
+        },
+        "Create_share_link": {
+          "runAfter": {
+            "Create_file": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "00f09fea-2a1f-4c66-b9f4-0f80a4279c2b"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "id": "@outputs('Create_file')?['body/Id']",
+              "type": "Edit",
+              "scope": "Organization"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+              "operationId": "CreateShareLinkV2",
+              "connectionName": "shared_onedriveforbusiness"
+            }
+          }
+        },
+        "Respond_to_a_Power_App_or_flow": {
+          "runAfter": {
+            "Create_share_link": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "4b13f95f-5e4e-493f-ad9b-52832bd6a03d"
+          },
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "archivosalida": {
+                  "title": "ArchivoSalida",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                }
+              },
+              "additionalProperties": {}
+            },
+            "statusCode": 200,
+            "body": {
+              "archivosalida": "@{\r\nconcat(\r\n  outputs('Create_share_link')?['body/WebUrl'],\r\n  if(\r\n    equals(indexOf(outputs('Create_share_link')?['body/WebUrl'],'?'), -1),\r\n    '?download=1',\r\n    '&download=1'\r\n  )\r\n)\r\n}"
+            }
+          }
+        },
+        "Create_CSV_table": {
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1762de77-ac8c-4002-8f68-a24ac4eacefb"
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select')",
+            "format": "CSV"
+          }
+        },
+        "Select": {
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@JSON(outputs('Compose'))",
+            "select": {
+              "TRNCODE": "@item()?['TRNCODE']",
+              "CUENTA": "@item()?['CUENTA']",
+              "MONTOTOTAL": "@item()?['MONTOTOTAL']",
+              "REFERENCIA": "@item()?['REFERENCIA']",
+              "DEPOSITANTE": "@item()?['DEPOSITANTE']",
+              "MONEDA": "@item()?['MONEDA']",
+              "DEPOSITID": "@item()?['DEPOSITID']",
+              "DISPONIBILIDADINMEDIATA": "@item()?['DISPONIBILIDADINMEDIATA']",
+              "EFECTIVO": "@item()?['EFECTIVO']",
+              "MANIFIESTO": "@item()?['MANIFIESTO']",
+              "TIPOID": "@item()?['TIPOID']",
+              "NACIONALIDAD": "@item()?['NACIONALIDAD']",
+              "NUMEROID1": "@item()?['NUMEROID1']",
+              "NUMEROID2": "@item()?['NUMEROID2']"
+            }
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

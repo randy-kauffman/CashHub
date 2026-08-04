@@ -1,0 +1,41 @@
+App As appinfo:
+    BackEnabled: =true
+    OnStart: |
+        =Collect(
+            colPlanillas,
+            {
+                ID: Max(
+                    colPlanillas,
+                    ID
+                ) + 1,
+                Empresa: "",
+                Planilla: "",
+                ChequeNIO: 0,
+                ChequeUSD: 0,
+                EfectivoNIO: 0,
+                EfectivoUSD: 0,
+                Cliente: {},
+                Sucursal:{}
+            }
+        );
+        
+        Collect(
+            colTulas,
+            {
+                Numero: ""
+                ,RelatedRowID: 0
+            }
+        );
+        
+        Clear(colTulas);
+        
+        Clear(colPlanillas);
+    Theme: =PowerAppsTheme
+
+    Host As hostControl.DefaultHostControlVariant:
+        OnCancel: =false
+        OnEdit: =false
+        OnNew: =false
+        OnSave: =false
+        OnView: =false
+

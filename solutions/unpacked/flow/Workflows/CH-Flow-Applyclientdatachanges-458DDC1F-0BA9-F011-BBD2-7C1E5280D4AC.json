@@ -1,0 +1,536 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Cuando_un_RFC_es_modificado_a_\"Approved\"_y_es_tipo_\"Update\"": {
+          "metadata": {
+            "operationMetadataId": "7e53f3cd-cb9b-466a-acd2-1003d04f863b"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "subscriptionRequest/message": 4,
+              "subscriptionRequest/entityname": "sanic_chtblclientdatachangerequest",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filterexpression": "cr140_changestatus eq 796490002 and sanic_type eq 159460000"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
+          }
+        }
+      },
+      "actions": {
+        "Obtener_lineas_del_RFC": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "c4c050a0-6a67-4c5a-a630-4144b36a0554"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblclientdatachangerequestlines",
+              "$filter": "_sanic_changerequestid_value eq @{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']}",
+              "$expand": "sanic_FieldDefinition($select=sanic_datatype,sanic_logicalname,sanic_name,sanic_table,sanic_tabledisplayname,sanic_datatype,sanic_datatype,sanic_optionsetmap,sanic_tablepluralname,sanic_lookuptargettable)"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
+          }
+        },
+        "Aplicar_a_cada_linea_del_RFC": {
+          "foreach": "@outputs('Obtener_lineas_del_RFC')?['body/value']",
+          "actions": {
+            "OK_Agregar_a_notas_de_implementacion": {
+              "runAfter": {
+                "Convertir_dato_y_actualizar_campo": [
+                  "Succeeded"
+                ]
+              },
+              "type": "AppendToArrayVariable",
+              "inputs": {
+                "name": "varNotes",
+                "value": "OK Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'"
+              }
+            },
+            "FAILED_Agregar_a_notas_de_implementacion": {
+              "runAfter": {
+                "Convertir_dato_y_actualizar_campo": [
+                  "TimedOut",
+                  "Failed"
+                ]
+              },
+              "type": "AppendToArrayVariable",
+              "inputs": {
+                "name": "varNotes",
+                "value": "FAILED Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'"
+              }
+            },
+            "Actualizar_variable_varAnyErrors": {
+              "runAfter": {
+                "FAILED_Agregar_a_notas_de_implementacion": [
+                  "Succeeded"
+                ]
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varAnyError",
+                "value": true
+              }
+            },
+            "Actualizar_status_CRL_a_APPLIED": {
+              "runAfter": {
+                "OK_Agregar_a_notas_de_implementacion": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "sanic_chtblclientdatachangerequestlines",
+                  "recordId": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']",
+                  "item/sanic_changestatus": 159460004
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "UpdateOnlyRecord",
+                  "connectionName": "shared_commondataserviceforapps_1"
+                }
+              }
+            },
+            "Actualizar_status_CRL_a_FAILED": {
+              "runAfter": {
+                "Actualizar_variable_varAnyErrors": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "sanic_chtblclientdatachangerequestlines",
+                  "recordId": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']",
+                  "item/sanic_changestatus": 159460004
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "UpdateOnlyRecord",
+                  "connectionName": "shared_commondataserviceforapps_1"
+                }
+              }
+            },
+            "Create_audit_trail_for_SUCCESS": {
+              "runAfter": {
+                "Actualizar_status_CRL_a_APPLIED": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "sanic_chtblclientdatachangesaudittrails",
+                  "item/sanic_opeationtype": 159460001,
+                  "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
+                  "item/sanic_result": true,
+                  "item/sanic_message": "OK Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'",
+                  "item/sanic_RelatedClient@odata.bind": "/sanic_chtblclients(@{triggerOutputs()?['body/_sanic_relatedclient_value']})",
+                  "item/sanic_RelatedCRL@odata.bind": "/sanic_chtblclientdatachangerequestlines(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']})"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "connectionName": "shared_commondataserviceforapps_1"
+                }
+              }
+            },
+            "Create_audit_trail_for_FAIL": {
+              "runAfter": {
+                "Actualizar_status_CRL_a_FAILED": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "sanic_chtblclientdatachangesaudittrails",
+                  "item/sanic_opeationtype": 159460001,
+                  "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
+                  "item/sanic_result": false,
+                  "item/sanic_message": "FAILED Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'",
+                  "item/sanic_RelatedClient@odata.bind": "/sanic_chtblclients(@{triggerOutputs()?['body/_sanic_relatedclient_value']})",
+                  "item/sanic_RelatedCRL@odata.bind": "/sanic_chtblclientdatachangerequestlines(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']})"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "connectionName": "shared_commondataserviceforapps_1"
+                }
+              }
+            },
+            "Convertir_dato_y_actualizar_campo": {
+              "actions": {
+                "Tipo_de_dato": {
+                  "cases": {
+                    "Text": {
+                      "case": 159460000,
+                      "actions": {
+                        "Update_a_row": {
+                          "metadata": {
+                            "operationMetadataId": "a9bc5f41-615d-40a5-848b-7a20bda51f81"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "entityName": "@triggerOutputs()?['body/sanic_targettablepluralname']",
+                              "recordId": "@triggerOutputs()?['body/sanic_targetrecordid']",
+                              "item": {
+                                "@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}": "@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']}"
+                              }
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                              "operationId": "UpdateOnlyRecord",
+                              "connectionName": "shared_commondataserviceforapps_1"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "Number": {
+                      "case": 159460001,
+                      "actions": {
+                        "Convertir_a_numero": {
+                          "metadata": {
+                            "operationMetadataId": "a01ed4ed-4665-41df-855f-66f78a962935"
+                          },
+                          "type": "Compose",
+                          "inputs": "@float(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue'])"
+                        },
+                        "Update_a_row_2": {
+                          "runAfter": {
+                            "Convertir_a_numero": [
+                              "Succeeded"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "f22c1a31-2018-4dfc-ba40-136cbc770daa"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "entityName": "@triggerOutputs()?['body/sanic_targettablepluralname']",
+                              "recordId": "@triggerOutputs()?['body/sanic_targetrecordid']",
+                              "item": {
+                                "@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']"
+                              }
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                              "operationId": "UpdateOnlyRecord",
+                              "connectionName": "shared_commondataserviceforapps_1"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "Date": {
+                      "case": 159460002,
+                      "actions": {
+                        "Convertir_a_fecha": {
+                          "metadata": {
+                            "operationMetadataId": "8e541315-4c03-4906-9649-d9f878fd40e3"
+                          },
+                          "type": "Compose",
+                          "inputs": "@formatDateTime(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue'],'yyyy-MM-dd')"
+                        },
+                        "Update_a_row_3": {
+                          "runAfter": {
+                            "Convertir_a_fecha": [
+                              "Succeeded"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "48dfb8bb-659f-452f-b40f-fe3979f2c787"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "entityName": "@triggerOutputs()?['body/sanic_targettablepluralname']",
+                              "recordId": "@triggerOutputs()?['body/sanic_targetrecordid']",
+                              "item": {
+                                "@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}": "@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']}"
+                              }
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                              "operationId": "UpdateOnlyRecord",
+                              "connectionName": "shared_commondataserviceforapps_1"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "Money": {
+                      "case": 159460003,
+                      "actions": {
+                        "Convertir_a_Dinero": {
+                          "metadata": {
+                            "operationMetadataId": "8aacc2ce-0fdd-42f0-93fe-acb74233808b"
+                          },
+                          "type": "Compose",
+                          "inputs": "@float(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue'])"
+                        },
+                        "Update_a_row_4": {
+                          "runAfter": {
+                            "Convertir_a_Dinero": [
+                              "Succeeded"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "1db29a34-7624-423e-b677-9510d117d3b5"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "entityName": "@triggerOutputs()?['body/sanic_targettablepluralname']",
+                              "recordId": "@triggerOutputs()?['body/sanic_targetrecordid']",
+                              "item": {
+                                "@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']"
+                              }
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                              "operationId": "UpdateOnlyRecord",
+                              "connectionName": "shared_commondataserviceforapps_1"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "LookUp": {
+                      "case": 159460004,
+                      "actions": {
+                        "Crear_enlace_lookup": {
+                          "metadata": {
+                            "operationMetadataId": "8aacc2ce-0fdd-42f0-93fe-acb74233808b"
+                          },
+                          "type": "Compose",
+                          "inputs": "/@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_lookuptargettable']}(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']})"
+                        },
+                        "Update_a_row_4_1": {
+                          "runAfter": {
+                            "Crear_enlace_lookup": [
+                              "Succeeded"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "1db29a34-7624-423e-b677-9510d117d3b5"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "entityName": "@triggerOutputs()?['body/sanic_targettablepluralname']",
+                              "recordId": "@triggerOutputs()?['body/sanic_targetrecordid']",
+                              "item": {
+                                "@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}@odata.bind": "@{outputs('Crear_enlace_lookup')}"
+                              }
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                              "operationId": "UpdateOnlyRecord",
+                              "connectionName": "shared_commondataserviceforapps_1"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "OptionSet": {
+                      "case": 159460005,
+                      "actions": {}
+                    },
+                    "TwoOptions": {
+                      "case": 159460006,
+                      "actions": {
+                        "Convertir_valor_booleano": {
+                          "metadata": {
+                            "operationMetadataId": "8aacc2ce-0fdd-42f0-93fe-acb74233808b"
+                          },
+                          "type": "Compose",
+                          "inputs": "@if(equals(toLower(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']), 'yes'),'true','false')"
+                        },
+                        "Update_a_row_4_1_1": {
+                          "runAfter": {
+                            "Convertir_valor_booleano": [
+                              "Succeeded"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "1db29a34-7624-423e-b677-9510d117d3b5"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "entityName": "@triggerOutputs()?['body/sanic_targettablepluralname']",
+                              "recordId": "@triggerOutputs()?['body/sanic_targetrecordid']",
+                              "item": {
+                                "@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}": "@outputs('Convertir_valor_booleano')"
+                              }
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                              "operationId": "UpdateOnlyRecord",
+                              "connectionName": "shared_commondataserviceforapps_1"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "default": {
+                    "actions": {}
+                  },
+                  "expression": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_FieldDefinition/sanic_datatype']",
+                  "metadata": {
+                    "operationMetadataId": "72dc389e-f601-4162-ae17-1017ea1b30e0"
+                  },
+                  "type": "Switch"
+                }
+              },
+              "type": "Scope"
+            }
+          },
+          "runAfter": {
+            "Inicializar_varNotes": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b8625346-a6a8-4a7f-a722-d4f79a58101d"
+          },
+          "type": "Foreach"
+        },
+        "Inicializar_varNotes": {
+          "runAfter": {
+            "Inicializar_varAnyError": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varNotes",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "Inicializar_varAnyError": {
+          "runAfter": {
+            "Obtener_lineas_del_RFC": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varAnyError",
+                "type": "boolean",
+                "value": false
+              }
+            ]
+          }
+        },
+        "Hubo_algun_error": {
+          "actions": {
+            "Actualizar_a_status_FALIED": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "sanic_chtblclientdatachangerequests",
+                  "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']",
+                  "item/cr140_changestatus": 796490005,
+                  "item/sanic_applynotes": "@join(variables('varNotes'),'\\n')",
+                  "item/sanic_applyon": "@convertFromUtc(utcNow(),'Central America Standard Time','yyyy-MM-dd HH:mm:ss')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "UpdateOnlyRecord",
+                  "connectionName": "shared_commondataserviceforapps_1"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Aplicar_a_cada_linea_del_RFC": [
+              "Succeeded",
+              "Failed",
+              "TimedOut"
+            ]
+          },
+          "else": {
+            "actions": {
+              "Actualizar_a_status_APPLIED": {
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "entityName": "sanic_chtblclientdatachangerequests",
+                    "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']",
+                    "item/cr140_changestatus": 796490004,
+                    "item/sanic_applynotes": "@join(variables('varNotes'),'\\n')",
+                    "item/sanic_applyon": "@convertFromUtc(utcNow(),'Central America Standard Time','yyyy-MM-dd HH:mm:ss')"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                    "operationId": "UpdateOnlyRecord",
+                    "connectionName": "shared_commondataserviceforapps_1"
+                  }
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@variables('varAnyError')",
+                  "@true"
+                ]
+              }
+            ]
+          },
+          "type": "If"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

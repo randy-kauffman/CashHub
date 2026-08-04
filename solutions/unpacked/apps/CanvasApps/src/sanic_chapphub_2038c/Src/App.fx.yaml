@@ -1,0 +1,34 @@
+App As appinfo:
+    BackEnabled: =true
+    OnStart: |
+        =ClearCollect(
+            colAppData,
+            Filter(
+                Filter(
+                    'CH-Tbl-AppCatalogs',
+                    !IsBlank('AAD Group Id') && Enabled
+                ),
+                (!IsBlank(
+                    LookUp(
+                        Office365Groups.ListGroupMembers(Trim('AAD Group Id')).value,
+                        userPrincipalName = User().Email
+                    )
+                ) )
+            )
+        );
+        Collect(
+            colAppData,
+            Filter(
+                'CH-Tbl-AppCatalogs',
+                IsBlank('AAD Group Id') && Enabled
+            )
+        );
+    Theme: =PowerAppsTheme
+
+    Host As hostControl.DefaultHostControlVariant:
+        OnCancel: =false
+        OnEdit: =false
+        OnNew: =false
+        OnSave: =false
+        OnView: =false
+

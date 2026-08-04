@@ -1,0 +1,156 @@
+App As appinfo:
+    BackEnabled: =true
+    Formulas: |-
+        =EvaluateEV(_op:Text, _iv:Text, _bv:Text):Boolean = IfError(
+            
+        With(
+            {
+                // Try parsing JSON arrays from text (safe via IfError)
+                _ivJson: IfError( ParseJSON( Text( _iv ) ), Blank() ),
+                _bvJson: IfError( ParseJSON( Text( _bv ) ),  Blank() ),
+        
+                // Convert JSON arrays to tables (1 column 'Value' of untyped items); Blank() if not an array
+                _ivArr: IfError( Table( IfError( ParseJSON( Text( _iv ) ), Blank() ) ), Blank() ),
+                _bvArr: IfError( Table( IfError( ParseJSON( Text( _bv ) ),  Blank() ) ), Blank() ),
+        
+                _ivArrCount: If( IsBlank( IfError( Table( IfError( ParseJSON( Text( _iv ) ), Blank() ) ), Blank() ) ), Blank(), CountRows( IfError( Table( IfError( ParseJSON( Text( _iv ) ), Blank() ) ), Blank() ) ) ),
+                _bvArrCount: If( IsBlank( IfError( Table( IfError( ParseJSON( Text( _bv ) ),  Blank() ) ), Blank() ) ), Blank(), CountRows( IfError( Table( IfError( ParseJSON( Text( _bv ) ),  Blank() ) ), Blank() ) ) )
+            },
+            Switch(
+                _op,
+        
+                // --- Aliases for equality ---
+                "=", _iv = _bv,
+        
+                // -----------------------------
+                // EQUAL (now supports JSON-array strings; order-insensitive, case-insensitive, counts must match)
+                // -----------------------------
+                "equal",
+                    If(
+                        // Both parse as JSON arrays
+                        Not( IsBlank( _ivArrCount ) ) And Not( IsBlank( _bvArrCount ) ),
+                        _ivArrCount = _bvArrCount And
+                        With(
+                            {
+                                // Normalize each array element to a lower-cased text key "_k"
+                                // Works for strings/numbers/bools in the JSON array
+                                _ivAgg:
+                                    AddColumns(
+                                        GroupBy(
+                                            AddColumns( _ivArr, _k, Lower( Text( Value ) ) ),
+                                            _k,
+                                            grp
+                                        ),
+                                        cnt,
+                                        CountRows( grp )
+                                    ),
+                                _bvAgg:
+                                    AddColumns(
+                                        GroupBy(
+                                            AddColumns( _bvArr, _k, Lower( Text( Value ) ) ),
+                                            _k,
+                                            grp
+                                        ),
+                                        cnt,
+                                        CountRows( grp )
+                                    )
+                            },
+                            // Same set of unique keys and same count per key
+                            CountRows( _ivAgg ) = CountRows( _bvAgg ) And
+                            CountIf(
+                                _ivAgg,
+                                LookUp( _bvAgg, _k = _ivAgg[@_k], cnt ) = _ivAgg[@cnt]
+                            ) = CountRows( _ivAgg )
+                        ),
+        
+                        // Non-array equality (numeric strictness + blanks)
+                        If(
+                            IsNumeric( _iv ) And IsNumeric( _bv ),
+                            Value( _iv ) = Value( _bv ),
+                            ( IsBlank( _iv ) And IsBlank( _bv ) ) Or ( Text( _iv ) = Text( _bv ) )
+                        )
+                    ),
+        
+                // --- Less than / less than or equal ---
+                "<",     IsNumeric(_iv) And IsNumeric(_bv) And Value(_iv) <  Value(_bv),
+                "<=",    IsNumeric(_iv) And IsNumeric(_bv) And Value(_iv) <= Value(_bv),
+                "less than",
+                         IsNumeric(_iv) And IsNumeric(_bv) And Value(_iv) <  Value(_bv),
+                "less than or equal",
+                         IsNumeric(_iv) And IsNumeric(_bv) And Value(_iv) <= Value(_bv),
+        
+                // --- Greater than / greater than or equal (and common misspellings) ---
+                ">",     IsNumeric(_iv) And IsNumeric(_bv) And Value(_iv) >  Value(_bv),
+                ">=",    IsNumeric(_iv) And IsNumeric(_bv) And Value(_iv) >= Value(_bv),
+                "greater than",
+                         IsNumeric(_iv) And IsNumeric(_bv) And Value(_iv) >  Value(_bv),
+                "greater than or equal",
+                         IsNumeric(_iv) And IsNumeric(_bv) And Value(_iv) >= Value(_bv),
+                "greather than",
+                         IsNumeric(_iv) And IsNumeric(_bv) And Value(_iv) >  Value(_bv),
+                "greather than or equal",
+                         IsNumeric(_iv) And IsNumeric(_bv) And Value(_iv) >= Value(_bv),
+        
+                // --- String operations ---
+                "contains",
+                    Not( IsBlank( Find( Text(_bv), Text(_iv) ) ) ),
+        
+                "begins with",
+                    StartsWith( Text(_iv), Text(_bv) ),
+                "beginswith",
+                    StartsWith( Text(_iv), Text(_bv) ),
+                "starts with",
+                    StartsWith( Text(_iv), Text(_bv) ),
+                "startswith",
+                    StartsWith( Text(_iv), Text(_bv) ),
+        
+                "ends with",
+                    EndsWith( Text(_iv), Text(_bv) ),
+                "endswith",
+                    EndsWith( Text(_iv), Text(_bv) ),
+        
+                // --- Empty (JSON array-aware; fallback to blank/table)
+                "empty",
+                    If(
+                        Not( IsBlank( _ivArrCount ) ),
+                        _ivArrCount = 0,                           // JSON array string
+                        IfError( IsEmpty( _ivArr), IsBlank( _iv ) )  // fallback: table or scalar
+                    ),
+                "empoty",
+                    If(
+                        Not( IsBlank( _ivArrCount ) ),
+                        _ivArrCount = 0,
+                        IfError( IsEmpty( _ivArr ), IsBlank( _iv ) )
+                    ),
+        
+                // --- Default: unsupported op ---
+                false
+            )
+        )
+        
+        ,
+            false
+        );
+    OnStart: |-
+        =/*Set(varBuzonCorreo, LookUp('Environment Variable Values', 'Schema Name' = "sanic_CHEVSharedMailboxAddress", Value));*/
+        
+        Set(varBuzonCorreo, Coalesce(LookUp('Environment Variable Values', 'Schema Name' = "sanic_CHEVSharedMailboxAddress", Value), LookUp('Environment Variable Definitions', 'Schema Name' = "sanic_CHEVSharedMailboxAddress", 'Default Value')));
+        
+        Set(varIDFolderArchivado, "AAMkADgzNTc3NDg0LWNiOWQtNDIzYy1iZmI5LTFjY2VmYWQwYzUwNgAuAAAAAABInfc4Xs2oTI8aweUBvBa6AQBwR7J4pM4WQKNKSgid6I4wAAAAAAEYAAA=");//LookUp('Environment Variable Values', 'Schema Name' = "sanic_CEADEVIDFolderArchivado", Value));
+        Set(UsuarioOffice, Office365Users.MyProfileV2());
+        Set(varHoy, Today());
+        ClearCollect(colExpandMenu,
+        Table(
+        {Icon: "OutlookLogo", Label: "Emails", Screen:'screen CorreosElectronicos', Tooltip:"Mailbox emails"}, 
+        {Icon: "BulletedList", Label: "Cola de procesamiento", Screen:'screen ColaDeProcesamiento', Tooltip:"Cola de procesamiento"}
+        ));
+        ClearCollect(colValidationRules, Filter('CH-Tbl-ValidationRules',IsActive=true));
+    Theme: =PowerAppsTheme
+
+    Host As hostControl.DefaultHostControlVariant:
+        OnCancel: =false
+        OnEdit: =false
+        OnNew: =false
+        OnSave: =false
+        OnView: =false
+

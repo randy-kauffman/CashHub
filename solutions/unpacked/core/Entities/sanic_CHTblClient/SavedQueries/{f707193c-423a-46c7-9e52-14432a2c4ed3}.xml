@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>1</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{f707193c-423a-46c7-9e52-14432a2c4ed3}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="sanic_name" select="1" icon="1" preview="1">
+        <row name="result" id="sanic_chtblclientid">
+          <cell name="sanic_name" width="300" />
+          <cell name="createdon" width="125" />
+          <cell name="createdby" width="104" />
+          <cell name="createdonbehalfby" width="166" />
+          <cell name="emailaddress" width="123" />
+          <cell name="importsequencenumber" width="185" />
+          <cell name="modifiedby" width="112" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>4</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="sanic_chtblclient">
+          <attribute name="sanic_chtblclientid" />
+          <attribute name="sanic_name" />
+          <attribute name="createdon" />
+          <order attribute="sanic_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <filter type="or" isquickfindfields="1">
+            <condition attribute="sanic_name" operator="like" value="{0}" />
+          </filter>
+          <attribute name="createdby" />
+          <attribute name="createdonbehalfby" />
+          <attribute name="emailaddress" />
+          <attribute name="importsequencenumber" />
+          <attribute name="modifiedby" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.1</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Quick Find Active CH-Tbl-Clients" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

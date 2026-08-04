@@ -1,0 +1,150 @@
+{
+  "properties": {
+    "connectionReferences": {},
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "7d0032a5-0ca4-42c6-8a7c-e579c77b433f"
+          },
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "title": "ValidationValue",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "number": {
+                  "title": "AttachmentSize",
+                  "type": "number",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter a number",
+                  "x-ms-content-hint": "NUMBER"
+                }
+              },
+              "required": [
+                "text",
+                "number"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Condition": {
+          "actions": {
+            "Respond_to_a_Power_App_or_flow": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "2f5341e4-897b-4aa4-8f5f-43beee56268c"
+              },
+              "type": "Response",
+              "kind": "PowerApp",
+              "inputs": {
+                "statusCode": 200,
+                "body": {
+                  "validationresult": "Pass"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "validationresult": {
+                      "title": "ValidationResult",
+                      "x-ms-dynamically-added": true,
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "runAfter": {},
+          "else": {
+            "actions": {
+              "Respond_to_a_Power_App_or_flow_2": {
+                "runAfter": {},
+                "metadata": {
+                  "operationMetadataId": "f45ee253-6e11-4eb3-830a-1cc67ee00b51"
+                },
+                "type": "Response",
+                "kind": "PowerApp",
+                "inputs": {
+                  "statusCode": 200,
+                  "body": {
+                    "validationresult": "Fail"
+                  },
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "validationresult": {
+                        "title": "ValidationResult",
+                        "x-ms-dynamically-added": true,
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "expression": {
+            "lessOrEquals": [
+              "@triggerBody()['number']",
+              "@int(triggerBody()['text'])"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3074944a-5789-42cb-8170-002d98e39984"
+          },
+          "type": "If"
+        },
+        "Respond_to_a_Power_App_or_flow_3": {
+          "runAfter": {
+            "Condition": [
+              "Failed",
+              "Skipped",
+              "TimedOut"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "226ba5ad-f78a-4838-96df-4630fe70759f"
+          },
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "statusCode": 200,
+            "body": {
+              "validationresult": "Error"
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "validationresult": {
+                  "title": "ValidationResult",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,747 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  Screen BagLocation:
+    Properties:
+      OnVisible: |-
+        =UpdateContext({varScreenSpinnerMessage: ""});
+    Children:
+      - container ScreenSpinner_1:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Fill: =RGBA(0, 0, 0, 0.7)
+            Height: =Parent.Height
+            Visible: =!IsBlank(varScreenSpinnerMessage)
+            Width: =Parent.Width
+          Children:
+            - Spinner1_1:
+                Control: Spinner@1.4.6
+                Properties:
+                  Appearance: ='Spinner.Appearance'.Primary
+                  BasePaletteColor: =RGBA(5, 102, 178, 1)
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  Height: =Parent.Height
+                  Label: =varScreenSpinnerMessage
+                  LabelPosition: ='Spinner.LabelPosition'.Below
+                  SpinnerSize: ='Spinner.SpinnerSize'.Huge
+                  Width: =Parent.Width
+      - ScreenContainer1_1:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            Fill: =RGBA(245, 245, 245, 1)
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =10
+            PaddingBottom: =16
+            PaddingLeft: =16
+            PaddingRight: =16
+            PaddingTop: =16
+            Width: =Parent.Width - Self.X
+            X: =46
+          Children:
+            - BodyContainer1_1:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =16
+                  LayoutMaxHeight: =
+                  LayoutMaxWidth: =
+                  PaddingBottom: =2
+                  PaddingTop: =4
+                  RadiusBottomLeft: =0
+                  RadiusBottomRight: =0
+                  RadiusTopLeft: =0
+                  RadiusTopRight: =0
+                Children:
+                  - DeleteConfirmDialogContainer1_1:
+                      Control: GroupContainer@1.5.0
+                      Variant: AutoLayout
+                      Properties:
+                        FillPortions: =7
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Visible: =If(deleteMode, true, false)
+                        Width: =0
+                      Children:
+                        - ConfirmDeleteLabelContainer1_1:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              LayoutAlignItems: =LayoutAlignItems.End
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              PaddingBottom: =20
+                            Children:
+                              - TextCanvas1_1:
+                                  Control: Text@0.0.51
+                                  Properties:
+                                    Align: ='TextCanvas.Align'.Center
+                                    FillPortions: =1
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    Size: =16
+                                    Text: ="Are you sure you want to delete this record?"
+                        - ConfirmDeleteButtonBarContainer1_1:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =15
+                              LayoutJustifyContent: =LayoutJustifyContent.Center
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              LayoutWrap: =true
+                            Children:
+                              - ConfirmDeleteButton1_1:
+                                  Control: Button@0.0.45
+                                  Properties:
+                                    AccessibleLabel: ="Delete"
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    OnSelect: =
+                                    Text: ="Delete"
+                              - CancelDeleteButton1_1:
+                                  Control: Button@0.0.45
+                                  Properties:
+                                    AccessibleLabel: ="Cancel"
+                                    Appearance: ='ButtonCanvas.Appearance'.Secondary
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    OnSelect: |-
+                                      =UpdateContext({ deleteMode: false })
+                                    Text: ="Cancel"
+                  - SidebarContainer1_1:
+                      Control: GroupContainer@1.5.0
+                      Variant: AutoLayout
+                      Properties:
+                        Fill: =RGBA(255, 255, 255, 1)
+                        FillPortions: =If(And('Screen BagLocation'.Size = ScreenSize.Small, Or(newMode, isItemSelected)), 0, 3)
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =10
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        PaddingBottom: =10
+                        PaddingLeft: =20
+                        PaddingRight: =20
+                        PaddingTop: =10
+                        Visible: =varShowFilters
+                      Children:
+                        - txtBuscarCamposTexto:
+                            Control: Text@0.0.51
+                            Properties:
+                              Height: =22
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Buscar"
+                              VerticalAlign: =VerticalAlign.Middle
+                              Weight: ='TextCanvas.Weight'.Bold
+                              X: =40
+                              Y: =40
+                        - SearchContainer1_1:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Fill: =RGBA(245, 245, 245, 1)
+                              FillPortions: =0
+                              Height: =32
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              PaddingRight: =5
+                            Children:
+                              - SearchInput1_1:
+                                  Control: TextInput@0.0.54
+                                  Properties:
+                                    BorderRadius: =10
+                                    BorderStyle: =BorderStyle.Solid
+                                    FillPortions: =1
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    Placeholder: ="Search"
+                                    TriggerOutput: ='TextInputCanvas.TriggerOutput'.Delayed
+                        - txtFechaDesde:
+                            Control: Text@0.0.51
+                            Properties:
+                              Height: =22
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Fecha desde"
+                              VerticalAlign: =VerticalAlign.Middle
+                              Weight: ='TextCanvas.Weight'.Bold
+                              X: =40
+                              Y: =40
+                        - dpFechaDesde:
+                            Control: DatePicker@0.0.46
+                            Properties:
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              LayoutMinWidth: =1
+                        - txtFechaHasta:
+                            Control: Text@0.0.51
+                            Properties:
+                              Height: =22
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Fechas hasta"
+                              VerticalAlign: =VerticalAlign.Middle
+                              Weight: ='TextCanvas.Weight'.Bold
+                              X: =40
+                              Y: =40
+                        - dpFechaHasta:
+                            Control: DatePicker@0.0.46
+                            Properties:
+                              AlignInContainer: =AlignInContainer.Stretch
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              LayoutMinWidth: =1
+                        - txtCreadoPor:
+                            Control: Text@0.0.51
+                            Properties:
+                              Height: =22
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Creador"
+                              VerticalAlign: =VerticalAlign.Middle
+                              Weight: ='TextCanvas.Weight'.Bold
+                              X: =40
+                              Y: =40
+                        - combCreadoPor:
+                            Control: ComboBox@0.0.51
+                            Properties:
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Items: =Users
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              LayoutMinWidth: =1
+                            Children:
+                              - Full Name1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Full Name"
+                                    FieldName: ="fullname"
+                                    FieldType: ="s"
+                                    Order: =1
+                              - Business Unit1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Business Unit"
+                                    FieldName: ="businessunitid"
+                                    FieldType: ="E"
+                                    Order: =2
+                              - Title1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Title"
+                                    FieldName: ="title"
+                                    FieldType: ="s"
+                                    Order: =3
+                              - Position1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Position"
+                                    FieldName: ="positionid"
+                                    FieldType: ="E"
+                                    Order: =4
+                              - Main Phone1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Main Phone"
+                                    FieldName: ="address1_telephone1"
+                                    FieldType: ="s"
+                                    Order: =5
+                        - txtModificadoPor:
+                            Control: Text@0.0.51
+                            Properties:
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Height: =22
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Ultimo modificador"
+                              VerticalAlign: =VerticalAlign.Middle
+                              Weight: ='TextCanvas.Weight'.Bold
+                              X: =40
+                              Y: =40
+                        - combModificadoPor:
+                            Control: ComboBox@0.0.51
+                            Properties:
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Items: =Filter(Users, 'Users (Views)'.'User Lookup View')
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              LayoutMinWidth: =1
+                            Children:
+                              - Full Name1_1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Full Name"
+                                    FieldName: ="fullname"
+                                    FieldType: ="s"
+                                    Order: =1
+                              - Business Unit1_1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Business Unit"
+                                    FieldName: ="businessunitid"
+                                    FieldType: ="E"
+                                    Order: =2
+                              - Title1_1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Title"
+                                    FieldName: ="title"
+                                    FieldType: ="s"
+                                    Order: =3
+                              - Position1_1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Position"
+                                    FieldName: ="positionid"
+                                    FieldType: ="E"
+                                    Order: =4
+                              - Main Phone1_1:
+                                  Control: ComboBoxDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Main Phone"
+                                    FieldName: ="address1_telephone1"
+                                    FieldType: ="s"
+                                    Order: =5
+                        - ButtonCanvas1:
+                            Control: Button@0.0.45
+                            Properties:
+                              AlignInContainer: =AlignInContainer.Center
+                              Appearance: ='ButtonCanvas.Appearance'.Outline
+                              BorderRadius: =20
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              OnSelect: =Reset(combCreadoPor);Reset(combModificadoPor);Reset(dpFechaHasta);Reset(dpFechaDesde);Reset(SearchInput1_1)
+                              Text: ="Reset"
+                  - RightContainer1_1:
+                      Control: GroupContainer@1.5.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.None
+                        FillPortions: =7
+                        LayoutAlignItems: =LayoutAlignItems.Stretch
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutGap: =16
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        PaddingBottom: =2
+                        PaddingLeft: =2
+                        PaddingRight: =2
+                        RadiusBottomLeft: =0
+                        RadiusBottomRight: =0
+                        RadiusTopLeft: =0
+                        RadiusTopRight: =0
+                        Visible: =If(Or(deleteMode, And('Screen BagLocation'.Size = ScreenSize.Small, !newMode, !isItemSelected)), false, true)
+                        Width: =0
+                      Children:
+                        - MainContainer1_1:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              Fill: =RGBA(255, 255, 255, 1)
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =16
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              LayoutMinHeight: =150
+                              LayoutMinWidth: =300
+                              LayoutOverflowY: =LayoutOverflow.Scroll
+                              PaddingTop: =8
+                            Children:
+                              - TabList1:
+                                  Control: TabList@2.2.31
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    Height: =30
+                                    Items: =["Esclusa", "Boveda temporal", "Declaraciones pendientes","Procesadas"]
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    Size: ='TabList.Size'.Small
+                              - tblTulasEnEsclusa:
+                                  Control: Table@1.0.278
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    FillPortions: =1
+                                    Items: "=If(\n    TabList1.Selected.Value = \"Esclusa\",\n    Filter(\n        'CH-Tbl-Bags',\n        (BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en exclusa' || BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - exclusa')\n        && (IsBlank(dpFechaDesde.SelectedDate) || 'Created On' >= dpFechaDesde.SelectedDate)\n        && (IsBlank(dpFechaHasta.SelectedDate) || 'Created On' <=dpFechaHasta.SelectedDate)\n        && (IsBlank(combCreadoPor.Selected) || 'Created By'.User = combCreadoPor.Selected.User)\n        && (IsBlank(combModificadoPor.Selected) || 'Modified By'.User = combModificadoPor.Selected.User)\n        && (IsBlank(SearchInput1_1.Value) || StartsWith(BagID, SearchInput1_1.Value) || StartsWith(ReceptionID.ReceiptID, SearchInput1_1.Value))\n    )\n    \n)"
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    NoDataText: ="No hay tulas en esclusa."
+                                    OnSelect: |-
+                                      =UpdateContext({ isItemSelected: true, newMode: false, CurrentItem:tblTulasEnEsclusa.Selected })
+                                    ReflowBehavior: ='PowerAppsOneGrid.ReflowBehavior'.Reflow
+                                    Visible: =TabList1.Selected.Value = "Esclusa"
+                                  Children:
+                                    - BagID2:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="BagID"
+                                          FieldName: ="sanic_bagid"
+                                          FieldType: ="s"
+                                          Order: =2
+                                    - BagStatus2:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="BagStatus"
+                                          FieldName: ="sanic_bagstatus"
+                                          FieldType: ="l"
+                                          Order: =3
+                                    - Created On3:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="Created On"
+                                          FieldName: ="createdon"
+                                          FieldType: ="d"
+                                          Order: =4
+                                    - ReceptionID2:
+                                        Control: TableDataField@1.5.0
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="ReceptionID"
+                                          FieldName: ="sanic_ReceptionID"
+                                          FieldType: ="E"
+                                          Order: =5
+                                    - createdby1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="createdby"
+                                          FieldName: ="createdby"
+                                          FieldType: ="E"
+                                          Order: =5
+                                    - modifiedby1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="modifiedby"
+                                          FieldName: ="modifiedby"
+                                          FieldType: ="E"
+                                          Order: =6
+                              - tblTulasEnBoveda:
+                                  Control: Table@1.0.278
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    FillPortions: =1
+                                    Items: "=If(\n    TabList1.Selected.Value = \"Boveda temporal\",\n    Filter(\n        'CH-Tbl-Bags',\n        (BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda' )\n        && (IsBlank(dpFechaDesde.SelectedDate) || 'Created On' >= dpFechaDesde.SelectedDate)\n        && (IsBlank(dpFechaHasta.SelectedDate) || 'Created On' <=dpFechaHasta.SelectedDate)\n        && (IsBlank(combCreadoPor.Selected) || 'Created By'.User = combCreadoPor.Selected.User)\n        && (IsBlank(combModificadoPor.Selected) || 'Modified By'.User = combModificadoPor.Selected.User)\n        && (IsBlank(SearchInput1_1.Value) || StartsWith(BagID, SearchInput1_1.Value) || StartsWith(ReceptionID.ReceiptID, SearchInput1_1.Value))\n    )\n    \n)"
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    NoDataText: ="No hay tulas en esclusa."
+                                    OnSelect: |-
+                                      =UpdateContext({ isItemSelected: true, newMode: false, CurrentItem:tblTulasEnBoveda.Selected })
+                                    ReflowBehavior: ='PowerAppsOneGrid.ReflowBehavior'.Reflow
+                                    Visible: =TabList1.Selected.Value = "Boveda temporal"
+                                  Children:
+                                    - BagID2_1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="BagID"
+                                          FieldName: ="sanic_bagid"
+                                          FieldType: ="s"
+                                          Order: =2
+                                    - BagStatus2_1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="BagStatus"
+                                          FieldName: ="sanic_bagstatus"
+                                          FieldType: ="l"
+                                          Order: =3
+                                    - Created On3_1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="Created On"
+                                          FieldName: ="createdon"
+                                          FieldType: ="d"
+                                          Order: =4
+                                    - ReceptionID2_1:
+                                        Control: TableDataField@1.5.0
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="ReceptionID"
+                                          FieldName: ="sanic_ReceptionID"
+                                          FieldType: ="E"
+                                          Order: =5
+                                    - createdby1_1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="createdby"
+                                          FieldName: ="createdby"
+                                          FieldType: ="E"
+                                          Order: =5
+                                    - modifiedby1_1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="modifiedby"
+                                          FieldName: ="modifiedby"
+                                          FieldType: ="E"
+                                          Order: =6
+                              - tblTulasDeclaradas:
+                                  Control: Table@1.0.278
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    FillPortions: =1
+                                    Items: |-
+                                      =If(
+                                          TabList1.Selected.Value = "Declaraciones pendientes",
+                                          Filter(
+                                              'CH-Tbl-DeclaredBags',
+                                              IsRelatedToBag = false && (IsBlank(dpFechaDesde.SelectedDate) || 'Created On' >= dpFechaDesde.SelectedDate) && (IsBlank(dpFechaHasta.SelectedDate) || 'Created On' <= dpFechaHasta.SelectedDate) && (IsBlank(combCreadoPor.Selected) || 'Created By'.User = combCreadoPor.Selected.User) && (IsBlank(combModificadoPor.Selected) || 'Modified By'.User = combModificadoPor.Selected.User)  && (IsBlank(SearchInput1_1.Value) || StartsWith(BagNumber, SearchInput1_1.Value))
+                                          )
+                                      )
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    NoDataText: ="No hay tulas declaras sin relacionarse."
+                                    OnSelect: |-
+                                      =UpdateContext({ isItemSelected: true, newMode: false, CurrentItem:tblTulasDeclaradas.Selected })
+                                    ReflowBehavior: ='PowerAppsOneGrid.ReflowBehavior'.Reflow
+                                    Visible: =TabList1.Selected.Value = "Declaraciones pendientes"
+                                  Children:
+                                    - sanic_bagnumber1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="sanic_bagnumber"
+                                          FieldName: ="sanic_bagnumber"
+                                          FieldType: ="s"
+                                          HeaderText: ="BagID"
+                                          Order: =1
+                                    - sanic_totalnio1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="sanic_totalnio"
+                                          FieldName: ="sanic_totalnio"
+                                          FieldType: ="n"
+                                          HeaderText: ="NIO"
+                                          Order: =3
+                                    - sanic_totalusd1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="sanic_totalusd"
+                                          FieldName: ="sanic_totalusd"
+                                          FieldType: ="n"
+                                          HeaderText: ="USD"
+                                          Order: =4
+                                    - sanic_totaleur1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="sanic_totaleur"
+                                          FieldName: ="sanic_totaleur"
+                                          FieldType: ="n"
+                                          HeaderText: ="EUR"
+                                          Order: =5
+                                    - createdby2:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="createdby"
+                                          FieldName: ="createdby"
+                                          FieldType: ="E"
+                                          HeaderText: ="Autor"
+                                          Order: =6
+                                    - modifiedby2:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="modifiedby"
+                                          FieldName: ="modifiedby"
+                                          FieldType: ="E"
+                                          HeaderText: ="Editor"
+                                          Order: =7
+                                    - createdon1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="createdon"
+                                          FieldName: ="createdon"
+                                          FieldType: ="d"
+                                          HeaderText: ="Creado en"
+                                          Order: =8
+                                    - modifiedon1:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="modifiedon"
+                                          FieldName: ="modifiedon"
+                                          FieldType: ="d"
+                                          HeaderText: ="Editado en"
+                                          Order: =9
+                              - tblTulasEnProcesadas:
+                                  Control: Table@1.0.278
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    FillPortions: =1
+                                    Items: "=If(\n    TabList1.Selected.Value = \"Procesadas\",\n    Filter(\n        'CH-Tbl-Bags',\n        (BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada)\n        && (IsBlank(dpFechaDesde.SelectedDate) || 'Created On' >= dpFechaDesde.SelectedDate)\n        && (IsBlank(dpFechaHasta.SelectedDate) || 'Created On' <=dpFechaHasta.SelectedDate)\n        && (IsBlank(combCreadoPor.Selected) || 'Created By'.User = combCreadoPor.Selected.User)\n        && (IsBlank(combModificadoPor.Selected) || 'Modified By'.User = combModificadoPor.Selected.User)\n        && (IsBlank(SearchInput1_1.Value) || StartsWith(BagID, SearchInput1_1.Value) || StartsWith(ReceptionID.ReceiptID, SearchInput1_1.Value))\n    )\n    \n)"
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    NoDataText: ="No hay tulas en esclusa."
+                                    OnSelect: |-
+                                      =UpdateContext({ isItemSelected: true, newMode: false, CurrentItem:tblTulasEnProcesadas.Selected })
+                                    ReflowBehavior: ='PowerAppsOneGrid.ReflowBehavior'.Reflow
+                                    Visible: =TabList1.Selected.Value = "Procesadas"
+                                  Children:
+                                    - BagID2_2:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="BagID"
+                                          FieldName: ="sanic_bagid"
+                                          FieldType: ="s"
+                                          Order: =2
+                                    - BagStatus2_2:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="BagStatus"
+                                          FieldName: ="sanic_bagstatus"
+                                          FieldType: ="l"
+                                          Order: =3
+                                    - Created On3_2:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="Created On"
+                                          FieldName: ="createdon"
+                                          FieldType: ="d"
+                                          Order: =4
+                                    - ReceptionID2_2:
+                                        Control: TableDataField@1.5.0
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="ReceptionID"
+                                          FieldName: ="sanic_ReceptionID"
+                                          FieldType: ="E"
+                                          Order: =5
+                                    - createdby1_2:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="createdby"
+                                          FieldName: ="createdby"
+                                          FieldType: ="E"
+                                          Order: =5
+                                    - modifiedby1_2:
+                                        Control: TableDataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="modifiedby"
+                                          FieldName: ="modifiedby"
+                                          FieldType: ="E"
+                                          Order: =6
+      - ExpandMenu_3:
+          Control: CanvasComponent
+          ComponentName: ExpandMenu
+          ComponentLibraryUniqueName: cat_powercatcomponentlibrary_0be3a
+          Properties:
+            DefaultExpandValue: =false
+            Fill: =ColorValue(ExpandMenu_3.Theme.palette.white)
+            Height: =Parent.Height
+            IsNavigationEnabled: =false
+            Items: =gvarNavItems
+            OnButtonSelect: =Navigate(Self.SelectedItem.Screen,ScreenTransition.Fade)
+            OnExpandSelect: =
+            Theme: |-
+              ={
+              	palette: {
+              		themePrimary: "#0078d4",
+              		themeLighterAlt: "#eff6fc",
+              		themeLighter: "#deecf9",
+              		themeLight: "#c7e0f4",
+              		themeTertiary: "#71afe5",
+              		themeSecondary: "#2b88d8",
+              		themeDarkAlt: "#106ebe",
+              		themeDark: "#005a9e",
+              		themeDarker: "#004578",
+              		neutralLighterAlt: "#faf9f8",
+              		neutralLighter: "#f3f2f1",
+              		neutralLight: "#edebe9",
+              		neutralQuaternaryAlt: "#e1dfdd",
+              		neutralQuaternary: "#d0d0d0",
+              		neutralTertiaryAlt: "#c8c6c4",
+              		neutralTertiary: "#a19f9d",
+              		neutralSecondary: "#605e5c",
+              		neutralPrimaryAlt: "#3b3a39",
+              		neutralPrimary: "#323130",
+              		neutralDark: "#201f1e",
+              		black: "#000000",
+              		white: "#ffffff"
+              	}
+              }
+            Width: =If(!Self.IsExpanded, 46, 221)
+      - Icon2:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            Color: =RGBA(0, 0, 0, 1)
+            Height: =20
+            Icon: =If(varShowFilters, Icon.BackArrow, Icon.NextArrow)
+            OnSelect: |-
+              =UpdateContext({varShowFilters: !varShowFilters})
+            Width: =20
+            X: =SidebarContainer1_1.X + If(SidebarContainer1_1.Visible,(SidebarContainer1_1.Width)) + 52
+            Y: =SidebarContainer1_1.Y + (SidebarContainer1_1.Height / 2)  - (Self.Height/2)

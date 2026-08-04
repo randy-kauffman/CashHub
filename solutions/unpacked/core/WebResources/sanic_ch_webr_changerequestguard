@@ -1,0 +1,47 @@
+// ch_changerequestguard.js
+// Purpose: Prevent saving a ChangeRequest if another pending one exists for the same target.
+// Hook: Form OnSave (pre-operation)
+
+async function ch_preventDuplicatePendingCR(executionContext) {
+    const formCtx = executionContext.getFormContext();
+    const eventArgs = executionContext.getEventArgs();
+
+    try {
+        //Read current values from the form
+        const targetTable = formCtx.getAttribute("sanic_targettable")?.getValue();
+        const targetRecordId = formCtx.getAttribute("sanic_targetrecordid")?.getValue();
+        const statusAttr = formCtx.getAttribute("sanic_status");
+        const status = statusAttr ? statusAttr.getValue() : null;
+
+        // Only run when status is moving into a "Pending" bucket;
+        const PENDING_STATUSES = [159460001, 159460002];
+        If (!targetTable || !targetRecordId || !status || PENDING_STATUSES.indexOf(status) === -1) 
+        {
+            return; // nothing to check
+        }
+
+        // Exclude current record (when editing)
+        const currentId = formCtx.data.entity.getId()?.replace(/[{}]/g,"");
+
+        //Build Odata filter (URL-encoded)
+        // status in (Submitted, Approved) ABD sane target table/id AND id != current
+        // Note: sanic_changerequestid ne <currentId> only when editing existing row.
+        let filter = `ch_targettable eq '${encodeURIcomponent(targetTable)}' and sanic_targetrecordid eq '${encodeURIComponent(targetRecordId)}' and (sanic_status eq 159460002 or sanic_status eq 159460001)`;
+        if (currentId) {
+            filter += ` and sanic_changerequestid ne ${currentId}`;
+        }
+
+        // Call Dataverse Web API
+        const result = await XMLHttpRequest.WebApi.retrieveMultipleRecords("sanic_chtblclientdatachangerequest", `?$select=sanic_changerequestid&$top=1&$filter=${filter}`)
+        if (result && result.entities && result.entities.length > 0) {
+            const msg = "A pending Change Request already exist for this record. Please review or complete it before submitting another."
+            formCtx.ui.setFormNotification(msg, "Error", "cg_dup_pending");
+            eventArgs.preventDefault();
+        } else {
+            formCtx.ui.clearFormNotification("cg_dup_pending");
+        }
+    } catch (e) {
+        // Fail safe: do not block save on JS error, but log a warning
+        console.warn("ch_preventDuplicatePendingCR error:", e);
+    }
+}

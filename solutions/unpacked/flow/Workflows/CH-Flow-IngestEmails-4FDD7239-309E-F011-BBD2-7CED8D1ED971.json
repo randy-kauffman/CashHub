@@ -1,0 +1,211 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_office365": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CEADCONNOutlook365"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      },
+      "shared_commondataserviceforapps-1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_new_email_arrives_in_a_shared_mailbox_(V2)": {
+          "recurrence": {
+            "interval": 1,
+            "frequency": "Minute"
+          },
+          "splitOn": "@triggerOutputs()?['body/value']",
+          "metadata": {
+            "operationMetadataId": "7ea0af44-cb56-4333-863f-5d6ac9076d2f"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "mailboxAddress": "no-reply-powerplatform-dev@baccredomatic.ni",
+              "to": "No-Reply-PowerPlatform-DEV@baccredomatic.ni",
+              "importance": "Any",
+              "hasAttachments": false,
+              "includeAttachments": false,
+              "folderId": "Inbox"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "SharedMailboxOnNewEmailV2",
+              "connectionName": "shared_office365"
+            }
+          }
+        }
+      },
+      "actions": {
+        "Seach_email_unique_ID": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "5fa39ce6-ee15-4f9f-8807-44553ec92f25"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblreceivedemailses",
+              "$filter": "sanic_replyemailoutlookuniqueid eq '@{triggerOutputs()?['body/id']}'"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps-1"
+            }
+          }
+        },
+        "Check_if_search_returns_records": {
+          "actions": {
+            "Terminate": {
+              "metadata": {
+                "operationMetadataId": "fba052a9-3ab5-4273-b5f2-d3a8cfd4e26b"
+              },
+              "type": "Terminate",
+              "inputs": {
+                "runStatus": "Succeeded"
+              },
+              "description": "Duplicate ID found"
+            }
+          },
+          "runAfter": {
+            "Seach_email_unique_ID": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "Add_a_new_email": {
+                "metadata": {
+                  "operationMetadataId": "d9f4983f-9dc8-4187-9384-54a0425b7fea"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "entityName": "sanic_chtblreceivedemailses",
+                    "item/sanic_receivedemailinternetmessageid": "@triggerOutputs()?['body/internetMessageId']",
+                    "item/sanic_receivedemailoutlookuniqueid": "@triggerOutputs()?['body/id']",
+                    "item/sanic_sourceemailaddress": "@triggerOutputs()?['body/from']",
+                    "item/emailaddress": "@triggerOutputs()?['body/from']",
+                    "item/sanic_emailreplystatus": 159460000,
+                    "item/sanic_emailreviewmethod": 159460001,
+                    "item/sanic_emailreviewstatus": 159460000,
+                    "item/sanic_receptiondatetime": "@triggerOutputs()?['body/receivedDateTime']",
+                    "item/sanic_subject": "@triggerOutputs()?['body/subject']",
+                    "item/sanic_validationstatus": 159460000
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                    "operationId": "CreateRecord",
+                    "connectionName": "shared_commondataserviceforapps-1"
+                  }
+                }
+              },
+              "For_each_attachment": {
+                "foreach": "@triggerOutputs()?['body/attachments']",
+                "actions": {
+                  "Create_attachment": {
+                    "metadata": {
+                      "operationMetadataId": "394f3820-3d0b-4234-828c-5fc18d2f819c"
+                    },
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "entityName": "sanic_chtblemailsattachmentses",
+                        "item/sanic_Email@odata.bind": "@outputs('Add_a_new_email')?['body/sanic_chtblreceivedemailsid']",
+                        "item/sanic_emailattachmentid": "@items('For_each_attachment')?['id']",
+                        "item/sanic_filename": "@item()?['name']",
+                        "item/sanic_fileextention": "@toLower(last(split(item()?['name'],'.')))",
+                        "item/sanic_tamanoenbytes": "@items('For_each_attachment')?['size']"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                        "operationId": "CreateRecord",
+                        "connectionName": "shared_commondataserviceforapps-1"
+                      }
+                    }
+                  },
+                  "Upload_attachment": {
+                    "runAfter": {
+                      "Create_attachment": [
+                        "Succeeded"
+                      ]
+                    },
+                    "metadata": {
+                      "operationMetadataId": "9be368e2-c508-40f6-8669-59249764bac1"
+                    },
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "x-ms-file-name": "Untitled",
+                        "entityName": "sanic_chtblemailsattachmentses",
+                        "recordId": "@outputs('Create_attachment')?['body/sanic_chtblemailsattachmentsid']",
+                        "fileImageFieldName": "sanic_filecontent",
+                        "item": "@items('For_each_attachment')?['contentBytes']"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                        "operationId": "UpdateEntityFileImageFieldContent",
+                        "connectionName": "shared_commondataserviceforapps-1"
+                      }
+                    }
+                  }
+                },
+                "runAfter": {
+                  "Add_a_new_email": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "ab86b74f-9e9f-431e-b3a5-72343ffd74aa"
+                },
+                "type": "Foreach"
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "greater": [
+                  "@length(outputs('Seach_email_unique_ID')?['body/value'])",
+                  0
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9ab5af26-5079-4868-b71c-a419aa2d7cb0"
+          },
+          "type": "If"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

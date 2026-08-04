@@ -1,0 +1,65 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+App:
+  Properties:
+    OnStart: |-
+      =Set(
+          gvarSideMenu,
+          Table(
+              {
+                  Icon: "People",
+                  Label: "Clientes",
+                  Screen: 'screen Clients',
+                  Tooltip: "Power Apps Tooltip"
+              },
+              {
+                  Icon: "BranchCompare",
+                  Label: "Solicitudes de cambio",
+                  Screen: 'screen RFC',
+                  Tooltip: "Power BI Tooltip"
+              }
+          )
+      );
+
+
+      //ClearCollect(colAADGroups, Office365Groups.ListOwnedGroupsV3().value);
+
+      //Check if the user is in the security groups
+      Clear(colClientDataPermissions);
+
+      ForAll('CH-Tbl-ClientDataChangePermissions' As Permission,
+
+      If( !IsBlank(
+                  LookUp(
+                      Office365Groups.ListGroupMembers(Permission.AADGroupID).value,
+                      userPrincipalName = User().Email
+                  )
+              ) ,Collect(colClientDataPermissions, Permission))
+      );
+
+      Set(
+          gvarUser,
+          LookUp(
+              Users,
+              'Primary Email' = User().Email
+          )
+      );
+      If(
+          !IsBlank(Param("RFC")),
+          Set(
+              gvarSelectedChangeRequest,
+              LookUp(
+                  'CH-Tbl-ClientDataChangeRequests',
+                  'CH-Tbl-ClientDataChangeRequest' = GUID(Param("RFC"))
+              )
+          );
+          Set(gvarSelectedClient, gvarSelectedChangeRequest.RelatedClient)
+      )
+    StartScreen: ='screen Splash'
+    Theme: =PowerAppsTheme

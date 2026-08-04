@@ -1,0 +1,743 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  Screen OperationSummary:
+    Properties:
+      OnVisible: |-
+        =UpdateContext({varScreenSpinnerMessage: ""});
+    Children:
+      - ScreenContainer1_2:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            Fill: =RGBA(245, 245, 245, 1)
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =20
+            PaddingBottom: =16
+            PaddingLeft: =16
+            PaddingRight: =16
+            PaddingTop: =16
+            Width: =Parent.Width - Self.X
+            X: =46
+          Children:
+            - BodyContainer1_2:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =70
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =16
+                  LayoutMaxHeight: =
+                  LayoutMaxWidth: =
+                  PaddingBottom: =2
+                  PaddingTop: =4
+                  RadiusBottomLeft: =0
+                  RadiusBottomRight: =0
+                  RadiusTopLeft: =0
+                  RadiusTopRight: =0
+                Children:
+                  - lblTItulo:
+                      Control: Label@2.5.1
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        AutoHeight: =true
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Size: =24
+                        Text: ="Resumen de operaciones"
+                        Width: =400
+                  - Container2:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Start
+                        DropShadow: =DropShadow.None
+                        Height: =1
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        LayoutMinHeight: =1
+                        LayoutMinWidth: =1
+                  - Icon3:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        Color: =RGBA(0, 0, 0, 1)
+                        Height: =20
+                        Icon: =Icon.CalendarBlank
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Width: =20
+                  - DatePickerCanvas1:
+                      Control: DatePicker@0.0.46
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        Appearance: ='DatePickerCanvas.Appearance'.FilledLighter
+                        BorderRadius: =10
+                        EndDate: =Today()
+                        Height: =40
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        SelectedDate: =Today()
+                        Width: =200
+                  - Icon4:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        Color: =RGBA(0, 0, 0, 1)
+                        Height: =24
+                        Icon: =Icon.People
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Width: =24
+                  - ComboboxCanvas1:
+                      Control: ComboBox@0.0.51
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        Appearance: ='ComboboxCanvas.Appearance'.FilledLighter
+                        Height: =40
+                        InputTextPlaceholder: ="Todos los cajeros"
+                        Items: |+
+                          =With(
+                              {
+                                  _sessions:
+                                      Filter(
+                                          'CH-Tbl-RecountingSessions',
+                                          'Created On' >= DatePickerCanvas1.SelectedDate &&
+                                          'Created On' <  DateAdd(DatePickerCanvas1.SelectedDate, 1, TimeUnit.Days)
+                                      )
+                              },
+                              ForAll(
+                                  Distinct(_sessions, Cashier.User),
+                                  {User: Value
+                                  , FullName: LookUp(
+                                      Choices([@'CH-Tbl-RecountingSessions'].Cashier),
+                                      User = Value
+                                  ).'Full Name'
+                                  }
+                              )
+                          )
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Width: =250
+                      Children:
+                        - FullName2:
+                            Control: ComboBoxDataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="FullName"
+                              FieldName: ="FullName"
+                              FieldType: ="s"
+                              Order: =1
+                        - User2:
+                            Control: ComboBoxDataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="User"
+                              FieldName: ="User"
+                              FieldType: ="g"
+                              Order: =2
+                  - ButtonCanvas2:
+                      Control: Button@0.0.45
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        BorderRadius: =10
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        OnSelect: |
+                          =UpdateContext({varScreenSpinnerMessage: "Actualizando..."});
+                          ClearCollect(
+                              colRecountingSessions,
+                              ShowColumns(
+                                  Filter(
+                                      'CH-Tbl-RecountingSessions',
+                                      'Created On' >= DatePickerCanvas1.SelectedDate && 'Created On' < DateAdd(
+                                          DatePickerCanvas1.SelectedDate,
+                                          1,
+                                          TimeUnit.Days
+                                      ) && (IsBlank(ComboboxCanvas1.Selected) || Cashier.User = ComboboxCanvas1.Selected.User) && Confirmed = true
+                                  ),
+                                  'CH-Tbl-Bags',
+                                  'CH-Tbl-RecountingSession',
+                                  'Created By',
+                                  'Created On',
+                                  'Modified By',
+                                  'Modified On',
+                                  SessionForciblyClosed,
+                                  Name,
+                                  ForcedClosureBy,
+                                  CountingDesk,
+                                  ConfirmedBy,
+                                  Confirmed,
+                                  Cashier
+                              )
+                          );
+                          Clear(colRecountedBags);
+                          ForAll(
+                              colRecountingSessions As RS,
+                              Collect(
+                                  colRecountedBags,
+                                  AddColumns(
+                                      ShowColumns(
+                                          Filter(
+                                              'CH-Tbl-Bags',
+                                              RecountingSession.'CH-Tbl-RecountingSession' = RS.sanic_chtblrecountingsessionid && BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada
+                                          ),
+                                          'CH-Tbl-Bags',
+                                          'CH-Tbl-DepositsRecountings',
+                                          BagID,
+                                          BagStatus,
+                                          ReceptionID,
+                                          RecountingSession,
+                                          TotalUSD,
+                                          TotalNIO,
+                                          TotalEUR
+                                      ),
+                                      RecountedSessionGUID,
+                                      sanic_RecountingSession.'CH-Tbl-RecountingSession'
+                                  )
+                              )
+                          );
+                          Clear(colRecounted);
+                          ForAll(
+                              colRecountedBags As RB,
+                              Collect(
+                                  colRecounted,
+                                  AddColumns(
+                                      ShowColumns(
+                                          Filter(
+                                              'CH-Tbl-DepositsRecountings',
+                                              BagID.'CH-Tbl-Bags' = RB.sanic_chtblbagsid
+                                          ),
+                                          'CH-Tbl-Checks',
+                                          'CH-Tbl-DepositsRecounting',
+                                          BACLocalCheckAmount,
+                                          BagID,
+                                          CashAmount,
+                                          Currency,
+                                          OtherLocaCheckAmount,
+                                          Total
+                                      ),
+                                      RelatedBagGUID,
+                                      sanic_BagID.'CH-Tbl-Bags'
+                                  )
+                              )
+                          );
+                          Clear(colRecountedCheck);
+                          ForAll(
+                              colRecounted As Recounted,
+                              Collect(
+                                  colRecountedCheck,
+                                  AddColumns(
+                                      ShowColumns(
+                                          Filter(
+                                              'CH-Tbl-Checks',
+                                              RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting' = Recounted.sanic_chtbldepositsrecountingid
+                                          ),
+                                          'CH-Tbl-Checks',
+                                          RelatedReCounterDepositID,
+                                          CheckTypes,
+                                          CheckStatus,
+                                          CheckNumber,
+                                          CheckCurrency,
+                                          CheckAmount
+                                      ),
+                                      RelatedRecountedDepositGUID,
+                                      sanic_RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting'
+                                  )
+                              )
+                          );
+                          ClearCollect(
+                              colR,
+                              AddColumns(
+                                  colRecounted,
+                                  Checks,
+                                  LookUp(
+                                      GroupBy(
+                                          colRecountedCheck,
+                                          RelatedRecountedDepositGUID,
+                                          RecountedDeposit
+                                      ),
+                                      RelatedRecountedDepositGUID = sanic_chtbldepositsrecountingid
+                                  ).RecountedDeposit
+                              )
+                          );
+                          ClearCollect(
+                              colRB,
+                              AddColumns(
+                                  colRecountedBags,
+                                  Deposits,
+                                  LookUp(
+                                      GroupBy(
+                                          colR,
+                                          RelatedBagGUID,
+                                          Deposit
+                                      ),
+                                      RelatedBagGUID = sanic_chtblbagsid
+                                  ).Deposit
+                              )
+                          );
+                          ClearCollect(
+                              colRS,
+                              AddColumns(
+                                  colRecountingSessions,
+                                  Bags,
+                                  LookUp(
+                                      GroupBy(
+                                          colRB,
+                                          RecountedSessionGUID,
+                                          RS
+                                      ),
+                                      RecountedSessionGUID = sanic_chtblrecountingsessionid
+                                  ).RS
+                              )
+                          );
+                          UpdateContext({varScreenSpinnerMessage: ""});
+                        Text: ="Actualizar"
+            - BodyContainer1_3:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =130
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =16
+                  LayoutMaxHeight: =
+                  LayoutMaxWidth: =
+                  LayoutOverflowY: =LayoutOverflow.Scroll
+                  PaddingBottom: =2
+                  PaddingTop: =4
+                  RadiusBottomLeft: =0
+                  RadiusBottomRight: =0
+                  RadiusTopLeft: =0
+                  RadiusTopRight: =0
+                Children:
+                  - container TulasRecontadas:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: =RGBA(214, 221, 224, 1)
+                        BorderThickness: =1
+                        DropShadow: =DropShadow.None
+                        Fill: =RGBA(255, 255, 255, 1)
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =1
+                        RadiusBottomLeft: =10
+                        RadiusBottomRight: =10
+                        RadiusTopLeft: =10
+                        RadiusTopRight: =10
+                      Children:
+                        - Label3_1:
+                            Control: Label@2.5.1
+                            Properties:
+                              FontWeight: =FontWeight.Bold
+                              PaddingLeft: =15
+                              Size: =24
+                              Text: =CountRows(colRB)
+                              Width: =200
+                              X: =10
+                              Y: =Label3.Height + Label3.Y
+                        - Label3:
+                            Control: Label@2.5.1
+                            Properties:
+                              FontWeight: =FontWeight.Semibold
+                              PaddingLeft: =15
+                              Text: ="Tulas recontadas"
+                              Width: =200
+                              X: =10
+                        - Icon5:
+                            Control: Classic/Icon@2.5.0
+                            Properties:
+                              Color: =RGBA(0, 0, 0, 1)
+                              Height: =20
+                              Icon: =Icon.Journal
+                              Width: =20
+                              X: =Parent.Width - Self.Width - 10
+                              Y: =10
+                  - container TulasDinero:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: =RGBA(214, 221, 224, 1)
+                        BorderThickness: =1
+                        DropShadow: =DropShadow.None
+                        Fill: =RGBA(255, 255, 255, 1)
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =1
+                        RadiusBottomLeft: =10
+                        RadiusBottomRight: =10
+                        RadiusTopLeft: =10
+                        RadiusTopRight: =10
+                      Children:
+                        - Label3_9:
+                            Control: Label@2.5.1
+                            Properties:
+                              FontWeight: =FontWeight.Semibold
+                              Height: =25
+                              PaddingLeft: =15
+                              Size: =15
+                              Text: ="€    "&Text(Sum(Filter(colR,sanic_currency='CH-Ch-Currency'.EUR),sanic_total),"#,###.00")
+                              Width: =Parent.Width - 10
+                              X: =10
+                              Y: =Label3_8.Height + Label3_8.Y
+                        - Label3_8:
+                            Control: Label@2.5.1
+                            Properties:
+                              FontWeight: =FontWeight.Semibold
+                              Height: =25
+                              PaddingLeft: =15
+                              Size: =15
+                              Text: ="U$ "&Text(Sum(Filter(colR,sanic_currency='CH-Ch-Currency'.USD),sanic_total),"#,###.00")
+                              Width: =Parent.Width - 10
+                              X: =10
+                              Y: =Label3_2.Height + Label3_2.Y
+                        - Label3_2:
+                            Control: Label@2.5.1
+                            Properties:
+                              FontWeight: =FontWeight.Semibold
+                              Height: =25
+                              PaddingLeft: =15
+                              Size: =15
+                              Text: ="C$ "&Text(Sum(Filter(colR,sanic_currency='CH-Ch-Currency'.NIO),sanic_total),"#,###.00")
+                              Width: =Parent.Width - 10
+                              X: =10
+                              Y: =Label3_3.Height + Label3_3.Y
+                        - Label3_3:
+                            Control: Label@2.5.1
+                            Properties:
+                              FontWeight: =FontWeight.Semibold
+                              PaddingLeft: =15
+                              Text: ="Monto recontado"
+                              Width: =200
+                              X: =10
+                        - Icon5_1:
+                            Control: Classic/Icon@2.5.0
+                            Properties:
+                              Color: =RGBA(0, 0, 0, 1)
+                              Height: =20
+                              Icon: =Icon.Money
+                              Width: =20
+                              X: =Parent.Width - Self.Width - 10
+                              Y: =10
+                  - container ChequesRecontados:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: =RGBA(214, 221, 224, 1)
+                        BorderThickness: =1
+                        DropShadow: =DropShadow.None
+                        Fill: =RGBA(255, 255, 255, 1)
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =1
+                        RadiusBottomLeft: =10
+                        RadiusBottomRight: =10
+                        RadiusTopLeft: =10
+                        RadiusTopRight: =10
+                      Children:
+                        - Label3_4:
+                            Control: Label@2.5.1
+                            Properties:
+                              FontWeight: =FontWeight.Bold
+                              PaddingLeft: =15
+                              Size: =24
+                              Text: =CountRows(colRecountedCheck)
+                              Width: =200
+                              X: =10
+                              Y: =Label3_5.Height + Label3_5.Y
+                        - Label3_5:
+                            Control: Label@2.5.1
+                            Properties:
+                              FontWeight: =FontWeight.Semibold
+                              PaddingLeft: =15
+                              Text: ="Cheques recibidos"
+                              Width: =200
+                              X: =10
+                        - Icon5_2:
+                            Control: Classic/Icon@2.5.0
+                            Properties:
+                              Color: =RGBA(0, 0, 0, 1)
+                              Height: =20
+                              Icon: =Icon.Document
+                              Width: =20
+                              X: =Parent.Width - Self.Width - 10
+                              Y: =10
+            - BodyContainer1_4:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  Fill: =RGBA(255, 255, 255, 1)
+                  Height: =130
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =16
+                  LayoutMaxHeight: =
+                  LayoutMaxWidth: =
+                  LayoutOverflowY: =LayoutOverflow.Scroll
+                  PaddingBottom: =2
+                  PaddingTop: =4
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                Children:
+                  - Label4:
+                      Control: Label@2.5.1
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Stretch
+                        FontWeight: =FontWeight.Bold
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        PaddingLeft: =20
+                        Size: =24
+                        Text: ="Resumen de operaciones de cajeros"
+                  - Container5_1:
+                      Control: GroupContainer@1.5.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.None
+                        FillPortions: =0
+                        Height: =25
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Width: =Parent.Width
+                      Children:
+                        - Label6_2:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =RGBA(79, 90, 94, 1)
+                              FillPortions: =1
+                              FontWeight: =FontWeight.Bold
+                              Height: =Parent.Height
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Cajero"
+                        - Label6_8:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =RGBA(79, 90, 94, 1)
+                              FontWeight: =FontWeight.Bold
+                              Height: =Parent.Height
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Mesa"
+                              Width: =80
+                        - Label6_9:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =RGBA(79, 90, 94, 1)
+                              FontWeight: =FontWeight.Bold
+                              Height: =Parent.Height
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Tulas"
+                              Width: =80
+                        - Label6_10:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =RGBA(79, 90, 94, 1)
+                              FontWeight: =FontWeight.Bold
+                              Height: =Parent.Height
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Cheques"
+                              Width: =80
+                        - Label6_11:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =RGBA(79, 90, 94, 1)
+                              FontWeight: =FontWeight.Bold
+                              Height: =Parent.Height
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Total NIO"
+                              Width: =140
+                        - Label6_12:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =RGBA(79, 90, 94, 1)
+                              FontWeight: =FontWeight.Bold
+                              Height: =Parent.Height
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Total USD"
+                              Width: =140
+                        - Label6_13:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =RGBA(79, 90, 94, 1)
+                              FontWeight: =FontWeight.Bold
+                              Height: =Parent.Height
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Text: ="Total EUR"
+                              Width: =140
+                  - Gallery1:
+                      Control: Gallery@2.15.0
+                      Variant: Vertical
+                      Properties:
+                        Items: =SortByColumns(colRS,"sanic_name",SortOrder.Ascending)
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        TemplatePadding: =0
+                        TemplateSize: =25
+                      Children:
+                        - Container5:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Height: =Parent.TemplateHeight
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              Width: =Parent.TemplateWidth
+                            Children:
+                              - Label6:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    FillPortions: =1
+                                    Height: =Parent.Height
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    Text: =ThisItem.sanic_Cashier.'Full Name'
+                              - Label6_1:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    Height: =Parent.Height
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    Text: =ThisItem.sanic_CountingDesk.Name
+                                    Width: =80
+                              - Label6_3:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    Height: =Parent.Height
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    Text: =CountRows(ThisItem.Bags)
+                                    Width: =80
+                              - Label6_7:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    Height: =Parent.Height
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    Text: =CountRows(Filter(colRecountedCheck,sanic_RelatedReCounterDepositID.BagID.RecountingSession.'CH-Tbl-RecountingSession' = ThisItem.sanic_chtblrecountingsessionid))
+                                    Width: =80
+                              - Label6_4:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    Height: =Parent.Height
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    Text: =Text(Sum(ThisItem.Bags,sanic_totalnio),"#,###.00")
+                                    Width: =140
+                              - Label6_5:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    Height: =Parent.Height
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    Text: =Text(Sum(ThisItem.Bags,sanic_totalusd),"#,###.00")
+                                    Width: =140
+                              - Label6_6:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Center
+                                    Height: =Parent.Height
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    Text: =Text(Sum(ThisItem.Bags,sanic_totaleur),"#,###.00")
+                                    Width: =140
+      - container ScreenSpinner_2:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Fill: =RGBA(0, 0, 0, 0.7)
+            Height: =Parent.Height
+            Visible: =!IsBlank(varScreenSpinnerMessage)
+            Width: =Parent.Width
+          Children:
+            - Spinner1_2:
+                Control: Spinner@1.4.6
+                Properties:
+                  Appearance: ='Spinner.Appearance'.Primary
+                  BasePaletteColor: =RGBA(5, 102, 178, 1)
+                  FontColor: =RGBA(255, 255, 255, 1)
+                  Height: =Parent.Height
+                  Label: =varScreenSpinnerMessage
+                  LabelPosition: ='Spinner.LabelPosition'.Below
+                  SpinnerSize: ='Spinner.SpinnerSize'.Huge
+                  Width: =Parent.Width
+      - ExpandMenu_4:
+          Control: CanvasComponent
+          ComponentName: ExpandMenu
+          ComponentLibraryUniqueName: cat_powercatcomponentlibrary_0be3a
+          Properties:
+            DefaultExpandValue: =false
+            Fill: =ColorValue(ExpandMenu_4.Theme.palette.white)
+            Height: =Parent.Height
+            IsNavigationEnabled: =false
+            Items: =gvarNavItems
+            OnButtonSelect: =Navigate(Self.SelectedItem.Screen,ScreenTransition.Fade)
+            OnExpandSelect: =
+            Theme: |-
+              ={
+              	palette: {
+              		themePrimary: "#0078d4",
+              		themeLighterAlt: "#eff6fc",
+              		themeLighter: "#deecf9",
+              		themeLight: "#c7e0f4",
+              		themeTertiary: "#71afe5",
+              		themeSecondary: "#2b88d8",
+              		themeDarkAlt: "#106ebe",
+              		themeDark: "#005a9e",
+              		themeDarker: "#004578",
+              		neutralLighterAlt: "#faf9f8",
+              		neutralLighter: "#f3f2f1",
+              		neutralLight: "#edebe9",
+              		neutralQuaternaryAlt: "#e1dfdd",
+              		neutralQuaternary: "#d0d0d0",
+              		neutralTertiaryAlt: "#c8c6c4",
+              		neutralTertiary: "#a19f9d",
+              		neutralSecondary: "#605e5c",
+              		neutralPrimaryAlt: "#3b3a39",
+              		neutralPrimary: "#323130",
+              		neutralDark: "#201f1e",
+              		black: "#000000",
+              		white: "#ffffff"
+              	}
+              }
+            Width: =If(!Self.IsExpanded, 46, 221)

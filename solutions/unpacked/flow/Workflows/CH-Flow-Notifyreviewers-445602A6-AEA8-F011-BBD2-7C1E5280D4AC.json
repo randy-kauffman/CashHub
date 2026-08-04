@@ -1,0 +1,479 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      },
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_AEDDConnDataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      },
+      "shared_teams": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_084e4"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Cuando_un_nuevo_cambio_este_en_status_\"Submitted\"": {
+          "metadata": {
+            "operationMetadataId": "5edcecad-2c18-459e-95e4-96624397f817"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "subscriptionRequest/message": 4,
+              "subscriptionRequest/entityname": "sanic_chtblclientdatachangerequest",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filterexpression": "cr140_changestatus eq 796490001"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
+          }
+        }
+      },
+      "actions": {
+        "Obtener_lineas_del_RFC_(CRL)": {
+          "runAfter": {
+            "Obtener_mas_datos_del_RFC": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6eff451b-955a-4abe-883a-b92d54978af5"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblclientdatachangerequestlines",
+              "$filter": "_sanic_changerequestid_value eq @{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']}"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
+          }
+        },
+        "Inicializar_variable_varField": {
+          "runAfter": {
+            "Obtener_lineas_del_RFC_(CRL)": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varField",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "Por_cada_CRL": {
+          "foreach": "@outputs('Obtener_lineas_del_RFC_(CRL)')?['body/value']",
+          "actions": {
+            "Añadir_campo_que_se_cambiarai": {
+              "type": "AppendToArrayVariable",
+              "inputs": {
+                "name": "varField",
+                "value": {
+                  "type": "TextBlock",
+                  "text": "@{items('Por_cada_CRL')?['_sanic_fielddefinition_value@OData.Community.Display.V1.FormattedValue']}",
+                  "wrap": true
+                }
+              }
+            },
+            "Añadir_antiguo_valor": {
+              "type": "AppendToArrayVariable",
+              "inputs": {
+                "name": "varNewValue",
+                "value": {
+                  "type": "TextBlock",
+                  "text": "@{items('Por_cada_CRL')?['sanic_newvalue']}",
+                  "wrap": true
+                }
+              }
+            },
+            "Añadir_nuevo_valor": {
+              "type": "AppendToArrayVariable",
+              "inputs": {
+                "name": "varOldValue",
+                "value": {
+                  "type": "TextBlock",
+                  "text": "@{items('Por_cada_CRL')?['sanic_oldvalue']}",
+                  "wrap": true
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "Inicializar_variable_varOldValue": [
+              "Succeeded"
+            ]
+          },
+          "type": "Foreach"
+        },
+        "inicializar_variable_varNewValue": {
+          "runAfter": {
+            "Inicializar_variable_varField": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varNewValue",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "Inicializar_variable_varOldValue": {
+          "runAfter": {
+            "inicializar_variable_varNewValue": [
+              "Succeeded"
+            ]
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varOldValue",
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "Obtener_mas_datos_del_RFC": {
+          "runAfter": {
+            "Obtener_enlace_a_la_app_de_adminsitracion_de_clientes": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblclientdatachangerequests",
+              "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']",
+              "$expand": "createdby($select=fullname)"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "GetItem",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
+          }
+        },
+        "Obtener_enlace_a_la_app_de_adminsitracion_de_clientes": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "environmentvariablevalues",
+              "$filter": "schemaname eq 'sanic_CHEVAppUrl_ClientAdmin' ",
+              "$top": 1
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        },
+        "Construir_adaptive_card": {
+          "runAfter": {
+            "Por_cada_CRL": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": {
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "type": "AdaptiveCard",
+            "version": "1.5",
+            "body": [
+              {
+                "type": "Badge",
+                "text": "@{triggerOutputs()?['body/_sanic_type_label']}",
+                "size": "ExtraLarge",
+                "style": "@{if(equals(outputs('Obtener_mas_datos_del_RFC')?['body/sanic_type'],159460000), 'Warning',if(equals(outputs('Obtener_mas_datos_del_RFC')?['body/sanic_type'],159460001),'Attention','Good'))}"
+              },
+              {
+                "type": "TextBlock",
+                "text": "RFC Resumen de cambios",
+                "weight": "bolder",
+                "size": "ExtraLarge"
+              },
+              {
+                "type": "FactSet",
+                "facts": [
+                  {
+                    "title": "RFC ID",
+                    "value": "@{triggerOutputs()?['body/sanic_name']}"
+                  },
+                  {
+                    "title": "Fecha de creacion",
+                    "value": "@{formatDateTime(triggerOutputs()?['body/createdon'],'yyyy-MM-dd HH:mm')}"
+                  },
+                  {
+                    "title": "Creado por",
+                    "value": "@{outputs('Obtener_mas_datos_del_RFC')?['body/createdby/fullname']}"
+                  },
+                  {
+                    "title": "Motivo",
+                    "value": "@{triggerOutputs()?['body/sanic_reason']}"
+                  },
+                  {
+                    "title": "Cantidad de cambios",
+                    "value": "@{length(outputs('Obtener_lineas_del_RFC_(CRL)')?['body/value'])}"
+                  },
+                  {
+                    "title": "Tabla objetivo",
+                    "value": "@{triggerOutputs()?['body/sanic_targettabledisplayname']}"
+                  }
+                ]
+              },
+              {
+                "type": "TextBlock",
+                "text": "Detalle de cambios",
+                "weight": "Bolder",
+                "spacing": "Medium"
+              },
+              {
+                "type": "ColumnSet",
+                "columns": [
+                  {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [
+                      {
+                        "type": "TextBlock",
+                        "text": "Campo",
+                        "weight": "Bolder"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [
+                      {
+                        "type": "TextBlock",
+                        "text": "Valor actual",
+                        "weight": "Bolder"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [
+                      {
+                        "type": "TextBlock",
+                        "text": "Nuevo valor",
+                        "weight": "Bolder"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "$data": "${changes}",
+                "type": "Container",
+                "items": [
+                  {
+                    "type": "ColumnSet",
+                    "columns": [
+                      {
+                        "type": "Column",
+                        "width": "stretch",
+                        "items": "@variables('varField')"
+                      },
+                      {
+                        "type": "Column",
+                        "width": "stretch",
+                        "items": "@variables('varOldValue')"
+                      },
+                      {
+                        "type": "Column",
+                        "width": "stretch",
+                        "items": "@variables('varNewValue')"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ActionSet",
+                "actions": [
+                  {
+                    "type": "Action.OpenUrl",
+                    "title": "Abrir app",
+                    "horizontalAlignment": "Center",
+                    "style": "positive",
+                    "tooltip": "Abrir app",
+                    "url": "@{first(outputs('Obtener_enlace_a_la_app_de_adminsitracion_de_clientes')?['body/value'])?['value']}&RFC=@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']}"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "List_rows": {
+          "runAfter": {
+            "Construir_adaptive_card": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblclientdatachangepermissions",
+              "$filter": "sanic_name eq '@{triggerOutputs()?['body/sanic_targettable']}' and sanic_type eq 159460001"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        },
+        "For_each": {
+          "foreach": "@outputs('List_rows')?['body/value']",
+          "actions": {
+            "Condition": {
+              "actions": {
+                "Run_a_Child_Flow": {
+                  "type": "Workflow",
+                  "inputs": {
+                    "host": {
+                      "workflowReferenceName": "f386eeb1-f2aa-f011-bbd2-000d3a52eba2"
+                    },
+                    "body": {
+                      "text": "@items('For_each')?['sanic_aadgroupid']",
+                      "text_1": "CashHub-Aprobadores de cambios en @{triggerOutputs()?['body/sanic_targettabledisplayname']}"
+                    }
+                  }
+                },
+                "Update_a_row": {
+                  "runAfter": {
+                    "Run_a_Child_Flow": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "sanic_chtblclientdatachangepermissions",
+                      "recordId": "@items('For_each')?['sanic_chtblclientdatachangepermissionid']",
+                      "item/sanic_teamsgroupid": "@body('Run_a_Child_Flow')?['chatid']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
+                  }
+                },
+                "Enviar_adaptive_card_a_aprobadores_1": {
+                  "runAfter": {
+                    "Update_a_row": [
+                      "Succeeded"
+                    ]
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "poster": "Flow bot",
+                      "location": "Group chat",
+                      "body/recipient": "@body('Run_a_Child_Flow')?['chatid']",
+                      "body/messageBody": "@outputs('Construir_adaptive_card')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                      "operationId": "PostCardToConversation",
+                      "connectionName": "shared_teams"
+                    }
+                  }
+                }
+              },
+              "else": {
+                "actions": {
+                  "Enviar_adaptive_card_a_aprobadores": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "poster": "Flow bot",
+                        "location": "Group chat",
+                        "body/recipient": "@items('For_each')?['sanic_teamsgroupid']",
+                        "body/messageBody": "@outputs('Construir_adaptive_card')"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                        "operationId": "PostCardToConversation",
+                        "connectionName": "shared_teams"
+                      }
+                    }
+                  }
+                }
+              },
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@items('For_each')?['sanic_teamsgroupid']",
+                      "@null"
+                    ]
+                  }
+                ]
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "List_rows": [
+              "Succeeded"
+            ]
+          },
+          "type": "Foreach"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,219 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Cuando_un_RFC_es_modificado_a_\"Approved\"_y_es_tipo_\"Deactivate\"": {
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "subscriptionRequest/message": 3,
+              "subscriptionRequest/entityname": "sanic_chtblclientdatachangerequest",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filterexpression": "cr140_changestatus eq 796490002 and sanic_type eq 159460001"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
+          }
+        }
+      },
+      "actions": {
+        "Por_tabla_objetivo": {
+          "runAfter": {},
+          "cases": {
+            "CH-Tbl-Client": {
+              "case": "sanic_chtblclient",
+              "actions": {
+                "Actualizar_cliente_a_INACTIVE": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "sanic_chtblclients",
+                      "recordId": "@triggerOutputs()?['body/sanic_targetrecordid']",
+                      "item/sanic_recordstatus": 159460001
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "connectionName": "shared_commondataserviceforapps_1"
+                    }
+                  }
+                }
+              }
+            },
+            "CH-Tbl-ClientBranch": {
+              "case": "sanic_chtblclientbranch",
+              "actions": {
+                "Actualizar_ClientBranch_a_INACTIVE": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "sanic_chtblclientbranchs",
+                      "recordId": "@triggerOutputs()?['body/sanic_targetrecordid']",
+                      "item/sanic_recordstatus": 159460001
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "connectionName": "shared_commondataserviceforapps_1"
+                    }
+                  }
+                }
+              }
+            },
+            "CH-Tbl-ClientEmail": {
+              "case": "sanic_chtblclientemail",
+              "actions": {
+                "Actualizar_ClientEmail_a_INACTIVE": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "sanic_chtblclientemails",
+                      "recordId": "@triggerOutputs()?['body/sanic_targetrecordid']",
+                      "item/sanic_recordstatus": 159460001
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "connectionName": "shared_commondataserviceforapps_1"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "actions": {
+              "Terminate": {
+                "type": "Terminate",
+                "inputs": {
+                  "runStatus": "Succeeded"
+                }
+              }
+            }
+          },
+          "expression": "@triggerOutputs()?['body/sanic_targettable']",
+          "type": "Switch"
+        },
+        "Añadir_AUDIT-TRAIL_para_caso_FAILED": {
+          "runAfter": {
+            "Por_tabla_objetivo": [
+              "TimedOut",
+              "Failed"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblclientdatachangesaudittrails",
+              "item/sanic_opeationtype": 159460002,
+              "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
+              "item/sanic_result": false,
+              "item/sanic_message": "FAILED @{triggerOutputs()?['body/sanic_targettabledisplayname']}",
+              "item/sanic_RelatedClient@odata.bind": "/sanic_chtblclients(@{triggerOutputs()?['body/_sanic_relatedclient_value']})"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "CreateRecord",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
+          }
+        },
+        "Añadir_AUDIT-TRAIL_para_caso_SUCCESS": {
+          "runAfter": {
+            "Por_tabla_objetivo": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblclientdatachangesaudittrails",
+              "item/sanic_opeationtype": 159460002,
+              "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
+              "item/sanic_result": true,
+              "item/sanic_message": "OK @{triggerOutputs()?['body/sanic_targettabledisplayname']}",
+              "item/sanic_RelatedClient@odata.bind": "/sanic_chtblclients(@{triggerOutputs()?['body/_sanic_relatedclient_value']})"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "CreateRecord",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
+          }
+        },
+        "Actualizar_RFC_a_APPLIED": {
+          "runAfter": {
+            "Añadir_AUDIT-TRAIL_para_caso_SUCCESS": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblclientdatachangerequests",
+              "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']",
+              "item/cr140_changestatus": 796490004,
+              "item/sanic_applynotes": "OK @{triggerOutputs()?['body/sanic_targettabledisplayname']}",
+              "item/sanic_applyon": "@convertFromUtc(utcNow(),'Central America Standard Time','yyyy-MM-dd HH:mm:ss')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "UpdateOnlyRecord",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
+          }
+        },
+        "Actualizar_RFC_a_FAILED": {
+          "runAfter": {
+            "Añadir_AUDIT-TRAIL_para_caso_FAILED": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblclientdatachangerequests",
+              "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']",
+              "item/cr140_changestatus": 796490005,
+              "item/sanic_applynotes": "FAILED @{triggerOutputs()?['body/sanic_targettabledisplayname']}",
+              "item/sanic_applyon": "@convertFromUtc(utcNow(),'Central America Standard Time','yyyy-MM-dd HH:mm:ss')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "UpdateOnlyRecord",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

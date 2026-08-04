@@ -1,0 +1,19 @@
+App As appinfo:
+    BackEnabled: =true
+    OnStart: |-
+        =Set(gvarUser, LookUp(Users, 'Primary Email' =  User().Email));
+        Set(gvarNavItems, Table(
+        {Icon: "ProductRelease", Label: "Aprobaciones", Screen:'Screen Approvals', Tooltip:"Aprobaciones de solicitudes"}, 
+        {Icon: "ProductVariant", Label: "Localizacion de tulas", Screen:'Screen BagLocation', Tooltip:"Tulas en tesoreria"},
+        {Icon: "ExploreData", Label: "Resumen de operaciones", Screen:'Screen OperationSummary', Tooltip:"Resumen de operaciones por cajero"},
+        {Icon: "StackIndicator", Label: "Administracion de cheques", Screen:'Screen ChecksSummary', Tooltip:"Estatus de cheques en tesoreriaDo"}
+        ));
+    Theme: =PowerAppsTheme
+
+    Host As hostControl.DefaultHostControlVariant:
+        OnCancel: =false
+        OnEdit: =false
+        OnNew: =false
+        OnSave: =false
+        OnView: =false
+

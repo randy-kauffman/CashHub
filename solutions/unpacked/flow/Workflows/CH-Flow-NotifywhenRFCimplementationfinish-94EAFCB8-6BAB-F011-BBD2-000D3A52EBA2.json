@@ -1,0 +1,169 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      },
+      "shared_teams": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedteams_084e4"
+        },
+        "api": {
+          "name": "shared_teams"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "Cuando_un_RFC_sea_modificado_a_status_\"Failed\",_\"Applied\"_or_\"Rejected\"": {
+          "metadata": {
+            "operationMetadataId": "70120d64-6beb-4660-a693-293fb9c06bcd"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "SubscribeWebhookTrigger",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "subscriptionRequest/message": 3,
+              "subscriptionRequest/entityname": "sanic_chtblclientdatachangerequest",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filterexpression": "cr140_changestatus eq 796490004 or cr140_changestatus eq 796490005 or cr140_changestatus eq 796490003"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Obtener_enlace_a_la_app_de_adminsitracion_de_clientes": {
+          "runAfter": {
+            "Obtener_mas_detalles_del_RFC": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "24b5ca5a-6d8e-41a8-9122-66fe85f3140f"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "environmentvariablevalues",
+              "$filter": "schemaname eq 'sanic_CHEVAppUrl_ClientAdmin' "
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Estructurar_HTML": {
+          "runAfter": {
+            "Obtener_enlace_a_la_app_de_adminsitracion_de_clientes": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "51c0f5d1-b0d2-4930-8f94-f765c5db660f"
+          },
+          "type": "Compose",
+          "inputs": "<!-- RFC Implementation Notification (HTML for Microsoft Teams) -->\n<div style=\"font-family:Segoe UI, Arial, sans-serif; font-size:14px; line-height:1.35;\">\n  <!-- Header -->\n  <div style=\"margin:0 0 10px 0;\">\n    <span style=\"font-size:16px; font-weight:700;\">@{triggerOutputs()?['body/sanic_name']}</span>\n  </div>\n\n  <!-- Status pill -->\n  <div style=\"margin:6px 0 14px 0;\">\n@{if(equals(triggerOutputs()?['body/cr140_changestatus'], 796490004), '<span style=\"background:#E6F4EA; color:#137333; padding:4px 10px; border-radius:9999px; font-weight:600; display:inline-block;\">✅ APPLIED</span>', '<span style=\"background:#FCE8E6; color:#C5221F; padding:4px 10px; border-radius:9999px; font-weight:600; display:inline-block;\">❌ FAILED</span>')}\n  </div>\n\n  <!-- Details table -->\n  <table style=\"border-collapse:collapse; width:100%; max-width:780px;\">\n    <tr>\n      <td style=\"padding:6px 8px; color:#555\">Target Table</td>\n      <td style=\"padding:6px 8px\">@{triggerOutputs()?['body/sanic_targettabledisplayname']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding:6px 8px; color:#555\">Operation</td>\n      <td style=\"padding:6px 8px\">@{triggerOutputs()?['body/_sanic_type_label']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding:6px 8px; color:#555;\">Created By</td>\n      <td style=\"padding:6px 8px;\">@{outputs('Obtener_mas_detalles_del_RFC')?['body/sanic_solvedby/fullname']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding:6px 8px; color:#555;\">Creator comment</td>\n      <td style=\"padding:6px 8px;\">@{triggerOutputs()?['body/sanic_reason']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding:6px 8px; color:#555;\">Reviewed By</td>\n      <td style=\"padding:6px 8px;\">@{outputs('Obtener_mas_detalles_del_RFC')?['body/sanic_solvedby/fullname']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding:6px 8px; color:#555;\">Reviewer Comment</td>\n      <td style=\"padding:6px 8px;\">@{triggerOutputs()?['body/sanic_reasonfordecision']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding:6px 8px; color:#555;\">Related client</td>\n      <td style=\"padding:6px 8px;\">@{outputs('Obtener_mas_detalles_del_RFC')?['body/sanic_relatedclient/sanic_name']}</td>\n    </tr>\n    <tr>\n      <td style=\"padding:6px 8px; color:#555;\">Summary</td>\n      <td style=\"padding:6px 8px;\">@{triggerOutputs()?['body/sanic_applynotes']}</td>\n    </tr>\n  </table>\n  <!-- Button (link) to open the Power App -->\n  <div style=\"margin-top:16px;\">\n    <div style=\"font-size:12px; color:#666; margin-top:6px;\">\n      <a  href=\"@{first(outputs('Obtener_enlace_a_la_app_de_adminsitracion_de_clientes')?['body/value'])?['value']}&RFC=@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']}\">See details in powerapps</a>\n    </div>\n  </div>\n</div>"
+        },
+        "Enviar_mensaje_a_creador": {
+          "runAfter": {
+            "Estructurar_HTML": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9b2fb390-0216-461b-afa2-8375e97a25d2"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_teams",
+              "operationId": "PostMessageToConversation",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+            },
+            "parameters": {
+              "poster": "Flow bot",
+              "location": "Chat with Flow bot",
+              "body/recipient": "@{outputs('Obtener_mas_detalles_del_RFC')?['body/createdby/internalemailaddress']};",
+              "body/messageBody": "<p>@{outputs('Estructurar_HTML')}</p>"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Obtener_mas_detalles_del_RFC": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "e0079b52-b4b7-477e-8c2b-3d809d6c1521"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "GetItem",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "sanic_chtblclientdatachangerequests",
+              "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']",
+              "$expand": "sanic_SolvedBy($select=fullname,internalemailaddress),createdby($select=fullname,internalemailaddress),sanic_RelatedClient($select=sanic_name)"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Enviar_mensaje_a_aprobador": {
+          "runAfter": {
+            "Enviar_mensaje_a_creador": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "01255434-cc98-49a1-b92d-3fd2db15187d"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_teams",
+              "operationId": "PostMessageToConversation",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+            },
+            "parameters": {
+              "poster": "Flow bot",
+              "location": "Chat with Flow bot",
+              "body/recipient": "@{outputs('Obtener_mas_detalles_del_RFC')?['body/sanic_solvedby/internalemailaddress']};",
+              "body/messageBody": "<p>@{outputs('Estructurar_HTML')}</p>"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

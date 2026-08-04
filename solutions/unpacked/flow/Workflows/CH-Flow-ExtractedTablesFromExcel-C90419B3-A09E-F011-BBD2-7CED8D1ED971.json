@@ -1,0 +1,338 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps-1": {
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
+        },
+        "runtimeSource": "embedded"
+      },
+      "shared_onedriveforbusiness-2": {
+        "api": {
+          "name": "shared_onedriveforbusiness"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CHCROneDrive"
+        },
+        "runtimeSource": "invoker"
+      },
+      "shared_excelonlinebusiness": {
+        "api": {
+          "name": "shared_excelonlinebusiness"
+        },
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CEADCONNExcelOnlineBusiness"
+        },
+        "runtimeSource": "invoker"
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "description": "Please enter your input",
+                  "title": "AttachmentGUID",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
+                }
+              },
+              "required": [
+                "text"
+              ]
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "5cb77d9a-1104-4135-b383-59e44b14cda6"
+          }
+        }
+      },
+      "actions": {
+        "Download_a_file_or_an_image": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblemailsattachmentses",
+              "recordId": "@triggerBody()?['text']",
+              "fileImageFieldName": "sanic_filecontent",
+              "size": "full"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "GetEntityFileImageFieldContent",
+              "connectionName": "shared_commondataserviceforapps-1"
+            }
+          },
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d9e46d6b-73f9-484a-af42-ee148b3514e9"
+          }
+        },
+        "Create_file": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "folderPath": "/tmp",
+              "name": "Exce_@{triggerBody()?['text']}_@{convertFromUtc(utcNow(),'Central America Standard Time','yyyyMMddhhmmss')}.xlsx",
+              "body": "@body('Download_a_file_or_an_image')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+              "operationId": "CreateFile",
+              "connectionName": "shared_onedriveforbusiness-2"
+            }
+          },
+          "runAfter": {
+            "Download_a_file_or_an_image": [
+              "Succeeded"
+            ]
+          },
+          "runtimeConfiguration": {
+            "contentTransfer": {
+              "transferMode": "Chunked"
+            }
+          },
+          "metadata": {
+            "operationMetadataId": "24ad814a-2a4d-4f6c-90bb-a5284bc5b0cb"
+          }
+        },
+        "Get_tables": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "source": "me",
+              "drive": "@first(split(outputs('Get_File_Metadata')?['body/Id'], '.'))",
+              "file": "/tmp/@{outputs('Create_file')?['body/Name']}"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+              "operationId": "GetTables",
+              "connectionName": "shared_excelonlinebusiness"
+            }
+          },
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "59772d57-1e27-406a-a2c7-33b5ece1c4a2",
+            "tableId": null
+          }
+        },
+        "Apply_to_each": {
+          "type": "Foreach",
+          "foreach": "@outputs('Get_tables')?['body/value']",
+          "actions": {
+            "List_rows_present_in_a_table": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "source": "me",
+                  "drive": "@outputs('Compose')",
+                  "file": "/tmp/@{outputs('Create_file')?['body/Name']}",
+                  "table": "@items('Apply_to_each')?['id']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness",
+                  "operationId": "GetItems",
+                  "connectionName": "shared_excelonlinebusiness"
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "5c8ce4d9-f823-466f-8ee4-46180df79b47",
+                "tableId": "@items('Apply_to_each')?['id']"
+              }
+            },
+            "Append_to_array_variable": {
+              "type": "AppendToArrayVariable",
+              "inputs": {
+                "name": "varDatos",
+                "value": {
+                  "@{items('Apply_to_each')?['name']}": "@body('Filter_array')"
+                }
+              },
+              "runAfter": {
+                "Filter_array": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "da53a1a7-ebb6-41de-9a1b-38742be053fd"
+              }
+            },
+            "Filter_array": {
+              "type": "Query",
+              "inputs": {
+                "from": "@outputs('List_rows_present_in_a_table')?['body/value']",
+                "where": "@not(\r\n  equals(\r\n    join(\r\n      xpath(\r\n        xml(\r\n          json(\r\n            concat('{ \"r\":', string(item()), ' }')\r\n          )\r\n        ),\r\n        '/r/*[\r\n            not(local-name() = \"ItemInternalId\")          and\r\n            not(local-name() = \"Total\") and\r\n            not(contains(local-name(), \"odata\"))          \r\n          ]/text()'\r\n      ),\r\n      ''\r\n    ),\r\n    ''\r\n  )\r\n)"
+              },
+              "runAfter": {
+                "List_rows_present_in_a_table": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "2d6e1740-ae1c-4637-8bc0-1db51cf59ebb"
+              }
+            }
+          },
+          "runAfter": {
+            "Get_tables": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "bd108ed9-f4a0-4044-a80d-ae391b1d796a"
+          }
+        },
+        "Initialize_variable": {
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varDatos",
+                "type": "array"
+              }
+            ]
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "2ed0ad3c-00a1-45cc-bf83-63dc82829f14"
+          }
+        },
+        "Upload_a_file_or_an_image": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "x-ms-file-name": "Data.json",
+              "entityName": "sanic_chtblemailsattachmentses",
+              "recordId": "@triggerBody()?['text']",
+              "fileImageFieldName": "sanic_jsondata",
+              "item": "@replace(string(variables('varDatos')),'_x002e_','.')"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "UpdateEntityFileImageFieldContent",
+              "connectionName": "shared_commondataserviceforapps-1"
+            }
+          },
+          "runAfter": {
+            "Apply_to_each": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8e724558-81d7-462b-9e69-ce0ea1fa1d66"
+          }
+        },
+        "Respond_to_a_Power_App_or_flow": {
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "datos": {
+                  "title": "Datos",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                }
+              },
+              "additionalProperties": {}
+            },
+            "statusCode": 200,
+            "body": {
+              "datos": "@{replace(string(variables('varDatos')),'_x002e_','.')}"
+            }
+          },
+          "runAfter": {
+            "Upload_a_file_or_an_image": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3d0f0c70-0a40-402d-83cb-227ef9523ca0"
+          }
+        },
+        "Delay": {
+          "type": "Wait",
+          "inputs": {
+            "interval": {
+              "count": 5,
+              "unit": "Second"
+            }
+          },
+          "runAfter": {
+            "Get_file_metadata": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "06487d3e-e12b-406c-bc72-d213d04af104"
+          }
+        },
+        "Compose": {
+          "type": "Compose",
+          "inputs": "@split(outputs('Get_file_metadata')?['body/FileLocator'],'.')?[0]",
+          "runAfter": {
+            "Delay": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "eec385ae-39be-4cea-94f8-efc6bf9a0709"
+          }
+        },
+        "Get_file_metadata": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "id": "@outputs('Create_file')?['body/Id']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
+              "operationId": "GetFileMetadata",
+              "connectionName": "shared_onedriveforbusiness-2"
+            }
+          },
+          "runAfter": {
+            "Create_file": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "df82ae1e-9a7f-40d4-8d33-1e70fc7f078d"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

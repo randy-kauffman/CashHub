@@ -1,0 +1,398 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  screen RFC:
+    Properties:
+      OnVisible: =UpdateContext({varShowScreenSpinner:false});
+    Children:
+      - SideMenu_1:
+          Control: CanvasComponent
+          ComponentName: ExpandMenu
+          ComponentLibraryUniqueName: cat_powercatcomponentlibrary_0be3a
+          Properties:
+            DefaultExpandValue: =false
+            Fill: =ColorValue(SideMenu_1.Theme.palette.white)
+            Height: =Parent.Height
+            IsNavigationEnabled: =true
+            Items: =gvarSideMenu
+            OnButtonSelect: =
+            OnExpandSelect: =
+            Theme: |-
+              ={
+              	palette: {
+              		themePrimary: "#0078d4",
+              		themeLighterAlt: "#eff6fc",
+              		themeLighter: "#deecf9",
+              		themeLight: "#c7e0f4",
+              		themeTertiary: "#71afe5",
+              		themeSecondary: "#2b88d8",
+              		themeDarkAlt: "#106ebe",
+              		themeDark: "#005a9e",
+              		themeDarker: "#004578",
+              		neutralLighterAlt: "#faf9f8",
+              		neutralLighter: "#f3f2f1",
+              		neutralLight: "#edebe9",
+              		neutralQuaternaryAlt: "#e1dfdd",
+              		neutralQuaternary: "#d0d0d0",
+              		neutralTertiaryAlt: "#c8c6c4",
+              		neutralTertiary: "#a19f9d",
+              		neutralSecondary: "#605e5c",
+              		neutralPrimaryAlt: "#3b3a39",
+              		neutralPrimary: "#323130",
+              		neutralDark: "#201f1e",
+              		black: "#000000",
+              		white: "#ffffff"
+              	}
+              }
+            Width: =If(!Self.IsExpanded, 46, 221)
+      - verticalContainer MainContainer_1:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            Height: =Parent.Height
+            LayoutDirection: =LayoutDirection.Vertical
+            Width: =Parent.Width - Self.X
+            X: =SideMenu_1.Width
+          Children:
+            - container commandBar_1:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =40
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutMaxHeight: =
+                  LayoutMaxWidth: =
+                  PaddingLeft: =10
+                  PaddingRight: =10
+                Children:
+                  - CommandBar1_1:
+                      Control: CodeComponent
+                      ComponentName: cat_PowerCAT.CommandBar
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Stretch
+                        FillPortions: =8
+                        Items: |-
+                          =Table(
+                              {
+                                  ItemKey: "refresh",
+                                  ItemDisplayName: "Refresh",
+                                  ItemIconName: "Refresh"
+                              }
+                          )
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        LayoutMinHeight: =1
+                        LayoutMinWidth: =1
+                        OnSelect: |-
+                          =Switch(
+                              Self.Selected.ItemKey,
+                              //"edit",Set(varItemID,GridView.Selected.TBL_Meeting); EditForm(Form3);UpdateContext({showPanel: true}),
+                              //"delete",Remove(TBL_Meetings,LookUp(TBL_Meetings,TBL_Meeting = GridView.Selected.TBL_Meeting)),
+                              "refresh",Refresh('CH-Tbl-ClientDataChangeRequests'),
+                              "help",UpdateContext({showHelpDialog: true}),
+                              "flow",UpdateContext({showNotificationDialog: true})
+                          )
+                        X: =40
+                        Y: =40
+                  - Toggle1:
+                      Control: Toggle@1.1.5
+                      Properties:
+                        Checked: =true
+                        Label: ="Pendientes"
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Width: =150
+                  - container verticalSpacer_1:
+                      Control: GroupContainer@1.5.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.None
+                        FillPortions: =2
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        LayoutMinHeight: =1
+                      Children:
+                        - container spacer_1:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              FillPortions: =0
+                              Height: =5
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              LayoutMinHeight: =1
+                              LayoutMinWidth: =1
+                        - SearchBox1_1:
+                            Control: CodeComponent
+                            ComponentName: cat_PowerCAT.SearchBox
+                            Properties:
+                              AlignInContainer: =AlignInContainer.Stretch
+                              Height: =1
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              X: =220
+                              Y: =10
+            - DVFluentDetailsListWithContextMenu1_1:
+                Control: CodeComponent
+                ComponentName: cat_PowerCAT.DVFluentDetailsListWithContextMenu
+                Properties:
+                  AlignInContainer: =AlignInContainer.Stretch
+                  CurrentSortColumn: ="createdon"
+                  CurrentSortDirection: ='PowerCAT.DVFluentDetailsListWithContextMenu.CurrentSortDirection'.Descending
+                  FillPortions: =1
+                  Height: =Parent.Height - Self.Y
+                  InputEvent: =ctxGridEvent
+                  Items: |-
+                    =SortByColumns(
+                        Search(Filter(
+                            'CH-Tbl-ClientDataChangeRequests',
+                            Toggle1.Checked = false || (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited)
+                        ),
+                        SearchBox1_1.SearchText,
+                        Name
+                        ),
+                        "createdon",
+                        SortOrder.Descending
+                    )
+                  LayoutMaxHeight: =
+                  LayoutMaxWidth: =
+                  OnChange: "=If(\n    Self.EventName = \"CellAction\" && Self.EventColumn = \"sanic_name\",\n    \n    With(\n            { row: LookUp('CH-Tbl-ClientDataChangeRequests','CH-Tbl-ClientDataChangeRequest'=GUID(Self.EventRowKey) ) },\n            Set(gvarSelectedChangeRequest, row); Set(gvarSelectedClient,row.RelatedClient);Navigate('screen ChangeRequestDetails',ScreenTransition.Fade,{ FromScreen: App.ActiveScreen })\n        )\n\n)"
+                  PageSize: =50
+                  RecordKey: ="sanic_chtblclientdatachangerequestid"
+                  SelectionType: ='PowerCAT.DVFluentDetailsListWithContextMenu.SelectionType'.None
+                  Width: =1
+                  X: =SideMenu_1.Width
+                  Y: =40
+                  columns_Items: |-
+                    =Table(
+                        {
+                            ColName: "sanic_name",
+                            ColDisplayName: "Name",
+                            ColWidth: 60,
+                            ColSortable: true,
+                            ColIsBold: true,
+                            ColResizable: true,
+                            ColCellType: "link",
+                            ColSortBy: "createdon"
+                        },{
+                            ColName: "cr140_changestatus",
+                            ColDisplayName: "Status",
+                            ColSortable: true,
+                            ColIsBold: true,
+                            ColResizable: true,
+                            ColWidth: 100
+                        },{
+                            ColName: "sanic_RelatedClient",
+                            ColDisplayName: "Cliente",
+                            ColSortable: true,
+                            ColIsBold: true,
+                            ColResizable: true,
+                            ColWidth: 200
+                        },{
+                            ColName: "sanic_type",
+                            ColDisplayName: "Tipo",
+                            ColWidth: 60,
+                            ColSortable: true,
+                            ColResizable: true
+                        },{
+                            ColName: "sanic_targettabledisplayname",
+                            ColDisplayName: "Tabla",
+                            ColWidth: 60,
+                            ColSortable: true,
+                            ColResizable: true
+                        },{
+                            ColName: "createdby",
+                            ColDisplayName: "Creador por",
+                            ColWidth: 160,
+                            ColSortable: true
+                        },{
+                            ColName: "createdon",
+                            ColDisplayName: "Fecha de creacion",
+                            ColWidth: 100,
+                            ColSortable: true
+                        },{
+                            ColName: "sanic_SolvedBy",
+                            ColDisplayName: "Resuelto por",
+                            ColWidth: 160,
+                            ColSortable: true
+                        },{
+                            ColName: "sanic_solvedon",
+                            ColDisplayName: "Resuelto en",
+                            ColWidth: 100,
+                            ColSortable: true
+                        },{
+                            ColName: "createdon",
+                            ColDisplayName: "Fecha de implementacionn",
+                            ColWidth: 100,
+                            ColSortable: true
+                        }
+                    )
+                Children:
+                  - ApplyOn1:
+                      Control: DataField@1.5.0
+                      Variant: textualColumn
+                      IsLocked: true
+                      Properties:
+                        FieldDisplayName: ="ApplyOn"
+                        FieldName: ="sanic_applyon"
+                        FieldType: ="d"
+                        Order: =1
+                  - Created By1:
+                      Control: DataField@1.5.0
+                      IsLocked: true
+                      Properties:
+                        FieldDisplayName: ="Created By"
+                        FieldName: ="createdby"
+                        FieldType: ="E"
+                        Order: =2
+                  - Created On4:
+                      Control: DataField@1.5.0
+                      Variant: textualColumn
+                      IsLocked: true
+                      Properties:
+                        FieldDisplayName: ="Created On"
+                        FieldName: ="createdon"
+                        FieldType: ="d"
+                        Order: =3
+                  - ChangeStatus3:
+                      Control: DataField@1.5.0
+                      Variant: textualColumn
+                      IsLocked: true
+                      Properties:
+                        FieldDisplayName: ="ChangeStatus"
+                        FieldName: ="cr140_changestatus"
+                        FieldType: ="l"
+                        Order: =4
+                  - Name4:
+                      Control: DataField@1.5.0
+                      Variant: textualColumn
+                      IsLocked: true
+                      Properties:
+                        FieldDisplayName: ="Name"
+                        FieldName: ="sanic_name"
+                        FieldType: ="s"
+                        Order: =5
+                  - RelatedClient3:
+                      Control: DataField@1.5.0
+                      IsLocked: true
+                      Properties:
+                        FieldDisplayName: ="RelatedClient"
+                        FieldName: ="sanic_RelatedClient"
+                        FieldType: ="E"
+                        Order: =6
+                  - SolvedBy1:
+                      Control: DataField@1.5.0
+                      IsLocked: true
+                      Properties:
+                        FieldDisplayName: ="SolvedBy"
+                        FieldName: ="sanic_SolvedBy"
+                        FieldType: ="E"
+                        Order: =7
+                  - SolvedOn1:
+                      Control: DataField@1.5.0
+                      Variant: textualColumn
+                      IsLocked: true
+                      Properties:
+                        FieldDisplayName: ="SolvedOn"
+                        FieldName: ="sanic_solvedon"
+                        FieldType: ="d"
+                        Order: =8
+                  - TargetTableDisplayName3:
+                      Control: DataField@1.5.0
+                      Variant: textualColumn
+                      IsLocked: true
+                      Properties:
+                        FieldDisplayName: ="TargetTableDisplayName"
+                        FieldName: ="sanic_targettabledisplayname"
+                        FieldType: ="s"
+                        Order: =9
+                  - Type3:
+                      Control: DataField@1.5.0
+                      Variant: textualColumn
+                      IsLocked: true
+                      Properties:
+                        FieldDisplayName: ="Type"
+                        FieldName: ="sanic_type"
+                        FieldType: ="l"
+                        Order: =10
+            - container Pagination_1:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =40
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =10
+                  LayoutMaxHeight: =
+                  LayoutMaxWidth: =
+                Children:
+                  - TextCanvas1_1:
+                      Control: Text@0.0.51
+                      Properties:
+                        Align: ='TextCanvas.Align'.Center
+                        AlignInContainer: =AlignInContainer.Center
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Text: |+
+                          ="Total " & DVFluentDetailsListWithContextMenu1_1.TotalRecords & " record(s), " & Text(CountRows(DVFluentDetailsListWithContextMenu1_1.SelectedItems)+0) & " selected"
+                        VerticalAlign: =VerticalAlign.Middle
+                        Width: =200
+                  - Icon1_1:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisplayMode: =If(DVFluentDetailsListWithContextMenu1_1.HasPreviousPage,DisplayMode.Edit,DisplayMode.Disabled)
+                        Height: =25
+                        Icon: =Icon.Download
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        LayoutMinHeight: =1
+                        OnSelect: =UpdateContext({ctxGridEvent:"LoadFirstPage" & Text(Rand())})
+                        Rotation: =90
+                        Width: =25
+                  - Icon3_2:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisplayMode: =If(DVFluentDetailsListWithContextMenu1_1.HasPreviousPage,DisplayMode.Edit,DisplayMode.Disabled)
+                        Height: =25
+                        Icon: =Icon.BackArrow
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        OnSelect: =UpdateContext({ctxGridEvent:"LoadPreviousPage" & Text(Rand())})
+                        Width: =25
+                  - Label1_1:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        Font: =Font.'Segoe UI'
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        Size: =10
+                        Text: ="Page " & DVFluentDetailsListWithContextMenu1_1.PageNumber
+                        Width: =80
+                  - Icon3_3:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisplayMode: =If(DVFluentDetailsListWithContextMenu1_1.HasNextPage,DisplayMode.Edit,DisplayMode.Disabled)
+                        Height: =25
+                        Icon: =Icon.NextArrow
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        OnSelect: =UpdateContext({ctxGridEvent:"LoadNextPage" & Text(Rand())})
+                        Width: =25

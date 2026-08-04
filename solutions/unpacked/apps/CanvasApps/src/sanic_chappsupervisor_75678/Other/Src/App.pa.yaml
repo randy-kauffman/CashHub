@@ -1,0 +1,19 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+App:
+  Properties:
+    OnStart: |-
+      =Set(gvarUser, LookUp(Users, 'Primary Email' =  User().Email));
+      Set(gvarNavItems, Table(
+      {Icon: "ProductRelease", Label: "Aprobaciones", Screen:'Screen Approvals', Tooltip:"Aprobaciones de solicitudes"}, 
+      {Icon: "ProductVariant", Label: "Localizacion de tulas", Screen:'Screen BagLocation', Tooltip:"Tulas en tesoreria"},
+      {Icon: "ExploreData", Label: "Resumen de operaciones", Screen:'Screen OperationSummary', Tooltip:"Resumen de operaciones por cajero"},
+      {Icon: "StackIndicator", Label: "Administracion de cheques", Screen:'Screen ChecksSummary', Tooltip:"Estatus de cheques en tesoreriaDo"}
+      ));
+    Theme: =PowerAppsTheme

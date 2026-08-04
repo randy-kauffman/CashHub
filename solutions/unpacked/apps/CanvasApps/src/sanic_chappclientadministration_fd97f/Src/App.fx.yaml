@@ -1,0 +1,65 @@
+App As appinfo:
+    BackEnabled: =true
+    OnStart: |-
+        =Set(
+            gvarSideMenu,
+            Table(
+                {
+                    Icon: "People",
+                    Label: "Clientes",
+                    Screen: 'screen Clients',
+                    Tooltip: "Power Apps Tooltip"
+                },
+                {
+                    Icon: "BranchCompare",
+                    Label: "Solicitudes de cambio",
+                    Screen: 'screen RFC',
+                    Tooltip: "Power BI Tooltip"
+                }
+            )
+        );
+        
+        
+        //ClearCollect(colAADGroups, Office365Groups.ListOwnedGroupsV3().value);
+        
+        //Check if the user is in the security groups
+        Clear(colClientDataPermissions);
+        
+        ForAll('CH-Tbl-ClientDataChangePermissions' As Permission,
+        
+        If( !IsBlank(
+                    LookUp(
+                        Office365Groups.ListGroupMembers(Permission.AADGroupID).value,
+                        userPrincipalName = User().Email
+                    )
+                ) ,Collect(colClientDataPermissions, Permission))
+        );
+        
+        Set(
+            gvarUser,
+            LookUp(
+                Users,
+                'Primary Email' = User().Email
+            )
+        );
+        If(
+            !IsBlank(Param("RFC")),
+            Set(
+                gvarSelectedChangeRequest,
+                LookUp(
+                    'CH-Tbl-ClientDataChangeRequests',
+                    'CH-Tbl-ClientDataChangeRequest' = GUID(Param("RFC"))
+                )
+            );
+            Set(gvarSelectedClient, gvarSelectedChangeRequest.RelatedClient)
+        )
+    StartScreen: ='screen Splash'
+    Theme: =PowerAppsTheme
+
+    Host As hostControl.DefaultHostControlVariant:
+        OnCancel: =false
+        OnEdit: =false
+        OnNew: =false
+        OnSave: =false
+        OnView: =false
+

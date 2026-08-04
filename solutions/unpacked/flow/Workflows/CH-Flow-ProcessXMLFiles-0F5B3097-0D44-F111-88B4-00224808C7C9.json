@@ -1,0 +1,368 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_onedriveforbusiness_1": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "new_sharedonedriveforbusiness_a6c30"
+        },
+        "api": {
+          "name": "shared_onedriveforbusiness"
+        }
+      },
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_sharedcommondataserviceforapps_025cb"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "22496c6c-a573-44c7-a637-6431e00c1a9a"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "title": "Input_SessionID",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_1": {
+                  "title": "Input_MachineSerial",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": [
+                "text",
+                "text_1"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Respond_to_a_Power_App_or_flow": {
+          "runAfter": {
+            "Aplicar_a_cada_uno": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "3f29cb5a-de66-44be-a2ec-18c0016a119d"
+          },
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "statusCode": 200,
+            "body": {
+              "status": "Completado",
+              "recountingsessionid": "@variables('RecountingSessionID')"
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "title": "status",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                },
+                "recountingsessionid": {
+                  "title": "RecountingSessionID",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "List_files_in_folder": {
+          "runAfter": {
+            "Apply_to_each": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "b!hrjqZgFD0Uq-l5YyfRCN9Js5Ug_VvMdPhWUXZyO5N4cQzXUOTUDGRI0ff0owhM4u.01JHQQ44GLPM5TZOYTLBAL636EDEC42GFP": "/CashHub_XML/Pendientes",
+            "operationMetadataId": "b265d6c7-9971-412a-9aeb-1d23bc735aa6",
+            "b!hIMGKT1dnkqhnNYB2YgC3ZSoPdl-pfROtUSyAuwffe_tEetG5BaBRrJL3XgoQcip.01GBM7VFF5NMDEIVUEUJDZNGO2VZHV5QN6": "/CashHub_XML_Anneke/Pendientes"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_onedriveforbusiness_1",
+              "operationId": "ListFolderV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+            },
+            "parameters": {
+              "id": "b!hIMGKT1dnkqhnNYB2YgC3ZSoPdl-pfROtUSyAuwffe_tEetG5BaBRrJL3XgoQcip.01GBM7VFF5NMDEIVUEUJDZNGO2VZHV5QN6"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Filter_array": {
+          "runAfter": {
+            "List_files_in_folder": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6e13230d-bbd7-4fa6-bd24-ce143f86a84e"
+          },
+          "type": "Query",
+          "inputs": {
+            "from": "@outputs('List_files_in_folder')?['body/value']",
+            "where": "@startsWith(item()?['Name'], concat('BPS_', triggerBody()?['text_1']))"
+          }
+        },
+        "List_rows": {
+          "runAfter": {
+            "Initialize_variable": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1316ab33-3562-4dd3-910c-1364b80072b9"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "sanic_chtblxmlreadings",
+              "$filter": "_sanic_recountingsessiondetailid_value eq '@{triggerBody()['text']}'"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@outputs('List_rows')?['body/value']",
+          "actions": {
+            "Update_a_row": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "c3a75b9b-f0e7-40f9-9005-b472afbf0972"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "UpdateOnlyRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "sanic_chtblxmlreadings",
+                  "recordId": "@items('Apply_to_each')?['sanic_chtblxmlreadingid']",
+                  "item/sanic_isactive": false
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "List_rows": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "abc5d5dc-687b-40d1-83fc-037c3f2fdc30"
+          },
+          "type": "Foreach"
+        },
+        "Aplicar_a_cada_uno": {
+          "foreach": "@body('Filter_array')",
+          "actions": {
+            "Obtener_contenido_de_archivo": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "1a60a783-004c-4786-a9f5-2304fd5b987a"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_onedriveforbusiness_1",
+                  "operationId": "GetFileContent",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                },
+                "parameters": {
+                  "id": "@items('Aplicar_a_cada_uno')?['Id']",
+                  "inferContentType": true
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Redactar": {
+              "runAfter": {
+                "Obtener_contenido_de_archivo": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "ebbcebec-dc37-449d-abdd-b56fc5d2f1d7"
+              },
+              "type": "Compose",
+              "inputs": "@xml(outputs('Obtener_contenido_de_archivo')?['body'])"
+            },
+            "Agregar_una_fila_nueva": {
+              "runAfter": {
+                "Redactar": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "c67dbd89-3ff5-4318-9c00-aa6eee0386d5"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "sanic_chtblxmlreadings",
+                  "item/sanic_filename": "@items('Aplicar_a_cada_uno')?['Name']",
+                  "item/sanic_RecountingSessionDetailId@odata.bind": "sanic_chtblrecountingsessiondetails(@{triggerBody()['text']})",
+                  "item/sanic_isactive": true
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Aplicar_a_cada_uno_2": {
+              "foreach": "@xpath(outputs('Redactar'), '//Counter')",
+              "actions": {
+                "Agregar_una_fila_nueva_2": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "2564193d-11e5-4f29-9a38-1ca4a734173b"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "CreateRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "sanic_chtblxmlreadingdetails",
+                      "item/sanic_currency": "@xpath(item(), 'string(/*/@Currency)')",
+                      "item/sanic_XMLReading@odata.bind": "sanic_chtblxmlreadings(@{outputs('Agregar_una_fila_nueva')?['body/sanic_chtblxmlreadingid']})",
+                      "item/sanic_denomination": "@float(xpath(item(), 'string(/*/@Value)'))",
+                      "item/sanic_quantity": "@int(xpath(item(), 'string(/*/@Number)'))",
+                      "item/sanic_name": " "
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "runAfter": {
+                "Set_variable": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "69bcd40b-d4df-497b-aad0-d16a7e861cb8"
+              },
+              "type": "Foreach"
+            },
+            "Mover_un_archivo_o_cambiar_su_nombre": {
+              "runAfter": {
+                "Aplicar_a_cada_uno_2": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "7300b2e8-021b-4407-8083-7f1d664a942d"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_onedriveforbusiness_1",
+                  "operationId": "MoveFile",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                },
+                "parameters": {
+                  "id": "@item()?['Id']",
+                  "destination": "/CashHub_XML_Anneke/Procesados/@{items('Aplicar_a_cada_uno')?['Name']}",
+                  "overwrite": true
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Set_variable": {
+              "runAfter": {
+                "Agregar_una_fila_nueva": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "f9eb740e-3c92-4706-b851-8e52f9b981bc"
+              },
+              "type": "SetVariable",
+              "inputs": {
+                "name": "RecountingSessionID",
+                "value": "@outputs('Agregar_una_fila_nueva')?['body/_sanic_recountingsessiondetailid_value@Microsoft.Dynamics.CRM.lookuplogicalname']"
+              }
+            }
+          },
+          "runAfter": {
+            "Filter_array": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "4f6fc7f9-2a7b-4e7f-bd84-d6fc7ba4b739"
+          },
+          "type": "Foreach"
+        },
+        "Initialize_variable": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "fdda4f49-ded9-41e9-af20-b1e328bada71"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "RecountingSessionID",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      },
+      "outputs": {}
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}
