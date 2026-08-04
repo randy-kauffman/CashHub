@@ -81,13 +81,13 @@ sesión, escanear tula, contar, cerrar— ocurre ahí.
 
 ## Limitaciones conocidas
 
-- **Auto-aprobación en tu propia mesa.** Si abrís tu sesión en la mesa que
-  tenés asignada, el sistema la aprueba solo, sin que ningún supervisor la
-  revise. Esto es una decisión de diseño del sistema tal como está hoy, no un
-  error tuyo — pero es importante que lo sepas porque rompe el control de
-  "cuatro ojos" que uno esperaría para este tipo de operación. Si tu banco
-  espera que toda sesión pase por un supervisor, esto no ocurre en la
-  práctica salvo que uses una mesa distinta a la asignada.
+- **Apertura de sesión en tu propia mesa: sin aprobación (por diseño).** Si
+  abrís tu sesión diaria en la mesa que tenés asignada por defecto, el
+  sistema la aprueba automáticamente — el supervisor solo interviene cuando
+  elegís una mesa que no es la tuya (por ejemplo, cubrís a un compañero de
+  vacaciones o enfermo). Esto es intencional: lo que siempre pasa por el
+  supervisor no es la apertura de sesión sino cualquier **diferencia del
+  recuento** (faltante, sobrante o tula sin declaración).
 - **Si escaneás una tula y el sistema no la encuentra**, confirmá primero
   con el oficial de esclusa/bóveda que efectivamente la movió a bóveda: en la
   operación normal, para cuando la tula llega a tu mesa ya debería estar en

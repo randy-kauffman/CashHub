@@ -48,15 +48,15 @@
 
 **Esfuerzo**: M — definir y agregar privilegios por rol para 18 tablas es mecánico una vez decidido el modelo de acceso, pero exige primero mapear qué rol físico (Analista de correos, Administrador de clientes, etc.) necesita qué nivel sobre cuál tabla.
 
-### 3. Auto-aprobación del cajero en Recounting
+### 3. ~~Auto-aprobación del cajero en Recounting~~ — RESUELTO: es diseño intencional, no brecha
 
-**Descripción**: cuando un cajero crea una sesión de recuento (`RecountingSession`) en su propia mesa asignada (`varIsOwnDesk = true`), el sistema hace `Patch(Confirmed: true)` directo y crea el `ApprovalRequest` ya con `ApprovalStatus = Aprobado`, sin intervención de un supervisor. El propio comentario en el código lo marca como fix: `// ✅ ESTE ES EL FIX DEFINITIVO`.
+**Descripción**: cuando un cajero crea su sesión de recuento diaria (`RecountingSession`) en su mesa asignada por defecto (`varIsOwnDesk = true`), el sistema confirma la sesión y crea el `ApprovalRequest` ya con `ApprovalStatus = Aprobado` (código: `// SI ES SU MESA → auto-aprobado`). La aprobación del supervisor solo se exige cuando el cajero elige una mesa que NO es la suya (cubre vacaciones, enfermedad, etc.).
 
-**Evidencia**: `solutions/unpacked/apps/CanvasApps/src/sanic_chapprecounting_54962/Src/Screen1.fx.yaml`, bloque de confirmación de sesión de recuento.
+**Resolución (confirmada con negocio, 2026-08-04)**: es el comportamiento esperado. Lo que requiere control de cuatro ojos no es la apertura de sesión en mesa propia sino las **diferencias del recuento** — y eso sí está garantizado: "Tula con diferencia", "Tula sin declaracion" y "Tula recontada sin declaracion" siempre generan `ApprovalRequest` pendiente que resuelve el supervisor.
 
-**Impacto**: brecha de segregación de funciones en un proceso de bóveda — el cajero que cuenta el efectivo también autoaprueba que su propia sesión de conteo sea válida, sin un segundo par de ojos. Vale confirmar con negocio si es una decisión consciente (por ejemplo, para no bloquear operación cuando el supervisor no está disponible) o un atajo de desarrollo.
+**Evidencia**: `solutions/unpacked/apps/CanvasApps/src/sanic_chapprecounting_54962/Src/Screen1.fx.yaml`, bloque `Form1.OnSuccess` de creación de sesión.
 
-**Esfuerzo**: M — requiere decisión de negocio primero; el cambio de Power Fx en sí (forzar `ApprovalRequest` pendiente siempre, sin importar la mesa) es acotado a una app.
+**Esfuerzo**: N/A — sin acción; se conserva como registro de la decisión.
 
 ### 4. Ninguna app operativa verifica rol/grupo AAD en su propio código
 

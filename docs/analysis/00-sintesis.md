@@ -33,7 +33,7 @@ flowchart TD
     end
 
     subgraph Recuento["3. Recuento"]
-        I --> J["App: Supervisor\nasignación y aprobaciones"]
+        I --> J["App: Supervisor\naprobaciones (la asignación de tulas\nal cajero es física, fuera del sistema)"]
         J --> K["App: Recounting\nRecountingSession + CountedMoneyDetails\ncompara contra lo declarado"]
         K -->|XML máquina contadora| L[CH-Flow-ProcessXMLFiles]
         K -->|diferencia| M["ApprovalRequest → Supervisor aprueba\ny postea Transactions (Depósito + Sobrante/Faltante)"]
@@ -60,7 +60,7 @@ Módulo paralelo: **administración de datos maestros del cliente** (RFC = Reque
 ### Seguridad
 1. **18 de 38 tablas sin ningún privilegio en ningún rol** (todo el dominio correo/validación, cambios de cliente, `Client`, `TransactionBatches`). 3 de 6 roles (`CH-Role`, `AnalyticsRead`, `OpsAdmin`) no otorgan acceso a ninguna tabla custom.
 2. **Las apps no verifican rol**: identidad por `LookUp(Users, PrimaryEmail=User().Email)`; los grupos AAD (`sanic_CHEVAADGroup_*`) solo se usan en el Hub y en Client Administration.
-3. **Auto-aprobación en Recounting**: si el cajero recuenta en su mesa asignada, su propia sesión se auto-aprueba — brecha de segregación de funciones.
+3. ~~**Auto-aprobación en Recounting**~~ — corregido: la auto-aprobación de la sesión diaria en la mesa propia es diseño intencional (el supervisor solo aprueba sesiones en mesa ajena: vacaciones/enfermedad); las diferencias del recuento siempre van al supervisor. Ver backlog §3.
 
 ### Integridad de datos
 4. El faltante/sobrante se guarda solo como etiqueta categórica (`Transactions.TransactionType`), **sin monto de la diferencia**.
