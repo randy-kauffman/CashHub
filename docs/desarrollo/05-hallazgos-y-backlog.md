@@ -220,6 +220,35 @@
 
 **Esfuerzo**: S — pasada de limpieza puntual en los 2 archivos de app y renombrado de la acción del flujo (renombrar una acción de Power Automate no requiere reimportar dependencias externas, solo republicar el flujo).
 
+---
+
+## Decisiones aprobadas por negocio — a implementar cuanto antes (2026-08-04)
+
+### A. Modelo de autorización de correos: el correo autoriza, el contenido atribuye
+
+**Decisión**: un mismo correo electrónico PUEDE estar registrado para más de un cliente (caso real: dos entidades legales con tesorería/contador compartido). El remitente responde "¿está autorizado a declarar por este cliente?"; la atribución de la declaración sale del contenido del Excel, nunca del remitente. Regla dura: 1 correo = 1 declaración = 1 cliente.
+
+**Cambios**:
+- Alternate key en `sanic_CHTblClientEmail` sobre el par (dirección, cliente) — permite compartir dirección entre clientes, prohíbe duplicar el par.
+- Lookup a `Client` en `sanic_CHTblDeclaration` (y en `sanic_CHTblReceivedEmails` post-validación) — hoy ninguna de las dos sabe de qué cliente es (requisito además para reconstruir Deposits Tracker).
+- Regla de validación: existe par (remitente, cliente-declarado) activo en `ClientEmail`.
+
+**Esfuerzo**: S (esquema) + S (regla de validación).
+
+### B. Nueva tabla de cuentas del cliente
+
+**Decisión**: crear el maestro de cuentas bancarias por cliente. Hoy no existe (`Client` solo tiene CIFBCO/CIFCOM; `DeclaredDeposits.AccountNumber` es un int suelto sin validar contra nada). Habilita las validaciones "la cuenta pertenece al cliente declarado" y "una cuenta tiene una única moneda", y la verificación triple encabezado = dueño de cuentas = remitente autorizado.
+
+**Diseño mínimo**: número de cuenta, cliente (lookup), moneda, estado — administrada vía Client Administration (área a definir con negocio: Banca de Empresas o Bóveda) bajo el mismo modelo RFC.
+
+**Esfuerzo**: S (tabla + rol) + M (integrarla al flujo RFC de Client Administration y a las validaciones).
+
+### C. La plantilla Excel debe declarar el cliente
+
+**Decisión**: la plantilla distribuida a clientes (`CH-TPL-Depositos` v1.0.0: hojas `Depositos`, `Cheques` y `Metadata`) hoy solo lleva `TemplateId` y `TemplateVersion` en Metadata. Se agrega el **identificador del cliente (CIF)** a la hoja Metadata, requisito de las validaciones "el cliente viene declarado en el Excel", "el cliente está registrado en CashHub" y "el correo tiene permitido depositar a ese cliente".
+
+**Esfuerzo**: S (plantilla + versionarla como 1.1.0 y validar `TemplateVersion` en la ingesta).
+
 ## Ver también
 
 - [01-arquitectura.md](01-arquitectura.md) — contexto de cada componente mencionado acá.
