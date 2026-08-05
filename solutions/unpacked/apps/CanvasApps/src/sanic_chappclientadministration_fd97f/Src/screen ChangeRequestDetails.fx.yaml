@@ -198,7 +198,7 @@
                             {
                                 varConflictRow: LookUp(
                                     'CH-Tbl-ClientDataChangeRequestLines',
-                                    'Field Definition'.LogicalName = CRL.'Field Definition'.LogicalName && (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved)
+                                    'Field Definition'.LogicalName = CRL.'Field Definition'.LogicalName && ChangeRequestID.TargetRecordID = gvarSelectedChangeRequest.TargetRecordID && ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' <> gvarSelectedChangeRequest.'CH-Tbl-ClientDataChangeRequest' && (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved)
                                 )
                             },
                             Collect(
@@ -2217,7 +2217,7 @@
                         {
                             varConflictRow: LookUp(
                                 'CH-Tbl-ClientDataChangeRequestLines',
-                                'Field Definition'.LogicalName = CRL.'Field Definition'.LogicalName && (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved)
+                                'Field Definition'.LogicalName = CRL.'Field Definition'.LogicalName && ChangeRequestID.TargetRecordID = gvarSelectedChangeRequest.TargetRecordID && ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' <> gvarSelectedChangeRequest.'CH-Tbl-ClientDataChangeRequest' && (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved)
                             )
                         },
                         Collect(

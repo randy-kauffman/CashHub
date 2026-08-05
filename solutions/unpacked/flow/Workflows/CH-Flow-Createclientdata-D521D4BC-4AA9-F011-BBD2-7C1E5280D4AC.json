@@ -46,487 +46,6 @@
         }
       },
       "actions": {
-        "Obtener_lineas_del_RFC": {
-          "runAfter": {},
-          "metadata": {
-            "operationMetadataId": "c4c050a0-6a67-4c5a-a630-4144b36a0554"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "entityName": "sanic_chtblclientdatachangerequestlines",
-              "$filter": "_sanic_changerequestid_value eq @{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']}",
-              "$expand": "sanic_FieldDefinition($select=sanic_datatype,sanic_logicalname,sanic_name,sanic_table,sanic_tabledisplayname,sanic_datatype,sanic_datatype,sanic_optionsetmap,sanic_tablepluralname,sanic_lookuptargettable)"
-            },
-            "host": {
-              "connectionName": "shared_commondataserviceforapps_1",
-              "operationId": "ListRecords",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-            }
-          }
-        },
-        "Aplicar_a_cada_linea_del_RFC": {
-          "foreach": "@outputs('Obtener_lineas_del_RFC')?['body/value']",
-          "actions": {
-            "OK_Agregar_a_notas_de_implementacion": {
-              "runAfter": {
-                "Convertir_dato_y_actualizar_campo": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "611b1e2a-379c-44cc-ac54-27c0bd6b2fdf"
-              },
-              "type": "AppendToArrayVariable",
-              "inputs": {
-                "name": "varNotes",
-                "value": "OK Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'"
-              }
-            },
-            "FAILED_Agregar_a_notas_de_implementacion": {
-              "runAfter": {
-                "Convertir_dato_y_actualizar_campo": [
-                  "TimedOut",
-                  "Failed"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "2c1d9d9a-0017-4117-a7fc-f9219ac2a69b"
-              },
-              "type": "AppendToArrayVariable",
-              "inputs": {
-                "name": "varNotes",
-                "value": "FAILED Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'"
-              }
-            },
-            "Actualizar_variable_varAnyErrors": {
-              "runAfter": {
-                "FAILED_Agregar_a_notas_de_implementacion": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "b29b5c2d-cfaa-403d-939a-9e3980ec849a"
-              },
-              "type": "SetVariable",
-              "inputs": {
-                "name": "varAnyError",
-                "value": true
-              }
-            },
-            "Actualizar_status_CRL_a_APPLIED": {
-              "runAfter": {
-                "OK_Agregar_a_notas_de_implementacion": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "9f2a0cae-5fca-4c7a-b652-d853e854ca58"
-              },
-              "type": "OpenApiConnection",
-              "inputs": {
-                "parameters": {
-                  "entityName": "sanic_chtblclientdatachangerequestlines",
-                  "recordId": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']",
-                  "item/sanic_changestatus": 159460004
-                },
-                "host": {
-                  "connectionName": "shared_commondataserviceforapps_1",
-                  "operationId": "UpdateOnlyRecord",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                }
-              }
-            },
-            "Actualizar_status_CRL_a_FAILED": {
-              "runAfter": {
-                "Actualizar_variable_varAnyErrors": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "88922268-51b2-4830-a6ba-e3d4ece1e3bb"
-              },
-              "type": "OpenApiConnection",
-              "inputs": {
-                "parameters": {
-                  "entityName": "sanic_chtblclientdatachangerequestlines",
-                  "recordId": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']",
-                  "item/sanic_changestatus": 159460004
-                },
-                "host": {
-                  "connectionName": "shared_commondataserviceforapps_1",
-                  "operationId": "UpdateOnlyRecord",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                }
-              }
-            },
-            "Convertir_dato_y_actualizar_campo": {
-              "actions": {
-                "Tipo_de_dato": {
-                  "runAfter": {},
-                  "cases": {
-                    "Text": {
-                      "case": 159460000,
-                      "actions": {
-                        "Añadir_propiedad_de_Texto": {
-                          "runAfter": {},
-                          "metadata": {
-                            "operationMetadataId": "c6683642-e534-4f25-81ab-0ee20fb0c511"
-                          },
-                          "type": "AppendToArrayVariable",
-                          "inputs": {
-                            "name": "varItem",
-                            "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']}\""
-                          }
-                        }
-                      }
-                    },
-                    "Number": {
-                      "case": 159460001,
-                      "actions": {
-                        "Convertir_a_numero": {
-                          "runAfter": {},
-                          "metadata": {
-                            "operationMetadataId": "a01ed4ed-4665-41df-855f-66f78a962935"
-                          },
-                          "type": "Compose",
-                          "inputs": "@float(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue'])"
-                        },
-                        "Añadir_propiedad_de_Numerica": {
-                          "runAfter": {
-                            "Convertir_a_numero": [
-                              "Succeeded"
-                            ]
-                          },
-                          "metadata": {
-                            "operationMetadataId": "492339a2-96f2-4fda-8e84-2f23e412ea06"
-                          },
-                          "type": "AppendToArrayVariable",
-                          "inputs": {
-                            "name": "varItem",
-                            "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":@{string(outputs('Convertir_a_numero'))}"
-                          }
-                        }
-                      }
-                    },
-                    "Date": {
-                      "case": 159460002,
-                      "actions": {
-                        "Convertir_a_fecha": {
-                          "runAfter": {},
-                          "metadata": {
-                            "operationMetadataId": "8e541315-4c03-4906-9649-d9f878fd40e3"
-                          },
-                          "type": "Compose",
-                          "inputs": "@formatDateTime(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue'],'yyyy-MM-dd')"
-                        },
-                        "Añadir_propiedad_de_Fecha": {
-                          "runAfter": {
-                            "Convertir_a_fecha": [
-                              "Succeeded"
-                            ]
-                          },
-                          "metadata": {
-                            "operationMetadataId": "a4e4841e-98ca-4d40-b545-73b06c785e5c"
-                          },
-                          "type": "AppendToArrayVariable",
-                          "inputs": {
-                            "name": "varItem",
-                            "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":\"@{outputs('Convertir_a_fecha')}\""
-                          }
-                        }
-                      }
-                    },
-                    "Money": {
-                      "case": 159460003,
-                      "actions": {
-                        "Convertir_a_Dinero": {
-                          "runAfter": {},
-                          "metadata": {
-                            "operationMetadataId": "8aacc2ce-0fdd-42f0-93fe-acb74233808b"
-                          },
-                          "type": "Compose",
-                          "inputs": "@float(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue'])"
-                        },
-                        "Añadir_propiedad_de_Dinero": {
-                          "runAfter": {
-                            "Convertir_a_Dinero": [
-                              "Succeeded"
-                            ]
-                          },
-                          "metadata": {
-                            "operationMetadataId": "929faf7b-fd6a-4ee0-be0e-05f404e8d623"
-                          },
-                          "type": "AppendToArrayVariable",
-                          "inputs": {
-                            "name": "varItem",
-                            "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":@{string(outputs('Convertir_a_Dinero'))}"
-                          }
-                        }
-                      }
-                    },
-                    "LookUp": {
-                      "case": 159460004,
-                      "actions": {
-                        "Crear_enlace_lookup": {
-                          "runAfter": {},
-                          "metadata": {
-                            "operationMetadataId": "8aacc2ce-0fdd-42f0-93fe-acb74233808b"
-                          },
-                          "type": "Compose",
-                          "inputs": "/@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_lookuptargettable']}(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']})"
-                        },
-                        "Añadir_propiedad_LookUp": {
-                          "runAfter": {
-                            "Crear_enlace_lookup": [
-                              "Succeeded"
-                            ]
-                          },
-                          "metadata": {
-                            "operationMetadataId": "b7059d14-ebc8-41bc-b373-786b3dc0186a"
-                          },
-                          "type": "AppendToArrayVariable",
-                          "inputs": {
-                            "name": "varItem",
-                            "value": "\"@{concat(items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname'],'@odata.bind')}\":\"@{outputs('Crear_enlace_lookup')}\""
-                          }
-                        }
-                      }
-                    },
-                    "OptionSet": {
-                      "case": 159460005,
-                      "actions": {}
-                    },
-                    "TwoOptions": {
-                      "case": 159460006,
-                      "actions": {
-                        "Convertir_valor_booleano": {
-                          "runAfter": {},
-                          "metadata": {
-                            "operationMetadataId": "8aacc2ce-0fdd-42f0-93fe-acb74233808b"
-                          },
-                          "type": "Compose",
-                          "inputs": "@if(equals(toLower(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']), 'yes'),'true','false')"
-                        },
-                        "Añadir_propiedad_Boolean": {
-                          "runAfter": {
-                            "Convertir_valor_booleano": [
-                              "Succeeded"
-                            ]
-                          },
-                          "metadata": {
-                            "operationMetadataId": "e1279ab3-7af2-4ee1-8352-889a2eae5212"
-                          },
-                          "type": "AppendToArrayVariable",
-                          "inputs": {
-                            "name": "varItem",
-                            "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":@{string(outputs('Convertir_valor_booleano'))}"
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "default": {
-                    "actions": {}
-                  },
-                  "expression": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_FieldDefinition/sanic_datatype']",
-                  "metadata": {
-                    "operationMetadataId": "72dc389e-f601-4162-ae17-1017ea1b30e0"
-                  },
-                  "type": "Switch"
-                }
-              },
-              "runAfter": {},
-              "metadata": {
-                "operationMetadataId": "0b669501-3d9e-4f08-a154-7af53e4cff53"
-              },
-              "type": "Scope"
-            },
-            "Es_un_nuevo_cliente": {
-              "actions": {
-                "Create_audit_trail_for_FAIL": {
-                  "runAfter": {},
-                  "metadata": {
-                    "operationMetadataId": "f1eb170b-79d9-4081-8f88-5c35959a0ed1"
-                  },
-                  "type": "OpenApiConnection",
-                  "inputs": {
-                    "parameters": {
-                      "entityName": "sanic_chtblclientdatachangesaudittrails",
-                      "item/sanic_opeationtype": 159460000,
-                      "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
-                      "item/sanic_result": false,
-                      "item/sanic_message": "FAILED Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'",
-                      "item/sanic_RelatedCRL@odata.bind": "/sanic_chtblclientdatachangerequestlines(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']})"
-                    },
-                    "host": {
-                      "connectionName": "shared_commondataserviceforapps_1",
-                      "operationId": "CreateRecord",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                    }
-                  }
-                },
-                "Append_to_array_variable": {
-                  "runAfter": {
-                    "Create_audit_trail_for_FAIL": [
-                      "Succeeded"
-                    ]
-                  },
-                  "metadata": {
-                    "operationMetadataId": "11f5f7e2-d61a-42df-aae2-64ab21937409"
-                  },
-                  "type": "AppendToArrayVariable",
-                  "inputs": {
-                    "name": "varAuditTrailEntry",
-                    "value": "@outputs('Create_audit_trail_for_FAIL')?['body/sanic_chtblclientdatachangesaudittrailid']"
-                  }
-                }
-              },
-              "runAfter": {
-                "Actualizar_status_CRL_a_FAILED": [
-                  "Succeeded"
-                ]
-              },
-              "else": {
-                "actions": {
-                  "Create_audit_trail_for_FAIL_1": {
-                    "runAfter": {},
-                    "metadata": {
-                      "operationMetadataId": "70bed7e4-97cf-486b-89dd-60bfd298fdf0"
-                    },
-                    "type": "OpenApiConnection",
-                    "inputs": {
-                      "parameters": {
-                        "entityName": "sanic_chtblclientdatachangesaudittrails",
-                        "item/sanic_opeationtype": 159460000,
-                        "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
-                        "item/sanic_result": false,
-                        "item/sanic_message": "FAILED Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'",
-                        "item/sanic_RelatedClient@odata.bind": "/sanic_chtblclients(@{triggerOutputs()?['body/_sanic_relatedclient_value']})",
-                        "item/sanic_RelatedCRL@odata.bind": "/sanic_chtblclientdatachangerequestlines(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']})"
-                      },
-                      "host": {
-                        "connectionName": "shared_commondataserviceforapps_1",
-                        "operationId": "CreateRecord",
-                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                      }
-                    }
-                  }
-                }
-              },
-              "expression": {
-                "and": [
-                  {
-                    "equals": [
-                      "@triggerOutputs()?['body/sanic_targettable']",
-                      "sanic_chtblclient"
-                    ]
-                  }
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "7615e94e-61de-4c8c-890f-e5eda2bf41b1"
-              },
-              "type": "If"
-            },
-            "Es_un_nuevo_cliente_2": {
-              "actions": {
-                "Create_audit_trail_for_SUCCESS": {
-                  "runAfter": {},
-                  "metadata": {
-                    "operationMetadataId": "951d7866-6719-4d3e-84a3-d4cfee19a678"
-                  },
-                  "type": "OpenApiConnection",
-                  "inputs": {
-                    "parameters": {
-                      "entityName": "sanic_chtblclientdatachangesaudittrails",
-                      "item/sanic_opeationtype": 159460000,
-                      "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
-                      "item/sanic_result": true,
-                      "item/sanic_message": "OK Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'",
-                      "item/sanic_RelatedCRL@odata.bind": "/sanic_chtblclientdatachangerequestlines(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']})"
-                    },
-                    "host": {
-                      "connectionName": "shared_commondataserviceforapps_1",
-                      "operationId": "CreateRecord",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                    }
-                  }
-                },
-                "Append_to_array_variable_1": {
-                  "runAfter": {
-                    "Create_audit_trail_for_SUCCESS": [
-                      "Succeeded"
-                    ]
-                  },
-                  "metadata": {
-                    "operationMetadataId": "b0774b10-b5c5-4f82-b4d9-f7c0c9bb206a"
-                  },
-                  "type": "AppendToArrayVariable",
-                  "inputs": {
-                    "name": "varAuditTrailEntry",
-                    "value": "@outputs('Create_audit_trail_for_SUCCESS')?['body/sanic_chtblclientdatachangesaudittrailid']"
-                  }
-                }
-              },
-              "runAfter": {
-                "Actualizar_status_CRL_a_APPLIED": [
-                  "Succeeded"
-                ]
-              },
-              "else": {
-                "actions": {
-                  "Create_audit_trail_for_SUCCESS_1": {
-                    "runAfter": {},
-                    "metadata": {
-                      "operationMetadataId": "665bbb8b-1971-4157-aab8-7d6a6724d1d5"
-                    },
-                    "type": "OpenApiConnection",
-                    "inputs": {
-                      "parameters": {
-                        "entityName": "sanic_chtblclientdatachangesaudittrails",
-                        "item/sanic_opeationtype": 159460000,
-                        "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
-                        "item/sanic_result": true,
-                        "item/sanic_message": "OK Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'",
-                        "item/sanic_RelatedClient@odata.bind": "/sanic_chtblclients(@{triggerOutputs()?['body/_sanic_relatedclient_value']})",
-                        "item/sanic_RelatedCRL@odata.bind": "/sanic_chtblclientdatachangerequestlines(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']})"
-                      },
-                      "host": {
-                        "connectionName": "shared_commondataserviceforapps_1",
-                        "operationId": "CreateRecord",
-                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                      }
-                    }
-                  }
-                }
-              },
-              "expression": {
-                "and": [
-                  {
-                    "equals": [
-                      "@triggerOutputs()?['body/sanic_targettable']",
-                      "sanic_chtblclient"
-                    ]
-                  }
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "659ccb7e-b84e-4ded-94ad-760c4da7338d"
-              },
-              "type": "If"
-            }
-          },
-          "runAfter": {
-            "Inicializar_varNotes": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "b8625346-a6a8-4a7f-a722-d4f79a58101d"
-          },
-          "type": "Foreach"
-        },
         "Inicializar_varNotes": {
           "runAfter": {
             "Inicializar_varNewAuditTrail": [
@@ -586,15 +105,18 @@
                   "connectionName": "shared_commondataserviceforapps_1",
                   "operationId": "UpdateOnlyRecord",
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "retryPolicy": {
+                  "type": "exponential",
+                  "count": 4,
+                  "interval": "PT10S"
                 }
               }
             }
           },
           "runAfter": {
-            "Crear_nuevo_item": [
-              "Succeeded",
-              "TimedOut",
-              "Failed"
+            "Try_Aplicar_RFC": [
+              "Succeeded"
             ]
           },
           "else": {
@@ -617,6 +139,11 @@
                     "connectionName": "shared_commondataserviceforapps_1",
                     "operationId": "UpdateOnlyRecord",
                     "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                  },
+                  "retryPolicy": {
+                    "type": "exponential",
+                    "count": 4,
+                    "interval": "PT10S"
                   }
                 }
               },
@@ -637,6 +164,11 @@
                         "connectionName": "shared_commondataserviceforapps_1",
                         "operationId": "UpdateOnlyRecord",
                         "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 4,
+                        "interval": "PT10S"
                       }
                     }
                   }
@@ -679,11 +211,7 @@
           "type": "If"
         },
         "Inicializar_varItem": {
-          "runAfter": {
-            "Obtener_lineas_del_RFC": [
-              "Succeeded"
-            ]
-          },
+          "runAfter": {},
           "metadata": {
             "operationMetadataId": "5da2494f-96b0-4ad6-b754-8505eec58b53"
           },
@@ -696,158 +224,6 @@
               }
             ]
           }
-        },
-        "Crear_nuevo_item": {
-          "actions": {
-            "Crear_nuevo_registro": {
-              "runAfter": {
-                "Crear_JSON_item": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "ea461e42-ce88-48a2-9c5d-092ad05bc555"
-              },
-              "type": "OpenApiConnection",
-              "inputs": {
-                "host": {
-                  "connectionName": "shared_commondataserviceforapps_1",
-                  "operationId": "CreateRecord",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                },
-                "parameters": {
-                  "entityName": "@triggerOutputs()?['body/sanic_targettablepluralname']",
-                  "item": "@outputs('Crear_JSON_item')"
-                },
-                "authentication": "@parameters('$authentication')"
-              }
-            },
-            "Actualizar_variable_varAnyErrors_a_SUCCESS": {
-              "runAfter": {
-                "Crear_nuevo_registro": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "8c7b9c1e-fa5f-40a0-9e5c-2bc2919c6727"
-              },
-              "type": "SetVariable",
-              "inputs": {
-                "name": "varAnyError",
-                "value": false
-              }
-            },
-            "Actualizar_variable_varAnyErrors_a_FAIL": {
-              "runAfter": {
-                "Crear_nuevo_registro": [
-                  "Failed",
-                  "TimedOut"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "d47feb72-837f-4b9d-8fcd-94a6a0876975"
-              },
-              "type": "SetVariable",
-              "inputs": {
-                "name": "varAnyError",
-                "value": true
-              }
-            },
-            "OK_Agregar_a_notas_de_implementacion_1": {
-              "runAfter": {
-                "Actualizar_variable_varAnyErrors_a_SUCCESS": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "510af46a-010a-4103-950c-244ff696b51a"
-              },
-              "type": "AppendToArrayVariable",
-              "inputs": {
-                "name": "varNotes",
-                "value": "OK Nuevo registro creado"
-              }
-            },
-            "FAILED_Agregar_a_notas_de_implementacion_1": {
-              "runAfter": {
-                "Actualizar_variable_varAnyErrors_a_FAIL": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "e0921586-a062-4f86-b3f2-eccdfda49276"
-              },
-              "type": "AppendToArrayVariable",
-              "inputs": {
-                "name": "varNotes",
-                "value": "FAILED Nuevo registro creado"
-              }
-            },
-            "Apply_to_each": {
-              "foreach": "@variables('varAuditTrailEntry')",
-              "actions": {
-                "Update_a_row": {
-                  "runAfter": {},
-                  "metadata": {
-                    "operationMetadataId": "6a581808-8e16-48f9-b5b4-b9d41a25f97e"
-                  },
-                  "type": "OpenApiConnection",
-                  "inputs": {
-                    "parameters": {
-                      "entityName": "sanic_chtblclientdatachangesaudittrails",
-                      "recordId": "@item()"
-                    },
-                    "host": {
-                      "connectionName": "shared_commondataserviceforapps_1",
-                      "operationId": "UpdateOnlyRecord",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                    }
-                  }
-                }
-              },
-              "runAfter": {
-                "OK_Agregar_a_notas_de_implementacion_1": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "47354e85-39a7-466c-a50a-f16a3caac0fc"
-              },
-              "type": "Foreach"
-            },
-            "Añadir_Record_Status": {
-              "runAfter": {},
-              "metadata": {
-                "operationMetadataId": "bd38968b-fd6e-420d-89cb-7605be3dfaae"
-              },
-              "type": "AppendToArrayVariable",
-              "inputs": {
-                "name": "varItem",
-                "value": "\"sanic_recordstatus\":159460000"
-              }
-            },
-            "Crear_JSON_item": {
-              "runAfter": {
-                "Añadir_Record_Status": [
-                  "Succeeded"
-                ]
-              },
-              "metadata": {
-                "operationMetadataId": "daaf8ef2-0f8a-44e7-aba7-709ee63407f8"
-              },
-              "type": "Compose",
-              "inputs": "@json(concat('{',join(variables('varItem'),','),'}'))"
-            }
-          },
-          "runAfter": {
-            "Aplicar_a_cada_linea_del_RFC": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "f52f8ab3-a4ff-4682-af59-39d921fa5330"
-          },
-          "type": "Scope"
         },
         "Inicializar_varNewAuditTrail": {
           "runAfter": {
@@ -866,6 +242,886 @@
                 "type": "array"
               }
             ]
+          }
+        },
+        "Try_Aplicar_RFC": {
+          "type": "Scope",
+          "metadata": {
+            "operationMetadataId": "554cec6d-6d23-475a-bb18-799b45540d95"
+          },
+          "runAfter": {
+            "Inicializar_varNotes": [
+              "Succeeded"
+            ]
+          },
+          "actions": {
+            "Obtener_lineas_del_RFC": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "c4c050a0-6a67-4c5a-a630-4144b36a0554"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "sanic_chtblclientdatachangerequestlines",
+                  "$filter": "_sanic_changerequestid_value eq @{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']}",
+                  "$expand": "sanic_FieldDefinition($select=sanic_datatype,sanic_logicalname,sanic_name,sanic_table,sanic_tabledisplayname,sanic_datatype,sanic_datatype,sanic_optionsetmap,sanic_tablepluralname,sanic_lookuptargettable)"
+                },
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps_1",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "retryPolicy": {
+                  "type": "exponential",
+                  "count": 4,
+                  "interval": "PT10S"
+                }
+              }
+            },
+            "Aplicar_a_cada_linea_del_RFC": {
+              "foreach": "@outputs('Obtener_lineas_del_RFC')?['body/value']",
+              "actions": {
+                "OK_Agregar_a_notas_de_implementacion": {
+                  "runAfter": {
+                    "Convertir_dato_y_actualizar_campo": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "611b1e2a-379c-44cc-ac54-27c0bd6b2fdf"
+                  },
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "varNotes",
+                    "value": "OK Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'"
+                  }
+                },
+                "FAILED_Agregar_a_notas_de_implementacion": {
+                  "runAfter": {
+                    "Convertir_dato_y_actualizar_campo": [
+                      "TimedOut",
+                      "Failed"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "2c1d9d9a-0017-4117-a7fc-f9219ac2a69b"
+                  },
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "varNotes",
+                    "value": "FAILED Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'"
+                  }
+                },
+                "Actualizar_variable_varAnyErrors": {
+                  "runAfter": {
+                    "FAILED_Agregar_a_notas_de_implementacion": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "b29b5c2d-cfaa-403d-939a-9e3980ec849a"
+                  },
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varAnyError",
+                    "value": true
+                  }
+                },
+                "Actualizar_status_CRL_a_APPLIED": {
+                  "runAfter": {
+                    "OK_Agregar_a_notas_de_implementacion": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "9f2a0cae-5fca-4c7a-b652-d853e854ca58"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "sanic_chtblclientdatachangerequestlines",
+                      "recordId": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']",
+                      "item/sanic_changestatus": 159460004
+                    },
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps_1",
+                      "operationId": "UpdateOnlyRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "retryPolicy": {
+                      "type": "exponential",
+                      "count": 4,
+                      "interval": "PT10S"
+                    }
+                  }
+                },
+                "Actualizar_status_CRL_a_FAILED": {
+                  "runAfter": {
+                    "Actualizar_variable_varAnyErrors": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "88922268-51b2-4830-a6ba-e3d4ece1e3bb"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "sanic_chtblclientdatachangerequestlines",
+                      "recordId": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']",
+                      "item/sanic_changestatus": 159460004
+                    },
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps_1",
+                      "operationId": "UpdateOnlyRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "retryPolicy": {
+                      "type": "exponential",
+                      "count": 4,
+                      "interval": "PT10S"
+                    }
+                  }
+                },
+                "Convertir_dato_y_actualizar_campo": {
+                  "actions": {
+                    "Tipo_de_dato": {
+                      "runAfter": {},
+                      "cases": {
+                        "Text": {
+                          "case": 159460000,
+                          "actions": {
+                            "Añadir_propiedad_de_Texto": {
+                              "runAfter": {},
+                              "metadata": {
+                                "operationMetadataId": "c6683642-e534-4f25-81ab-0ee20fb0c511"
+                              },
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "varItem",
+                                "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']}\""
+                              }
+                            }
+                          }
+                        },
+                        "Number": {
+                          "case": 159460001,
+                          "actions": {
+                            "Convertir_a_numero": {
+                              "runAfter": {},
+                              "metadata": {
+                                "operationMetadataId": "a01ed4ed-4665-41df-855f-66f78a962935"
+                              },
+                              "type": "Compose",
+                              "inputs": "@float(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue'])"
+                            },
+                            "Añadir_propiedad_de_Numerica": {
+                              "runAfter": {
+                                "Convertir_a_numero": [
+                                  "Succeeded"
+                                ]
+                              },
+                              "metadata": {
+                                "operationMetadataId": "492339a2-96f2-4fda-8e84-2f23e412ea06"
+                              },
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "varItem",
+                                "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":@{string(outputs('Convertir_a_numero'))}"
+                              }
+                            }
+                          }
+                        },
+                        "Date": {
+                          "case": 159460002,
+                          "actions": {
+                            "Convertir_a_fecha": {
+                              "runAfter": {},
+                              "metadata": {
+                                "operationMetadataId": "8e541315-4c03-4906-9649-d9f878fd40e3"
+                              },
+                              "type": "Compose",
+                              "inputs": "@formatDateTime(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue'],'yyyy-MM-dd')"
+                            },
+                            "Añadir_propiedad_de_Fecha": {
+                              "runAfter": {
+                                "Convertir_a_fecha": [
+                                  "Succeeded"
+                                ]
+                              },
+                              "metadata": {
+                                "operationMetadataId": "a4e4841e-98ca-4d40-b545-73b06c785e5c"
+                              },
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "varItem",
+                                "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":\"@{outputs('Convertir_a_fecha')}\""
+                              }
+                            }
+                          }
+                        },
+                        "Money": {
+                          "case": 159460003,
+                          "actions": {
+                            "Convertir_a_Dinero": {
+                              "runAfter": {},
+                              "metadata": {
+                                "operationMetadataId": "8aacc2ce-0fdd-42f0-93fe-acb74233808b"
+                              },
+                              "type": "Compose",
+                              "inputs": "@float(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue'])"
+                            },
+                            "Añadir_propiedad_de_Dinero": {
+                              "runAfter": {
+                                "Convertir_a_Dinero": [
+                                  "Succeeded"
+                                ]
+                              },
+                              "metadata": {
+                                "operationMetadataId": "929faf7b-fd6a-4ee0-be0e-05f404e8d623"
+                              },
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "varItem",
+                                "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":@{string(outputs('Convertir_a_Dinero'))}"
+                              }
+                            }
+                          }
+                        },
+                        "LookUp": {
+                          "case": 159460004,
+                          "actions": {
+                            "Crear_enlace_lookup": {
+                              "runAfter": {},
+                              "metadata": {
+                                "operationMetadataId": "8aacc2ce-0fdd-42f0-93fe-acb74233808b"
+                              },
+                              "type": "Compose",
+                              "inputs": "/@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_lookuptargettable']}(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']})"
+                            },
+                            "Añadir_propiedad_LookUp": {
+                              "runAfter": {
+                                "Crear_enlace_lookup": [
+                                  "Succeeded"
+                                ]
+                              },
+                              "metadata": {
+                                "operationMetadataId": "b7059d14-ebc8-41bc-b373-786b3dc0186a"
+                              },
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "varItem",
+                                "value": "\"@{concat(items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname'],'@odata.bind')}\":\"@{outputs('Crear_enlace_lookup')}\""
+                              }
+                            }
+                          }
+                        },
+                        "OptionSet": {
+                          "case": 159460005,
+                          "actions": {
+                            "Convertir_a_optionset": {
+                              "runAfter": {},
+                              "metadata": {
+                                "operationMetadataId": "ef7e62c1-99cf-4e71-9cb9-ceaf067dcbf4"
+                              },
+                              "type": "Compose",
+                              "inputs": "@int(json(coalesce(items('Aplicar_a_cada_linea_del_RFC')?['sanic_FieldDefinition/sanic_optionsetmap'], '{}'))?[items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']])"
+                            },
+                            "Añadir_propiedad_de_OptionSet": {
+                              "runAfter": {
+                                "Convertir_a_optionset": [
+                                  "Succeeded"
+                                ]
+                              },
+                              "metadata": {
+                                "operationMetadataId": "0bdf978e-059c-49b5-b45f-2ab1fb0f435e"
+                              },
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "varItem",
+                                "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":@{string(outputs('Convertir_a_optionset'))}"
+                              }
+                            }
+                          }
+                        },
+                        "TwoOptions": {
+                          "case": 159460006,
+                          "actions": {
+                            "Convertir_valor_booleano": {
+                              "runAfter": {},
+                              "metadata": {
+                                "operationMetadataId": "8aacc2ce-0fdd-42f0-93fe-acb74233808b"
+                              },
+                              "type": "Compose",
+                              "inputs": "@if(equals(toLower(items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']), 'yes'),'true','false')"
+                            },
+                            "Añadir_propiedad_Boolean": {
+                              "runAfter": {
+                                "Convertir_valor_booleano": [
+                                  "Succeeded"
+                                ]
+                              },
+                              "metadata": {
+                                "operationMetadataId": "e1279ab3-7af2-4ee1-8352-889a2eae5212"
+                              },
+                              "type": "AppendToArrayVariable",
+                              "inputs": {
+                                "name": "varItem",
+                                "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":@{string(outputs('Convertir_valor_booleano'))}"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "default": {
+                        "actions": {}
+                      },
+                      "expression": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_FieldDefinition/sanic_datatype']",
+                      "metadata": {
+                        "operationMetadataId": "72dc389e-f601-4162-ae17-1017ea1b30e0"
+                      },
+                      "type": "Switch"
+                    }
+                  },
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "0b669501-3d9e-4f08-a154-7af53e4cff53"
+                  },
+                  "type": "Scope"
+                },
+                "Es_un_nuevo_cliente": {
+                  "actions": {
+                    "Create_audit_trail_for_FAIL": {
+                      "runAfter": {},
+                      "metadata": {
+                        "operationMetadataId": "f1eb170b-79d9-4081-8f88-5c35959a0ed1"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "entityName": "sanic_chtblclientdatachangesaudittrails",
+                          "item/sanic_opeationtype": 159460000,
+                          "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
+                          "item/sanic_result": false,
+                          "item/sanic_message": "FAILED Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'",
+                          "item/sanic_RelatedCRL@odata.bind": "/sanic_chtblclientdatachangerequestlines(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']})"
+                        },
+                        "host": {
+                          "connectionName": "shared_commondataserviceforapps_1",
+                          "operationId": "CreateRecord",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT10S"
+                        }
+                      }
+                    },
+                    "Append_to_array_variable": {
+                      "runAfter": {
+                        "Create_audit_trail_for_FAIL": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "11f5f7e2-d61a-42df-aae2-64ab21937409"
+                      },
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "varAuditTrailEntry",
+                        "value": "@outputs('Create_audit_trail_for_FAIL')?['body/sanic_chtblclientdatachangesaudittrailid']"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Actualizar_status_CRL_a_FAILED": [
+                      "Succeeded"
+                    ]
+                  },
+                  "else": {
+                    "actions": {
+                      "Create_audit_trail_for_FAIL_1": {
+                        "runAfter": {},
+                        "metadata": {
+                          "operationMetadataId": "70bed7e4-97cf-486b-89dd-60bfd298fdf0"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "entityName": "sanic_chtblclientdatachangesaudittrails",
+                            "item/sanic_opeationtype": 159460000,
+                            "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
+                            "item/sanic_result": false,
+                            "item/sanic_message": "FAILED Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'",
+                            "item/sanic_RelatedClient@odata.bind": "/sanic_chtblclients(@{triggerOutputs()?['body/_sanic_relatedclient_value']})",
+                            "item/sanic_RelatedCRL@odata.bind": "/sanic_chtblclientdatachangerequestlines(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']})"
+                          },
+                          "host": {
+                            "connectionName": "shared_commondataserviceforapps_1",
+                            "operationId": "CreateRecord",
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                          },
+                          "retryPolicy": {
+                            "type": "exponential",
+                            "count": 4,
+                            "interval": "PT10S"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@triggerOutputs()?['body/sanic_targettable']",
+                          "sanic_chtblclient"
+                        ]
+                      }
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "7615e94e-61de-4c8c-890f-e5eda2bf41b1"
+                  },
+                  "type": "If"
+                },
+                "Es_un_nuevo_cliente_2": {
+                  "actions": {
+                    "Create_audit_trail_for_SUCCESS": {
+                      "runAfter": {},
+                      "metadata": {
+                        "operationMetadataId": "951d7866-6719-4d3e-84a3-d4cfee19a678"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "entityName": "sanic_chtblclientdatachangesaudittrails",
+                          "item/sanic_opeationtype": 159460000,
+                          "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
+                          "item/sanic_result": true,
+                          "item/sanic_message": "OK Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'",
+                          "item/sanic_RelatedCRL@odata.bind": "/sanic_chtblclientdatachangerequestlines(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']})"
+                        },
+                        "host": {
+                          "connectionName": "shared_commondataserviceforapps_1",
+                          "operationId": "CreateRecord",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT10S"
+                        }
+                      }
+                    },
+                    "Append_to_array_variable_1": {
+                      "runAfter": {
+                        "Create_audit_trail_for_SUCCESS": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "b0774b10-b5c5-4f82-b4d9-f7c0c9bb206a"
+                      },
+                      "type": "AppendToArrayVariable",
+                      "inputs": {
+                        "name": "varAuditTrailEntry",
+                        "value": "@outputs('Create_audit_trail_for_SUCCESS')?['body/sanic_chtblclientdatachangesaudittrailid']"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Actualizar_status_CRL_a_APPLIED": [
+                      "Succeeded"
+                    ]
+                  },
+                  "else": {
+                    "actions": {
+                      "Create_audit_trail_for_SUCCESS_1": {
+                        "runAfter": {},
+                        "metadata": {
+                          "operationMetadataId": "665bbb8b-1971-4157-aab8-7d6a6724d1d5"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "entityName": "sanic_chtblclientdatachangesaudittrails",
+                            "item/sanic_opeationtype": 159460000,
+                            "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
+                            "item/sanic_result": true,
+                            "item/sanic_message": "OK Field @{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_name']}: '@{item()?['sanic_oldvalue']}' → '@{item()?['sanic_newvalue']}'",
+                            "item/sanic_RelatedClient@odata.bind": "/sanic_chtblclients(@{triggerOutputs()?['body/_sanic_relatedclient_value']})",
+                            "item/sanic_RelatedCRL@odata.bind": "/sanic_chtblclientdatachangerequestlines(@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']})"
+                          },
+                          "host": {
+                            "connectionName": "shared_commondataserviceforapps_1",
+                            "operationId": "CreateRecord",
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                          },
+                          "retryPolicy": {
+                            "type": "exponential",
+                            "count": 4,
+                            "interval": "PT10S"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@triggerOutputs()?['body/sanic_targettable']",
+                          "sanic_chtblclient"
+                        ]
+                      }
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "659ccb7e-b84e-4ded-94ad-760c4da7338d"
+                  },
+                  "type": "If"
+                }
+              },
+              "runAfter": {
+                "Guard_Hay_lineas_aprobadas": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "b8625346-a6a8-4a7f-a722-d4f79a58101d"
+              },
+              "type": "Foreach"
+            },
+            "Crear_nuevo_item": {
+              "actions": {
+                "Crear_nuevo_registro": {
+                  "runAfter": {
+                    "Crear_JSON_item": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "ea461e42-ce88-48a2-9c5d-092ad05bc555"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps_1",
+                      "operationId": "CreateRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "@triggerOutputs()?['body/sanic_targettablepluralname']",
+                      "item": "@outputs('Crear_JSON_item')"
+                    },
+                    "authentication": "@parameters('$authentication')",
+                    "retryPolicy": {
+                      "type": "exponential",
+                      "count": 4,
+                      "interval": "PT10S"
+                    }
+                  }
+                },
+                "Actualizar_variable_varAnyErrors_a_SUCCESS": {
+                  "runAfter": {
+                    "Crear_nuevo_registro": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "8c7b9c1e-fa5f-40a0-9e5c-2bc2919c6727"
+                  },
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varAnyError",
+                    "value": false
+                  }
+                },
+                "Actualizar_variable_varAnyErrors_a_FAIL": {
+                  "runAfter": {
+                    "Crear_nuevo_registro": [
+                      "Failed",
+                      "TimedOut"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "d47feb72-837f-4b9d-8fcd-94a6a0876975"
+                  },
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "varAnyError",
+                    "value": true
+                  }
+                },
+                "OK_Agregar_a_notas_de_implementacion_1": {
+                  "runAfter": {
+                    "Actualizar_variable_varAnyErrors_a_SUCCESS": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "510af46a-010a-4103-950c-244ff696b51a"
+                  },
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "varNotes",
+                    "value": "OK Nuevo registro creado"
+                  }
+                },
+                "FAILED_Agregar_a_notas_de_implementacion_1": {
+                  "runAfter": {
+                    "Actualizar_variable_varAnyErrors_a_FAIL": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "e0921586-a062-4f86-b3f2-eccdfda49276"
+                  },
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "varNotes",
+                    "value": "FAILED Nuevo registro creado"
+                  }
+                },
+                "Apply_to_each": {
+                  "foreach": "@variables('varAuditTrailEntry')",
+                  "actions": {
+                    "Update_a_row": {
+                      "runAfter": {},
+                      "metadata": {
+                        "operationMetadataId": "6a581808-8e16-48f9-b5b4-b9d41a25f97e"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "entityName": "sanic_chtblclientdatachangesaudittrails",
+                          "recordId": "@item()"
+                        },
+                        "host": {
+                          "connectionName": "shared_commondataserviceforapps_1",
+                          "operationId": "UpdateOnlyRecord",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT10S"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "OK_Agregar_a_notas_de_implementacion_1": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "47354e85-39a7-466c-a50a-f16a3caac0fc"
+                  },
+                  "type": "Foreach"
+                },
+                "Añadir_Record_Status": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "bd38968b-fd6e-420d-89cb-7605be3dfaae"
+                  },
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "varItem",
+                    "value": "\"sanic_recordstatus\":159460000"
+                  }
+                },
+                "Crear_JSON_item": {
+                  "runAfter": {
+                    "Añadir_Record_Status": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "daaf8ef2-0f8a-44e7-aba7-709ee63407f8"
+                  },
+                  "type": "Compose",
+                  "inputs": "@json(concat('{',join(variables('varItem'),','),'}'))"
+                }
+              },
+              "runAfter": {
+                "Aplicar_a_cada_linea_del_RFC": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "f52f8ab3-a4ff-4682-af59-39d921fa5330"
+              },
+              "type": "Scope"
+            },
+            "Guard_Hay_lineas_aprobadas": {
+              "type": "If",
+              "metadata": {
+                "operationMetadataId": "193489fe-dd66-4f80-bf41-658b5bbde6f7"
+              },
+              "runAfter": {
+                "Obtener_lineas_del_RFC": [
+                  "Succeeded"
+                ]
+              },
+              "expression": {
+                "greater": [
+                  "@length(outputs('Obtener_lineas_del_RFC')?['body/value'])",
+                  0
+                ]
+              },
+              "actions": {},
+              "else": {
+                "actions": {
+                  "Sin_lineas_Actualizar_RFC_a_FAILED": {
+                    "type": "OpenApiConnection",
+                    "metadata": {
+                      "operationMetadataId": "f01ce1ec-2343-49f4-8977-676261f6cc47"
+                    },
+                    "runAfter": {},
+                    "inputs": {
+                      "parameters": {
+                        "entityName": "sanic_chtblclientdatachangerequests",
+                        "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']",
+                        "item/sanic_changestatus": 159460005,
+                        "item/sanic_applynotes": "RFC aprobado sin lineas de cambio: no se creo ningun registro.",
+                        "item/sanic_applyon": "@convertFromUtc(utcNow(),'Central America Standard Time','yyyy-MM-dd HH:mm:ss')"
+                      },
+                      "host": {
+                        "connectionName": "shared_commondataserviceforapps_1",
+                        "operationId": "UpdateOnlyRecord",
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 4,
+                        "interval": "PT10S"
+                      }
+                    }
+                  },
+                  "Sin_lineas_Crear_audit_trail": {
+                    "type": "OpenApiConnection",
+                    "metadata": {
+                      "operationMetadataId": "9da0ceda-14c7-430a-9ead-e1d290a3bbbc"
+                    },
+                    "runAfter": {
+                      "Sin_lineas_Actualizar_RFC_a_FAILED": [
+                        "Succeeded",
+                        "Failed"
+                      ]
+                    },
+                    "inputs": {
+                      "parameters": {
+                        "entityName": "sanic_chtblclientdatachangesaudittrails",
+                        "item/sanic_opeationtype": 159460000,
+                        "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
+                        "item/sanic_result": false,
+                        "item/sanic_message": "FAILED: RFC aprobado sin lineas de cambio aprobadas. No se creo el registro destino."
+                      },
+                      "host": {
+                        "connectionName": "shared_commondataserviceforapps_1",
+                        "operationId": "CreateRecord",
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 4,
+                        "interval": "PT10S"
+                      }
+                    }
+                  },
+                  "Sin_lineas_Terminar": {
+                    "type": "Terminate",
+                    "metadata": {
+                      "operationMetadataId": "6c4952ac-1490-4723-8989-998cd1aecf0e"
+                    },
+                    "runAfter": {
+                      "Sin_lineas_Crear_audit_trail": [
+                        "Succeeded",
+                        "Failed"
+                      ]
+                    },
+                    "inputs": {
+                      "runStatus": "Succeeded"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Catch_Fallo_inesperado": {
+          "type": "Scope",
+          "metadata": {
+            "operationMetadataId": "d43a48dc-3da8-4355-ae36-0fdd28437073"
+          },
+          "runAfter": {
+            "Try_Aplicar_RFC": [
+              "Failed",
+              "TimedOut"
+            ]
+          },
+          "actions": {
+            "Catch_Actualizar_RFC_a_FAILED": {
+              "type": "OpenApiConnection",
+              "metadata": {
+                "operationMetadataId": "95de67ff-2997-4f19-aca9-8c501cb0d4af"
+              },
+              "runAfter": {},
+              "inputs": {
+                "parameters": {
+                  "entityName": "sanic_chtblclientdatachangerequests",
+                  "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']",
+                  "item/sanic_changestatus": 159460005,
+                  "item/sanic_applynotes": "@concat('Fallo inesperado del flujo de aplicacion. Notas parciales: ', join(variables('varNotes'), ' | '))",
+                  "item/sanic_applyon": "@convertFromUtc(utcNow(),'Central America Standard Time','yyyy-MM-dd HH:mm:ss')"
+                },
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps_1",
+                  "operationId": "UpdateOnlyRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "retryPolicy": {
+                  "type": "exponential",
+                  "count": 4,
+                  "interval": "PT10S"
+                }
+              }
+            },
+            "Catch_Crear_audit_trail": {
+              "type": "OpenApiConnection",
+              "metadata": {
+                "operationMetadataId": "17b0ec85-753a-43ea-8912-bee506754b26"
+              },
+              "runAfter": {
+                "Catch_Actualizar_RFC_a_FAILED": [
+                  "Succeeded",
+                  "Failed"
+                ]
+              },
+              "inputs": {
+                "parameters": {
+                  "entityName": "sanic_chtblclientdatachangesaudittrails",
+                  "item/sanic_opeationtype": 159460000,
+                  "item/sanic_RelatedRFC@odata.bind": "/sanic_chtblclientdatachangerequests(@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']})",
+                  "item/sanic_result": false,
+                  "item/sanic_message": "FAILED: fallo inesperado del flujo de aplicacion (revisar historial de ejecucion en Power Automate)."
+                },
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps_1",
+                  "operationId": "CreateRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "retryPolicy": {
+                  "type": "exponential",
+                  "count": 4,
+                  "interval": "PT10S"
+                }
+              }
+            }
           }
         }
       }
