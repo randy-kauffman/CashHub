@@ -13,6 +13,7 @@ namespace CashHub.Plugins
             public const string ReviewStatus = "sanic_emailreviewstatus";
             public const string ReviewMethod = "sanic_emailreviewmethod";
             public const string ErrorText = "sanic_errortext";
+            public const string ClientLookup = "sanic_client";
 
             public const int ValidationPendiente = 159460000;
             public const int ValidationValido = 159460001;
@@ -32,6 +33,7 @@ namespace CashHub.Plugins
             public const string EmailLookup = "sanic_email";
             public const string FileName = "sanic_filename";
             public const string SizeBytes = "sanic_tamanoenbytes";
+            public const string FileContent = "sanic_filecontent";
         }
 
         internal static class Rule

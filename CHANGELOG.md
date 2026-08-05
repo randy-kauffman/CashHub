@@ -6,6 +6,23 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-05
+
+Fase C del motor de validación: parser de la plantilla, las 27 reglas completas y materialización de la declaración — verificado E2E positivo y negativo en DEV.
+
+### Added
+
+- Parser de xlsx propio (`XlsxParser`, ZipArchive + XML crudo, apto para el sandbox de Dataverse): tablas nombradas con ubicación de cada celda, hoja Metadata, celdas sueltas (CIF), y errores SIEMPRE explícitos (`XlsxParseException` dice qué parte del paquete falló).
+- Las 21 estrategias restantes (VR-07…VR-27): estructura (tablas/columnas/plantilla oficial), contenido (bolsa/cuenta obligatorias, numéricos, negativos, totales, monedas, cuenta↔moneda única, cheques completos/repetidos/huérfanos, cruce cheques vs declarado) y negocio (CIF declarado → cliente registrado → correo autorizado → cuentas del cliente), con hallazgo por celda.
+- `DeclarationMaterializer`: con la validación en verde crea `Declaration` (atribuida al cliente) → `DeclaredBags` (totales por moneda; `TotalDeposits` es rollup y se deja a Dataverse) → `DeclaredDeposits` → `DeclaredChecks`.
+- Servicio con tracing explícito etapa por etapa (regla de la casa) incluida la descarga del archivo por bloques (`InitializeFileBlocksDownload`).
+- **44 tests verdes**, incluido el parser leyendo la plantilla REAL v1.1.0 del repo.
+
+### Verificado E2E en DEV
+
+- Positivo: plantilla llena (CIF, 2 depósitos, 1 cheque) → `Pass`, correo `Valido/Aceptado` y **atribuido**, árbol completo de declaración con totales por moneda y cheque vinculado.
+- Negativo: efectivo negativo, cuenta ajena y cheque huérfano → 3 hallazgos **con pestaña, celda y fila** (`Depositos!O7`, `Cheques!A3`, `Depositos!K7`) y mensajes de negocio renderizados.
+
 ## [0.8.0] - 2026-08-05
 
 Fase B del motor de validación: primer backend C# del proyecto, desplegado y verificado E2E en DEV.

@@ -7,12 +7,6 @@ using Xunit;
 
 namespace CashHub.Validation.Tests
 {
-    internal sealed class FakeDataAccess : IValidationDataAccess
-    {
-        public HashSet<string> RegisteredSenders { get; } = new(StringComparer.OrdinalIgnoreCase);
-        public bool IsSenderRegistered(string senderEmail) => RegisteredSenders.Contains(senderEmail);
-    }
-
     internal sealed class AlwaysFailsRule : IValidationRule
     {
         public string Key => "VR-XX";

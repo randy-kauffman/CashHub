@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using CashHub.Validation.Engine;
 using CashHub.Validation.Models;
+using CashHub.Validation.Parsing;
 using CashHub.Validation.Rules;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
@@ -10,8 +12,9 @@ using Microsoft.Xrm.Sdk.Query;
 namespace CashHub.Plugins
 {
     /// <summary>
-    /// Orquesta una corrida de validación sobre un correo recibido: carga sobre y
-    /// reglas, ejecuta el motor y persiste run/hallazgos/estado del correo.
+    /// Orquesta una corrida de validación sobre un correo recibido: sobre + parseo del
+    /// xlsx + motor completo + persistencia + atribución + materialización de la
+    /// declaración. Traza cada etapa (regla de la casa: nunca un error genérico).
     /// </summary>
     public sealed class ReceivedEmailValidationService
     {
@@ -26,34 +29,68 @@ namespace CashHub.Plugins
 
         public (Guid RunId, bool Passed, int FailedFindings) Validate(Guid receivedEmailId)
         {
+            _tracing.Trace("Validate[{0}]: etapa 1 — cargando correo.", receivedEmailId);
             var email = _service.Retrieve(Schema.ReceivedEmail.LogicalName, receivedEmailId,
                 new ColumnSet(Schema.ReceivedEmail.SenderAddress, Schema.ReceivedEmail.Subject));
 
-            var envelope = BuildEnvelope(email);
+            _tracing.Trace("Validate[{0}]: etapa 2 — cargando adjuntos.", receivedEmailId);
+            var attachments = LoadAttachments(receivedEmailId);
+            var envelope = BuildEnvelope(email, attachments);
+            _tracing.Trace("Validate[{0}]: sobre listo — remitente='{1}', adjuntos={2}, archivo='{3}', {4} KB.",
+                receivedEmailId, envelope.SenderEmail, envelope.AttachmentCount,
+                envelope.AttachmentFileName, envelope.AttachmentSizeKb);
+
+            var context = new ValidationContext(envelope, new DataverseValidationDataAccess(_service, _tracing));
+            ParseAttachment(receivedEmailId, attachments.FirstOrDefault(), context);
+
+            _tracing.Trace("Validate[{0}]: etapa 4 — cargando reglas.", receivedEmailId);
             var rules = LoadRules(out var ruleIdsByKey);
-            var engine = new ValidationEngine(EnvelopeRuleSet.All);
-            var context = new ValidationContext(envelope, new DataverseValidationDataAccess(_service));
+            _tracing.Trace("Validate[{0}]: {1} reglas cargadas ({2} activas).",
+                receivedEmailId, rules.Count, rules.Count(r => r.IsActive));
 
+            _tracing.Trace("Validate[{0}]: etapa 5 — ejecutando motor.", receivedEmailId);
             var started = DateTime.UtcNow;
-            var result = engine.Run(rules, context);
+            var result = new ValidationEngine(FullRuleSet.All).Run(rules, context);
+            foreach (var execution in result.Executions)
+            {
+                _tracing.Trace("Validate[{0}]:   {1} => {2}{3}", receivedEmailId,
+                    execution.Definition.Key, execution.Outcome,
+                    execution.Findings.Count > 0 ? $" ({execution.Findings.Count} hallazgos)" : string.Empty);
+            }
+
+            _tracing.Trace("Validate[{0}]: etapa 6 — persistiendo run y hallazgos.", receivedEmailId);
             var runId = PersistRun(receivedEmailId, started, result, ruleIdsByKey);
-            UpdateEmail(receivedEmailId, result);
 
-            _tracing.Trace("Validate: run={0} passed={1} fails={2} systemIssues={3}",
-                runId, result.Passed, result.FailFindings.Count(), result.HasSystemIssues);
+            Guid? declarationId = null;
+            if (result.Passed && context.ResolvedClientId != null && context.Workbook != null)
+            {
+                _tracing.Trace("Validate[{0}]: etapa 7 — validación en verde, materializando declaración.",
+                    receivedEmailId);
+                declarationId = new DeclarationMaterializer(_service, _tracing)
+                    .Materialize(receivedEmailId, context.Workbook, context.ResolvedClientId.Value);
+            }
 
+            _tracing.Trace("Validate[{0}]: etapa 8 — actualizando estado del correo.", receivedEmailId);
+            UpdateEmail(receivedEmailId, result, context.ResolvedClientId);
+
+            _tracing.Trace("Validate[{0}]: FIN — run={1}, passed={2}, hallazgos={3}, declaracion={4}.",
+                receivedEmailId, runId, result.Passed, result.FailFindings.Count(),
+                declarationId?.ToString("D") ?? "(no aplica)");
             return (runId, result.Passed, result.FailFindings.Count());
         }
 
-        private EmailEnvelope BuildEnvelope(Entity email)
+        private List<Entity> LoadAttachments(Guid emailId)
         {
             var query = new QueryExpression(Schema.Attachment.LogicalName)
             {
                 ColumnSet = new ColumnSet(Schema.Attachment.FileName, Schema.Attachment.SizeBytes)
             };
-            query.Criteria.AddCondition(Schema.Attachment.EmailLookup, ConditionOperator.Equal, email.Id);
-            var attachments = _service.RetrieveMultiple(query).Entities;
+            query.Criteria.AddCondition(Schema.Attachment.EmailLookup, ConditionOperator.Equal, emailId);
+            return _service.RetrieveMultiple(query).Entities.ToList();
+        }
 
+        private static EmailEnvelope BuildEnvelope(Entity email, List<Entity> attachments)
+        {
             var first = attachments.FirstOrDefault();
             return new EmailEnvelope
             {
@@ -65,16 +102,88 @@ namespace CashHub.Plugins
             };
         }
 
+        private void ParseAttachment(Guid emailId, Entity attachment, ValidationContext context)
+        {
+            if (attachment == null)
+            {
+                context.WorkbookError = "el correo no trae adjunto que parsear";
+                _tracing.Trace("Validate[{0}]: etapa 3 — sin adjunto, no hay parseo.", emailId);
+                return;
+            }
+
+            try
+            {
+                _tracing.Trace("Validate[{0}]: etapa 3 — descargando adjunto {1}.", emailId, attachment.Id);
+                var bytes = DownloadFileColumn(attachment.Id);
+                _tracing.Trace("Validate[{0}]: adjunto descargado ({1} bytes); parseando xlsx.",
+                    emailId, bytes.Length);
+                context.Workbook = XlsxParser.Parse(bytes);
+                _tracing.Trace("Validate[{0}]: xlsx parseado — {1} tablas, {2} claves de metadata.",
+                    emailId, context.Workbook.Tables.Count, context.Workbook.Metadata.Count);
+            }
+            catch (XlsxParseException ex)
+            {
+                // Error de NEGOCIO (archivo malo del cliente): lo reporta VR-07 con el detalle.
+                context.WorkbookError = ex.Message;
+                _tracing.Trace("Validate[{0}]: el adjunto no parsea — {1}", emailId, ex.Message);
+            }
+        }
+
+        private byte[] DownloadFileColumn(Guid attachmentId)
+        {
+            var init = new OrganizationRequest("InitializeFileBlocksDownload")
+            {
+                ["Target"] = new EntityReference(Schema.Attachment.LogicalName, attachmentId),
+                ["FileAttributeName"] = Schema.Attachment.FileContent
+            };
+            OrganizationResponse initResponse;
+            try
+            {
+                initResponse = _service.Execute(init);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidPluginExecutionException(
+                    $"Descarga del adjunto {attachmentId:D}: InitializeFileBlocksDownload fallo sobre la columna " +
+                    $"'{Schema.Attachment.FileContent}' de {Schema.Attachment.LogicalName}. ¿El adjunto tiene archivo cargado? Detalle: {ex.Message}", ex);
+            }
+
+            var token = (string)initResponse["FileContinuationToken"];
+            var size = (long)initResponse["FileSizeInBytes"];
+            using (var buffer = new MemoryStream())
+            {
+                long offset = 0;
+                const long blockSize = 4 * 1024 * 1024;
+                while (offset < size)
+                {
+                    var block = _service.Execute(new OrganizationRequest("DownloadBlock")
+                    {
+                        ["FileContinuationToken"] = token,
+                        ["Offset"] = offset,
+                        ["BlockLength"] = Math.Min(blockSize, size - offset)
+                    });
+                    var data = (byte[])block["Data"];
+                    buffer.Write(data, 0, data.Length);
+                    offset += data.Length;
+                }
+                return buffer.ToArray();
+            }
+        }
+
         private List<RuleDefinition> LoadRules(out Dictionary<string, Guid> ruleIdsByKey)
         {
-            // Se cargan TODAS (activas e inactivas) para resolver la clave de la dependencia;
-            // el motor solo ejecuta las activas.
             var query = new QueryExpression(Schema.Rule.LogicalName)
             {
                 ColumnSet = new ColumnSet(Schema.Rule.Key, Schema.Rule.Name, Schema.Rule.Order,
                     Schema.Rule.IsActive, Schema.Rule.Value, Schema.Rule.FailMessage, Schema.Rule.Dependency)
             };
             var rows = _service.RetrieveMultiple(query).Entities;
+            if (rows.Count == 0)
+            {
+                throw new InvalidPluginExecutionException(
+                    $"Carga de reglas: la tabla {Schema.Rule.LogicalName} esta VACIA en este ambiente. " +
+                    "Sembrar data/seed/50-validationrules.json (scripts/seed-data.sh) antes de validar correos.");
+            }
 
             var keyById = rows.ToDictionary(r => r.Id, r => r.GetAttributeValue<string>(Schema.Rule.Key));
             ruleIdsByKey = rows
@@ -114,6 +223,7 @@ namespace CashHub.Plugins
                 [Schema.Run.SourceType] = new OptionSetValue(Schema.Run.SourceSharedMailbox)
             };
             var runId = _service.Create(run);
+            _tracing.Trace("Validate[{0}]: ValidationRun {1} creado.", emailId, runId);
 
             foreach (var execution in result.Executions)
             {
@@ -169,16 +279,22 @@ namespace CashHub.Plugins
             _service.Create(entity);
         }
 
-        private void UpdateEmail(Guid emailId, RunResult result)
+        private void UpdateEmail(Guid emailId, RunResult result, Guid? resolvedClientId)
         {
             var update = new Entity(Schema.ReceivedEmail.LogicalName, emailId)
             {
                 [Schema.ReceivedEmail.ReviewMethod] = new OptionSetValue(Schema.ReceivedEmail.MethodAuto)
             };
 
+            if (resolvedClientId != null)
+            {
+                // El contenido ATRIBUYE: el correo queda vinculado al cliente aunque falle.
+                update[Schema.ReceivedEmail.ClientLookup] =
+                    new EntityReference("sanic_chtblclient", resolvedClientId.Value);
+            }
+
             if (result.HasSystemIssues && !result.FailFindings.Any())
             {
-                // Nada de negocio falló pero el motor tuvo incidentes: nunca dar Valido a medias.
                 update[Schema.ReceivedEmail.ReviewStatus] = new OptionSetValue(Schema.ReceivedEmail.ReviewError);
                 update[Schema.ReceivedEmail.ErrorText] =
                     string.Join("\n", result.Executions.Where(e => e.EngineNote != null).Select(e => e.EngineNote));
@@ -201,23 +317,69 @@ namespace CashHub.Plugins
         }
     }
 
-    /// <summary>Acceso a datos de Dataverse para las reglas.</summary>
+    /// <summary>Acceso a datos de Dataverse para las reglas, con tracing de cada consulta.</summary>
     public sealed class DataverseValidationDataAccess : IValidationDataAccess
     {
         private readonly IOrganizationService _service;
+        private readonly ITracingService _tracing;
 
-        public DataverseValidationDataAccess(IOrganizationService service) => _service = service;
+        public DataverseValidationDataAccess(IOrganizationService service, ITracingService tracing)
+        {
+            _service = service;
+            _tracing = tracing;
+        }
 
         public bool IsSenderRegistered(string senderEmail)
         {
-            var query = new QueryExpression(Schema.ClientEmail.LogicalName)
-            {
-                ColumnSet = new ColumnSet(false),
-                TopCount = 1
-            };
+            var query = ActiveQuery(Schema.ClientEmail.LogicalName);
             query.Criteria.AddCondition(Schema.ClientEmail.Address, ConditionOperator.Equal, senderEmail);
+            var found = _service.RetrieveMultiple(query).Entities.Count > 0;
+            _tracing.Trace("DataAccess.IsSenderRegistered('{0}') = {1}", senderEmail, found);
+            return found;
+        }
+
+        public Guid? FindClientIdByCif(string cif)
+        {
+            var query = ActiveQuery("sanic_chtblclient");
+            query.ColumnSet = new ColumnSet("sanic_chtblclientid");
+            var filter = new FilterExpression(LogicalOperator.Or);
+            filter.AddCondition("sanic_cifbco", ConditionOperator.Equal, cif);
+            filter.AddCondition("sanic_cifcom", ConditionOperator.Equal, cif);
+            query.Criteria.AddFilter(filter);
+
+            var rows = _service.RetrieveMultiple(query).Entities;
+            _tracing.Trace("DataAccess.FindClientIdByCif('{0}') = {1}", cif,
+                rows.Count > 0 ? rows[0].Id.ToString("D") : "(no existe)");
+            return rows.Count > 0 ? rows[0].Id : (Guid?)null;
+        }
+
+        public bool IsSenderAuthorizedForClient(string senderEmail, Guid clientId)
+        {
+            var query = ActiveQuery(Schema.ClientEmail.LogicalName);
+            query.Criteria.AddCondition(Schema.ClientEmail.Address, ConditionOperator.Equal, senderEmail);
+            query.Criteria.AddCondition("sanic_client", ConditionOperator.Equal, clientId);
+            var found = _service.RetrieveMultiple(query).Entities.Count > 0;
+            _tracing.Trace("DataAccess.IsSenderAuthorizedForClient('{0}', {1}) = {2}",
+                senderEmail, clientId, found);
+            return found;
+        }
+
+        public bool AccountBelongsToClient(string accountNumber, Guid clientId)
+        {
+            var query = ActiveQuery("sanic_chtblclientaccount");
+            query.Criteria.AddCondition("sanic_name", ConditionOperator.Equal, accountNumber);
+            query.Criteria.AddCondition("sanic_client", ConditionOperator.Equal, clientId);
+            var found = _service.RetrieveMultiple(query).Entities.Count > 0;
+            _tracing.Trace("DataAccess.AccountBelongsToClient('{0}', {1}) = {2}",
+                accountNumber, clientId, found);
+            return found;
+        }
+
+        private static QueryExpression ActiveQuery(string entity)
+        {
+            var query = new QueryExpression(entity) { ColumnSet = new ColumnSet(false), TopCount = 1 };
             query.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
-            return _service.RetrieveMultiple(query).Entities.Count > 0;
+            return query;
         }
     }
 }
