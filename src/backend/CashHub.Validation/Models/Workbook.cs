@@ -7,13 +7,17 @@ namespace CashHub.Validation.Models
     /// <summary>Una celda leída del xlsx, con su ubicación para reportar hallazgos.</summary>
     public sealed class CellValue
     {
-        public CellValue(string? raw, string cellRef, int row, string sheet)
+        public CellValue(string? raw, string cellRef, int row, string sheet, bool isFormulaCached = false)
         {
             Raw = raw;
             CellRef = cellRef;
             Row = row;
             Sheet = sheet;
+            IsFormulaCached = isFormulaCached;
         }
+
+        /// <summary>El valor no fue tipeado: es el resultado cacheado de una fórmula de la plantilla.</summary>
+        public bool IsFormulaCached { get; }
 
         public string? Raw { get; }
         public string CellRef { get; }
@@ -42,8 +46,10 @@ namespace CashHub.Validation.Models
         public CellValue? this[string column] =>
             Cells.TryGetValue(column, out var cell) ? cell : null;
 
-        /// <summary>Una fila "vacía" (relleno de la plantilla) no cuenta como dato.</summary>
-        public bool IsBlank => Cells.Values.All(c => c.IsEmpty);
+        /// <summary>Una fila "vacía" (relleno de la plantilla) no cuenta como dato.
+        /// Los valores cacheados de fórmulas (los totales pre-armados del rango completo)
+        /// no convierten una fila en dato: solo lo tipeado por el cliente cuenta.</summary>
+        public bool IsBlank => Cells.Values.All(c => c.IsEmpty || c.IsFormulaCached);
     }
 
     /// <summary>Una tabla nombrada de Excel (ListObject) ya materializada.</summary>

@@ -279,6 +279,31 @@ namespace CashHub.Plugins
             _service.Create(entity);
         }
 
+        /// <summary>
+        /// El resumen en el correo tiene tope de columna; el detalle completo SIEMPRE vive
+        /// en los ValidationResults. Cortamos con aviso explícito de cuántos faltan.
+        /// </summary>
+        private static string CapForColumn(IEnumerable<string> lines, int maxLength = 90000)
+        {
+            var included = new List<string>();
+            var total = 0;
+            var length = 0;
+            foreach (var line in lines)
+            {
+                total++;
+                if (length + line.Length + 1 <= maxLength)
+                {
+                    included.Add(line);
+                    length += line.Length + 1;
+                }
+            }
+            if (included.Count < total)
+            {
+                included.Add($"... y {total - included.Count} errores mas (detalle completo en los resultados de validacion).");
+            }
+            return string.Join("\n", included);
+        }
+
         private void UpdateEmail(Guid emailId, RunResult result, Guid? resolvedClientId)
         {
             var update = new Entity(Schema.ReceivedEmail.LogicalName, emailId)
@@ -297,7 +322,7 @@ namespace CashHub.Plugins
             {
                 update[Schema.ReceivedEmail.ReviewStatus] = new OptionSetValue(Schema.ReceivedEmail.ReviewError);
                 update[Schema.ReceivedEmail.ErrorText] =
-                    string.Join("\n", result.Executions.Where(e => e.EngineNote != null).Select(e => e.EngineNote));
+                    CapForColumn(result.Executions.Where(e => e.EngineNote != null).Select(e => e.EngineNote));
             }
             else if (result.Passed)
             {
@@ -310,7 +335,7 @@ namespace CashHub.Plugins
                 update[Schema.ReceivedEmail.ValidationStatus] = new OptionSetValue(Schema.ReceivedEmail.ValidationInvalido);
                 update[Schema.ReceivedEmail.ReviewStatus] = new OptionSetValue(Schema.ReceivedEmail.ReviewDenegado);
                 update[Schema.ReceivedEmail.ErrorText] =
-                    string.Join("\n", result.FailFindings.Select(f => f.RenderedMessage));
+                    CapForColumn(result.FailFindings.Select(f => f.RenderedMessage));
             }
 
             _service.Update(update);

@@ -39,9 +39,9 @@ namespace CashHub.Validation.Parsing
                 {
                     var shared = ReadSharedStrings(zip);
                     var sheets = ReadSheetCatalog(zip);          // nombre -> ruta del xml de la hoja
-                    var cellCache = new Dictionary<string, Dictionary<string, (string val, int row)>>(StringComparer.OrdinalIgnoreCase);
+                    var cellCache = new Dictionary<string, Dictionary<string, (string val, int row, bool formula)>>(StringComparer.OrdinalIgnoreCase);
 
-                    Dictionary<string, (string val, int row)> SheetCells(string sheetName)
+                    Dictionary<string, (string val, int row, bool formula)> SheetCells(string sheetName)
                     {
                         if (!cellCache.TryGetValue(sheetName, out var cells))
                         {
@@ -112,13 +112,13 @@ namespace CashHub.Validation.Parsing
             return result;
         }
 
-        private static Dictionary<string, (string val, int row)> ReadCells(
+        private static Dictionary<string, (string val, int row, bool formula)> ReadCells(
             ZipArchive zip, string sheetPath, List<string> shared)
         {
             var entry = zip.GetEntry(sheetPath)
                 ?? throw new XlsxParseException($"La hoja declarada en el libro no existe en el paquete: {sheetPath}.");
             var doc = Load(entry, sheetPath);
-            var cells = new Dictionary<string, (string, int)>(StringComparer.OrdinalIgnoreCase);
+            var cells = new Dictionary<string, (string, int, bool)>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var c in doc.Descendants(M + "c"))
             {
@@ -140,14 +140,15 @@ namespace CashHub.Validation.Parsing
 
                 if (value != null)
                 {
-                    cells[cellRef] = (value, RowOf(cellRef));
+                    var isFormula = c.Element(M + "f") != null;
+                    cells[cellRef] = (value, RowOf(cellRef), isFormula);
                 }
             }
             return cells;
         }
 
         private static List<TableModel> ReadTables(ZipArchive zip, Dictionary<string, string> sheets,
-            Func<string, Dictionary<string, (string val, int row)>> sheetCells)
+            Func<string, Dictionary<string, (string val, int row, bool formula)>> sheetCells)
         {
             var tables = new List<TableModel>();
             var sheetByPath = sheets.ToDictionary(kv => kv.Value, kv => kv.Key, StringComparer.OrdinalIgnoreCase);
@@ -198,7 +199,7 @@ namespace CashHub.Validation.Parsing
         }
 
         private static TableModel Materialize(string name, string sheet, string reference,
-            List<string> columns, Dictionary<string, (string val, int row)> cells)
+            List<string> columns, Dictionary<string, (string val, int row, bool formula)> cells)
         {
             var parts = reference.Split(':');
             var startCol = ColumnOf(parts[0]);
@@ -213,7 +214,7 @@ namespace CashHub.Validation.Parsing
                 {
                     var cellRef = ColumnName(startCol + i) + row;
                     cells.TryGetValue(cellRef, out var found);
-                    rowCells[columns[i]] = new CellValue(found.val, cellRef, row, sheet);
+                    rowCells[columns[i]] = new CellValue(found.val, cellRef, row, sheet, found.formula);
                 }
                 var tableRow = new TableRow(row, rowCells);
                 if (!tableRow.IsBlank)
@@ -225,7 +226,7 @@ namespace CashHub.Validation.Parsing
         }
 
         private static Dictionary<string, string> ReadMetadata(Dictionary<string, string> sheets,
-            Func<string, Dictionary<string, (string val, int row)>> sheetCells)
+            Func<string, Dictionary<string, (string val, int row, bool formula)>> sheetCells)
         {
             var metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (!sheets.ContainsKey("Metadata")) return metadata;
