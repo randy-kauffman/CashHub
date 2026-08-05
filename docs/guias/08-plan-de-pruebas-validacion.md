@@ -4,8 +4,8 @@ Batería para probar de punta a punta: ingesta del correo, las 27 reglas, la
 materialización de la declaración y **el correo de respuesta al cliente**.
 
 Los archivos están en [`docs/plantillas/pruebas/`](../plantillas/pruebas/) y se regeneran con
-`python3 scripts/build-test-workbooks.py`. Cada uno fue verificado contra el motor real:
-dispara exactamente las reglas que dice esta guía, ni una más.
+`python3 scripts/build-test-workbooks.py`. Cada uno está **verificado por tests automáticos** (`TestBatteryTests`): si alguien cambia una regla
+y un archivo deja de probar lo que dice esta guía, la suite lo delata en CI.
 
 ## Antes de empezar
 
@@ -59,6 +59,7 @@ y al pie el **número de gestión** (`Email-N`) con el id de validación.
 | B9 | `11-ERR-cheque-incompleto.xlsx` | VR-15 | 2 errores: celdas `C2` (tipo) y `D2` (moneda) vacías en el cheque. |
 | B10 | `12-ERR-sin-depositos.xlsx` | VR-09 | 1 error: no hay depósitos declarados. |
 | B11 | `13-ERR-multiple.xlsx` | VR-10, VR-20, VR-13, VR-22, VR-23 | **6 errores mezclados**: es la prueba del agrupado del correo — verificar que la tabla los liste ordenados por hoja y fila, y que se lea sin esfuerzo. |
+| B12 | `15-ERR-desglose-cheques.xlsx` | VR-28 | El **total** de cheques cuadra (300 = 300) pero el desglose está cruzado: se declaran como cheques del BAC y el cheque listado es de otro banco. 2 errores, uno por cada columna del desglose. |
 
 **Qué mirar en el correo rojo**: banner rojo con el conteo correcto ("Encontramos N puntos por
 corregir"), sección "Sobre el correo y el archivo" solo si hay errores sin celda, sección
@@ -114,6 +115,7 @@ Estos no necesitan archivo especial: se prueban con cualquiera de los anteriores
 | B9 | | Rechazado | | | |
 | B10 | | Rechazado | | | |
 | B11 | | Rechazado | | | |
+| B12 | | Rechazado | | | |
 | C1–C7 | | Rechazado | | | |
 | D1–D6 | | — | | | |
 

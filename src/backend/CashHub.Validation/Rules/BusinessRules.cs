@@ -117,6 +117,7 @@ namespace CashHub.Validation.Rules
                 new Vr14NoDuplicateChecks(),
                 new Vr22NoOrphanChecks(),
                 new Vr12ChecksMatchDeclared(),
+                new Vr28CheckBreakdownMatches(),
                 new Vr24CifDeclared(),
                 new Vr25ClientRegistered(),
                 new Vr26SenderAuthorizedForClient(),

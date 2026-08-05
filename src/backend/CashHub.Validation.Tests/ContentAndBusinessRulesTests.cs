@@ -175,6 +175,68 @@ namespace CashHub.Validation.Tests
             Assert.Equal("100200301", finding.ActualValue);
         }
 
+
+        // ---------- VR-28: desglose de cheques por tipo ----------
+
+        [Fact]
+        public void Vr28_pasa_cuando_el_desglose_por_tipo_coincide()
+        {
+            var wb = new WorkbookBuilder()
+                .Table("Depositos", "Depositos", Plantilla.DepositColumns,
+                    new[] { "1", "B-1", "100", "USD", "200", "100", "0", "300", "r" })
+                .Table("Cheques", "Cheques", Plantilla.CheckColumns,
+                    new[] { "1", "CH-1", "Cheque Local BAC", "USD", "200" },
+                    new[] { "1", "CH-2", "Otros Local", "USD", "100" })
+                .Build();
+            Assert.Empty(new Vr28CheckBreakdownMatches().Evaluate(Def("VR-28"), Ctx(wb)));
+        }
+
+        [Fact]
+        public void Vr28_detecta_el_desglose_cruzado_aunque_el_total_cuadre()
+        {
+            // Declara todo como BAC, pero el cheque es de otro banco: el TOTAL cuadra (300=300).
+            var wb = new WorkbookBuilder()
+                .Table("Depositos", "Depositos", Plantilla.DepositColumns,
+                    new[] { "1", "B-1", "100", "USD", "300", "0", "0", "300", "r" })
+                .Table("Cheques", "Cheques", Plantilla.CheckColumns,
+                    new[] { "1", "CH-1", "Otros Local", "USD", "300" })
+                .Build();
+            var ctx = Ctx(wb);
+
+            Assert.Empty(new Vr12ChecksMatchDeclared().Evaluate(Def("VR-12"), ctx));  // el total cuadra
+            var findings = new Vr28CheckBreakdownMatches().Evaluate(Def("VR-28"), ctx);
+            Assert.Equal(2, findings.Count);   // sobra en BAC y falta en otros
+            Assert.Contains(findings, f => f.ExpectedValue!.Contains("BAC: declarado 300, listado 0"));
+            Assert.Contains(findings, f => f.ExpectedValue!.Contains("otros bancos: declarado 0, listado 300"));
+        }
+
+        [Fact]
+        public void Vr28_ubica_cada_diferencia_en_su_columna()
+        {
+            var wb = new WorkbookBuilder()
+                .Table("Depositos", "Depositos", Plantilla.DepositColumns,
+                    new[] { "1", "B-1", "100", "USD", "500", "0", "0", "500", "r" })
+                .Table("Cheques", "Cheques", Plantilla.CheckColumns,
+                    new[] { "1", "CH-1", "Cheque Local BAC", "USD", "400" })
+                .Build();
+            var finding = new Vr28CheckBreakdownMatches().Evaluate(Def("VR-28"), Ctx(wb)).Single();
+            Assert.Equal("E6", finding.CellRef);      // columna Cheques Locales BAC
+            Assert.Equal("Depositos", finding.Sheet);
+            Assert.Equal(6, finding.RowNumber);
+        }
+
+        [Fact]
+        public void Vr28_reconoce_el_tipo_sin_importar_como_lo_escriban()
+        {
+            var wb = new WorkbookBuilder()
+                .Table("Depositos", "Depositos", Plantilla.DepositColumns,
+                    new[] { "1", "B-1", "100", "USD", "100", "0", "0", "100", "r" })
+                .Table("Cheques", "Cheques", Plantilla.CheckColumns,
+                    new[] { "1", "CH-1", "cheque local bac", "USD", "100" })  // minúsculas
+                .Build();
+            Assert.Empty(new Vr28CheckBreakdownMatches().Evaluate(Def("VR-28"), Ctx(wb)));
+        }
+
         /// <summary>El builder puede acumular dos tablas homónimas; usa la última para el test.</summary>
         private static WorkbookModel RebuildWithLast(WorkbookModel wb, string tableName)
         {

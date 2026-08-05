@@ -218,8 +218,18 @@
       "sanic_validationorder": 200,
       "sanic_isactive": true,
       "sanic_sourcetype": 159460000,
-      "sanic_validationfailmessage": "El deposito {valor} declara un monto en cheques que no coincide con la suma de sus cheques en la tabla Cheques (fila {fila}).",
+      "sanic_validationfailmessage": "El deposito {valor} (fila {fila}) declara un monto en cheques que no coincide con la suma de sus cheques en la pestana Cheques: {esperado}.",
       "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-22"
+    },
+    {
+      "sanic_validationname": "VR-28",
+      "sanic_name": "Desglose de cheques por tipo",
+      "sanic_validationorder": 205,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El deposito {valor} (fila {fila}) tiene el desglose de cheques cruzado: {esperado}. Verifique que los cheques del BAC y los de otros bancos esten en la columna correcta.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-12",
+      "sanic_notes": "Los cheques propios y los de otros bancos tienen tiempos de compensacion distintos: si el total cuadra pero el desglose esta cruzado, la expectativa de acreditacion es equivocada."
     },
     {
       "sanic_validationname": "VR-24",

@@ -274,6 +274,75 @@ namespace CashHub.Validation.Rules
         }
     }
 
+    /// <summary>
+    /// VR-28: el DESGLOSE por tipo coincide, no solo el total. Un cheque del propio banco
+    /// y uno de otro banco tienen tiempos de compensacion distintos: si el cliente los
+    /// declara cruzados, el total cuadra pero la expectativa de acreditacion es equivocada.
+    /// Depende de VR-12 (si el total ya no cuadra, no se reporta tambien el desglose).
+    /// </summary>
+    public sealed class Vr28CheckBreakdownMatches : IValidationRule
+    {
+        public string Key => "VR-28";
+
+        /// <summary>Un tipo cuenta como BAC si su etiqueta menciona al banco; el resto es "otros".</summary>
+        private const string BacMarker = "BAC";
+
+        public IReadOnlyList<Finding> Evaluate(RuleDefinition definition, ValidationContext context)
+        {
+            var deposits = context.Workbook!.Table(DepositsTable)!;
+            var checks = context.Workbook!.Table(ChecksTable)!;
+
+            var byDeposit = checks.Rows
+                .Where(r => r[Checks.DepositNo]?.IsEmpty == false)
+                .GroupBy(r => r[Checks.DepositNo]!.Raw!.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => (
+                    Bac: SumWhere(g, isBac: true),
+                    Otros: SumWhere(g, isBac: false)),
+                    StringComparer.OrdinalIgnoreCase);
+
+            var findings = new List<Finding>();
+            foreach (var row in deposits.Rows)
+            {
+                var depositNo = row[Deposits.DepositNo]?.Raw?.Trim();
+                if (string.IsNullOrEmpty(depositNo)) continue;
+
+                byDeposit.TryGetValue(depositNo!, out var listed);
+                var declaredBac = ReadAmount(row, Deposits.BacChecks);
+                var declaredOtros = ReadAmount(row, Deposits.OtherChecks);
+
+                if (declaredBac != listed.Bac)
+                {
+                    findings.Add(new Finding(Key, sheet: deposits.Sheet,
+                        cellRef: row[Deposits.BacChecks]?.CellRef, rowNumber: row.RowNumber,
+                        actualValue: depositNo,
+                        expectedValue: $"cheques BAC: declarado {declaredBac}, listado {listed.Bac}"));
+                }
+                if (declaredOtros != listed.Otros)
+                {
+                    findings.Add(new Finding(Key, sheet: deposits.Sheet,
+                        cellRef: row[Deposits.OtherChecks]?.CellRef, rowNumber: row.RowNumber,
+                        actualValue: depositNo,
+                        expectedValue: $"cheques de otros bancos: declarado {declaredOtros}, listado {listed.Otros}"));
+                }
+            }
+            return findings;
+        }
+
+        private static decimal SumWhere(IEnumerable<TableRow> rows, bool isBac) =>
+            rows.Where(r => IsBacType(r[Checks.Type]?.Raw) == isBac)
+                .Sum(r => { r[Checks.Amount]!.TryDecimal(out var amount); return amount; });
+
+        private static bool IsBacType(string? type) =>
+            (type ?? string.Empty).IndexOf(BacMarker, StringComparison.OrdinalIgnoreCase) >= 0;
+
+        private static decimal ReadAmount(TableRow row, string column)
+        {
+            decimal value = 0;
+            row[column]?.TryDecimal(out value);
+            return value;
+        }
+    }
+
     /// <summary>VR-12: por depósito, el monto declarado en cheques (BAC + Otros) coincide
     /// con la suma de sus cheques en la tabla Cheques.</summary>
     public sealed class Vr12ChecksMatchDeclared : IValidationRule
