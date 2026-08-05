@@ -165,8 +165,8 @@
               "inputs": {
                 "parameters": {
                   "entityName": "sanic_chtblreceivedemailses",
-                  "$select": "sanic_chtblreceivedemailsid,sanic_subject",
-                  "$filter": "sanic_validationstatus eq 159460000 and sanic_emailreviewstatus eq 159460000 and createdon lt @{addMinutes(utcNow(),-10)}",
+                  "$select": "sanic_chtblreceivedemailsid,sanic_subject,modifiedon",
+                  "$filter": "sanic_validationstatus eq 159460000 and sanic_emailreviewstatus eq 159460000",
                   "$top": 20
                 },
                 "host": {
@@ -202,9 +202,10 @@
                   "inputs": {
                     "parameters": {
                       "entityName": "sanic_chtblvalidationrunses",
-                      "$select": "sanic_chtblvalidationrunsid",
+                      "$select": "sanic_chtblvalidationrunsid,modifiedon",
                       "$filter": "sanic_sourcerecordid eq '@{items('Por_cada_pendiente')?['sanic_chtblreceivedemailsid']}'",
-                      "$top": 1
+                      "$top": 1,
+                      "$orderby": "modifiedon desc"
                     },
                     "host": {
                       "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
@@ -229,9 +230,19 @@
                     ]
                   },
                   "expression": {
-                    "equals": [
-                      "@length(outputs('Tiene_run')?['body/value'])",
-                      0
+                    "or": [
+                      {
+                        "equals": [
+                          "@length(outputs('Tiene_run')?['body/value'])",
+                          0
+                        ]
+                      },
+                      {
+                        "less": [
+                          "@coalesce(first(outputs('Tiene_run')?['body/value'])?['modifiedon'], '1900-01-01')",
+                          "@items('Por_cada_pendiente')?['modifiedon']"
+                        ]
+                      }
                     ]
                   },
                   "actions": {

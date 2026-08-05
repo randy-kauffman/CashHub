@@ -1396,7 +1396,7 @@ Screens:
                       Properties:
                         DataField: ="sanic_name"
                         Default: =ThisItem.Name
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'sanic_name')
+                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,Name)
                         Required: =false
                         Width: =166
                         X: =0
@@ -1433,7 +1433,7 @@ Screens:
                       Properties:
                         DataField: ="statecode"
                         Default: =ThisItem.Status
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'statecode')
+                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,Status)
                         Required: =false
                         Update: =DataCardValue15.Selected.Value
                         Width: =166
@@ -1491,7 +1491,7 @@ Screens:
                       Properties:
                         DataField: ="statuscode"
                         Default: =ThisItem.'Status Reason'
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'statuscode')
+                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'Status Reason')
                         Required: =false
                         Update: =DataCardValue16.Selected.Value
                         Width: =166
@@ -1548,8 +1548,8 @@ Screens:
                       Properties:
                         DataField: ="sanic_sourceentity"
                         Default: =ThisItem.SourceEntity
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'sanic_sourceentity')
-                        MaxLength: =DataSourceInfo([@'CH-Tbl-Declarations'], DataSourceInfo.MaxLength, 'sanic_sourceentity')
+                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,SourceEntity)
+                        MaxLength: =DataSourceInfo([@'CH-Tbl-Declarations'], DataSourceInfo.MaxLength, SourceEntity)
                         Required: =true
                         Update: ="App"
                         Width: =166
@@ -1606,8 +1606,8 @@ Screens:
                       Properties:
                         DataField: ="sanic_sourcerecordid"
                         Default: =ThisItem.SourceRecordID
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'sanic_sourcerecordid')
-                        MaxLength: =DataSourceInfo([@'CH-Tbl-Declarations'], DataSourceInfo.MaxLength, 'sanic_sourcerecordid')
+                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,SourceRecordID)
+                        MaxLength: =DataSourceInfo([@'CH-Tbl-Declarations'], DataSourceInfo.MaxLength, SourceRecordID)
                         Required: =true
                         Update: =gvarSelectedEmail.'CH-Tbl-Received Emails'
                         Width: =166
@@ -1665,7 +1665,7 @@ Screens:
                       Properties:
                         DataField: ="overriddencreatedon"
                         Default: =ThisItem.'Record Created On'
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'overriddencreatedon')
+                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'Record Created On')
                         Required: =false
                         Update: =If(Not IsBlank(DateValue2.SelectedDate), DateTime(Year(DateValue2.SelectedDate), Month(DateValue2.SelectedDate), Day(DateValue2.SelectedDate), Value(HourValue2.Selected.Value), Value(MinuteValue2.Selected.Value), Second(DateValue2.SelectedDate)))
                         Width: =166
@@ -1758,7 +1758,7 @@ Screens:
                       Properties:
                         DataField: ="importsequencenumber"
                         Default: =ThisItem.'Import Sequence Number'
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'importsequencenumber')
+                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'Import Sequence Number')
                         Required: =false
                         Update: =Value(DataCardValue19.Value)
                         Width: =166
@@ -1816,7 +1816,7 @@ Screens:
                       Properties:
                         DataField: ="timezoneruleversionnumber"
                         Default: =ThisItem.'Time Zone Rule Version Number'
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'timezoneruleversionnumber')
+                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'Time Zone Rule Version Number')
                         Required: =false
                         Update: =Value(DataCardValue20.Value)
                         Width: =166
@@ -1874,7 +1874,7 @@ Screens:
                       Properties:
                         DataField: ="utcconversiontimezonecode"
                         Default: =ThisItem.'UTC Conversion Time Zone Code'
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'utcconversiontimezonecode')
+                        DisplayName: =DataSourceInfo([@'CH-Tbl-Declarations'],DataSourceInfo.DisplayName,'UTC Conversion Time Zone Code')
                         Required: =false
                         Update: =Value(DataCardValue21.Value)
                         Width: =166
