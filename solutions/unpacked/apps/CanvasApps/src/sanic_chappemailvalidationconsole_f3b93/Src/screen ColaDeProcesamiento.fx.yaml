@@ -709,14 +709,25 @@
                         );
                         ClearCollect(
                             colValidatedResults,
-                            Filter(
-                                'CH-Tbl-ValidationResults',
-                                ValidationRun.'CH-Tbl-ValidationRuns' = Last(
-                                    Filter(
-                                        'CH-Tbl-ValidationRuns',
-                                        SourceRecordID = Text(Table1_1.Selected.'CH-Tbl-Received Emails')
-                                    )
-                                ).'CH-Tbl-ValidationRuns'
+                            AddColumns(
+                                Filter(
+                                    'CH-Tbl-ValidationResults',
+                                    ValidationRun.'CH-Tbl-ValidationRuns' = Last(
+                                        Filter(
+                                            'CH-Tbl-ValidationRuns',
+                                            SourceRecordID = Text(Table1_1.Selected.'CH-Tbl-Received Emails')
+                                        )
+                                    ).'CH-Tbl-ValidationRuns'
+                                ),
+                                "ReglaClave", Coalesce(ValidationRule.'Validation Name', "-"),
+                                "ReglaNombre", Coalesce(ValidationRule.Name, "(regla no identificada)"),
+                                "ReglaOrden", Coalesce(ValidationRule.ValidationOrder, 9999),
+                                "Paso", ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass,
+                                "Ubicacion", If(
+                                    IsBlank(Hoja), "",
+                                    IsBlank(Celda), Hoja & If(IsBlank(Fila), "", " fila " & Fila),
+                                    Hoja & "!" & Celda
+                                )
                             )
                         );
                         Set(gvarSelectedEmail, Table1_1.Selected);
@@ -1582,6 +1593,118 @@
                             X: =TextCanvas4.X + TextCanvas4.Width + 5
                             Y: =TextCanvas4.Y + (TextCanvas4.Height - Self.Height)/2
                             ZIndex: =4
+
+            "'container LogReglas' As groupContainer.verticalAutoLayoutContainer":
+                Fill: =RGBA(255, 255, 255, 1)
+                FillPortions: =1
+                LayoutDirection: =LayoutDirection.Vertical
+                LayoutMinHeight: =200
+                LayoutMode: =LayoutMode.Auto
+                PaddingLeft: =12
+                PaddingRight: =12
+                PaddingTop: =8
+                RadiusBottomLeft: =6
+                RadiusBottomRight: =6
+                RadiusTopLeft: =6
+                RadiusTopRight: =6
+                Visible: =!IsBlank(gvarSelectedEmail)
+                ZIndex: =5
+
+                lblLogTitulo As label:
+                    Color: =RGBA(36, 36, 36, 1)
+                    FillPortions: =0
+                    FontWeight: =FontWeight.Semibold
+                    Height: =32
+                    Size: =13
+                    Text: |-
+                        ="Reglas aplicadas: " & CountRows(colValidatedResults) &   "  ·  fallidas: " & CountRows(Filter(colValidatedResults, !Paso))
+                    VerticalAlign: =VerticalAlign.Middle
+                    ZIndex: =1
+
+                galLogReglas As gallery.galleryVertical:
+                    DelayItemLoading: =true
+                    FillPortions: =1
+                    Items: |-
+                        =SortByColumns(
+                            // primero lo que fallo: es lo accionable
+                            AddColumns(colValidatedResults, "OrdenVista", If(Paso, 1, 0)),
+                            "OrdenVista", SortOrder.Ascending,
+                            "ReglaOrden", SortOrder.Ascending)
+                    LayoutMinHeight: =150
+                    Loop: =false
+                    ShowScrollbar: =true
+                    TemplatePadding: =0
+                    TemplateSize: =52
+                    ZIndex: =2
+
+                    icoLogEstado As icon:
+                        Color: =If(ThisItem.Paso, RGBA(16, 124, 16, 1), RGBA(168, 0, 0, 1))
+                        Height: =16
+                        Icon: =If(ThisItem.Paso, Icon.CheckBadge, Icon.Error)
+                        Tooltip: =If(ThisItem.Paso, "Regla aprobada", "Regla no aprobada")
+                        Width: =16
+                        X: =8
+                        Y: =18
+                        ZIndex: =1
+
+                    lblLogRegla As label:
+                        Color: =RGBA(36, 36, 36, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        Size: =11
+                        Text: =ThisItem.ReglaClave & "  " & ThisItem.ReglaNombre
+                        VerticalAlign: =VerticalAlign.Middle
+                        Width: =330
+                        X: =32
+                        Y: =6
+                        ZIndex: =2
+
+                    lblLogUbicacion As label:
+                        Color: =RGBA(168, 0, 0, 1)
+                        Font: =Font.'Courier New'
+                        Height: =22
+                        Size: =10
+                        Text: =ThisItem.Ubicacion
+                        VerticalAlign: =VerticalAlign.Middle
+                        Visible: =!IsBlank(ThisItem.Ubicacion)
+                        Width: =150
+                        X: =370
+                        Y: =6
+                        ZIndex: =3
+
+                    lblLogDetalle As label:
+                        Color: =If(ThisItem.Paso, RGBA(97, 97, 97, 1), RGBA(36, 36, 36, 1))
+                        Height: =22
+                        Size: =10
+                        Text: |-
+                            =If(IsBlank(ThisItem.Detalle),
+                                If(ThisItem.Paso, "Sin observaciones", "Sin detalle registrado"),
+                                ThisItem.Detalle)
+                        VerticalAlign: =VerticalAlign.Middle
+                        Width: =Parent.TemplateWidth - 200
+                        X: =32
+                        Y: =26
+                        ZIndex: =4
+
+                    lblLogDuracion As label:
+                        Align: =Align.Right
+                        Color: =RGBA(97, 97, 97, 1)
+                        Height: =22
+                        Size: =9
+                        Text: =If(IsBlank(ThisItem.Durationms), "", ThisItem.Durationms & " ms")
+                        VerticalAlign: =VerticalAlign.Middle
+                        Width: =70
+                        X: =Parent.TemplateWidth - 80
+                        Y: =6
+                        ZIndex: =5
+
+                    sepLogFila As rectangle:
+                        Fill: =RGBA(237, 235, 233, 1)
+                        Height: =1
+                        Width: =Parent.TemplateWidth
+                        X: =0
+                        Y: =51
+                        ZIndex: =0
 
                 Form2 As form.PowerApps_CoreControls_Form:
                     BorderColor: =App.Theme.Colors.Darker40
