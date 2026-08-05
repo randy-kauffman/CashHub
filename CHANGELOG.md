@@ -6,6 +6,27 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-05
+
+Fase E (parte 1): respuesta automática al cliente con diseño parametrizable. Core 1.5.1.0, Flow 1.5.0.0.
+
+### Added
+
+- **Correo de respuesta al cliente** con diseño propio (HTML de email: tablas de layout, estilos inline, sin imágenes externas, 640px, legible en móvil): acuse de recibo con totales por moneda y bolsa cuando la declaración pasa, o lista completa de errores **con hoja y celda de cada uno** cuando no. Incluye el **número de gestión** (`Email-{SEQNUM}`) y el id de la corrida de validación para consultas.
+- **Plantillas editables sin código** (`CH-Tbl-EmailTemplate` + `data/seed/60-emailtemplates.json`): negocio cambia HTML, textos y estilos en Dataverse; el motor las renderiza con `TemplateEngine` (`{{token}}`, `{{{sin_escapar}}}`, `{{#lista}}`, `{{#si:token}}`). Si la plantilla no existe, está inactiva o falla su lectura, cae al diseño embebido — el cliente nunca se queda sin respuesta.
+- `CH-Flow-Replytoclientemail` reescrito: webhook sobre la respuesta lista, responde el hilo original del cliente, marca `Respondido` con fecha; ante fallo de envío deja rastro y conserva la respuesta para reenviarla.
+- Campos `sanic_ReplySubject`/`sanic_ReplyBodyHtml` en `ReceivedEmails`.
+- 63 tests (motor de plantillas + diseño de correo, incluidas las reglas de HTML para email y el escapado de contenido del cliente).
+
+### Fixed
+
+- El autonumber `Email-{SEQNUM}` de los correos volvió a funcionar: la ingesta lo pisaba con el asunto.
+- `register-validation-plugin.sh`: el body va por archivo temporal (el assembly en base64 supera el límite de argumentos del SO).
+
+### Pendiente de activación manual
+
+- `CH-Flow-Replytoclientemail` (conexión de Outlook del usuario).
+
 ## [0.10.0] - 2026-08-05
 
 Fase D del motor de validación: ingesta confiable, barrido con auto-reparación y heartbeat. Core 1.4.1.0, Flow 1.4.0.0.
