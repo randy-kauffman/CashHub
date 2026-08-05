@@ -154,12 +154,24 @@ Screens:
                   InputEvent: =ctxGridEvent
                   Items: |-
                     =SortByColumns(
-                        Search(Filter(
-                            'CH-Tbl-ClientDataChangeRequests',
-                            Toggle1.Checked = false || ('Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted)
-                        ),
-                        SearchBox1_1.SearchText,
-                        Name
+                        AddColumns(
+                            Search(Filter(
+                                'CH-Tbl-ClientDataChangeRequests',
+                                Toggle1.Checked = false || ('Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted)
+                            ),
+                            SearchBox1_1.SearchText,
+                            Name
+                            ),
+                            "statusdisplay", Text('Change Status'),
+                            "statuscolor", Switch('Change Status',
+                                'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft, "#EDEBE9",
+                                'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted, "#FFF4CE",
+                                'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved, "#DEECF9",
+                                'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied, "#DFF6DD",
+                                'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected, "#FED9CC",
+                                'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed, "#FDE7E9",
+                                'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled, "#EDEBE9",
+                                "#FFFFFF")
                         ),
                         "createdon",
                         SortOrder.Descending
@@ -185,12 +197,14 @@ Screens:
                             ColCellType: "link",
                             ColSortBy: "createdon"
                         },{
-                            ColName: "sanic_changestatus",
+                            ColName: "statusdisplay",
                             ColDisplayName: "Status",
                             ColSortable: true,
                             ColIsBold: true,
                             ColResizable: true,
-                            ColWidth: 100
+                            ColWidth: 100,
+                            ColCellType: "tag",
+                            ColTagColorColumn: "statuscolor"
                         },{
                             ColName: "sanic_RelatedClient",
                             ColDisplayName: "Cliente",

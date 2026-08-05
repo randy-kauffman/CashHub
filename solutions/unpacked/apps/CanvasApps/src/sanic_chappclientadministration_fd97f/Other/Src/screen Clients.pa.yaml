@@ -9,7 +9,18 @@
 Screens:
   screen Clients:
     Properties:
-      OnVisible: =UpdateContext({varShowScreenSpinner:false});
+      OnVisible: |-
+        =UpdateContext({varShowScreenSpinner:false});
+        ClearCollect(
+            colPendingRFCs,
+            AddColumns(
+                Filter(
+                    'CH-Tbl-ClientDataChangeRequests',
+                    'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved
+                ),
+                "pendingtargetid", TargetRecordID
+            )
+        );
     Children:
       - formRFC_Cliente:
           Control: Form@2.4.4
@@ -1501,7 +1512,14 @@ Screens:
                   FillPortions: =1
                   Height: =Parent.Height - Self.Y
                   InputEvent: =ctxGridEvent
-                  Items: =SortByColumns(Search(Filter('CH-Tbl-Clients', 'CH-Tbl-Clients (Views)'.'Fluent Detail List Ready'),SearchBox1.SearchText,Name,CIFBCO,CIFCOM),"modifiedon",SortOrder.Descending)
+                  Items: |-
+                    =SortByColumns(
+                        AddColumns(
+                            Search(Filter('CH-Tbl-Clients', 'CH-Tbl-Clients (Views)'.'Fluent Detail List Ready'),SearchBox1.SearchText,Name,CIFBCO,CIFCOM),
+                            "pendingrfc", If(!IsBlank(LookUp(colPendingRFCs, pendingtargetid = Text('CH-Tbl-Client'))), "RFC en curso", ""),
+                            "pendingcolor", "#FFF4CE"
+                        ),
+                        "modifiedon", SortOrder.Descending)
                   LayoutMaxHeight: =
                   LayoutMaxWidth: =
                   OnChange: "=If(Self.EventName=\"Sort\", \nUpdateContext({\n                ctxSortCol:Self.SortEventColumn,\n                ctxSortAsc:If(Self.SortEventDirection='PowerCAT.DVFluentDetailsListWithContextMenu.CurrentSortDirection'.Ascending,true,false)\n })\n);\nIf(\n    Self.EventName = \"CellAction\" && Self.EventColumn = \"sanic_name\",\n    \n    With(\n            { row: LookUp('CH-Tbl-Clients','CH-Tbl-Client'=GUID(Self.EventRowKey)) },\n            If(\n                row.IsEditable,   // i.e., Status = \"Approved\"\n                Set(gvarSelectedClient, row); Navigate('screen ClientInformation',ScreenTransition.CoverRight,{ FromScreen: App.ActiveScreen }),\n                Set(gvarSelectedClient, Blank()); Notify(\"Only approved items can be opened.\", NotificationType.Information)\n            )\n        )\n\n)"
@@ -1541,6 +1559,14 @@ Screens:
                             ColWidth: 60,
                             ColResizable: true,
                             ColSortable: true
+                        },{
+                            ColName: "pendingrfc",
+                            ColDisplayName: "Cambios",
+                            ColWidth: 90,
+                            ColResizable: true,
+                            ColCellType: "tag",
+                            ColTagColorColumn: "pendingcolor",
+                            ColHideWhenBlank: true
                         },{
                             ColName: "Creador",
                             ColDisplayName: "Creador por",

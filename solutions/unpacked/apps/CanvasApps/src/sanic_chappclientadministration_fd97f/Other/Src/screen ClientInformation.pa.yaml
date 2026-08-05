@@ -8,6 +8,18 @@
 # ************************************************************************************************
 Screens:
   screen ClientInformation:
+    Properties:
+      OnVisible: |-
+        =ClearCollect(
+            colPendingRFCs,
+            AddColumns(
+                Filter(
+                    'CH-Tbl-ClientDataChangeRequests',
+                    'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved
+                ),
+                "pendingtargetid", TargetRecordID
+            )
+        );
     Children:
       - formRFC_Cliente_1:
           Control: Form@2.4.4
@@ -1796,7 +1808,12 @@ Screens:
                                     AlignInContainer: =AlignInContainer.Stretch
                                     FillPortions: =1
                                     InputEvent: =ctxGridEvent1
-                                    Items: =Filter('CH-Tbl-ClientBranches',Client.'CH-Tbl-Client' = gvarSelectedClient.'CH-Tbl-Client')
+                                    Items: |-
+                                      =AddColumns(
+                                          Filter('CH-Tbl-ClientBranches',Client.'CH-Tbl-Client' = gvarSelectedClient.'CH-Tbl-Client'),
+                                          "pendingrfc", If(!IsBlank(LookUp(colPendingRFCs, pendingtargetid = Text('CH-Tbl-ClientBranch'))), "RFC en curso", ""),
+                                          "pendingcolor", "#FFF4CE"
+                                      )
                                     LayoutMaxHeight: =
                                     LayoutMaxWidth: =
                                     PageSize: =25
@@ -1817,6 +1834,15 @@ Screens:
                                               ColWidth: 100,
                                               ColResizable: true,
                                               ColSortable: true
+                                          },
+                                            {
+                                              ColName: "pendingrfc",
+                                              ColDisplayName: "Cambios",
+                                              ColWidth: 90,
+                                              ColResizable: true,
+                                              ColCellType: "tag",
+                                              ColTagColorColumn: "pendingcolor",
+                                              ColHideWhenBlank: true
                                           },
                                             {
                                               ColName: "createdby",
@@ -2027,7 +2053,12 @@ Screens:
                                     AlignInContainer: =AlignInContainer.Stretch
                                     FillPortions: =1
                                     InputEvent: =ctxGridEvent2
-                                    Items: =Filter('CH-Tbl-ClientEmails',Client.'CH-Tbl-Client' = gvarSelectedClient.'CH-Tbl-Client')
+                                    Items: |-
+                                      =AddColumns(
+                                          Filter('CH-Tbl-ClientEmails',Client.'CH-Tbl-Client' = gvarSelectedClient.'CH-Tbl-Client'),
+                                          "pendingrfc", If(!IsBlank(LookUp(colPendingRFCs, pendingtargetid = Text('CH-Tbl-ClientEmail'))), "RFC en curso", ""),
+                                          "pendingcolor", "#FFF4CE"
+                                      )
                                     LayoutMaxHeight: =
                                     LayoutMaxWidth: =
                                     RecordKey: ="sanic_chtblclientemailid"
@@ -2051,6 +2082,15 @@ Screens:
                                               ColWidth: 100,
                                               ColResizable: true,
                                               ColSortable: true
+                                          },
+                                            {
+                                              ColName: "pendingrfc",
+                                              ColDisplayName: "Cambios",
+                                              ColWidth: 90,
+                                              ColResizable: true,
+                                              ColCellType: "tag",
+                                              ColTagColorColumn: "pendingcolor",
+                                              ColHideWhenBlank: true
                                           },
                                             {
                                               ColName: "createdby",
