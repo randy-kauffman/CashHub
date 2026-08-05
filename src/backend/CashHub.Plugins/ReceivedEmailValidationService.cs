@@ -5,6 +5,7 @@ using System.Linq;
 using CashHub.Validation.Engine;
 using CashHub.Validation.Models;
 using CashHub.Validation.Parsing;
+using CashHub.Validation.Reporting;
 using CashHub.Validation.Rules;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
@@ -31,7 +32,10 @@ namespace CashHub.Plugins
         {
             _tracing.Trace("Validate[{0}]: etapa 1 — cargando correo.", receivedEmailId);
             var email = _service.Retrieve(Schema.ReceivedEmail.LogicalName, receivedEmailId,
-                new ColumnSet(Schema.ReceivedEmail.SenderAddress, Schema.ReceivedEmail.Subject));
+                new ColumnSet(Schema.ReceivedEmail.SenderAddress, Schema.ReceivedEmail.Subject,
+                    Schema.ReceivedEmail.TrackingName, "createdon"));
+            var trackingId = email.GetAttributeValue<string>(Schema.ReceivedEmail.TrackingName) ?? receivedEmailId.ToString("D");
+            var receivedOn = email.GetAttributeValue<DateTime?>("createdon") ?? DateTime.UtcNow;
 
             _tracing.Trace("Validate[{0}]: etapa 2 — cargando adjuntos.", receivedEmailId);
             var attachments = LoadAttachments(receivedEmailId);
@@ -70,8 +74,12 @@ namespace CashHub.Plugins
                     .Materialize(receivedEmailId, context.Workbook, context.ResolvedClientId.Value);
             }
 
-            _tracing.Trace("Validate[{0}]: etapa 8 — actualizando estado del correo.", receivedEmailId);
-            UpdateEmail(receivedEmailId, result, context.ResolvedClientId);
+            _tracing.Trace("Validate[{0}]: etapa 8 — componiendo respuesta al cliente (gestion {1}).",
+                receivedEmailId, trackingId);
+            var reply = ComposeReply(receivedEmailId, result, context, envelope, trackingId, receivedOn, runId, declarationId);
+
+            _tracing.Trace("Validate[{0}]: etapa 9 — actualizando estado del correo.", receivedEmailId);
+            UpdateEmail(receivedEmailId, result, context.ResolvedClientId, reply);
 
             _tracing.Trace("Validate[{0}]: FIN — run={1}, passed={2}, hallazgos={3}, declaracion={4}.",
                 receivedEmailId, runId, result.Passed, result.FailFindings.Count(),
@@ -280,6 +288,70 @@ namespace CashHub.Plugins
         }
 
         /// <summary>
+        /// Arma asunto y cuerpo HTML de la respuesta al cliente. Si algo falla acá, el correo
+        /// igual queda validado: la respuesta se reintenta desde la Console o el barrido.
+        /// </summary>
+        private (string Subject, string Body)? ComposeReply(Guid emailId, RunResult result,
+            ValidationContext context, EmailEnvelope envelope, string trackingId,
+            DateTime receivedOn, Guid runId, Guid? declarationId)
+        {
+            try
+            {
+                var composer = new ClientReplyComposer(_service, _tracing);
+                var fileName = envelope.AttachmentFileName ?? "(sin adjunto)";
+                var clientName = ClientName(context.ResolvedClientId);
+
+                if (result.Passed && declarationId != null)
+                {
+                    return composer.BuildAccepted(clientName ?? "Cliente", fileName,
+                        BagSummaries(declarationId.Value), receivedOn, trackingId, runId);
+                }
+
+                var issues = result.FailFindings
+                    .Select(f => new ReplyIssue(f.RenderedMessage ?? string.Empty, f.Sheet, f.CellRef, f.RowNumber))
+                    .ToList();
+                if (issues.Count == 0)
+                {
+                    // Falla de sistema (sin hallazgos de negocio): no se responde al cliente.
+                    _tracing.Trace("Validate[{0}]: sin hallazgos de negocio; la respuesta al cliente se omite.", emailId);
+                    return null;
+                }
+                return composer.BuildRejected(clientName, fileName, issues, receivedOn, trackingId, runId);
+            }
+            catch (Exception ex)
+            {
+                _tracing.Trace("Validate[{0}]: fallo componiendo la respuesta ({1}: {2}); el correo queda validado igual.",
+                    emailId, ex.GetType().Name, ex.Message);
+                return null;
+            }
+        }
+
+        private string? ClientName(Guid? clientId)
+        {
+            if (clientId == null) return null;
+            var client = _service.Retrieve("sanic_chtblclient", clientId.Value, new ColumnSet("sanic_name"));
+            return client.GetAttributeValue<string>("sanic_name");
+        }
+
+        private List<ReplyBagSummary> BagSummaries(Guid declarationId)
+        {
+            var query = new QueryExpression("sanic_chtbldeclaredbags")
+            {
+                ColumnSet = new ColumnSet("sanic_bagnumber", "sanic_totalnio", "sanic_totalusd",
+                    "sanic_totaleur", "sanic_totaldeposits")
+            };
+            query.Criteria.AddCondition("sanic_declarationid", ConditionOperator.Equal, declarationId);
+            return _service.RetrieveMultiple(query).Entities
+                .Select(b => new ReplyBagSummary(
+                    b.GetAttributeValue<string>("sanic_bagnumber") ?? "-",
+                    b.GetAttributeValue<int?>("sanic_totaldeposits") ?? 0,
+                    b.GetAttributeValue<decimal?>("sanic_totalnio") ?? 0m,
+                    b.GetAttributeValue<decimal?>("sanic_totalusd") ?? 0m,
+                    b.GetAttributeValue<decimal?>("sanic_totaleur") ?? 0m))
+                .ToList();
+        }
+
+        /// <summary>
         /// El resumen en el correo tiene tope de columna; el detalle completo SIEMPRE vive
         /// en los ValidationResults. Cortamos con aviso explícito de cuántos faltan.
         /// </summary>
@@ -304,7 +376,8 @@ namespace CashHub.Plugins
             return string.Join("\n", included);
         }
 
-        private void UpdateEmail(Guid emailId, RunResult result, Guid? resolvedClientId)
+        private void UpdateEmail(Guid emailId, RunResult result, Guid? resolvedClientId,
+            (string Subject, string Body)? reply = null)
         {
             var update = new Entity(Schema.ReceivedEmail.LogicalName, emailId)
             {
@@ -336,6 +409,13 @@ namespace CashHub.Plugins
                 update[Schema.ReceivedEmail.ReviewStatus] = new OptionSetValue(Schema.ReceivedEmail.ReviewDenegado);
                 update[Schema.ReceivedEmail.ErrorText] =
                     CapForColumn(result.FailFindings.Select(f => f.RenderedMessage));
+            }
+
+            if (reply != null)
+            {
+                update[Schema.ReceivedEmail.ReplySubject] = reply.Value.Subject;
+                update[Schema.ReceivedEmail.ReplyBodyHtml] = reply.Value.Body;
+                update[Schema.ReceivedEmail.ReplyStatus] = new OptionSetValue(Schema.ReceivedEmail.ReplyPendiente);
             }
 
             _service.Update(update);

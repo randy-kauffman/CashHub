@@ -14,6 +14,14 @@ namespace CashHub.Plugins
             public const string ReviewMethod = "sanic_emailreviewmethod";
             public const string ErrorText = "sanic_errortext";
             public const string ClientLookup = "sanic_client";
+            public const string TrackingName = "sanic_name";
+            public const string ReplyStatus = "sanic_emailreplystatus";
+            public const string ReplySubject = "sanic_replysubject";
+            public const string ReplyBodyHtml = "sanic_replybodyhtml";
+
+            public const int ReplyPendiente = 159460000;
+            public const int ReplyRespondido = 159460001;
+            public const int ReplyOmitido = 159460002;
 
             public const int ValidationPendiente = 159460000;
             public const int ValidationValido = 159460001;
