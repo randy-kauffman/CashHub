@@ -4,6 +4,27 @@
     OnVisible: |-
         =UpdateContext({varSpinnerCompletoVisible: false});
         NewForm(Form2);
+        // Salud del pipeline: latido del barrido + cola real
+        UpdateContext(
+            {
+                varLatido: LookUp('CH-Tbl-SystemHeartbeat', Name = "ingesta-correos"),
+                varPendientes: CountRows(
+                    Filter('CH-Tbl-Received Emails',
+                        ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente)),
+                varErroresSistema: CountRows(
+                    Filter('CH-Tbl-Received Emails',
+                        EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error)),
+                varRespuestasPendientes: CountRows(
+                    Filter('CH-Tbl-Received Emails',
+                        EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente))
+            }
+        );
+        UpdateContext(
+            {
+                varMinutosSinLatido: If(IsBlank(varLatido), -1,
+                    DateDiff(varLatido.LastRunOn, Now(), TimeUnit.Minutes))
+            }
+        );
 
     ScreenContainer2 As groupContainer.verticalAutoLayoutContainer:
         DropShadow: =DropShadow.Light
@@ -28,6 +49,126 @@
         Width: =Parent.Width - Self.X
         X: =46
         ZIndex: =1
+
+        "'container Salud' As groupContainer.manualLayoutContainer":
+            Fill: =RGBA(255, 255, 255, 1)
+            FillPortions: =0
+            Height: =60
+            LayoutMinHeight: =60
+            RadiusBottomLeft: =6
+            RadiusBottomRight: =6
+            RadiusTopLeft: =6
+            RadiusTopRight: =6
+            ZIndex: =0
+
+            icoSemaforo As icon:
+                Color: =If(varMinutosSinLatido < 0, RGBA(168, 0, 0, 1), varMinutosSinLatido <= 20, RGBA(16, 124, 16, 1), varMinutosSinLatido <= 45, RGBA(196, 137, 0, 1), RGBA(168, 0, 0, 1))
+                Height: =20
+                Icon: =Icon.CircleFill
+                Tooltip: ="Estado del barrido de ingesta"
+                Width: =20
+                X: =16
+                Y: =20
+                ZIndex: =1
+
+            lblSemaforo As label:
+                Color: =If(varMinutosSinLatido < 0, RGBA(168, 0, 0, 1), varMinutosSinLatido <= 20, RGBA(16, 124, 16, 1), varMinutosSinLatido <= 45, RGBA(196, 137, 0, 1), RGBA(168, 0, 0, 1))
+                FontWeight: =FontWeight.Semibold
+                Height: =24
+                Size: =13
+                Text: =If(varMinutosSinLatido < 0, "SIN SEÑAL — el barrido nunca corrió", varMinutosSinLatido <= 20, "Ingesta operando — último control hace " & varMinutosSinLatido & " min", varMinutosSinLatido <= 45, "Atención: sin control hace " & varMinutosSinLatido & " min", "ALERTA: sin control hace " & varMinutosSinLatido & " min — revisar los flujos")
+                VerticalAlign: =VerticalAlign.Middle
+                Width: =480
+                X: =44
+                Y: =8
+                ZIndex: =2
+
+            lblSemaforoDetalle As label:
+                Color: =RGBA(97, 97, 97, 1)
+                Height: =20
+                Size: =10
+                Text: =If(IsBlank(varLatido), "Configure el flujo CH-Flow-MailboxSweep para vigilar la ingesta", Coalesce(varLatido.Details, ""))
+                VerticalAlign: =VerticalAlign.Middle
+                Width: =480
+                X: =44
+                Y: =32
+                ZIndex: =3
+
+            lblContPendientes As label:
+                Align: =Align.Center
+                Color: =If(varPendientes > 0, RGBA(196, 137, 0, 1), RGBA(97, 97, 97, 1))
+                FontWeight: =FontWeight.Semibold
+                Height: =44
+                Size: =13
+                Text: ="Pendientes: " & varPendientes
+                Tooltip: ="Correos esperando validación"
+                VerticalAlign: =VerticalAlign.Middle
+                Width: =190
+                X: =Parent.Width - 600
+                Y: =8
+                ZIndex: =2
+
+            lblContErrores As label:
+                Align: =Align.Center
+                Color: =If(varErroresSistema > 0, RGBA(168, 0, 0, 1), RGBA(97, 97, 97, 1))
+                FontWeight: =FontWeight.Semibold
+                Height: =44
+                Size: =13
+                Text: ="Errores: " & varErroresSistema
+                Tooltip: ="Correos con error de sistema"
+                VerticalAlign: =VerticalAlign.Middle
+                Width: =190
+                X: =Parent.Width - 410
+                Y: =8
+                ZIndex: =2
+
+            lblContRespuestas As label:
+                Align: =Align.Center
+                Color: =If(varRespuestasPendientes > 0, RGBA(196, 137, 0, 1), RGBA(97, 97, 97, 1))
+                FontWeight: =FontWeight.Semibold
+                Height: =44
+                Size: =13
+                Text: ="Sin responder: " & varRespuestasPendientes
+                Tooltip: ="Respuestas al cliente sin enviar"
+                VerticalAlign: =VerticalAlign.Middle
+                Width: =190
+                X: =Parent.Width - 220
+                Y: =8
+                ZIndex: =2
+
+            btnRefrescarSalud As icon:
+                Color: =RGBA(97, 97, 97, 1)
+                Height: =24
+                Icon: =Icon.Reload
+                OnSelect: |-
+                    =Refresh('CH-Tbl-SystemHeartbeat');
+                    Refresh('CH-Tbl-Received Emails');
+                    UpdateContext(
+                        {
+                            varLatido: LookUp('CH-Tbl-SystemHeartbeat', Name = "ingesta-correos"),
+                            varPendientes: CountRows(
+                                Filter('CH-Tbl-Received Emails',
+                                    ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente)),
+                            varErroresSistema: CountRows(
+                                Filter('CH-Tbl-Received Emails',
+                                    EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error)),
+                            varRespuestasPendientes: CountRows(
+                                Filter('CH-Tbl-Received Emails',
+                                    EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente))
+                        }
+                    );
+                    UpdateContext(
+                        {
+                            varMinutosSinLatido: If(IsBlank(varLatido), -1,
+                                DateDiff(varLatido.LastRunOn, Now(), TimeUnit.Minutes))
+                        }
+                    );
+                    Notify("Estado actualizado.", NotificationType.Success);
+                Tooltip: ="Actualizar el estado"
+                Width: =24
+                X: =Parent.Width - 44
+                Y: =18
+                ZIndex: =9
 
         BottomContainer1 As groupContainer.horizontalAutoLayoutContainer:
             Fill: =RGBA(245, 245, 245, 1)
