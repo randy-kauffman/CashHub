@@ -31,6 +31,14 @@
         "$connections": {
           "defaultValue": {},
           "type": "Object"
+        },
+        "sanic_CHEVSharedMailboxAddress": {
+          "defaultValue": "no-reply-powerplatform-dev@baccredomatic.ni",
+          "type": "String",
+          "metadata": {
+            "schemaName": "sanic_CHEVSharedMailboxAddress",
+            "description": "Buzon compartido de ingesta de declaraciones"
+          }
         }
       },
       "triggers": {
@@ -46,11 +54,11 @@
           "type": "OpenApiConnection",
           "inputs": {
             "parameters": {
-              "mailboxAddress": "no-reply-powerplatform-dev@baccredomatic.ni",
-              "to": "No-Reply-PowerPlatform-DEV@baccredomatic.ni",
+              "mailboxAddress": "@parameters('sanic_CHEVSharedMailboxAddress')",
+              "to": "@parameters('sanic_CHEVSharedMailboxAddress')",
               "importance": "Any",
               "hasAttachments": false,
-              "includeAttachments": false,
+              "includeAttachments": true,
               "folderId": "Inbox"
             },
             "host": {
@@ -62,146 +70,287 @@
         }
       },
       "actions": {
-        "Seach_email_unique_ID": {
-          "runAfter": {},
-          "metadata": {
-            "operationMetadataId": "5fa39ce6-ee15-4f9f-8807-44553ec92f25"
-          },
+        "Buscar_duplicado": {
           "type": "OpenApiConnection",
+          "metadata": {
+            "operationMetadataId": "6ba2d2fe-07eb-48a2-bf29-fc44999d2ea7"
+          },
+          "runAfter": {},
           "inputs": {
             "parameters": {
               "entityName": "sanic_chtblreceivedemailses",
-              "$filter": "sanic_replyemailoutlookuniqueid eq '@{triggerOutputs()?['body/id']}'"
+              "$select": "sanic_chtblreceivedemailsid",
+              "$filter": "sanic_receivedemailinternetmessageid eq '@{triggerOutputs()?['body/internetMessageId']}'",
+              "$top": 1
             },
             "host": {
               "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "ListRecords",
-              "connectionName": "shared_commondataserviceforapps-1"
+              "connectionName": "shared_commondataserviceforapps-1",
+              "operationId": "ListRecords"
+            },
+            "retryPolicy": {
+              "type": "exponential",
+              "count": 4,
+              "interval": "PT10S"
             }
           }
         },
-        "Check_if_search_returns_records": {
-          "actions": {
-            "Terminate": {
-              "metadata": {
-                "operationMetadataId": "fba052a9-3ab5-4273-b5f2-d3a8cfd4e26b"
-              },
-              "type": "Terminate",
-              "inputs": {
-                "runStatus": "Succeeded"
-              },
-              "description": "Duplicate ID found"
-            }
+        "Es_duplicado": {
+          "type": "If",
+          "metadata": {
+            "operationMetadataId": "4a9e9195-3fe9-4a4a-af6a-9064674279af"
           },
           "runAfter": {
-            "Seach_email_unique_ID": [
+            "Buscar_duplicado": [
               "Succeeded"
             ]
           },
-          "else": {
-            "actions": {
-              "Add_a_new_email": {
-                "metadata": {
-                  "operationMetadataId": "d9f4983f-9dc8-4187-9384-54a0425b7fea"
-                },
-                "type": "OpenApiConnection",
-                "inputs": {
-                  "parameters": {
-                    "entityName": "sanic_chtblreceivedemailses",
-                    "item/sanic_receivedemailinternetmessageid": "@triggerOutputs()?['body/internetMessageId']",
-                    "item/sanic_receivedemailoutlookuniqueid": "@triggerOutputs()?['body/id']",
-                    "item/sanic_sourceemailaddress": "@triggerOutputs()?['body/from']",
-                    "item/emailaddress": "@triggerOutputs()?['body/from']",
-                    "item/sanic_emailreplystatus": 159460000,
-                    "item/sanic_emailreviewmethod": 159460001,
-                    "item/sanic_emailreviewstatus": 159460000,
-                    "item/sanic_receptiondatetime": "@triggerOutputs()?['body/receivedDateTime']",
-                    "item/sanic_subject": "@triggerOutputs()?['body/subject']",
-                    "item/sanic_validationstatus": 159460000
-                  },
-                  "host": {
-                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                    "operationId": "CreateRecord",
-                    "connectionName": "shared_commondataserviceforapps-1"
-                  }
-                }
+          "expression": {
+            "greater": [
+              "@length(outputs('Buscar_duplicado')?['body/value'])",
+              0
+            ]
+          },
+          "actions": {
+            "Terminar_duplicado": {
+              "type": "Terminate",
+              "metadata": {
+                "operationMetadataId": "1f96b4cc-2b88-47d2-a138-32a9d525e5a8"
               },
-              "For_each_attachment": {
-                "foreach": "@triggerOutputs()?['body/attachments']",
-                "actions": {
-                  "Create_attachment": {
-                    "metadata": {
-                      "operationMetadataId": "394f3820-3d0b-4234-828c-5fc18d2f819c"
-                    },
-                    "type": "OpenApiConnection",
-                    "inputs": {
-                      "parameters": {
-                        "entityName": "sanic_chtblemailsattachmentses",
-                        "item/sanic_Email@odata.bind": "@outputs('Add_a_new_email')?['body/sanic_chtblreceivedemailsid']",
-                        "item/sanic_emailattachmentid": "@items('For_each_attachment')?['id']",
-                        "item/sanic_filename": "@item()?['name']",
-                        "item/sanic_fileextention": "@toLower(last(split(item()?['name'],'.')))",
-                        "item/sanic_tamanoenbytes": "@items('For_each_attachment')?['size']"
-                      },
-                      "host": {
-                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                        "operationId": "CreateRecord",
-                        "connectionName": "shared_commondataserviceforapps-1"
-                      }
-                    }
-                  },
-                  "Upload_attachment": {
-                    "runAfter": {
-                      "Create_attachment": [
-                        "Succeeded"
-                      ]
-                    },
-                    "metadata": {
-                      "operationMetadataId": "9be368e2-c508-40f6-8669-59249764bac1"
-                    },
-                    "type": "OpenApiConnection",
-                    "inputs": {
-                      "parameters": {
-                        "x-ms-file-name": "Untitled",
-                        "entityName": "sanic_chtblemailsattachmentses",
-                        "recordId": "@outputs('Create_attachment')?['body/sanic_chtblemailsattachmentsid']",
-                        "fileImageFieldName": "sanic_filecontent",
-                        "item": "@items('For_each_attachment')?['contentBytes']"
-                      },
-                      "host": {
-                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                        "operationId": "UpdateEntityFileImageFieldContent",
-                        "connectionName": "shared_commondataserviceforapps-1"
-                      }
-                    }
-                  }
-                },
-                "runAfter": {
-                  "Add_a_new_email": [
-                    "Succeeded"
-                  ]
-                },
-                "metadata": {
-                  "operationMetadataId": "ab86b74f-9e9f-431e-b3a5-72343ffd74aa"
-                },
-                "type": "Foreach"
+              "runAfter": {},
+              "inputs": {
+                "runStatus": "Succeeded"
               }
             }
           },
-          "expression": {
-            "and": [
-              {
-                "greater": [
-                  "@length(outputs('Seach_email_unique_ID')?['body/value'])",
-                  0
-                ]
+          "else": {
+            "actions": {
+              "Try_Ingesta": {
+                "type": "Scope",
+                "metadata": {
+                  "operationMetadataId": "55df7f9b-de66-469a-9f4e-d0ccc00a6c48"
+                },
+                "runAfter": {},
+                "actions": {
+                  "Crear_correo": {
+                    "type": "OpenApiConnection",
+                    "metadata": {
+                      "operationMetadataId": "341178ae-dcb8-430d-aae8-604cab9b7738"
+                    },
+                    "runAfter": {},
+                    "inputs": {
+                      "parameters": {
+                        "entityName": "sanic_chtblreceivedemailses",
+                        "item/sanic_name": "@triggerOutputs()?['body/subject']",
+                        "item/sanic_receivedemailinternetmessageid": "@triggerOutputs()?['body/internetMessageId']",
+                        "item/sanic_receivedemailoutlookuniqueid": "@triggerOutputs()?['body/id']",
+                        "item/sanic_sourceemailaddress": "@triggerOutputs()?['body/from']",
+                        "item/sanic_emailreplystatus": 159460000,
+                        "item/sanic_emailreviewmethod": 159460001,
+                        "item/sanic_emailreviewstatus": 159460000,
+                        "item/sanic_receptiondatetime": "@triggerOutputs()?['body/receivedDateTime']",
+                        "item/sanic_subject": "@triggerOutputs()?['body/subject']",
+                        "item/sanic_validationstatus": 159460000
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                        "connectionName": "shared_commondataserviceforapps-1",
+                        "operationId": "CreateRecord"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 4,
+                        "interval": "PT10S"
+                      }
+                    }
+                  },
+                  "For_each_attachment": {
+                    "type": "Foreach",
+                    "metadata": {
+                      "operationMetadataId": "368b8fdc-b56e-4f0f-8c58-7612e3d0df99"
+                    },
+                    "runAfter": {
+                      "Crear_correo": [
+                        "Succeeded"
+                      ]
+                    },
+                    "foreach": "@triggerOutputs()?['body/attachments']",
+                    "actions": {
+                      "Create_attachment": {
+                        "type": "OpenApiConnection",
+                        "metadata": {
+                          "operationMetadataId": "b102289e-5dc8-4328-9d28-9da055824fec"
+                        },
+                        "runAfter": {},
+                        "inputs": {
+                          "parameters": {
+                            "entityName": "sanic_chtblemailsattachmentses",
+                            "item/sanic_name": "@item()?['name']",
+                            "item/sanic_Email@odata.bind": "sanic_chtblreceivedemailses(@{outputs('Crear_correo')?['body/sanic_chtblreceivedemailsid']})",
+                            "item/sanic_emailattachmentid": "@items('For_each_attachment')?['id']",
+                            "item/sanic_filename": "@item()?['name']",
+                            "item/sanic_fileextention": "@toLower(last(split(item()?['name'],'.')))",
+                            "item/sanic_tamanoenbytes": "@items('For_each_attachment')?['size']"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                            "connectionName": "shared_commondataserviceforapps-1",
+                            "operationId": "CreateRecord"
+                          },
+                          "retryPolicy": {
+                            "type": "exponential",
+                            "count": 4,
+                            "interval": "PT10S"
+                          }
+                        }
+                      },
+                      "Upload_attachment": {
+                        "type": "OpenApiConnection",
+                        "metadata": {
+                          "operationMetadataId": "cb194311-6e58-46f8-8cb5-1c8b414e32a6"
+                        },
+                        "runAfter": {
+                          "Create_attachment": [
+                            "Succeeded"
+                          ]
+                        },
+                        "inputs": {
+                          "parameters": {
+                            "x-ms-file-name": "@item()?['name']",
+                            "entityName": "sanic_chtblemailsattachmentses",
+                            "recordId": "@outputs('Create_attachment')?['body/sanic_chtblemailsattachmentsid']",
+                            "fileImageFieldName": "sanic_filecontent",
+                            "item": "@items('For_each_attachment')?['contentBytes']"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                            "connectionName": "shared_commondataserviceforapps-1",
+                            "operationId": "UpdateEntityFileImageFieldContent"
+                          },
+                          "retryPolicy": {
+                            "type": "exponential",
+                            "count": 4,
+                            "interval": "PT10S"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "Validar_correo": {
+                    "type": "OpenApiConnection",
+                    "metadata": {
+                      "operationMetadataId": "f1b20466-0b47-4706-a84f-3f2e21b0b576"
+                    },
+                    "runAfter": {
+                      "For_each_attachment": [
+                        "Succeeded"
+                      ]
+                    },
+                    "inputs": {
+                      "parameters": {
+                        "actionName": "sanic_CHValidateReceivedEmail",
+                        "item/ReceivedEmailId": "@outputs('Crear_correo')?['body/sanic_chtblreceivedemailsid']"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                        "connectionName": "shared_commondataserviceforapps-1",
+                        "operationId": "PerformUnboundAction"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 4,
+                        "interval": "PT10S"
+                      }
+                    }
+                  }
+                }
+              },
+              "Catch_Ingesta": {
+                "type": "If",
+                "metadata": {
+                  "operationMetadataId": "6d7a36bb-1f66-4af6-95ae-4ba5760f01f2"
+                },
+                "runAfter": {
+                  "Try_Ingesta": [
+                    "Failed",
+                    "TimedOut"
+                  ]
+                },
+                "expression": {
+                  "not": {
+                    "equals": [
+                      "@coalesce(outputs('Crear_correo')?['body/sanic_chtblreceivedemailsid'], '')",
+                      ""
+                    ]
+                  }
+                },
+                "actions": {
+                  "Marcar_correo_con_error": {
+                    "type": "OpenApiConnection",
+                    "metadata": {
+                      "operationMetadataId": "8b919f0e-d0b2-4119-9ae7-bb79cc975324"
+                    },
+                    "runAfter": {},
+                    "inputs": {
+                      "parameters": {
+                        "entityName": "sanic_chtblreceivedemailses",
+                        "recordId": "@outputs('Crear_correo')?['body/sanic_chtblreceivedemailsid']",
+                        "item/sanic_emailreviewstatus": 159460004,
+                        "item/sanic_errortext": "Error de sistema en la INGESTA: fallo la persistencia de adjuntos o la invocacion del motor. Revisar el historial de este flujo (CH-Flow-IngestEmails). El barrido lo reintentara."
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                        "connectionName": "shared_commondataserviceforapps-1",
+                        "operationId": "UpdateOnlyRecord"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 4,
+                        "interval": "PT10S"
+                      }
+                    }
+                  },
+                  "Terminar_con_fallo": {
+                    "type": "Terminate",
+                    "metadata": {
+                      "operationMetadataId": "06c7727e-b186-4fb5-a7eb-a18c0c04951c"
+                    },
+                    "runAfter": {
+                      "Marcar_correo_con_error": [
+                        "Succeeded",
+                        "Failed"
+                      ]
+                    },
+                    "inputs": {
+                      "runStatus": "Failed",
+                      "runError": {
+                        "code": "IngestFailed",
+                        "message": "La ingesta fallo despues de crear el correo; quedo marcado con Error para el barrido."
+                      }
+                    }
+                  }
+                },
+                "else": {
+                  "actions": {
+                    "Terminar_sin_correo": {
+                      "type": "Terminate",
+                      "metadata": {
+                        "operationMetadataId": "554f3dcd-3ba8-4345-959f-3672d35058b0"
+                      },
+                      "runAfter": {},
+                      "inputs": {
+                        "runStatus": "Failed",
+                        "runError": {
+                          "code": "IngestFailedBeforeCreate",
+                          "message": "La ingesta fallo ANTES de crear el correo en Dataverse; el mensaje sigue en el buzon y el barrido lo detectara."
+                        }
+                      }
+                    }
+                  }
+                }
               }
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "9ab5af26-5079-4868-b71c-a419aa2d7cb0"
-          },
-          "type": "If"
+            }
+          }
         }
       }
     },

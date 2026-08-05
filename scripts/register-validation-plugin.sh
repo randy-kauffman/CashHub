@@ -93,19 +93,16 @@ for uname, ptype in [('RunId', 12), ('Result', 10), ('FailedFindings', 7)]:
         'CustomAPIId@odata.bind': f"/customapis({api_id})",
     }, f'respuesta {uname}', 'customapiresponsepropertyid')
 
-# 4. paso asíncrono en Create de sanic_chtblreceivedemails
-msg = find("/sdkmessages?$select=sdkmessageid&$filter=" + urllib.parse.quote("name eq 'Create'"))[0]
-flt = find(f"/sdkmessagefilters?$select=sdkmessagefilterid&$filter=" + urllib.parse.quote(
-    f"_sdkmessageid_value eq {msg['sdkmessageid']} and primaryobjecttypecode eq 'sanic_chtblreceivedemails'"))[0]
-upsert('sdkmessageprocessingsteps',
-    "name eq 'CashHub.ValidateReceivedEmail: Create de correo recibido'", {
-    'name': 'CashHub.ValidateReceivedEmail: Create de correo recibido',
-    'mode': 1, 'stage': 40, 'rank': 1, 'supporteddeployment': 0,
-    'asyncautodelete': True,
-    'plugintypeid@odata.bind': f"/plugintypes({type_id})",
-    'sdkmessageid@odata.bind': f"/sdkmessages({msg['sdkmessageid']})",
-    'sdkmessagefilterid@odata.bind': f"/sdkmessagefilters({flt['sdkmessagefilterid']})",
-}, 'paso asincrono Create receivedemails', 'sdkmessageprocessingstepid')
+# 4. El paso asíncrono en Create fue RETIRADO (fase D): la ingesta invoca el Custom API
+# explícitamente tras subir los adjuntos (orden garantizado) y el barrido re-valida
+# pendientes. Si el paso existe de una versión anterior, se elimina.
+steps = find("/sdkmessageprocessingsteps?$select=sdkmessageprocessingstepid&$filter=" +
+    urllib.parse.quote("name eq 'CashHub.ValidateReceivedEmail: Create de correo recibido'"))
+for s in steps:
+    req('DELETE', f"/sdkmessageprocessingsteps({s['sdkmessageprocessingstepid']})")
+    print("  eliminado: paso asincrono Create receivedemails (reemplazado por invocacion explicita)")
+if not steps:
+    print("  paso asincrono: no existe (correcto)")
 
 print("Registro completo.")
 PYEOF
