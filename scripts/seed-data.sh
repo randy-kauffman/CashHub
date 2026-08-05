@@ -12,10 +12,18 @@
 # Requiere pp_secrets.env en la raíz (DATAVERSE_URL, PP_TENANT_ID,
 # PP_CLIENT_ID, PP_CLIENT_SECRET).
 #
-# Uso:  ./scripts/seed-data.sh [--dry-run]
+# Uso:  ./scripts/seed-data.sh [--dry-run] [directorio]
+#       directorio default: data/seed (config). Ej: data/synthetic (datos de prueba).
 # =============================================================================
 set -euo pipefail
-DRY_RUN="${1:-}"
+DRY_RUN=""
+DATA_DIR="data/seed"
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN="--dry-run" ;;
+    *) DATA_DIR="$arg" ;;
+  esac
+done
 source "${ENV_FILE:-pp_secrets.env}"
 DATAVERSE_URL="${DATAVERSE_URL%$'\r'}"; DATAVERSE_URL="${DATAVERSE_URL%/}"
 PP_TENANT_ID="${PP_TENANT_ID%$'\r'}"; PP_CLIENT_ID="${PP_CLIENT_ID%$'\r'}"; PP_CLIENT_SECRET="${PP_CLIENT_SECRET%$'\r'}"
@@ -23,7 +31,7 @@ PP_TENANT_ID="${PP_TENANT_ID%$'\r'}"; PP_CLIENT_ID="${PP_CLIENT_ID%$'\r'}"; PP_C
 TOKEN=$(curl -sf -X POST "https://login.microsoftonline.com/${PP_TENANT_ID}/oauth2/v2.0/token" \
   -d "grant_type=client_credentials&client_id=${PP_CLIENT_ID}&client_secret=${PP_CLIENT_SECRET}&scope=${DATAVERSE_URL}/.default" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-export TOKEN DATAVERSE_URL DRY_RUN
+export TOKEN DATAVERSE_URL DRY_RUN DATA_DIR
 
 python3 - <<'PYEOF'
 import glob, json, os, subprocess, urllib.parse
@@ -76,7 +84,7 @@ def resolve(value):
     return value
 
 total = {'create': 0, 'update': 0, 'skip': 0, 'omit': 0}
-for path in sorted(glob.glob('data/seed/*.json')):
+for path in sorted(glob.glob(os.environ.get('DATA_DIR', 'data/seed') + '/*.json')):
     spec = json.load(open(path, encoding='utf-8'))
     es, nk = spec['entitySet'], spec['naturalKey']
     print(f"== {os.path.basename(path)} -> {es} ({len(spec['rows'])} filas)")
@@ -87,7 +95,13 @@ for path in sorted(glob.glob('data/seed/*.json')):
             total['omit'] += 1
             continue
         row = {k: resolve(v) for k, v in row.items()}
-        flt = ' and '.join(f"{k} eq {odata_literal(row[k])}" for k in nk)
+        def key_expr(k):
+            if k.endswith('@odata.bind'):
+                logical = k[:-len('@odata.bind')].lower()
+                guid = row[k].rsplit('(', 1)[1].rstrip(')')
+                return f"_{logical}_value eq {guid}"
+            return f"{k} eq {odata_literal(row[k])}"
+        flt = ' and '.join(key_expr(k) for k in nk)
         existing = req('GET', f"/{es}?$filter={urllib.parse.quote(flt)}").get('value', [])
         key = ' / '.join(str(row[k]) for k in nk)
         if not existing:

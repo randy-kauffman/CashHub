@@ -10,15 +10,6 @@
           "name": "shared_commondataserviceforapps"
         }
       },
-      "shared_office365": {
-        "runtimeSource": "embedded",
-        "connection": {
-          "connectionReferenceLogicalName": "sanic_CEADCONNOutlook365"
-        },
-        "api": {
-          "name": "shared_office365"
-        }
-      },
       "shared_teams": {
         "runtimeSource": "embedded",
         "connection": {
@@ -40,13 +31,6 @@
         "$authentication": {
           "defaultValue": {},
           "type": "SecureObject"
-        },
-        "sanic_CHEVSharedMailboxAddress": {
-          "defaultValue": "no-reply-powerplatform-dev@baccredomatic.ni",
-          "type": "String",
-          "metadata": {
-            "schemaName": "sanic_CHEVSharedMailboxAddress"
-          }
         },
         "sanic_CHEVOpsTeamsGroupId": {
           "defaultValue": "",
@@ -293,161 +277,20 @@
             "value": "FALLO el saneo de pendientes (revisar historial del barrido)."
           }
         },
-        "Vigilar_buzon": {
-          "type": "Scope",
-          "metadata": {
-            "operationMetadataId": "b18d83ec-eccb-422b-a5fa-773b2dc7c434"
-          },
-          "runAfter": {
-            "Sanar_pendientes": [
-              "Succeeded",
-              "Failed",
-              "TimedOut",
-              "Skipped"
-            ]
-          },
-          "actions": {
-            "Leer_buzon": {
-              "type": "OpenApiConnection",
-              "metadata": {
-                "operationMetadataId": "570d0a6d-84a3-4e89-a54f-db174e55c981"
-              },
-              "runAfter": {},
-              "inputs": {
-                "parameters": {
-                  "mailboxAddress": "@parameters('sanic_CHEVSharedMailboxAddress')",
-                  "folderPath": "Inbox",
-                  "top": 25,
-                  "fetchOnlyUnread": false
-                },
-                "host": {
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
-                  "connectionName": "shared_office365",
-                  "operationId": "SharedMailboxGetEmailsV2"
-                }
-              }
-            },
-            "Por_cada_correo_buzon": {
-              "type": "Foreach",
-              "metadata": {
-                "operationMetadataId": "12da2ed6-676d-4b0b-917d-54a8f306ac20"
-              },
-              "runAfter": {
-                "Leer_buzon": [
-                  "Succeeded"
-                ]
-              },
-              "foreach": "@outputs('Leer_buzon')?['body/value']",
-              "actions": {
-                "Es_viejo_sin_registrar": {
-                  "type": "If",
-                  "metadata": {
-                    "operationMetadataId": "cbb87e6e-8bfb-483a-8648-290566beac99"
-                  },
-                  "runAfter": {},
-                  "expression": {
-                    "less": [
-                      "@items('Por_cada_correo_buzon')?['receivedDateTime']",
-                      "@addMinutes(utcNow(),-10)"
-                    ]
-                  },
-                  "actions": {
-                    "Buscar_registro": {
-                      "type": "OpenApiConnection",
-                      "metadata": {
-                        "operationMetadataId": "989f4359-0446-46b7-b3cf-e0a93930af97"
-                      },
-                      "runAfter": {},
-                      "inputs": {
-                        "parameters": {
-                          "entityName": "sanic_chtblreceivedemailses",
-                          "$select": "sanic_chtblreceivedemailsid",
-                          "$filter": "sanic_receivedemailinternetmessageid eq '@{items('Por_cada_correo_buzon')?['internetMessageId']}'",
-                          "$top": 1
-                        },
-                        "host": {
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                          "connectionName": "shared_commondataserviceforapps_1",
-                          "operationId": "ListRecords"
-                        },
-                        "retryPolicy": {
-                          "type": "exponential",
-                          "count": 4,
-                          "interval": "PT10S"
-                        }
-                      }
-                    },
-                    "No_registrado": {
-                      "type": "If",
-                      "metadata": {
-                        "operationMetadataId": "683fbc72-bf88-4b8f-bf62-c839547d2d80"
-                      },
-                      "runAfter": {
-                        "Buscar_registro": [
-                          "Succeeded"
-                        ]
-                      },
-                      "expression": {
-                        "equals": [
-                          "@length(outputs('Buscar_registro')?['body/value'])",
-                          0
-                        ]
-                      },
-                      "actions": {
-                        "Contar_faltante": {
-                          "type": "IncrementVariable",
-                          "metadata": {
-                            "operationMetadataId": "18c2e5ac-a199-4d12-bc12-d3871c7ddaf1"
-                          },
-                          "runAfter": {},
-                          "inputs": {
-                            "name": "varFaltantes",
-                            "value": 1
-                          }
-                        },
-                        "Guardar_asunto": {
-                          "type": "AppendToArrayVariable",
-                          "metadata": {
-                            "operationMetadataId": "a9059db7-3827-415e-a101-12d8f0560c02"
-                          },
-                          "runAfter": {
-                            "Contar_faltante": [
-                              "Succeeded"
-                            ]
-                          },
-                          "inputs": {
-                            "name": "varAsuntosFaltantes",
-                            "value": "@items('Por_cada_correo_buzon')?['subject']"
-                          }
-                        }
-                      },
-                      "else": {
-                        "actions": {}
-                      }
-                    }
-                  },
-                  "else": {
-                    "actions": {}
-                  }
-                }
-              }
-            }
-          }
-        },
         "Nota_buzon_fallo": {
           "type": "AppendToArrayVariable",
           "metadata": {
             "operationMetadataId": "e64e0057-5b1d-4fab-86e2-978abb1fff03"
           },
           "runAfter": {
-            "Vigilar_buzon": [
+            "Vigilar_flujo_de_ingesta": [
               "Failed",
               "TimedOut"
             ]
           },
           "inputs": {
             "name": "varNotas",
-            "value": "FALLO la lectura del buzon (¿conexion de Outlook caida?)."
+            "value": "FALLO la vigilancia del flujo de ingesta (revisar historial del barrido)."
           }
         },
         "Alertar_si_faltan": {
@@ -456,7 +299,7 @@
             "operationMetadataId": "ba330cba-91d0-4193-a6f6-904b66b6b8f5"
           },
           "runAfter": {
-            "Vigilar_buzon": [
+            "Vigilar_flujo_de_ingesta": [
               "Succeeded",
               "Failed",
               "TimedOut",
@@ -497,7 +340,7 @@
                   "poster": "Flow bot",
                   "location": "Group chat",
                   "body/recipient": "@parameters('sanic_CHEVOpsTeamsGroupId')",
-                  "body/messageBody": "{\"type\":\"AdaptiveCard\",\"$schema\":\"http://adaptivecards.io/schemas/adaptive-card.json\",\"version\":\"1.4\",\"body\":[{\"type\":\"TextBlock\",\"weight\":\"Bolder\",\"size\":\"Medium\",\"color\":\"Attention\",\"text\":\"⚠ Barrido de ingesta CashHub\"},{\"type\":\"TextBlock\",\"wrap\":true,\"text\":\"Correos en el buzon SIN registrar en CashHub: @{variables('varFaltantes')}. Ultimos asuntos: @{join(variables('varAsuntosFaltantes'), ' | ')}. Revisar CH-Flow-IngestEmails (¿apagado o conexion caida?).\"}]}"
+                  "body/messageBody": "{\"type\":\"AdaptiveCard\",\"$schema\":\"http://adaptivecards.io/schemas/adaptive-card.json\",\"version\":\"1.4\",\"body\":[{\"type\":\"TextBlock\",\"weight\":\"Bolder\",\"size\":\"Medium\",\"color\":\"Attention\",\"text\":\"⚠ Barrido de ingesta CashHub\"},{\"type\":\"TextBlock\",\"wrap\":true,\"text\":\"Incidencias detectadas: @{variables('varFaltantes')}. Detalle: @{join(variables('varAsuntosFaltantes'), ' | ')}\"}]}"
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
@@ -611,6 +454,97 @@
                     "interval": "PT10S"
                   }
                 }
+              }
+            }
+          }
+        },
+        "Vigilar_flujo_de_ingesta": {
+          "type": "Scope",
+          "metadata": {
+            "operationMetadataId": "8ddb2ddd-284a-47e6-a595-ca594e8bb2fd"
+          },
+          "runAfter": {
+            "Sanar_pendientes": [
+              "Succeeded",
+              "Failed",
+              "TimedOut",
+              "Skipped"
+            ]
+          },
+          "actions": {
+            "Estado_del_flujo_de_ingesta": {
+              "type": "OpenApiConnection",
+              "metadata": {
+                "operationMetadataId": "d8ac04a1-f8fe-4473-a24f-46f8b4191234"
+              },
+              "runAfter": {},
+              "inputs": {
+                "parameters": {
+                  "entityName": "workflows",
+                  "$select": "workflowid,statecode,statuscode",
+                  "$filter": "category eq 5 and name eq 'CH-Flow-IngestEmails'",
+                  "$top": 1
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "connectionName": "shared_commondataserviceforapps_1",
+                  "operationId": "ListRecords"
+                },
+                "retryPolicy": {
+                  "type": "exponential",
+                  "count": 4,
+                  "interval": "PT10S"
+                }
+              }
+            },
+            "Ingesta_apagada": {
+              "type": "If",
+              "metadata": {
+                "operationMetadataId": "72b97bae-5ad6-4449-a93e-d83cbf730b5e"
+              },
+              "runAfter": {
+                "Estado_del_flujo_de_ingesta": [
+                  "Succeeded"
+                ]
+              },
+              "expression": {
+                "not": {
+                  "equals": [
+                    "@first(outputs('Estado_del_flujo_de_ingesta')?['body/value'])?['statecode']",
+                    1
+                  ]
+                }
+              },
+              "actions": {
+                "Contar_ingesta_caida": {
+                  "type": "IncrementVariable",
+                  "metadata": {
+                    "operationMetadataId": "6aa5d67d-f130-4aa3-bb78-2145d9db96bb"
+                  },
+                  "runAfter": {},
+                  "inputs": {
+                    "name": "varFaltantes",
+                    "value": 1
+                  }
+                },
+                "Nota_ingesta_caida": {
+                  "type": "AppendToArrayVariable",
+                  "metadata": {
+                    "operationMetadataId": "d9984f48-301b-4624-aa9d-4140431d07dd"
+                  },
+                  "runAfter": {
+                    "Contar_ingesta_caida": [
+                      "Succeeded"
+                    ]
+                  },
+                  "inputs": {
+                    "name": "varAsuntosFaltantes",
+                    "value": "CH-Flow-IngestEmails NO esta activo (apagado o suspendido): los correos se acumulan en el buzon sin procesar."
+                  }
+                }
+              },
+              "else": {
+                "actions": {}
               }
             }
           }
