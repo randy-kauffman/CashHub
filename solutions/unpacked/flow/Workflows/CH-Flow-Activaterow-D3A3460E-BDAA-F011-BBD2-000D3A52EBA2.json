@@ -120,6 +120,34 @@
                   }
                 }
               }
+            },
+            "CH-Tbl-ClientAccount": {
+              "case": "sanic_chtblclientaccount",
+              "actions": {
+                "Actualizar_ClientCuenta_a_INACTIVE": {
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "sanic_chtblclientaccounts",
+                      "recordId": "@triggerOutputs()?['body/sanic_targetrecordid']",
+                      "item/sanic_recordstatus": 159460000
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "connectionName": "shared_commondataserviceforapps_1"
+                    },
+                    "retryPolicy": {
+                      "type": "exponential",
+                      "count": 4,
+                      "interval": "PT10S"
+                    }
+                  },
+                  "metadata": {
+                    "operationMetadataId": "7d388705-38d8-40ba-8849-da003b4aaa9d"
+                  }
+                }
+              }
             }
           },
           "default": {
