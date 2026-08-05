@@ -6,6 +6,22 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-05
+
+Fase B del motor de validación: primer backend C# del proyecto, desplegado y verificado E2E en DEV.
+
+### Added
+
+- `src/backend/`: motor de validación en C# — `CashHub.Validation` (netstandard2.0, lógica pura testeable) con el engine (orden, dependencias anti-ruido, aislamiento de excepciones por estrategia, renderizado de placeholders, acumulación de TODOS los errores) y las 6 estrategias de sobre (VR-01…VR-06); `CashHub.Plugins` (net462 firmado, dominio compilado adentro para registro de una sola dll) con el Custom API `sanic_CHValidateReceivedEmail` y la persistencia de runs/hallazgos/estado del correo.
+- **30 tests xunit verdes** (motor + matriz pass/fail de cada regla + integración del sobre completo) y workflow de CI (`.github/workflows/ci.yml`).
+- `scripts/register-validation-plugin.sh`: registro idempotente por Web API de assembly, plugin type, Custom API (parámetro + 3 respuestas) y paso asíncrono en Create de `ReceivedEmails`.
+- Smoke E2E en DEV: correo inválido → validado automáticamente en ~60s → `Invalido/Denegado/Auto`, `ErrorText` con los 3 errores renderizados, run + resultados por regla, y las reglas sin estrategia contenidas por la cadena de dependencias.
+
+### Notas
+
+- Hasta la fase C (parser + reglas de contenido), un correo con sobre VÁLIDO queda contenido por la cadena (VR-07+ dependen del parseo) — nunca un "Válido" a medias.
+- Navigation properties de las entidades de Custom API son PascalCase (`PluginTypeId`, `CustomAPIId`); los entity sets de Dataverse pluralizan a ciegas (`...emailses`, `...runses`).
+
 ## [0.7.0] - 2026-08-05
 
 Fase A del motor de validación de correos: diseño y parametrización. Core en 1.4.0.1.

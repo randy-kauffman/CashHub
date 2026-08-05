@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['src/backend/**']
+  pull_request:
+    paths: ['src/backend/**']
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Tests del motor de validación
+        run: dotnet test src/backend/CashHub.Validation.Tests/CashHub.Validation.Tests.csproj --nologo
