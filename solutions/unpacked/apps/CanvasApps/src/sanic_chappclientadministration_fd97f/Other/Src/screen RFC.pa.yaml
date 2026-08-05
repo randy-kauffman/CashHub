@@ -156,7 +156,7 @@ Screens:
                     =SortByColumns(
                         Search(Filter(
                             'CH-Tbl-ClientDataChangeRequests',
-                            Toggle1.Checked = false || (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited)
+                            Toggle1.Checked = false || ('Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted)
                         ),
                         SearchBox1_1.SearchText,
                         Name
@@ -185,7 +185,7 @@ Screens:
                             ColCellType: "link",
                             ColSortBy: "createdon"
                         },{
-                            ColName: "cr140_changestatus",
+                            ColName: "sanic_changestatus",
                             ColDisplayName: "Status",
                             ColSortable: true,
                             ColIsBold: true,
@@ -270,7 +270,7 @@ Screens:
                       IsLocked: true
                       Properties:
                         FieldDisplayName: ="ChangeStatus"
-                        FieldName: ="cr140_changestatus"
+                        FieldName: ="sanic_changestatus"
                         FieldType: ="l"
                         Order: =4
                   - Name4:
@@ -344,7 +344,7 @@ Screens:
                         AlignInContainer: =AlignInContainer.Center
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
-                        Text: |+
+                        Text: |
                           ="Total " & DVFluentDetailsListWithContextMenu1_1.TotalRecords & " record(s), " & Text(CountRows(DVFluentDetailsListWithContextMenu1_1.SelectedItems)+0) & " selected"
                         VerticalAlign: =VerticalAlign.Middle
                         Width: =200

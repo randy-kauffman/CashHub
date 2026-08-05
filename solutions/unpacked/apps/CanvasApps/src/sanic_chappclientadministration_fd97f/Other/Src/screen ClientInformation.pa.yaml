@@ -61,7 +61,7 @@ Screens:
                 Properties:
                   DataField: ="sanic_applynotes"
                   Default: =ThisItem.ApplyNotes
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_applynotes)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ApplyNotes)
                   Required: =false
                   Update: =DataCardValue31_1.Text
                   Width: =266
@@ -140,7 +140,7 @@ Screens:
                 Properties:
                   DataField: ="sanic_applyon"
                   Default: =ThisItem.ApplyOn
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_applyon)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ApplyOn)
                   Required: =false
                   Update: =If(Not IsBlank(DateValue5_1.SelectedDate), DateTime(Year(DateValue5_1.SelectedDate), Month(DateValue5_1.SelectedDate), Day(DateValue5_1.SelectedDate), Value(HourValue5_1.Selected.Value), Value(MinuteValue5_1.Selected.Value), 0))
                   Width: =266
@@ -265,9 +265,9 @@ Screens:
                 Control: TypedDataCard@1.0.7
                 Variant: ClassicComboBoxOptionSetSingleEdit
                 Properties:
-                  DataField: ="cr140_changestatus"
+                  DataField: ="sanic_changestatus"
                   Default: =ThisItem.ChangeStatus
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,cr140_changestatus)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ChangeStatus)
                   Required: =false
                   Update: =DataCardValue32_1.Selected.Value
                   Width: =266
@@ -295,7 +295,7 @@ Screens:
                         DefaultSelectedItems: =[varChangeStatus]
                         DisplayMode: =Parent.DisplayMode
                         IsSearchable: =false
-                        Items: =Choices('ChangeStatus (CH-Tbl-ClientDataChangeRequests)')
+                        Items: =Choices('Change Status (CH-Tbl-ClientDataChangeRequests)')
                         PaddingLeft: =If(Self.DisplayMode = DisplayMode.Edit, 5, 0)
                         SelectMultiple: =false
                         Tooltip: =Parent.DisplayName
@@ -342,7 +342,7 @@ Screens:
                 Properties:
                   DataField: ="createdon"
                   Default: =ThisItem.'Created On'
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,createdon)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'Created On')
                   Required: =false
                   Width: =266
                   X: =0
@@ -382,7 +382,7 @@ Screens:
                 Properties:
                   DataField: ="sanic_name"
                   Default: =ThisItem.Name
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_name)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,Name)
                   Required: =false
                   Width: =266
                   X: =1
@@ -421,8 +421,8 @@ Screens:
                 Properties:
                   DataField: ="sanic_reason"
                   Default: =ThisItem.Reason
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_reason)
-                  MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, sanic_reason)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,Reason)
+                  MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, Reason)
                   Required: =true
                   Update: =DataCardValue35_1.Text
                   Width: =266
@@ -500,7 +500,7 @@ Screens:
                 Properties:
                   DataField: ="sanic_reasonfordecision"
                   Default: =ThisItem.ReasonForDecision
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_reasonfordecision)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ReasonForDecision)
                   Required: =false
                   Update: =DataCardValue36_1.Text
                   Width: =266
@@ -578,7 +578,7 @@ Screens:
                 Properties:
                   DataField: ="sanic_RelatedClient"
                   Default: =ThisItem.RelatedClient
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_RelatedClient)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,RelatedClient)
                   Required: =false
                   Update: =DataCardValue37_1.Selected
                   Width: =266
@@ -652,7 +652,7 @@ Screens:
                 Properties:
                   DataField: ="sanic_SolvedBy"
                   Default: =ThisItem.SolvedBy
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_SolvedBy)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,SolvedBy)
                   Required: =false
                   Update: =DataCardValue38_1.Selected
                   Width: =266
@@ -726,7 +726,7 @@ Screens:
                 Properties:
                   DataField: ="sanic_solvedon"
                   Default: =ThisItem.SolvedOn
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_solvedon)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,SolvedOn)
                   Required: =false
                   Update: =If(Not IsBlank(DateValue6_1.SelectedDate), DateTime(Year(DateValue6_1.SelectedDate), Month(DateValue6_1.SelectedDate), Day(DateValue6_1.SelectedDate), Value(HourValue6_1.Selected.Value), Value(MinuteValue6_1.Selected.Value), 0))
                   Width: =266
@@ -854,7 +854,7 @@ Screens:
                 Properties:
                   DataField: ="statecode"
                   Default: =ThisItem.Status
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,statecode)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,Status)
                   Required: =false
                   Update: =DataCardValue39_1.Selected.Value
                   Width: =266
@@ -929,8 +929,8 @@ Screens:
                 Properties:
                   DataField: ="sanic_targetrecordid"
                   Default: =ThisItem.TargetRecordID
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_targetrecordid)
-                  MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, sanic_targetrecordid)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,TargetRecordID)
+                  MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, TargetRecordID)
                   Required: =false
                   Update: =DataCardValue40_1.Text
                   Width: =266
@@ -1007,8 +1007,8 @@ Screens:
                 Properties:
                   DataField: ="sanic_targettable"
                   Default: =ThisItem.TargetTable
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_targettable)
-                  MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, sanic_targettable)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,TargetTable)
+                  MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, TargetTable)
                   Required: =false
                   Update: =DataCardValue41_1.Text
                   Width: =266
@@ -1086,7 +1086,7 @@ Screens:
                 Properties:
                   DataField: ="versionnumber"
                   Default: =ThisItem.'Version Number'
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,versionnumber)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'Version Number')
                   Required: =false
                   Width: =266
                   X: =1
@@ -1125,7 +1125,7 @@ Screens:
                 Properties:
                   DataField: ="sanic_type"
                   Default: =ThisItem.Type
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_type)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,Type)
                   Required: =false
                   Update: =DataCardValue43_1.Selected.Value
                   Width: =266
@@ -1199,8 +1199,8 @@ Screens:
                 Properties:
                   DataField: ="sanic_targettabledisplayname"
                   Default: =ThisItem.TargetTableDisplayName
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_targettabledisplayname)
-                  MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, sanic_targettabledisplayname)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,TargetTableDisplayName)
+                  MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, TargetTableDisplayName)
                   Required: =false
                   Update: =DataCardValue44_1.Text
                   Width: =266
@@ -1277,8 +1277,8 @@ Screens:
                 Properties:
                   DataField: ="sanic_targettablepluralname"
                   Default: =ThisItem.TargetTablePluralName
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,sanic_targettablepluralname)
-                  MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, sanic_targettablepluralname)
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,TargetTablePluralName)
+                  MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, TargetTablePluralName)
                   Required: =false
                   Update: =DataCardValue45_1.Text
                   Width: =266
@@ -1391,7 +1391,7 @@ Screens:
                         Icon: =Icon.BackArrow
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
-                        OnSelect: |+
+                        OnSelect: |
                           =
                           If(
                               IsBlank(FromScreen),
@@ -1733,7 +1733,7 @@ Screens:
                                                         varShowSidePanel: true,
                                                         varRelatedClient: gvarSelectedClient,
                                                         varTargetRecordID: Blank(),
-                                                        varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,
+                                                        varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,
                                                         varReason: "Nueva sucursal registrada",
                                                         varTargetTable: "sanic_chtblclientbranch",
                                                         varTablePluralName: "sanic_chtblclientbranchs",
@@ -1749,7 +1749,7 @@ Screens:
                                                         varDialogEditShow: true,
                                                         varRelatedClient: gvarSelectedClient,
                                                         varTargetRecordID: DVFluentDetailsList1.Selected.'CH-Tbl-ClientBranch',
-                                                        varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft,
+                                                        varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,
                                                         varReason: Blank(),
                                                         varTargetTable: "sanic_chtblclientbranch",
                                                         varTablePluralName: "sanic_chtblclientbranchs",
@@ -1764,7 +1764,7 @@ Screens:
                                                         varDialogDeactivateShow: true,
                                                         varRelatedClient: gvarSelectedClient,
                                                         varTargetRecordID: DVFluentDetailsList1.Selected.'CH-Tbl-ClientBranch',
-                                                        varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,
+                                                        varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,
                                                         varReason: Blank(),
                                                         varTargetTable: "sanic_chtblclientbranch",
                                                         varTablePluralName: "sanic_chtblclientbranchs",
@@ -1779,7 +1779,7 @@ Screens:
                                                         varDialogActivateShow: true,
                                                         varRelatedClient: gvarSelectedClient,
                                                         varTargetRecordID: DVFluentDetailsList1.Selected.'CH-Tbl-ClientBranch',
-                                                        varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,
+                                                        varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,
                                                         varReason: Blank(),
                                                         varTargetTable: "sanic_chtblclientbranch",
                                                         varTablePluralName: "sanic_chtblclientbranchs",
@@ -2018,7 +2018,7 @@ Screens:
                                           Items: "=Table(\n    {\n        ItemKey: \"new\",\n        ItemDisplayName: \"New\",\n        ItemIconName: \"Add\",\n        ItemVisible: IsBlank(DVFluentDetailsList1_1.Selected) && !IsBlank(LookUp(colClientDataPermissions, Name = \"sanic_chtblclientemail\"  && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))\n    },\n    {\n        ItemKey: \"edit\",\n        ItemDisplayName: \"Edit\",\n        ItemIconName: \"Edit\",\n        ItemVisible: !IsBlank(DVFluentDetailsList1_1.Selected) && !IsBlank(LookUp(colClientDataPermissions, Name = \"sanic_chtblclientemail\"  && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))\n    },\n    {\n        ItemKey: \"deactivate\",\n        ItemDisplayName: \"Deactivate\",\n        ItemIconName: \"Delete\",\n        ItemVisible: !IsBlank(DVFluentDetailsList1_1.Selected) && DVFluentDetailsList1_1.Selected.RecordStatus = 'CH-Ch-RecordStatus'.Active && !IsBlank(LookUp(colClientDataPermissions, Name = \"sanic_chtblclientemail\"  && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))\n    },\n   \n    {\n        ItemKey: \"activate\",\n        ItemDisplayName: \"Activate\",\n        ItemIconName: \"PowerButton\",\n        ItemVisible: !IsBlank(DVFluentDetailsList1_1.Selected) && DVFluentDetailsList1_1.Selected.RecordStatus = 'CH-Ch-RecordStatus'.Inactive && !IsBlank(LookUp(colClientDataPermissions, Name = \"sanic_chtblclientemail\"  && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))\n    },\n     {\n        ItemKey: \"refresh\",\n        ItemDisplayName: \"Refresh\",\n        ItemIconName: \"Refresh\"\n    }\n)"
                                           LayoutMaxHeight: =
                                           LayoutMaxWidth: =
-                                          OnSelect: "=Switch(\n    Self.Selected.ItemKey,\n    \"refresh\",\n   Refresh('CH-Tbl-ClientEmails'),\n    \"new\",\n    UpdateContext(\n        {\n            varShowSidePanel: true,\n            varRelatedClient: gvarSelectedClient,\n            varTargetRecordID: \"\",\n            varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,\n            varReason: \"Nuevo correo registrado\",\n            varTargetTable: \"sanic_chtblclientemail\",\n            varTablePluralName: \"sanic_chtblclientemails\",\n            varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,\n            varTableDisplayName: \"Emails\"\n        }\n    );\n    NewForm(formCorreos);\n    \n    ,\"edit\"\n    ,\n    UpdateContext(\n        {\n            varDialogEditShow: true,\n            varRelatedClient: gvarSelectedClient,\n            varTargetRecordID: DVFluentDetailsList1_1.Selected.'CH-Tbl-ClientEmail',\n            varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft,\n            varReason: Blank(),\n            varTargetTable: \"sanic_chtblclientemail\",\n            varTablePluralName: \"sanic_chtblclientemails\",\n            varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Update,\n            varTableDisplayName: \"Emails\"\n        }\n    );\n    ,\"deactivate\"\n    ,\n    UpdateContext(\n        {\n            varDialogDeactivateShow: true,\n            varRelatedClient: gvarSelectedClient,\n            varTargetRecordID: DVFluentDetailsList1_1.Selected.'CH-Tbl-ClientEmail',\n            varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,\n            varReason: Blank(),\n            varTargetTable: \"sanic_chtblclientemail\",\n            varTablePluralName: \"sanic_chtblclientemails\",\n            varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Deactivate,\n            varTableDisplayName: \"Emails\"\n        }\n    );\n    ,\"activate\"\n    ,\n    UpdateContext(\n        {\n            varDialogActivateShow: true,\n            varRelatedClient: gvarSelectedClient,\n            varTargetRecordID: DVFluentDetailsList1_1.Selected.'CH-Tbl-ClientEmail',\n            varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,\n            varReason: Blank(),\n            varTargetTable: \"sanic_chtblclientemail\",\n            varTablePluralName: \"sanic_chtblclientemails\",\n            varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Activate,\n            varTableDisplayName: \"Emails\"\n        }\n    );\n)"
+                                          OnSelect: "=Switch(\n    Self.Selected.ItemKey,\n    \"refresh\",\n   Refresh('CH-Tbl-ClientEmails'),\n    \"new\",\n    UpdateContext(\n        {\n            varShowSidePanel: true,\n            varRelatedClient: gvarSelectedClient,\n            varTargetRecordID: \"\",\n            varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,\n            varReason: \"Nuevo correo registrado\",\n            varTargetTable: \"sanic_chtblclientemail\",\n            varTablePluralName: \"sanic_chtblclientemails\",\n            varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,\n            varTableDisplayName: \"Emails\"\n        }\n    );\n    NewForm(formCorreos);\n    \n    ,\"edit\"\n    ,\n    UpdateContext(\n        {\n            varDialogEditShow: true,\n            varRelatedClient: gvarSelectedClient,\n            varTargetRecordID: DVFluentDetailsList1_1.Selected.'CH-Tbl-ClientEmail',\n            varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,\n            varReason: Blank(),\n            varTargetTable: \"sanic_chtblclientemail\",\n            varTablePluralName: \"sanic_chtblclientemails\",\n            varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Update,\n            varTableDisplayName: \"Emails\"\n        }\n    );\n    ,\"deactivate\"\n    ,\n    UpdateContext(\n        {\n            varDialogDeactivateShow: true,\n            varRelatedClient: gvarSelectedClient,\n            varTargetRecordID: DVFluentDetailsList1_1.Selected.'CH-Tbl-ClientEmail',\n            varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,\n            varReason: Blank(),\n            varTargetTable: \"sanic_chtblclientemail\",\n            varTablePluralName: \"sanic_chtblclientemails\",\n            varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Deactivate,\n            varTableDisplayName: \"Emails\"\n        }\n    );\n    ,\"activate\"\n    ,\n    UpdateContext(\n        {\n            varDialogActivateShow: true,\n            varRelatedClient: gvarSelectedClient,\n            varTargetRecordID: DVFluentDetailsList1_1.Selected.'CH-Tbl-ClientEmail',\n            varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,\n            varReason: Blank(),\n            varTargetTable: \"sanic_chtblclientemail\",\n            varTablePluralName: \"sanic_chtblclientemails\",\n            varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Activate,\n            varTableDisplayName: \"Emails\"\n        }\n    );\n)"
                                           Width: =Parent.Width
                               - DVFluentDetailsList1_1:
                                   Control: CodeComponent
@@ -2291,7 +2291,7 @@ Screens:
                                     Items: =SortByColumns(Filter('CH-Tbl-ClientDataChangeRequests', RelatedClient.'CH-Tbl-Client' = gvarSelectedClient.'CH-Tbl-Client'),"createdon",SortOrder.Descending)
                                     LayoutMaxHeight: =
                                     LayoutMaxWidth: =
-                                    OnChange: "=If(\r\n    Self.EventName = \"CellAction\" && Self.EventColumn = \"sanic_name\",\r\n    \r\n    With(\r\n            { row: LookUp('CH-Tbl-ClientDataChangeRequests','CH-Tbl-ClientDataChangeRequest'=GUID(Self.EventRowKey) ) },\r\n            Set(gvarSelectedChangeRequest, row); Navigate('screen ChangeRequestDetails',ScreenTransition.Fade,{ FromScreen: App.ActiveScreen })\r\n        )\r\n\r\n)"
+                                    OnChange: "=If(\n    Self.EventName = \"CellAction\" && Self.EventColumn = \"sanic_name\",\n    \n    With(\n            { row: LookUp('CH-Tbl-ClientDataChangeRequests','CH-Tbl-ClientDataChangeRequest'=GUID(Self.EventRowKey) ) },\n            Set(gvarSelectedChangeRequest, row); Navigate('screen ChangeRequestDetails',ScreenTransition.Fade,{ FromScreen: App.ActiveScreen })\n        )\n\n)"
                                     PageSize: =10
                                     RecordKey: ="sanic_chtblclientdatachangerequestid"
                                     SelectionType: ='PowerCAT.DVFluentDetailsList.SelectionType'.None
@@ -2325,7 +2325,7 @@ Screens:
                                               ColResizable: true,
                                               ColSortable: true
                                           },{
-                                              ColName: "cr140_changestatus",
+                                              ColName: "sanic_changestatus",
                                               ColDisplayName: "Status",
                                               ColWidth: 100,
                                               ColResizable: true,
@@ -2385,7 +2385,7 @@ Screens:
                                         IsLocked: true
                                         Properties:
                                           FieldDisplayName: ="ChangeStatus"
-                                          FieldName: ="cr140_changestatus"
+                                          FieldName: ="sanic_changestatus"
                                           FieldType: ="l"
                                           Order: =3
                                     - Modified By5:
@@ -2605,7 +2605,7 @@ Screens:
                                     Items: =SortByColumns(Filter('CH-Tbl-ClientDataChangesAuditTrails', RelatedClient.'CH-Tbl-Client' = gvarSelectedClient.'CH-Tbl-Client'),"createdon",SortOrder.Descending)
                                     LayoutMaxHeight: =
                                     LayoutMaxWidth: =
-                                    OnChange: "=If(\r\n    Self.EventName = \"CellAction\" && Self.EventColumn = \"sanic_RelatedRFC\",\r\n    \r\n    With(\r\n            { row: LookUp('CH-Tbl-ClientDataChangesAuditTrails','CH-Tbl-ClientDataChangesAuditTrail'=GUID(Self.EventRowKey) ).RelatedRFC },\r\n            Set(gvarSelectedChangeRequest, row); Navigate('screen ChangeRequestDetails',ScreenTransition.Fade,{ FromScreen: App.ActiveScreen })\r\n        )\r\n\r\n)"
+                                    OnChange: "=If(\n    Self.EventName = \"CellAction\" && Self.EventColumn = \"sanic_RelatedRFC\",\n    \n    With(\n            { row: LookUp('CH-Tbl-ClientDataChangesAuditTrails','CH-Tbl-ClientDataChangesAuditTrail'=GUID(Self.EventRowKey) ).RelatedRFC },\n            Set(gvarSelectedChangeRequest, row); Navigate('screen ChangeRequestDetails',ScreenTransition.Fade,{ FromScreen: App.ActiveScreen })\n        )\n\n)"
                                     OnSelect: =
                                     PageSize: =50
                                     RecordKey: ="sanic_chtblclientdatachangesaudittrailid"
@@ -2646,7 +2646,7 @@ Screens:
                                               ColResizable: true,
                                               ColSortable: true
                                           },{
-                                              ColName: "cr140_changestatus",
+                                              ColName: "sanic_changestatus",
                                               ColDisplayName: "Status",
                                               ColWidth: 100,
                                               ColResizable: true,

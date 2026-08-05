@@ -103,11 +103,11 @@
                 LayoutMinHeight: =32
                 LayoutMinWidth: =96
                 OnSelect: |-
-                    =UpdateContext({varShowResponseDialog: true, varResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved, varRFCResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Approved});
+                    =UpdateContext({varShowResponseDialog: true, varResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved, varRFCResponse: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved});
                     
                     UpdateContext({varShowResponseDialog: true, varResponseDialogTitle: "Confirmar aprobacion de RFC", varResponseSubtitle: "Añada un comentario justificando su decision"});
                 Text: ="Aprobar"
-                Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable)) && gvarSelectedChangeRequest.'Created By'.User <> gvarUser.User
+                Visible: =gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable)) && gvarSelectedChangeRequest.'Created By'.User <> gvarUser.User
                 Width: =96
                 X: =0
                 Y: =0
@@ -140,14 +140,14 @@
                 LayoutMinHeight: =32
                 LayoutMinWidth: =96
                 OnSelect: |-
-                    =UpdateContext({varShowResponseDialog: true, varResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Denied, varRFCResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Rejected});
+                    =UpdateContext({varShowResponseDialog: true, varResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Denied, varRFCResponse: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected});
                     
                     UpdateContext({varShowResponseDialog: true, varResponseDialogTitle: "Confirmar rechazo de RFC", varResponseSubtitle: "Añada un comentario justificando su decision"});
                 TabIndex: =0
                 Text: ="Rechazar"
                 Tooltip: =""
                 VerticalAlign: =""
-                Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable)) && gvarSelectedChangeRequest.'Created By'.User <> gvarUser.User
+                Visible: =gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable)) && gvarSelectedChangeRequest.'Created By'.User <> gvarUser.User
                 Width: =96
                 X: =0
                 Y: =0
@@ -236,7 +236,7 @@
                                 varShowConfirmationDialog: true,
                                 varConfirmationDialogTitle: "Confirmar envio de RFC",
                                 varConfirmationDialogSubtitle: "Una vez enviado ya no podra editar este RFC, ¿Desea continuar?",
-                                varRFCStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited
+                                varRFCStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted
                             }
                         )
                     )
@@ -244,7 +244,7 @@
                 Text: ="Enviar"
                 Tooltip: =""
                 VerticalAlign: =""
-                Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft && gvarSelectedChangeRequest.'Created By'.User = gvarUser.User
+                Visible: =gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft && gvarSelectedChangeRequest.'Created By'.User = gvarUser.User
                 Width: =96
                 X: =0
                 Y: =0
@@ -282,14 +282,14 @@
                                 varShowCancelarDialog: true,
                                 varCancelarDialogTitle: "Confirmar cancelacion de RFC",
                                 varCancelarDialogSubtitle: "Una vez cancealdo ya no podra editar este RFC, ¿Desea continuar?",
-                                varRFCStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Canceled
+                                varRFCStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled
                             }
                         )
                 TabIndex: =0
                 Text: ="Cancelar"
                 Tooltip: =""
                 VerticalAlign: =""
-                Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft && gvarSelectedChangeRequest.'Created By'.User = gvarUser.User
+                Visible: =gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft && gvarSelectedChangeRequest.'Created By'.User = gvarUser.User
                 Width: =96
                 X: =0
                 Y: =0
@@ -330,7 +330,7 @@
                 ChangeStatus_DataCard1 As typedDataCard.fluentV9ComboBoxOptionSetSingleEditCard:
                     BorderColor: =App.Theme.Colors.Darker40
                     BorderStyle: =BorderStyle.Solid
-                    DataField: ="cr140_changestatus"
+                    DataField: ="sanic_changestatus"
                     Default: =ThisItem.ChangeStatus
                     DisplayMode: =Parent.DisplayMode
                     DisplayName: ="Status"
@@ -363,7 +363,7 @@
                             ={Value: Parent.Default}
                         DisplayMode: =Parent.DisplayMode
                         Height: =32
-                        Items: =Choices('ChangeStatus (CH-Tbl-ClientDataChangeRequests)')
+                        Items: =Choices('Change Status (CH-Tbl-ClientDataChangeRequests)')
                         Required: =Parent.Required
                         ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
                         Width: =Parent.Width - 48
@@ -413,7 +413,7 @@
                     DataField: ="sanic_SolvedBy"
                     Default: =ThisItem.SolvedBy
                     DisplayMode: =Parent.DisplayMode
-                    DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_SolvedBy')
+                    DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,SolvedBy)
                     Fill: =RGBA(0, 0, 0, 0)
                     Height: =70
                     Required: =false
@@ -443,7 +443,7 @@
                         DefaultSelectedItems: =[Parent.Default]
                         DisplayMode: =Parent.DisplayMode
                         Height: =32
-                        Items: =Choices([@'CH-Tbl-ClientDataChangeRequests'].'sanic_SolvedBy')
+                        Items: =Choices([@'CH-Tbl-ClientDataChangeRequests'].SolvedBy)
                         Required: =Parent.Required
                         ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
                         Width: =Parent.Width - 48
@@ -525,7 +525,7 @@
                     DataField: ="sanic_solvedon"
                     Default: =ThisItem.SolvedOn
                     DisplayMode: =Parent.DisplayMode
-                    DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_solvedon')
+                    DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,SolvedOn)
                     Fill: =RGBA(0, 0, 0, 0)
                     Height: =70
                     Required: =false
@@ -641,7 +641,7 @@
                     DataField: ="sanic_applyon"
                     Default: =ThisItem.ApplyOn
                     DisplayMode: =Parent.DisplayMode
-                    DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_applyon')
+                    DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ApplyOn)
                     Fill: =RGBA(0, 0, 0, 0)
                     Height: =70
                     Required: =false
@@ -757,7 +757,7 @@
                     DataField: ="sanic_reasonfordecision"
                     Default: =ThisItem.ReasonForDecision
                     DisplayMode: =Parent.DisplayMode
-                    DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_reasonfordecision')
+                    DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ReasonForDecision)
                     Fill: =RGBA(0, 0, 0, 0)
                     Height: =166
                     Required: =false
@@ -833,7 +833,7 @@
                     DataField: ="sanic_applynotes"
                     Default: =ThisItem.ApplyNotes
                     DisplayMode: =Parent.DisplayMode
-                    DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_applynotes')
+                    DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ApplyNotes)
                     Fill: =RGBA(0, 0, 0, 0)
                     Height: =166
                     Required: =false
@@ -1240,13 +1240,13 @@
                                 ItemKey: "new",
                                 ItemDisplayName: "New",
                                 ItemIconName: "Add",
-                                ItemVisible: IsBlank(DVFluentDetailsList2.Selected) &&gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft
+                                ItemVisible: IsBlank(DVFluentDetailsList2.Selected) &&gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
                             },
                             {
                                 ItemKey: "delete",
                                 ItemDisplayName: "Delete",
                                 ItemIconName: "Delete",
-                                ItemVisible: !IsBlank(DVFluentDetailsList2.Selected) &&gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft
+                                ItemVisible: !IsBlank(DVFluentDetailsList2.Selected) &&gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
                             },
                             {
                                 ItemKey: "refresh",
@@ -1332,7 +1332,7 @@
                             ColWidth: 100,
                             ColResizable: true
                         },{
-                            ColName: "cr140_changestatus",
+                            ColName: "sanic_changestatus",
                             ColDisplayName: "Status",
                             ColWidth: 100,
                             ColResizable: true
@@ -2278,7 +2278,7 @@
                     Patch(
                         'CH-Tbl-ClientDataChangeRequests',
                         gvarSelectedChangeRequest,
-                        {ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited}
+                        {'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted}
                     );
                     Notify(
                         "RFC guardado y enviado",
@@ -2398,7 +2398,7 @@
                             'CH-Tbl-ClientDataChangeRequests',
                             gvarSelectedChangeRequest,
                             {
-                                ChangeStatus: varRFCResponse,
+                                'Change Status': varRFCResponse,
                                 SolvedBy: gvarUser,
                                 SolvedOn: varNow,
                                 ReasonForDecision: Trim(TextInputCanvas2.Value)
@@ -2523,7 +2523,7 @@
                     Patch(
                         'CH-Tbl-ClientDataChangeRequests',
                         gvarSelectedChangeRequest,
-                        {ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Canceled, SolvedOn: varNow, SolvedBy: gvarUser,ReasonForDecision: Trim(TextInputCanvas2.Value)}
+                        {'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled, SolvedOn: varNow, SolvedBy: gvarUser,ReasonForDecision: Trim(TextInputCanvas2.Value)}
                     );
                     Notify(
                         "RFC guardado y enviado",

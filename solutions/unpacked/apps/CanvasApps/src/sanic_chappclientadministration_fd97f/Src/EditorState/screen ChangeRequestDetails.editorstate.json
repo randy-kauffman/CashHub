@@ -432,7 +432,7 @@
         {
           "AFDDataSourceName": "",
           "AutoRuleBindingEnabled": false,
-          "AutoRuleBindingString": "true",
+          "AutoRuleBindingString": "",
           "InvariantPropertyName": "Visible",
           "IsLockable": false,
           "NameMapSourceSchema": "?"
@@ -440,7 +440,7 @@
         {
           "AFDDataSourceName": "",
           "AutoRuleBindingEnabled": false,
-          "AutoRuleBindingString": "false",
+          "AutoRuleBindingString": "",
           "InvariantPropertyName": "OnSelect",
           "IsLockable": false,
           "NameMapSourceSchema": "?"
@@ -515,7 +515,7 @@
       "MetaDataIDKey": "",
       "Name": "ButtonCanvas2",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 2,
+      "ParentIndex": 0,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -576,7 +576,7 @@
         {
           "Category": "Behavior",
           "PropertyName": "OnSelect",
-          "RuleProviderType": "User"
+          "RuleProviderType": "Unknown"
         }
       ],
       "StyleName": "",
@@ -626,7 +626,7 @@
         {
           "AFDDataSourceName": "",
           "AutoRuleBindingEnabled": false,
-          "AutoRuleBindingString": "true",
+          "AutoRuleBindingString": "",
           "InvariantPropertyName": "Visible",
           "IsLockable": false,
           "NameMapSourceSchema": "?"
@@ -635,7 +635,7 @@
         {
           "AFDDataSourceName": "",
           "AutoRuleBindingEnabled": false,
-          "AutoRuleBindingString": "false",
+          "AutoRuleBindingString": "",
           "InvariantPropertyName": "OnSelect",
           "IsLockable": false,
           "NameMapSourceSchema": "?"
@@ -712,7 +712,7 @@
       "MetaDataIDKey": "",
       "Name": "ButtonCanvas2_1",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 3,
+      "ParentIndex": 1,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -852,11 +852,6 @@
         },
         {
           "Category": "Design",
-          "PropertyName": "Visible",
-          "RuleProviderType": "Unknown"
-        },
-        {
-          "Category": "Design",
           "PropertyName": "DisplayMode",
           "RuleProviderType": "Unknown"
         },
@@ -866,9 +861,14 @@
           "RuleProviderType": "Unknown"
         },
         {
+          "Category": "Design",
+          "PropertyName": "Visible",
+          "RuleProviderType": "Unknown"
+        },
+        {
           "Category": "Behavior",
           "PropertyName": "OnSelect",
-          "RuleProviderType": "User"
+          "RuleProviderType": "Unknown"
         }
       ],
       "StyleName": "",
@@ -918,7 +918,7 @@
         {
           "AFDDataSourceName": "",
           "AutoRuleBindingEnabled": false,
-          "AutoRuleBindingString": "true",
+          "AutoRuleBindingString": "",
           "InvariantPropertyName": "Visible",
           "IsLockable": false,
           "NameMapSourceSchema": "?"
@@ -927,7 +927,7 @@
         {
           "AFDDataSourceName": "",
           "AutoRuleBindingEnabled": false,
-          "AutoRuleBindingString": "false",
+          "AutoRuleBindingString": "",
           "InvariantPropertyName": "OnSelect",
           "IsLockable": false,
           "NameMapSourceSchema": "?"
@@ -1004,7 +1004,7 @@
       "MetaDataIDKey": "",
       "Name": "ButtonCanvas2_2",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 4,
+      "ParentIndex": 2,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -1144,11 +1144,6 @@
         },
         {
           "Category": "Design",
-          "PropertyName": "Visible",
-          "RuleProviderType": "User"
-        },
-        {
-          "Category": "Design",
           "PropertyName": "DisplayMode",
           "RuleProviderType": "Unknown"
         },
@@ -1158,9 +1153,14 @@
           "RuleProviderType": "Unknown"
         },
         {
+          "Category": "Design",
+          "PropertyName": "Visible",
+          "RuleProviderType": "Unknown"
+        },
+        {
           "Category": "Behavior",
           "PropertyName": "OnSelect",
-          "RuleProviderType": "User"
+          "RuleProviderType": "Unknown"
         }
       ],
       "StyleName": "",
@@ -1210,7 +1210,7 @@
         {
           "AFDDataSourceName": "",
           "AutoRuleBindingEnabled": false,
-          "AutoRuleBindingString": "gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft",
+          "AutoRuleBindingString": "",
           "InvariantPropertyName": "Visible",
           "IsLockable": false,
           "NameMapSourceSchema": "?"
@@ -1219,7 +1219,7 @@
         {
           "AFDDataSourceName": "",
           "AutoRuleBindingEnabled": false,
-          "AutoRuleBindingString": "UpdateContext(\n    {\n        varShowConfirmationDialog: false,\n        varConfirmationDialogTitle: \"\",\n        varConfirmationDialogSubtitle: \"\"\n    }\n);\nUpdateContext({varRegistriesInConflict: \"\"});\nClear(colConflictRegistrie);\nForAll(\n    Filter(\n        'CH-Tbl-ClientDataChangeRequestLines',\n        ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSelectedChangeRequest.'CH-Tbl-ClientDataChangeRequest'\n    ) As CRL,\n    With(\n        {\n            varConflictRow: LookUp(\n                'CH-Tbl-ClientDataChangeRequestLines',\n                'Field Definition'.LogicalName = CRL.'Field Definition'.LogicalName && (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved)\n            )\n        },\n        Collect(\n            colConflictRegistrie,\n            varConflictRow\n        )\n    );\n    \n);\nIf(\n    !IsEmpty(colConflictRegistrie),\n    UpdateContext(\n        {\n            varRegistriesInConflict: \"Existen cambios en status submitted/approved en conflicto con el RFC actual. Los siguientes campos se encuentran en conflicto: \" & Concat(\n                colConflictRegistrie,\n                Concatenate(\n                    'Field Definition'.Name,\n                    \" (\",\n                    ChangeRequestID.Name,\n                    \"|\",\n                    Name,\n                    \")\"\n                ),\n                \", \"\n            )\n        }\n    );\n    Notify(\n        varRegistriesInConflict,\n        NotificationType.Error\n    );\n    ,\n    UpdateContext(\n        {\n            varShowConfirmationDialog: true,\n            varConfirmationDialogTitle: \"Confirmar envio de RFC\",\n            varConfirmationDialogSubtitle: \"Una vez enviado ya no podra editar este RFC, ¿Desea continuar?\"\n        }\n    )\n)",
+          "AutoRuleBindingString": "",
           "InvariantPropertyName": "OnSelect",
           "IsLockable": false,
           "NameMapSourceSchema": "?"
@@ -1296,7 +1296,7 @@
       "MetaDataIDKey": "",
       "Name": "ButtonCanvas2_3",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 5,
+      "ParentIndex": 3,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -1436,11 +1436,6 @@
         },
         {
           "Category": "Design",
-          "PropertyName": "Visible",
-          "RuleProviderType": "User"
-        },
-        {
-          "Category": "Design",
           "PropertyName": "DisplayMode",
           "RuleProviderType": "Unknown"
         },
@@ -1450,9 +1445,14 @@
           "RuleProviderType": "Unknown"
         },
         {
+          "Category": "Design",
+          "PropertyName": "Visible",
+          "RuleProviderType": "Unknown"
+        },
+        {
           "Category": "Behavior",
           "PropertyName": "OnSelect",
-          "RuleProviderType": "User"
+          "RuleProviderType": "Unknown"
         }
       ],
       "StyleName": "",
@@ -1624,8 +1624,8 @@
       "ControlPropertyState": [
         {
           "AFDDataSourceName": "",
-          "AutoRuleBindingEnabled": true,
-          "AutoRuleBindingString": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "\"cr140_changestatus\"",
           "InvariantPropertyName": "DataField",
           "IsLockable": true,
           "NameMapSourceSchema": "?"
@@ -1696,7 +1696,7 @@
         {
           "Category": "Data",
           "PropertyName": "DataField",
-          "RuleProviderType": "Unknown"
+          "RuleProviderType": "User"
         },
         {
           "Category": "Data",
@@ -1859,7 +1859,7 @@
         {
           "AFDDataSourceName": "",
           "AutoRuleBindingEnabled": false,
-          "AutoRuleBindingString": "Table(\n    {\n        ItemKey: \"new\",\n        ItemDisplayName: \"New\",\n        ItemIconName: \"Add\",\n        ItemVisible: IsBlank(DVFluentDetailsList1.Selected)\n    },\n    {\n        ItemKey: \"edit\",\n        ItemDisplayName: \"Edit\",\n        ItemIconName: \"Edit\",\n        ItemVisible: !IsBlank(DVFluentDetailsList1.Selected)\n    },\n    {\n        ItemKey: \"delete\",\n        ItemDisplayName: \"Delete\",\n        ItemIconName: \"Delete\",\n        ItemVisible: !IsBlank(DVFluentDetailsList1.Selected)\n    },\n    {\n        ItemKey: \"refresh\",\n        ItemDisplayName: \"Refresh\",\n        ItemIconName: \"Refresh\"\n    }\n)",
+          "AutoRuleBindingString": "",
           "InvariantPropertyName": "Items",
           "IsLockable": false,
           "NameMapSourceSchema": "?"
@@ -2970,7 +2970,7 @@
       "MetaDataIDKey": "",
       "Name": "container Spinner",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 6,
+      "ParentIndex": 5,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -6049,7 +6049,7 @@
       "ControlPropertyState": [
         {
           "AFDDataSourceName": "",
-          "AutoRuleBindingEnabled": true,
+          "AutoRuleBindingEnabled": false,
           "AutoRuleBindingString": "",
           "InvariantPropertyName": "Items",
           "IsLockable": true,
@@ -7581,7 +7581,7 @@
         {
           "AFDDataSourceName": "",
           "AutoRuleBindingEnabled": false,
-          "AutoRuleBindingString": "Switch(\n    Self.SelectedButton.Label,\n    \"Cancel\",\n    UpdateContext(\n        {\n            varShowConfirmationDialog: false,\n            varConfirmationDialogTitle: \"\",\n            varConfirmationDialogSubtitle: \"\"\n        }\n    );\n    ,\n    \"Ok\",\n    UpdateContext(\n        {\n            varScreenSpinnerLabel: \"Guardando...\",\n            varScreenSpinnerVisibility: true\n        }\n    );\n    Clear(colSubmittionErrors);\n    UpdateContext(\n        {\n            varRegistriesInConflict: \"\",\n            varContinue: true\n        }\n    );\n    Clear(colConflictRegistrie);\n    ClearCollect(\n        colRegistriesToSubmit,\n        Filter(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSelectedChangeRequest.'CH-Tbl-ClientDataChangeRequest'\n        )\n    );\n    ForAll(\n        Filter(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSelectedChangeRequest.'CH-Tbl-ClientDataChangeRequest'\n        ) As CRL,\n        With(\n            {\n                varConflictRow: LookUp(\n                    'CH-Tbl-ClientDataChangeRequestLines',\n                    'Field Definition'.LogicalName = CRL.'Field Definition'.LogicalName && (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved)\n                )\n            },\n            Collect(\n                colConflictRegistrie,\n                varConflictRow\n            )\n        );\n    );\n    If(\n        !IsEmpty(colConflictRegistrie),\n        UpdateContext(\n            {\n                varRegistriesInConflict: \"Existen cambios en status submitted/approved en conflicto con el RFC actual. Los siguientes campos se encuentran en conflicto: \" & Concat(\n                    colConflictRegistrie,\n                    Concatenate(\n                        'Field Definition'.Name,\n                        \" (\",\n                        ChangeRequestID.Name,\n                        \"-\",\n                        Name,\n                        \")\"\n                    ),\n                    \", \"\n                )\n            }\n        );\n        Notify(\n            varRegistriesInConflict,\n            NotificationType.Error\n        );\n        UpdateContext({varContinue: false});\n    );\n    If(\n        varContinue,\n        ForAll(\n            colRegistriesToSubmit As Row,\n            Collect(\n                colSubmittionErrors,\n                Row\n            );\n            IfError(\n                Patch(\n                    'CH-Tbl-ClientDataChangeRequestLines',\n                    Row,\n                    {ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted}\n                );\n                Remove(\n                    colSubmittionErrors,\n                    Row\n                );\n                ,\n                Blank()\n            )\n        );\n    );\n    If(\n        IsEmpty(colSubmittionErrors) && varContinue,\n        Patch(\n            'CH-Tbl-ClientDataChangeRequests',\n            gvarSelectedChangeRequest,\n            {ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited}\n        );\n        Notify(\n            \"RFC guardado y enviado\",\n            NotificationType.Success\n        );\n        UpdateContext(\n            {\n                varShowConfirmationDialog: false,\n                varConfirmationDialogTitle: \"\",\n                varConfirmationDialogSubtitle: \"\"\n            }\n        );\n        Set(\n            gvarSelectedChangeRequest,\n            Blank()\n        );\n        Refresh('CH-Tbl-ClientDataChangeRequestLines');\n        Refresh('CH-Tbl-ClientDataChangeRequests');\n         If(\n                IsBlank(FromScreen),\n                Navigate('screen Clients', ScreenTransition.Fade),  // no hay historial → pantalla por defecto\n                Back()                                        // hay historial → volver normalmente\n            );,\n        Notify(\n            \"Hubo problemas al guardar los registros, intentelo nuevamente\",\n            NotificationType.Error\n        )\n    );\n    UpdateContext(\n        {\n            varShowConfirmationDialog: false,\n            varConfirmationDialogTitle: \"\",\n            varConfirmationDialogSubtitle: \"\"\n        }\n    );\n    \n);\n",
+          "AutoRuleBindingString": "",
           "InvariantPropertyName": "OnButtonSelect",
           "IsLockable": false,
           "NameMapSourceSchema": "?"
@@ -7751,7 +7751,7 @@
         {
           "Category": "Behavior",
           "PropertyName": "OnButtonSelect",
-          "RuleProviderType": "User"
+          "RuleProviderType": "Unknown"
         },
         {
           "Category": "Behavior",
@@ -8043,7 +8043,7 @@
         {
           "Category": "Behavior",
           "PropertyName": "OnButtonSelect",
-          "RuleProviderType": "User"
+          "RuleProviderType": "Unknown"
         },
         {
           "Category": "Behavior",
@@ -8279,7 +8279,7 @@
         {
           "Category": "Behavior",
           "PropertyName": "OnButtonSelect",
-          "RuleProviderType": "User"
+          "RuleProviderType": "Unknown"
         },
         {
           "Category": "Behavior",
@@ -10488,7 +10488,7 @@
       "MetaDataIDKey": "",
       "Name": "Form4",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 7,
+      "ParentIndex": 6,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -11033,7 +11033,7 @@
       "MetaDataIDKey": "",
       "Name": "Icon5",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 0,
+      "ParentIndex": 5,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -11410,7 +11410,7 @@
       "MetaDataIDKey": "",
       "Name": "Label5",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 1,
+      "ParentIndex": 4,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -17450,7 +17450,7 @@
       "MetaDataIDKey": "",
       "Name": "TextInputCanvas2",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 5,
+      "ParentIndex": 7,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {

@@ -98,7 +98,7 @@
             DataField: ="sanic_applynotes"
             Default: =ThisItem.ApplyNotes
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_applynotes')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ApplyNotes)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
             Required: =false
@@ -190,7 +190,7 @@
             DataField: ="sanic_applyon"
             Default: =ThisItem.ApplyOn
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_applyon')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ApplyOn)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
             Required: =false
@@ -359,113 +359,19 @@
                 Y: =DataCardKey36.Y
                 ZIndex: =7
 
-        ChangeStatus_DataCard3 As typedDataCard.comboBoxOptionSetSingleEditCard:
-            BorderColor: =App.Theme.Colors.Darker40
-            BorderStyle: =BorderStyle.Solid
-            DataField: ="cr140_changestatus"
-            Default: =ThisItem.ChangeStatus
-            DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'cr140_changestatus')
-            Fill: =RGBA(0, 0, 0, 0)
-            Height: =50
-            Required: =false
-            Update: =DataCardValue32.Selected.Value
-            Width: =266
-            X: =2
-            Y: =0
-            ZIndex: =1
-
-            DataCardKey37 As label:
-                AutoHeight: =true
-                Color: =App.Theme.Colors.Darker30
-                DisabledColor: =RGBA(166, 166, 166, 1)
-                Font: =App.Theme.Font
-                Height: =34
-                Size: =13
-                Text: =Parent.DisplayName
-                Width: =Parent.Width - 60
-                Wrap: =false
-                X: =30
-                Y: =10
-                ZIndex: =1
-
-            DataCardValue32 As combobox:
-                BorderColor: =If(IsBlank(Parent.Error), Parent.BorderColor, Color.Red)
-                ChevronBackground: =App.Theme.Colors.Primary
-                ChevronDisabledBackground: =RGBA(166, 166, 166, 1)
-                ChevronDisabledFill: =RGBA(244, 244, 244, 1)
-                ChevronFill: =App.Theme.Colors.PrimaryForeground
-                ChevronHoverBackground: =App.Theme.Colors.Darker10
-                ChevronHoverFill: =App.Theme.Colors.PrimaryForeground
-                DefaultSelectedItems: =[varChangeStatus]
-                DisabledBorderColor: =RGBA(166, 166, 166, 1)
-                DisabledColor: =RGBA(166, 166, 166, 1)
-                DisabledFill: =RGBA(244, 244, 244, 1)
-                DisplayMode: =Parent.DisplayMode
-                Font: =App.Theme.Font
-                HoverColor: =RGBA(0, 0, 0, 1)
-                HoverFill: =App.Theme.Colors.Lighter70
-                IsSearchable: =false
-                Items: =Choices('ChangeStatus (CH-Tbl-ClientDataChangeRequests)')
-                PaddingLeft: =If(Self.DisplayMode = DisplayMode.Edit, 5, 0)
-                PressedColor: =App.Theme.Colors.PrimaryForeground
-                PressedFill: =App.Theme.Colors.Darker30
-                SelectionColor: =App.Theme.Colors.PrimaryForeground
-                SelectionFill: =App.Theme.Colors.Primary
-                SelectMultiple: =false
-                Size: =13
-                Tooltip: =Parent.DisplayName
-                Width: =Parent.Width - 60
-                X: =30
-                Y: =DataCardKey37.Y + DataCardKey37.Height + 5
-                ZIndex: =2
-
-            ErrorMessage33 As label:
-                AutoHeight: =true
-                Color: =RGBA(168, 0, 0, 1)
-                DisabledColor: =RGBA(166, 166, 166, 1)
-                Font: =App.Theme.Font
-                FontWeight: =FontWeight.Semibold
-                Height: =10
-                Live: =Live.Assertive
-                PaddingBottom: =0
-                PaddingLeft: =0
-                PaddingRight: =0
-                PaddingTop: =0
-                Text: =Parent.Error
-                Visible: =Parent.DisplayMode=DisplayMode.Edit
-                Width: =Parent.Width - 60
-                X: =30
-                Y: =DataCardValue32.Y + DataCardValue32.Height
-                ZIndex: =3
-
-            StarVisible33 As label:
-                Align: =Align.Center
-                Color: =App.Theme.Colors.Darker30
-                DisabledColor: =RGBA(166, 166, 166, 1)
-                Font: =App.Theme.Font
-                Height: =DataCardKey37.Height
-                Size: =13
-                Text: ="*"
-                Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                Width: =30
-                Wrap: =false
-                Y: =DataCardKey37.Y
-                ZIndex: =4
-
         "'Created On_DataCard1' As typedDataCard.textualViewCard":
             BorderColor: =App.Theme.Colors.Darker40
             BorderStyle: =BorderStyle.Solid
             DataField: ="createdon"
             Default: =ThisItem.'Created On'
             DisplayMode: =DisplayMode.View
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'createdon')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'Created On')
             Fill: =RGBA(0, 0, 0, 0)
             Height: =40
             Required: =false
             Width: =266
-            X: =0
-            Y: =1
+            X: =2
+            Y: =0
             ZIndex: =1
 
             DataCardKey38 As label:
@@ -500,18 +406,112 @@
                 Y: =DataCardKey38.Y + DataCardKey38.Height + 5
                 ZIndex: =2
 
+        sanic_ChangeStatus_DataCard2 As typedDataCard.comboBoxOptionSetSingleEditCard:
+            BorderColor: =App.Theme.Colors.Darker40
+            BorderStyle: =BorderStyle.Solid
+            DataField: ="sanic_changestatus"
+            Default: =ThisItem.'Change Status'
+            DisplayMode: =Parent.DisplayMode
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_changestatus')
+            Fill: =RGBA(0, 0, 0, 0)
+            Height: =50
+            Required: =false
+            Update: =DataCardValue15.Selected.Value
+            Width: =800
+            X: =0
+            Y: =0
+            ZIndex: =1
+
+            DataCardKey17 As label:
+                AutoHeight: =true
+                Color: =App.Theme.Colors.Darker30
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =34
+                Size: =13
+                Text: =Parent.DisplayName
+                Width: =Parent.Width - 60
+                Wrap: =false
+                X: =30
+                Y: =10
+                ZIndex: =1
+
+            DataCardValue15 As combobox:
+                BorderColor: =If(IsBlank(Parent.Error), Parent.BorderColor, Color.Red)
+                ChevronBackground: =App.Theme.Colors.Primary
+                ChevronDisabledBackground: =RGBA(166, 166, 166, 1)
+                ChevronDisabledFill: =RGBA(244, 244, 244, 1)
+                ChevronFill: =App.Theme.Colors.PrimaryForeground
+                ChevronHoverBackground: =App.Theme.Colors.Darker10
+                ChevronHoverFill: =App.Theme.Colors.PrimaryForeground
+                DefaultSelectedItems: =[Parent.Default]
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                DisplayMode: =Parent.DisplayMode
+                Font: =App.Theme.Font
+                HoverColor: =RGBA(0, 0, 0, 1)
+                HoverFill: =App.Theme.Colors.Lighter70
+                IsSearchable: =false
+                Items: =Choices('Change Status (CH-Tbl-ClientDataChangeRequests)')
+                PaddingLeft: =If(Self.DisplayMode = DisplayMode.Edit, 5, 0)
+                PressedColor: =App.Theme.Colors.PrimaryForeground
+                PressedFill: =App.Theme.Colors.Darker30
+                SelectionColor: =App.Theme.Colors.PrimaryForeground
+                SelectionFill: =App.Theme.Colors.Primary
+                SelectMultiple: =false
+                Size: =13
+                Tooltip: =Parent.DisplayName
+                Width: =Parent.Width - 60
+                X: =30
+                Y: =DataCardKey17.Y + DataCardKey17.Height + 5
+                ZIndex: =2
+
+            ErrorMessage16 As label:
+                AutoHeight: =true
+                Color: =RGBA(168, 0, 0, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =10
+                Live: =Live.Assertive
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Text: =Parent.Error
+                Visible: =Parent.DisplayMode=DisplayMode.Edit
+                Width: =Parent.Width - 60
+                X: =30
+                Y: =DataCardValue15.Y + DataCardValue15.Height
+                ZIndex: =3
+
+            StarVisible16 As label:
+                Align: =Align.Center
+                Color: =App.Theme.Colors.Darker30
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =DataCardKey17.Height
+                Size: =13
+                Text: ="*"
+                Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
+                Width: =30
+                Wrap: =false
+                Y: =DataCardKey17.Y
+                ZIndex: =4
+
         Name_DataCard6 As typedDataCard.textualViewCard:
             BorderColor: =App.Theme.Colors.Darker40
             BorderStyle: =BorderStyle.Solid
             DataField: ="sanic_name"
             Default: =ThisItem.Name
             DisplayMode: =DisplayMode.View
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_name')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,Name)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =40
             Required: =false
             Width: =266
-            X: =1
+            X: =0
             Y: =1
             ZIndex: =1
 
@@ -553,14 +553,14 @@
             DataField: ="sanic_reason"
             Default: =ThisItem.Reason
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_reason')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,Reason)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
-            MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, 'sanic_reason')
+            MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, Reason)
             Required: =true
             Update: =DataCardValue35.Text
             Width: =266
-            X: =2
+            X: =1
             Y: =1
             ZIndex: =1
 
@@ -645,14 +645,14 @@
             DataField: ="sanic_reasonfordecision"
             Default: =ThisItem.ReasonForDecision
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_reasonfordecision')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ReasonForDecision)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
             Required: =false
             Update: =DataCardValue36.Text
             Width: =266
-            X: =0
-            Y: =2
+            X: =2
+            Y: =1
             ZIndex: =1
 
             DataCardKey41 As label:
@@ -737,13 +737,13 @@
             DataField: ="sanic_RelatedClient"
             Default: =ThisItem.RelatedClient
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_RelatedClient')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,RelatedClient)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
             Required: =false
             Update: =varRelatedClient
             Width: =266
-            X: =1
+            X: =0
             Y: =2
             ZIndex: =1
 
@@ -830,13 +830,13 @@
             DataField: ="sanic_SolvedBy"
             Default: =ThisItem.SolvedBy
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_SolvedBy')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,SolvedBy)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
             Required: =false
             Update: =DataCardValue38.Selected
             Width: =266
-            X: =2
+            X: =1
             Y: =2
             ZIndex: =1
 
@@ -923,14 +923,14 @@
             DataField: ="sanic_solvedon"
             Default: =ThisItem.SolvedOn
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_solvedon')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,SolvedOn)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
             Required: =false
             Update: =If(Not IsBlank(DateValue6.SelectedDate), DateTime(Year(DateValue6.SelectedDate), Month(DateValue6.SelectedDate), Day(DateValue6.SelectedDate), Value(HourValue6.Selected.Value), Value(MinuteValue6.Selected.Value), 0))
             Width: =266
-            X: =0
-            Y: =3
+            X: =2
+            Y: =2
             ZIndex: =1
 
             DataCardKey44 As label:
@@ -1098,13 +1098,13 @@
             DataField: ="statecode"
             Default: =ThisItem.Status
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'statecode')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,Status)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
             Required: =false
             Update: =DataCardValue39.Selected.Value
             Width: =266
-            X: =1
+            X: =0
             Y: =3
             ZIndex: =1
 
@@ -1192,14 +1192,14 @@
             DataField: ="sanic_targetrecordid"
             Default: =varTargetRecordID
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_targetrecordid')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,TargetRecordID)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
-            MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, 'sanic_targetrecordid')
+            MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, TargetRecordID)
             Required: =false
             Update: =DataCardValue40.Text
             Width: =266
-            X: =2
+            X: =1
             Y: =3
             ZIndex: =1
 
@@ -1284,15 +1284,15 @@
             DataField: ="sanic_targettable"
             Default: =ThisItem.TargetTable
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_targettable')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,TargetTable)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
-            MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, 'sanic_targettable')
+            MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, TargetTable)
             Required: =false
             Update: =DataCardValue41.Text
             Width: =266
-            X: =0
-            Y: =4
+            X: =2
+            Y: =3
             ZIndex: =1
 
             DataCardKey47 As label:
@@ -1376,12 +1376,12 @@
             DataField: ="versionnumber"
             Default: =ThisItem.'Version Number'
             DisplayMode: =DisplayMode.View
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'versionnumber')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'Version Number')
             Fill: =RGBA(0, 0, 0, 0)
             Height: =40
             Required: =false
             Width: =266
-            X: =1
+            X: =0
             Y: =4
             ZIndex: =1
 
@@ -1423,13 +1423,13 @@
             DataField: ="sanic_type"
             Default: =ThisItem.Type
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_type')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,Type)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
             Required: =false
             Update: =DataCardValue43.Selected.Value
             Width: =266
-            X: =2
+            X: =1
             Y: =4
             ZIndex: =1
 
@@ -1517,15 +1517,15 @@
             DataField: ="sanic_targettabledisplayname"
             Default: =ThisItem.TargetTableDisplayName
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_targettabledisplayname')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,TargetTableDisplayName)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
-            MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, 'sanic_targettabledisplayname')
+            MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, TargetTableDisplayName)
             Required: =false
             Update: =DataCardValue44.Text
             Width: =266
-            X: =0
-            Y: =5
+            X: =2
+            Y: =4
             ZIndex: =1
 
             DataCardKey50 As label:
@@ -1609,14 +1609,14 @@
             DataField: ="sanic_targettablepluralname"
             Default: =ThisItem.TargetTablePluralName
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_targettablepluralname')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,TargetTablePluralName)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =50
-            MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, 'sanic_targettablepluralname')
+            MaxLength: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'], DataSourceInfo.MaxLength, TargetTablePluralName)
             Required: =false
             Update: =DataCardValue45.Text
             Width: =266
-            X: =1
+            X: =0
             Y: =5
             ZIndex: =1
 
@@ -1784,7 +1784,7 @@
                                 varShowSidePanel: true,
                                 varRelatedClient: Blank(),
                                 varTargetRecordID: Blank(),
-                                varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,
+                                varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,
                                 varReason: "Nuevo cliente registrado",
                                 varTargetTable: "sanic_chtblclient",
                                 varTablePluralName: "sanic_chtblclient",
@@ -1803,7 +1803,7 @@
                                 varDialogEditShow: true,
                                 varRelatedClient: DVFluentDetailsListWithContextMenu1.Selected,
                                 varTargetRecordID: DVFluentDetailsListWithContextMenu1.Selected.'CH-Tbl-Client',
-                                varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft,
+                                varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,
                                 varReason: Blank(),
                                 varTargetTable: "sanic_chtblclient",
                                 varTablePluralName: "sanic_chtblclients",
@@ -1821,7 +1821,7 @@
                                 varDialogDeactivateShow: true,
                                 varRelatedClient: DVFluentDetailsListWithContextMenu1.Selected,
                                 varTargetRecordID: DVFluentDetailsListWithContextMenu1.Selected.'CH-Tbl-Client',
-                                varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,
+                                varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,
                                 varReason: Blank(),
                                 varTargetTable: "sanic_chtblclient",
                                 varTablePluralName: "sanic_chtblclients",
@@ -1839,7 +1839,7 @@
                                 varDialogActivateShow: true,
                                 varRelatedClient: DVFluentDetailsListWithContextMenu1.Selected,
                                 varTargetRecordID: DVFluentDetailsListWithContextMenu1.Selected.'CH-Tbl-Client',
-                                varChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,
+                                varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,
                                 varReason: Blank(),
                                 varTargetTable: "sanic_chtblclient",
                                 varTablePluralName: "sanic_chtblclients",

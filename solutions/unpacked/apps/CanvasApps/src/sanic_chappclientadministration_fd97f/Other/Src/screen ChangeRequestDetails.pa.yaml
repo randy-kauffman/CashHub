@@ -88,11 +88,11 @@ Screens:
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
                         OnSelect: |-
-                          =UpdateContext({varShowResponseDialog: true, varResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved, varRFCResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Approved});
+                          =UpdateContext({varShowResponseDialog: true, varResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved, varRFCResponse: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved});
 
                           UpdateContext({varShowResponseDialog: true, varResponseDialogTitle: "Confirmar aprobacion de RFC", varResponseSubtitle: "Añada un comentario justificando su decision"});
                         Text: ="Aprobar"
-                        Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable))
+                        Visible: =gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable)) && gvarSelectedChangeRequest.'Created By'.User <> gvarUser.User
                   - ButtonCanvas2_1:
                       Control: Button@0.0.45
                       Properties:
@@ -100,19 +100,19 @@ Screens:
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
                         OnSelect: |-
-                          =UpdateContext({varShowResponseDialog: true, varResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Denied, varRFCResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Rejected});
+                          =UpdateContext({varShowResponseDialog: true, varResponse: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Denied, varRFCResponse: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected});
 
                           UpdateContext({varShowResponseDialog: true, varResponseDialogTitle: "Confirmar rechazo de RFC", varResponseSubtitle: "Añada un comentario justificando su decision"});
                         Text: ="Rechazar"
-                        Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable))
+                        Visible: =gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted && !IsBlank(LookUp(colClientDataPermissions, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSelectedChangeRequest.TargetTable)) && gvarSelectedChangeRequest.'Created By'.User <> gvarUser.User
                   - ButtonCanvas2_2:
                       Control: Button@0.0.45
                       Properties:
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
-                        OnSelect: "=UpdateContext(\n    {\n        varShowConfirmationDialog: false,\n        varConfirmationDialogTitle: \"\",\n        varConfirmationDialogSubtitle: \"\"\n    }\n);\nUpdateContext({varRegistriesInConflict: \"\"});\nClear(colConflictRegistrie);\nForAll(\n    Filter(\n        'CH-Tbl-ClientDataChangeRequestLines',\n        ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSelectedChangeRequest.'CH-Tbl-ClientDataChangeRequest'\n    ) As CRL,\n    With(\n        {\n            varConflictRow: LookUp(\n                'CH-Tbl-ClientDataChangeRequestLines',\n                'Field Definition'.LogicalName = CRL.'Field Definition'.LogicalName && (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved)\n            )\n        },\n        Collect(\n            colConflictRegistrie,\n            varConflictRow\n        )\n    );\n    \n);\nIf(\n    !IsEmpty(colConflictRegistrie),\n    UpdateContext(\n        {\n            varRegistriesInConflict: \"Existen cambios en status submitted/approved en conflicto con el RFC actual. Los siguientes campos se encuentran en conflicto: \" & Concat(\n                colConflictRegistrie,\n                Concatenate(\n                    'Field Definition'.Name,\n                    \" (\",\n                    ChangeRequestID.Name,\n                    \"|\",\n                    Name,\n                    \")\"\n                ),\n                \", \"\n            )\n        }\n    );\n    Notify(\n        varRegistriesInConflict,\n        NotificationType.Error\n    );\n    ,\n    UpdateContext(\n        {\n            varShowConfirmationDialog: true,\n            varConfirmationDialogTitle: \"Confirmar envio de RFC\",\n            varConfirmationDialogSubtitle: \"Una vez enviado ya no podra editar este RFC, ¿Desea continuar?\",\n            varRFCStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited\n        }\n    )\n)"
+                        OnSelect: "=UpdateContext(\n    {\n        varShowConfirmationDialog: false,\n        varConfirmationDialogTitle: \"\",\n        varConfirmationDialogSubtitle: \"\"\n    }\n);\nUpdateContext({varRegistriesInConflict: \"\"});\nClear(colConflictRegistrie);\nForAll(\n    Filter(\n        'CH-Tbl-ClientDataChangeRequestLines',\n        ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSelectedChangeRequest.'CH-Tbl-ClientDataChangeRequest'\n    ) As CRL,\n    With(\n        {\n            varConflictRow: LookUp(\n                'CH-Tbl-ClientDataChangeRequestLines',\n                'Field Definition'.LogicalName = CRL.'Field Definition'.LogicalName && (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved)\n            )\n        },\n        Collect(\n            colConflictRegistrie,\n            varConflictRow\n        )\n    );\n    \n);\nIf(\n    !IsEmpty(colConflictRegistrie),\n    UpdateContext(\n        {\n            varRegistriesInConflict: \"Existen cambios en status submitted/approved en conflicto con el RFC actual. Los siguientes campos se encuentran en conflicto: \" & Concat(\n                colConflictRegistrie,\n                Concatenate(\n                    'Field Definition'.Name,\n                    \" (\",\n                    ChangeRequestID.Name,\n                    \"|\",\n                    Name,\n                    \")\"\n                ),\n                \", \"\n            )\n        }\n    );\n    Notify(\n        varRegistriesInConflict,\n        NotificationType.Error\n    );\n    ,\n    UpdateContext(\n        {\n            varShowConfirmationDialog: true,\n            varConfirmationDialogTitle: \"Confirmar envio de RFC\",\n            varConfirmationDialogSubtitle: \"Una vez enviado ya no podra editar este RFC, ¿Desea continuar?\",\n            varRFCStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted\n        }\n    )\n)"
                         Text: ="Enviar"
-                        Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft && gvarSelectedChangeRequest.'Created By'.User = gvarUser.User
+                        Visible: =gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft && gvarSelectedChangeRequest.'Created By'.User = gvarUser.User
                   - ButtonCanvas2_3:
                       Control: Button@0.0.45
                       Properties:
@@ -125,11 +125,11 @@ Screens:
                                       varShowCancelarDialog: true,
                                       varCancelarDialogTitle: "Confirmar cancelacion de RFC",
                                       varCancelarDialogSubtitle: "Una vez cancealdo ya no podra editar este RFC, ¿Desea continuar?",
-                                      varRFCStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Canceled
+                                      varRFCStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled
                                   }
                               )
                         Text: ="Cancelar"
-                        Visible: =gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft && gvarSelectedChangeRequest.'Created By'.User = gvarUser.User
+                        Visible: =gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft && gvarSelectedChangeRequest.'Created By'.User = gvarUser.User
             - container ChangeRequestData:
                 Control: GroupContainer@1.5.0
                 Variant: AutoLayout
@@ -254,7 +254,7 @@ Screens:
                             Control: TypedDataCard@1.0.7
                             Variant: ComboBoxOptionSetSingleEdit
                             Properties:
-                              DataField: ="cr140_changestatus"
+                              DataField: ="sanic_changestatus"
                               Default: =ThisItem.ChangeStatus
                               DisplayName: ="Status"
                               Required: =false
@@ -282,7 +282,7 @@ Screens:
                                     DefaultSelectedItems: |-
                                       ={Value: Parent.Default}
                                     DisplayMode: =Parent.DisplayMode
-                                    Items: =Choices('ChangeStatus (CH-Tbl-ClientDataChangeRequests)')
+                                    Items: =Choices('Change Status (CH-Tbl-ClientDataChangeRequests)')
                                     Required: =Parent.Required
                                     ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
                                     Width: =Parent.Width - 48
@@ -442,7 +442,7 @@ Screens:
                             Properties:
                               DataField: ="sanic_SolvedBy"
                               Default: =ThisItem.SolvedBy
-                              DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_SolvedBy')
+                              DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,SolvedBy)
                               Required: =false
                               Update: =DataCardValue7.Selected
                               Visible: =If(IsBlank(DateValue2.SelectedDate),false,true)
@@ -468,7 +468,7 @@ Screens:
                                     AccessibleLabel: =Parent.DisplayName
                                     DefaultSelectedItems: =[Parent.Default]
                                     DisplayMode: =Parent.DisplayMode
-                                    Items: =Choices([@'CH-Tbl-ClientDataChangeRequests'].'sanic_SolvedBy')
+                                    Items: =Choices([@'CH-Tbl-ClientDataChangeRequests'].SolvedBy)
                                     Required: =Parent.Required
                                     ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
                                     Width: =Parent.Width - 48
@@ -545,7 +545,7 @@ Screens:
                             Properties:
                               DataField: ="sanic_solvedon"
                               Default: =ThisItem.SolvedOn
-                              DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_solvedon')
+                              DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,SolvedOn)
                               Required: =false
                               Update: =If(Not IsBlank(DateValue2.SelectedDate), DateTime(Year(DateValue2.SelectedDate), Month(DateValue2.SelectedDate), Day(DateValue2.SelectedDate), Value(HourValue2.Selected.Value), Value(MinuteValue2.Selected.Value), Second(DateValue2.SelectedDate)))
                               Visible: =If(IsBlank(DateValue2.SelectedDate),false,true)
@@ -640,7 +640,7 @@ Screens:
                             Properties:
                               DataField: ="sanic_applyon"
                               Default: =ThisItem.ApplyOn
-                              DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_applyon')
+                              DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ApplyOn)
                               Required: =false
                               Update: =If(Not IsBlank(DateValue1.SelectedDate), DateTime(Year(DateValue1.SelectedDate), Month(DateValue1.SelectedDate), Day(DateValue1.SelectedDate), Value(HourValue1.Selected.Value), Value(MinuteValue1.Selected.Value), Second(DateValue1.SelectedDate)))
                               Visible: =If(IsBlank(DateValue1.SelectedDate),false,true)
@@ -735,7 +735,7 @@ Screens:
                             Properties:
                               DataField: ="sanic_reasonfordecision"
                               Default: =ThisItem.ReasonForDecision
-                              DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_reasonfordecision')
+                              DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ReasonForDecision)
                               Required: =false
                               Update: =DataCardValue11.Value
                               Visible: =If(IsBlank(DateValue2.SelectedDate),false,true)
@@ -795,7 +795,7 @@ Screens:
                             Properties:
                               DataField: ="sanic_applynotes"
                               Default: =ThisItem.ApplyNotes
-                              DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,'sanic_applynotes')
+                              DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ApplyNotes)
                               Required: =false
                               Update: =DataCardValue6.Value
                               Visible: =If(IsBlank(DateValue1.SelectedDate),false,true)
@@ -892,13 +892,13 @@ Screens:
                                         ItemKey: "new",
                                         ItemDisplayName: "New",
                                         ItemIconName: "Add",
-                                        ItemVisible: IsBlank(DVFluentDetailsList2.Selected) &&gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft
+                                        ItemVisible: IsBlank(DVFluentDetailsList2.Selected) &&gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
                                     },
                                     {
                                         ItemKey: "delete",
                                         ItemDisplayName: "Delete",
                                         ItemIconName: "Delete",
-                                        ItemVisible: !IsBlank(DVFluentDetailsList2.Selected) &&gvarSelectedChangeRequest.ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Draft
+                                        ItemVisible: !IsBlank(DVFluentDetailsList2.Selected) &&gvarSelectedChangeRequest.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
                                     },
                                     {
                                         ItemKey: "refresh",
@@ -981,7 +981,7 @@ Screens:
                                   ColWidth: 100,
                                   ColResizable: true
                               },{
-                                  ColName: "cr140_changestatus",
+                                  ColName: "sanic_changestatus",
                                   ColDisplayName: "Status",
                                   ColWidth: 100,
                                   ColResizable: true
@@ -1624,7 +1624,7 @@ Screens:
             DialogWidth: =640
             Fill: =dialogEnviar.OverlayColor
             Height: =768
-            OnButtonSelect: "=Switch(\n    Self.SelectedButton.Label,\n    \"Cancel\",\n    UpdateContext(\n        {\n            varShowConfirmationDialog: false,\n            varConfirmationDialogTitle: \"\",\n            varConfirmationDialogSubtitle: \"\"\n        }\n    );\n    ,\n    \"Ok\",\n    UpdateContext(\n        {\n            varScreenSpinnerLabel: \"Guardando...\",\n            varScreenSpinnerVisibility: true\n        }\n    );\n    Clear(colSubmittionErrors);\n    UpdateContext(\n        {\n            varRegistriesInConflict: \"\",\n            varContinue: true\n        }\n    );\n    Clear(colConflictRegistrie);\n    ClearCollect(\n        colRegistriesToSubmit,\n        Filter(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSelectedChangeRequest.'CH-Tbl-ClientDataChangeRequest'\n        )\n    );\n    ForAll(\n        Filter(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSelectedChangeRequest.'CH-Tbl-ClientDataChangeRequest'\n        ) As CRL,\n        With(\n            {\n                varConflictRow: LookUp(\n                    'CH-Tbl-ClientDataChangeRequestLines',\n                    'Field Definition'.LogicalName = CRL.'Field Definition'.LogicalName && (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved)\n                )\n            },\n            Collect(\n                colConflictRegistrie,\n                varConflictRow\n            )\n        );\n    );\n    If(\n        !IsEmpty(colConflictRegistrie),\n        UpdateContext(\n            {\n                varRegistriesInConflict: \"Existen cambios en status submitted/approved en conflicto con el RFC actual. Los siguientes campos se encuentran en conflicto: \" & Concat(\n                    colConflictRegistrie,\n                    Concatenate(\n                        'Field Definition'.Name,\n                        \" (\",\n                        ChangeRequestID.Name,\n                        \"-\",\n                        Name,\n                        \")\"\n                    ),\n                    \", \"\n                )\n            }\n        );\n        Notify(\n            varRegistriesInConflict,\n            NotificationType.Error\n        );\n        UpdateContext({varContinue: false});\n    );\n    If(\n        varContinue,\n        ForAll(\n            colRegistriesToSubmit As Row,\n            Collect(\n                colSubmittionErrors,\n                Row\n            );\n            IfError(\n                Patch(\n                    'CH-Tbl-ClientDataChangeRequestLines',\n                    Row,\n                    {ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted}\n                );\n                Remove(\n                    colSubmittionErrors,\n                    Row\n                );\n                ,\n                Blank()\n            )\n        );\n    );\n    If(\n        IsEmpty(colSubmittionErrors) && varContinue,\n        Patch(\n            'CH-Tbl-ClientDataChangeRequests',\n            gvarSelectedChangeRequest,\n            {ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited}\n        );\n        Notify(\n            \"RFC guardado y enviado\",\n            NotificationType.Success\n        );\n        UpdateContext(\n            {\n                varShowConfirmationDialog: false,\n                varConfirmationDialogTitle: \"\",\n                varConfirmationDialogSubtitle: \"\"\n            }\n        );\n        Set(\n            gvarSelectedChangeRequest,\n            Blank()\n        );\n        Refresh('CH-Tbl-ClientDataChangeRequestLines');\n        Refresh('CH-Tbl-ClientDataChangeRequests');\n         If(\n                IsBlank(FromScreen),\n                Navigate('screen Clients', ScreenTransition.Fade),  // no hay historial → pantalla por defecto\n                Back()                                        // hay historial → volver normalmente\n            );,\n        Notify(\n            \"Hubo problemas al guardar los registros, intentelo nuevamente\",\n            NotificationType.Error\n        )\n    );\n    UpdateContext(\n        {\n            varShowConfirmationDialog: false,\n            varConfirmationDialogTitle: \"\",\n            varConfirmationDialogSubtitle: \"\"\n        }\n    );\n    \n);\n"
+            OnButtonSelect: "=Switch(\n    Self.SelectedButton.Label,\n    \"Cancel\",\n    UpdateContext(\n        {\n            varShowConfirmationDialog: false,\n            varConfirmationDialogTitle: \"\",\n            varConfirmationDialogSubtitle: \"\"\n        }\n    );\n    ,\n    \"Ok\",\n    UpdateContext(\n        {\n            varScreenSpinnerLabel: \"Guardando...\",\n            varScreenSpinnerVisibility: true\n        }\n    );\n    Clear(colSubmittionErrors);\n    UpdateContext(\n        {\n            varRegistriesInConflict: \"\",\n            varContinue: true\n        }\n    );\n    Clear(colConflictRegistrie);\n    ClearCollect(\n        colRegistriesToSubmit,\n        Filter(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSelectedChangeRequest.'CH-Tbl-ClientDataChangeRequest'\n        )\n    );\n    ForAll(\n        Filter(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSelectedChangeRequest.'CH-Tbl-ClientDataChangeRequest'\n        ) As CRL,\n        With(\n            {\n                varConflictRow: LookUp(\n                    'CH-Tbl-ClientDataChangeRequestLines',\n                    'Field Definition'.LogicalName = CRL.'Field Definition'.LogicalName && (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved)\n                )\n            },\n            Collect(\n                colConflictRegistrie,\n                varConflictRow\n            )\n        );\n    );\n    If(\n        !IsEmpty(colConflictRegistrie),\n        UpdateContext(\n            {\n                varRegistriesInConflict: \"Existen cambios en status submitted/approved en conflicto con el RFC actual. Los siguientes campos se encuentran en conflicto: \" & Concat(\n                    colConflictRegistrie,\n                    Concatenate(\n                        'Field Definition'.Name,\n                        \" (\",\n                        ChangeRequestID.Name,\n                        \"-\",\n                        Name,\n                        \")\"\n                    ),\n                    \", \"\n                )\n            }\n        );\n        Notify(\n            varRegistriesInConflict,\n            NotificationType.Error\n        );\n        UpdateContext({varContinue: false});\n    );\n    If(\n        varContinue,\n        ForAll(\n            colRegistriesToSubmit As Row,\n            Collect(\n                colSubmittionErrors,\n                Row\n            );\n            IfError(\n                Patch(\n                    'CH-Tbl-ClientDataChangeRequestLines',\n                    Row,\n                    {ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted}\n                );\n                Remove(\n                    colSubmittionErrors,\n                    Row\n                );\n                ,\n                Blank()\n            )\n        );\n    );\n    If(\n        IsEmpty(colSubmittionErrors) && varContinue,\n        Patch(\n            'CH-Tbl-ClientDataChangeRequests',\n            gvarSelectedChangeRequest,\n            {'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted}\n        );\n        Notify(\n            \"RFC guardado y enviado\",\n            NotificationType.Success\n        );\n        UpdateContext(\n            {\n                varShowConfirmationDialog: false,\n                varConfirmationDialogTitle: \"\",\n                varConfirmationDialogSubtitle: \"\"\n            }\n        );\n        Set(\n            gvarSelectedChangeRequest,\n            Blank()\n        );\n        Refresh('CH-Tbl-ClientDataChangeRequestLines');\n        Refresh('CH-Tbl-ClientDataChangeRequests');\n         If(\n                IsBlank(FromScreen),\n                Navigate('screen Clients', ScreenTransition.Fade),  // no hay historial → pantalla por defecto\n                Back()                                        // hay historial → volver normalmente\n            );,\n        Notify(\n            \"Hubo problemas al guardar los registros, intentelo nuevamente\",\n            NotificationType.Error\n        )\n    );\n    UpdateContext(\n        {\n            varShowConfirmationDialog: false,\n            varConfirmationDialogTitle: \"\",\n            varConfirmationDialogSubtitle: \"\"\n        }\n    );\n    \n);\n"
             OnCloseSelect: |-
               =UpdateContext({varShowConfirmationDialog: false, varConfirmationDialogTitle: "", varConfirmationDialogSubtitle: ""});
             OverlayColor: =RGBA(0, 0, 0, 0.4)
@@ -1737,7 +1737,7 @@ Screens:
                               'CH-Tbl-ClientDataChangeRequests',
                               gvarSelectedChangeRequest,
                               {
-                                  ChangeStatus: varRFCResponse,
+                                  'Change Status': varRFCResponse,
                                   SolvedBy: gvarUser,
                                   SolvedOn: varNow,
                                   ReasonForDecision: Trim(TextInputCanvas2.Value)
@@ -1892,7 +1892,7 @@ Screens:
                       Patch(
                           'CH-Tbl-ClientDataChangeRequests',
                           gvarSelectedChangeRequest,
-                          {ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Canceled, SolvedOn: varNow, SolvedBy: gvarUser,ReasonForDecision: Trim(TextInputCanvas2.Value)}
+                          {'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled, SolvedOn: varNow, SolvedBy: gvarUser,ReasonForDecision: Trim(TextInputCanvas2.Value)}
                       );
                       Notify(
                           "RFC guardado y enviado",
