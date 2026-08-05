@@ -6,6 +6,23 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-05
+
+Tanda 3: esquema de cuentas y atribución de declaraciones. Core en 1.3.0.1, Flow en 1.3.0.0.
+
+### Added
+
+- Tabla `sanic_CHTblClientAccount`: número de cuenta (texto, alternate key única a nivel banco), cliente, moneda (option set global), estado — integrada al modelo RFC (catálogo de campos con `sanic_optionsetmap` para Moneda, permisos por área, casos en Activate/Deactivate; los flujos Create/Apply ya eran genéricos).
+- Alternate key `(sanic_name, sanic_client)` en `ClientEmail` — un correo puede pertenecer a varios clientes, el par es único (decisión "el correo autoriza, el contenido atribuye"). Creadas vía `scripts/create-alternate-keys.sh` y verificadas funcionalmente.
+- Lookup `sanic_Client` de atribución en `Declaration` y `ReceivedEmails`.
+- Plantilla `CH-TPL-Depositos` v1.1.0 con `ClientCIF` en la hoja Metadata.
+- Permisos RFC sembrados con los GUIDs reales de AAD/Teams de negocio (8 filas, Banca de Empresas y Bóveda).
+
+### Fixed
+
+- `ClientEmail.sanic_name` MaxLength 850→320 (bloqueaba la alternate key por el límite de índice de 1700 bytes).
+- `EntitySetName` de la tabla nueva corregido (el clon heredó el plural de la entidad modelo y colisionaba con el endpoint de DepositHistory).
+
 ## [0.4.0] - 2026-08-05
 
 ### Added
