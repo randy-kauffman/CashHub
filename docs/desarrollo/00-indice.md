@@ -16,6 +16,7 @@ Se complementa también con [`docs/referencia/`](../referencia/) (contratos vivo
 | [04-deploy-y-alm.md](04-deploy-y-alm.md) | Estrategia de despliegue entre ambientes: orden de importación, las 19 variables de entorno y cuáles defaults de dev hay que pisar, connection references, activación de flujos, grupos AAD, y el App User para despliegue automatizado vía `pac`. |
 | [05-hallazgos-y-backlog.md](05-hallazgos-y-backlog.md) | Los hallazgos de `docs/analysis/` convertidos en backlog priorizado (Seguridad / Integridad / Operación / Calidad), con evidencia, impacto y esfuerzo estimado por ítem. |
 | [06-runbook-migracion-cr140.md](06-runbook-migracion-cr140.md) | Runbook del cutover `cr140_changestatus` → `sanic_changestatus`: mapeo de valores, orden de importación, migración de datos y paso de Studio para la canvas app. |
+| [07-seed-data.md](07-seed-data.md) | Datos de configuración versionados (`data/seed/`) y siembra idempotente por ambiente con `scripts/seed-data.sh`. |
 
 ## Cómo leer esta carpeta
 

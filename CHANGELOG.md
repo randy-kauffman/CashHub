@@ -6,6 +6,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-05
+
+### Added
+
+- Mecanismo de seed data: datos de configuración versionados en `data/seed/` y siembra idempotente por ambiente con `scripts/seed-data.sh` (upsert por clave natural, resolución en vivo de URLs de canvas apps, omisión con advertencia de configuración pendiente).
+- Datasets sembrados en DEV: catálogo de campos del RFC (6), catálogo de apps del Hub (7, con URLs reales del ambiente), denominaciones NIO/USD/EUR (39). Los permisos RFC por área (6) quedan definidos pero pendientes de los GUIDs de grupos AAD/Teams de negocio.
+- Documentación en `docs/desarrollo/07-seed-data.md`.
+
 ## [0.3.0] - 2026-08-05
 
 Tanda 2 de mejoras de Client Administration (robustez del motor RFC). Soluciones en 1.2.0.0.
