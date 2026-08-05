@@ -4,7 +4,7 @@
     "sanic_logicalname",
     "sanic_table"
   ],
-  "comment": "Campos que el módulo RFC permite modificar por tabla. DataType: 159460000 Text, ...4 Lookup, ...5 OptionSet (requiere sanic_optionsetmap JSON etiqueta->valor), ...6 TwoOptions. Los sanic_name deben coincidir EXACTO con los LookUp() hardcodeados en la canvas app (Sucursal, Correo electronico, Cliente, Nombre/CIFBCO/CIFCOM, Numero de cuenta, Moneda, Notificar siempre).",
+  "comment": "Campos que el módulo RFC permite modificar por tabla. DataType: 159460000 Text, ...4 Lookup, ...5 OptionSet (requiere sanic_optionsetmap JSON etiqueta->valor), ...6 TwoOptions. Los sanic_name deben coincidir EXACTO con los LookUp() hardcodeados en la canvas app (Sucursal, Correo electronico, Cliente, Nombre/CIFBCO/CIFCOM, Numero de cuenta, Moneda, Notificar siempre). OJO: los logicalname de lookups deben usar el casing del NAVIGATION PROPERTY (SchemaName, ej. sanic_Client) porque el flujo arma {logicalname}@odata.bind.",
   "rows": [
     {
       "sanic_name": "Nombre",
@@ -82,7 +82,7 @@
     {
       "sanic_name": "Cliente",
       "sanic_table": "sanic_chtblclientbranch",
-      "sanic_logicalname": "sanic_client",
+      "sanic_logicalname": "sanic_Client",
       "sanic_datatype": 159460004,
       "sanic_isallowed": true,
       "sanic_lookuptargettable": "sanic_chtblclients",
@@ -92,7 +92,7 @@
     {
       "sanic_name": "Cliente",
       "sanic_table": "sanic_chtblclientemail",
-      "sanic_logicalname": "sanic_client",
+      "sanic_logicalname": "sanic_Client",
       "sanic_datatype": 159460004,
       "sanic_isallowed": true,
       "sanic_lookuptargettable": "sanic_chtblclients",
@@ -102,7 +102,7 @@
     {
       "sanic_name": "Cliente",
       "sanic_table": "sanic_chtblclientaccount",
-      "sanic_logicalname": "sanic_client",
+      "sanic_logicalname": "sanic_Client",
       "sanic_datatype": 159460004,
       "sanic_isallowed": true,
       "sanic_lookuptargettable": "sanic_chtblclients",

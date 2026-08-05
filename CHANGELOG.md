@@ -6,6 +6,23 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-05
+
+Tanda 4: UX de Client Administration y UI de Cuentas. Apps en 1.4.1.0, Core en 1.3.0.2.
+
+### Added
+
+- Pestaña **Cuentas** en ClientInformation: grilla de cuentas del cliente (número, moneda, estado, indicador de RFC pendiente), command bar con permisos de área y alta vía RFC (formCuentas con tarjetas de número y moneda). Ciclo completo verificado E2E: alta → aprobación → materialización con moneda por `sanic_optionsetmap` y cliente por Lookup.
+- Badges de color por estado en el dashboard RFC (`ColCellType: tag` del Creator Kit).
+- Indicador "RFC en curso" por fila en clientes, sucursales y correos (colección precargada, sin N+1).
+- Campo `sanic_recordstatus` estándar en la tabla de Cuentas (el flujo genérico de creación lo asigna en todo alta; el `sanic_chchrecordstatus` heredado del clon queda deprecado).
+
+### Fixed
+
+- **Bug latente de materialización de Lookups**: el catálogo de campos guardaba `sanic_client` en minúsculas, pero los `@odata.bind` exigen el casing del navigation property (`sanic_Client`) — el alta de sucursales y correos vía app habría fallado siempre en la materialización. Corregido en seed para las 3 tablas.
+- Pluralización real de Dataverse en el catálogo (`sanic_chtblclientbranchs`, sin "e").
+- Templates de campo agregados a los PCF dataset para que las columnas calculadas viajen en el dataset.
+
 ## [0.5.0] - 2026-08-05
 
 Tanda 3: esquema de cuentas y atribución de declaraciones. Core en 1.3.0.1, Flow en 1.3.0.0.
