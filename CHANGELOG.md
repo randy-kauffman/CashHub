@@ -6,6 +6,24 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-05
+
+Fase D del motor de validación: ingesta confiable, barrido con auto-reparación y heartbeat. Core 1.4.1.0, Flow 1.4.0.0.
+
+### Added
+
+- `CH-Flow-IngestEmails` reescrito de cero (el original tenía 3 defectos de fábrica: dedup contra el campo de respuesta, trigger sin adjuntos y propiedad inexistente): dedup por `InternetMessageId`, buzón por variable de entorno nativa, orden garantizado correo→adjuntos→archivo→motor (invoca `sanic_CHValidateReceivedEmail` explícitamente), Try/Catch con estados y mensajes explícitos.
+- `CH-Flow-MailboxSweep` (cada 10 min): re-valida pendientes sin run (auto-reparación), detecta correos del buzón sin registrar (>10 min) y alerta por Teams al grupo de operaciones (`sanic_CHEVOpsTeamsGroupId`, opcional), y escribe el heartbeat.
+- Tabla `sanic_CHTblSystemHeartbeat` — el semáforo de salud que consumirá la Console en la fase E.
+
+### Changed
+
+- Retirado el paso asíncrono de Create sobre `ReceivedEmails`: una sola fuente de disparo con orden garantizado + el barrido como red de contención (el script de registro ahora elimina el paso si existe).
+
+### Pendiente de activación manual
+
+- `CH-Flow-IngestEmails` y `CH-Flow-MailboxSweep` importan en borrador: las conexiones de Outlook/Teams pertenecen al usuario (activar en make.powerautomate.com).
+
 ## [0.9.0] - 2026-08-05
 
 Fase C del motor de validación: parser de la plantilla, las 27 reglas completas y materialización de la declaración — verificado E2E positivo y negativo en DEV.
