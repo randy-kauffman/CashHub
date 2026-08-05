@@ -1,0 +1,262 @@
+{
+  "entitySet": "sanic_validationruleses",
+  "naturalKey": [
+    "sanic_validationname"
+  ],
+  "comment": "Las 26 validaciones de negocio (+VR-27 guardian de plantilla, recomendacion de arquitectura). ValidationName es la clave que mapea a la estrategia C# del motor. Negocio controla: IsActive, orden, parametros (ValidationValue, JSON cuando son varios) y mensajes (placeholders {hoja} {celda} {fila} {valor} {esperado}). Las dependencias evitan ruido en cascada: si falla la regla madre, las hijas no corren.",
+  "rows": [
+    {
+      "sanic_validationname": "VR-01",
+      "sanic_name": "Remitente presente",
+      "sanic_validationorder": 10,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El correo no tiene un remitente valido."
+    },
+    {
+      "sanic_validationname": "VR-02",
+      "sanic_name": "Cantidad de adjuntos",
+      "sanic_validationorder": 20,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El correo debe traer exactamente {esperado} archivo adjunto y trae {valor}.",
+      "sanic_validationvalue": "1"
+    },
+    {
+      "sanic_validationname": "VR-03",
+      "sanic_name": "Remitente registrado en CashHub",
+      "sanic_validationorder": 30,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El correo {valor} no esta registrado como remitente autorizado en CashHub.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-01"
+    },
+    {
+      "sanic_validationname": "VR-04",
+      "sanic_name": "Asunto con prefijo Pre-registro",
+      "sanic_validationorder": 40,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El asunto del correo debe comenzar con '{esperado}'.",
+      "sanic_validationvalue": "Pre-registro"
+    },
+    {
+      "sanic_validationname": "VR-05",
+      "sanic_name": "Adjunto es .xlsx",
+      "sanic_validationorder": 50,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El archivo adjunto debe ser un Excel (.xlsx); se recibio '{valor}'.",
+      "sanic_validationvalue": ".xlsx",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-02"
+    },
+    {
+      "sanic_validationname": "VR-06",
+      "sanic_name": "Tamano maximo del adjunto",
+      "sanic_validationorder": 60,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El archivo pesa {valor} KB; el maximo permitido es {esperado} KB.",
+      "sanic_validationvalue": "5120",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-05"
+    },
+    {
+      "sanic_validationname": "VR-27",
+      "sanic_name": "Plantilla oficial y version soportada",
+      "sanic_validationorder": 65,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El archivo no es la plantilla oficial del banco o su version no esta soportada. Descargue la plantilla vigente.",
+      "sanic_validationvalue": "{\"templateId\":\"CH-TPL-Depositos\",\"minVersion\":\"1.1.0\"}",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-05",
+      "sanic_notes": "Regla recomendada por arquitectura (lee TemplateId/TemplateVersion de la hoja Metadata). Apagable si negocio decide aceptar archivos libres."
+    },
+    {
+      "sanic_validationname": "VR-07",
+      "sanic_name": "El archivo contiene 2 tablas",
+      "sanic_validationorder": 70,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El archivo debe contener {esperado} tablas de Excel (Depositos y Cheques); se encontraron {valor}.",
+      "sanic_validationvalue": "2",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-05"
+    },
+    {
+      "sanic_validationname": "VR-08",
+      "sanic_name": "Las tablas son Depositos y Cheques",
+      "sanic_validationorder": 80,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El archivo debe contener las tablas '{esperado}'; no se encontro '{valor}'.",
+      "sanic_validationvalue": "[\"Depositos\",\"Cheques\"]",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-07"
+    },
+    {
+      "sanic_validationname": "VR-19",
+      "sanic_name": "Campos de la tabla Depositos",
+      "sanic_validationorder": 82,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "La tabla Depositos no tiene las columnas esperadas; falta '{valor}'.",
+      "sanic_validationvalue": "[\"No. deposito\",\"No. bolsa\",\"No. Cuenta\",\"Moneda\",\"Cheques Locales BAC\",\"Cheques Locales Otros\",\"Efectivo\",\"Total\",\"Referencia\"]",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-08"
+    },
+    {
+      "sanic_validationname": "VR-16",
+      "sanic_name": "Campos de la tabla Cheques",
+      "sanic_validationorder": 84,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "La tabla Cheques no tiene las columnas esperadas; falta '{valor}'.",
+      "sanic_validationvalue": "[\"No. Deposito\",\"No. Cheque\",\"Tipo\",\"Moneda\",\"Monto\"]",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-08"
+    },
+    {
+      "sanic_validationname": "VR-09",
+      "sanic_name": "Al menos un deposito declarado",
+      "sanic_validationorder": 90,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "La tabla Depositos no contiene ningun deposito.",
+      "sanic_validationvalue": "1",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-19"
+    },
+    {
+      "sanic_validationname": "VR-10",
+      "sanic_name": "Todos los depositos con numero de bolsa",
+      "sanic_validationorder": 100,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El deposito de la fila {fila} (celda {celda}, hoja {hoja}) no tiene numero de bolsa.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-09"
+    },
+    {
+      "sanic_validationname": "VR-11",
+      "sanic_name": "Todos los depositos con numero de cuenta",
+      "sanic_validationorder": 110,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El deposito de la fila {fila} (celda {celda}, hoja {hoja}) no tiene numero de cuenta.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-09"
+    },
+    {
+      "sanic_validationname": "VR-17",
+      "sanic_name": "Campos numericos solo contienen numeros",
+      "sanic_validationorder": 120,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "La celda {celda} de la hoja {hoja} debe ser numerica; contiene '{valor}'.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-19"
+    },
+    {
+      "sanic_validationname": "VR-20",
+      "sanic_name": "Valores numericos no negativos",
+      "sanic_validationorder": 130,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "La celda {celda} de la hoja {hoja} tiene un valor negativo ({valor}).",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-17"
+    },
+    {
+      "sanic_validationname": "VR-21",
+      "sanic_name": "Montos de deposito mayores a cero",
+      "sanic_validationorder": 140,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El deposito de la fila {fila} ({hoja}) declara un total de {valor}; debe ser mayor a cero.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-20"
+    },
+    {
+      "sanic_validationname": "VR-18",
+      "sanic_name": "Monedas soportadas",
+      "sanic_validationorder": 150,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "La celda {celda} de la hoja {hoja} declara la moneda '{valor}'; las soportadas son {esperado}.",
+      "sanic_validationvalue": "[\"NIO\",\"USD\",\"EUR\"]",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-19"
+    },
+    {
+      "sanic_validationname": "VR-13",
+      "sanic_name": "Cuenta con moneda unica",
+      "sanic_validationorder": 160,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "La cuenta {valor} aparece con mas de una moneda (ver fila {fila}, hoja {hoja}); una cuenta opera en una sola moneda.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-18"
+    },
+    {
+      "sanic_validationname": "VR-15",
+      "sanic_name": "Campos de cheques completos",
+      "sanic_validationorder": 170,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El cheque de la fila {fila} (hoja {hoja}) tiene la celda {celda} vacia.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-16"
+    },
+    {
+      "sanic_validationname": "VR-14",
+      "sanic_name": "Sin numeros de cheque repetidos",
+      "sanic_validationorder": 180,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El numero de cheque {valor} esta repetido (ver fila {fila}, hoja {hoja}).",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-15"
+    },
+    {
+      "sanic_validationname": "VR-22",
+      "sanic_name": "Sin cheques huerfanos",
+      "sanic_validationorder": 190,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El cheque de la fila {fila} (hoja {hoja}) referencia el deposito {valor}, que no existe en la tabla Depositos.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-14"
+    },
+    {
+      "sanic_validationname": "VR-12",
+      "sanic_name": "Cheques declarados coinciden con depositos",
+      "sanic_validationorder": 200,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El deposito {valor} declara un monto en cheques que no coincide con la suma de sus cheques en la tabla Cheques (fila {fila}).",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-22"
+    },
+    {
+      "sanic_validationname": "VR-24",
+      "sanic_name": "Cliente declarado en el Excel",
+      "sanic_validationorder": 210,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "La celda {esperado} debe contener el CIF del cliente y esta vacia.",
+      "sanic_validationvalue": "Depositos!J2",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-08"
+    },
+    {
+      "sanic_validationname": "VR-25",
+      "sanic_name": "Cliente registrado en CashHub",
+      "sanic_validationorder": 220,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El CIF '{valor}' no corresponde a ningun cliente registrado en el servicio.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-24"
+    },
+    {
+      "sanic_validationname": "VR-26",
+      "sanic_name": "Correo autorizado para el cliente",
+      "sanic_validationorder": 230,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "El remitente {valor} no esta autorizado para declarar depositos del cliente indicado.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-25"
+    },
+    {
+      "sanic_validationname": "VR-23",
+      "sanic_name": "Cuentas pertenecen al cliente",
+      "sanic_validationorder": 240,
+      "sanic_isactive": true,
+      "sanic_sourcetype": 159460000,
+      "sanic_validationfailmessage": "La cuenta {valor} (fila {fila}, hoja {hoja}) no pertenece al cliente declarado.",
+      "sanic_ValidationDependency@odata.bind": "@lookup:sanic_validationruleses:sanic_validationname:VR-25"
+    }
+  ]
+}

@@ -6,6 +6,17 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-05
+
+Fase A del motor de validación de correos: diseño y parametrización. Core en 1.4.0.1.
+
+### Added
+
+- Diseño completo del motor (`docs/desarrollo/08-motor-validacion.md`): arquitectura de 3 piezas (transporte mínimo en Power Automate, motor como Custom API en C#, respuesta), estados del correo sobre los picklists existentes, contrato de reglas paramétricas con dependencias, detección de fallos por síntoma (barrido + heartbeat + semáforo), y nuevo oficio de la Email Validation Console (contingencia/salud/administración — las 23 reglas Power Fx se retiran).
+- Seed de las 27 reglas de validación (`data/seed/50-validationrules.json`): las 26 de negocio + VR-27 (guardián de plantilla oficial, apagable), con orden de ejecución, parámetros (JSON donde aplica), mensajes con placeholders `{hoja} {celda} {fila} {valor} {esperado}` redactables por negocio, y cadena de dependencias anti-ruido — sembradas y verificadas idempotentes en DEV.
+- `ValidationResults` extendida con `Hoja`, `Celda`, `Fila` y `Detalle` — un hallazgo por fila para que el correo de respuesta liste todos los errores con su ubicación exacta en el Excel.
+- Resolver `@lookup:` en el script de seed (referencias entre filas sembradas, con comparación idempotente contra el `_value`).
+
 ## [0.6.0] - 2026-08-05
 
 Tanda 4: UX de Client Administration y UI de Cuentas. Apps en 1.4.1.0, Core en 1.3.0.2.

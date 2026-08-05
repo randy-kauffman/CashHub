@@ -50,6 +50,7 @@ def odata_literal(v):
     return str(v)
 
 app_url_cache = {}
+lookup_cache = {}
 def resolve(value):
     if isinstance(value, str) and value.startswith('@canvasapp:'):
         name = value.split(':', 1)[1]
@@ -60,6 +61,18 @@ def resolve(value):
         if not app_url_cache[name]:
             raise RuntimeError(f"canvas app '{name}' sin appopenuri en el ambiente")
         return app_url_cache[name]
+    if isinstance(value, str) and value.startswith('@lookup:'):
+        # @lookup:<entitySet>:<campo>:<valor> -> "/<entitySet>(<id>)"
+        _, eset, field, val = value.split(':', 3)
+        ck = (eset, field, val)
+        if ck not in lookup_cache:
+            f = urllib.parse.quote(f"{field} eq '{val}'")
+            rows = req('GET', f"/{eset}?$filter={f}").get('value', [])
+            if not rows:
+                raise RuntimeError(f"@lookup sin resultado: {eset}.{field}='{val}' (¿orden de filas correcto?)")
+            pk = next(k for k in rows[0] if k.endswith('id') and not k.startswith('_') and 'odata' not in k)
+            lookup_cache[ck] = f"/{eset}({rows[0][pk]})"
+        return lookup_cache[ck]
     return value
 
 total = {'create': 0, 'update': 0, 'skip': 0, 'omit': 0}
@@ -86,7 +99,15 @@ for path in sorted(glob.glob('data/seed/*.json')):
             cur = existing[0]
             # Dataverse guarda "" como null: normalizar para no generar updates eternos
             norm = lambda v: None if v == '' else v
-            diff = {k: v for k, v in row.items() if norm(cur.get(k)) != norm(v)}
+            def changed(k, v):
+                if k.endswith('@odata.bind'):
+                    # comparar el GUID resuelto contra _<logical>_value del registro
+                    logical = k[:-len('@odata.bind')].lower()
+                    cur_id = cur.get(f'_{logical}_value')
+                    new_id = v.rsplit('(', 1)[1].rstrip(')') if v else None
+                    return (cur_id or '').lower() != (new_id or '').lower()
+                return norm(cur.get(k)) != norm(v)
+            diff = {k: v for k, v in row.items() if changed(k, v)}
             if diff:
                 if not DRY:
                     pk = next(k for k in cur if k.endswith('id') and not k.startswith('_') and 'odata' not in k)

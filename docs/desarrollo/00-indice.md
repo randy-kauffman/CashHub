@@ -17,6 +17,7 @@ Se complementa también con [`docs/referencia/`](../referencia/) (contratos vivo
 | [05-hallazgos-y-backlog.md](05-hallazgos-y-backlog.md) | Los hallazgos de `docs/analysis/` convertidos en backlog priorizado (Seguridad / Integridad / Operación / Calidad), con evidencia, impacto y esfuerzo estimado por ítem. |
 | [06-runbook-migracion-cr140.md](06-runbook-migracion-cr140.md) | Runbook del cutover `cr140_changestatus` → `sanic_changestatus`: mapeo de valores, orden de importación, migración de datos y paso de Studio para la canvas app. |
 | [07-seed-data.md](07-seed-data.md) | Datos de configuración versionados (`data/seed/`) y siembra idempotente por ambiente con `scripts/seed-data.sh`. |
+| [08-motor-validacion.md](08-motor-validacion.md) | Diseño del motor de validación de correos: arquitectura de 3 piezas, contrato del Custom API, reglas paramétricas con dependencias, hallazgos con hoja/celda, detección de fallos y nuevo oficio de la Console. |
 
 ## Cómo leer esta carpeta
 
