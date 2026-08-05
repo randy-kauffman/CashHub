@@ -11,8 +11,8 @@
 # "Submitted". Por eso el mapeo es explícito, valor por valor — jamás copiar
 # el número crudo.
 #
-# Requiere en .env (NO versionado):
-#   CASHHUB_TENANT_ID, CASHHUB_CLIENT_ID, CASHHUB_CLIENT_SECRET, CASHHUB_ENV_URL
+# Requiere en pp_secrets.env (NO versionado, en la raíz del repo):
+#   DATAVERSE_URL, PP_TENANT_ID, PP_CLIENT_ID, PP_CLIENT_SECRET
 #   (app user con System Administrator en el ambiente destino)
 #
 # Uso:  ./scripts/migrate-cr140-changestatus.sh [--dry-run]
@@ -20,13 +20,13 @@
 set -euo pipefail
 
 DRY_RUN="${1:-}"
-source .env
+source "${ENV_FILE:-pp_secrets.env}"
 
-TOKEN=$(curl -sf -X POST "https://login.microsoftonline.com/${CASHHUB_TENANT_ID}/oauth2/v2.0/token" \
-  -d "grant_type=client_credentials&client_id=${CASHHUB_CLIENT_ID}&client_secret=${CASHHUB_CLIENT_SECRET}&scope=${CASHHUB_ENV_URL}/.default" \
+TOKEN=$(curl -sf -X POST "https://login.microsoftonline.com/${PP_TENANT_ID}/oauth2/v2.0/token" \
+  -d "grant_type=client_credentials&client_id=${PP_CLIENT_ID}&client_secret=${PP_CLIENT_SECRET}&scope=${DATAVERSE_URL}/.default" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
-API="${CASHHUB_ENV_URL}/api/data/v9.2"
+API="${DATAVERSE_URL}/api/data/v9.2"
 H=(-H "Authorization: Bearer ${TOKEN}" -H "Content-Type: application/json" -H "OData-MaxVersion: 4.0" -H "OData-Version: 4.0")
 
 # Mapeo viejo (cr140, rango 79649/15946 mixto) -> nuevo (sanic, rango 15946)
