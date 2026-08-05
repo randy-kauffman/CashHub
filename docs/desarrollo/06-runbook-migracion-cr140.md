@@ -1,11 +1,20 @@
 # Runbook: migración de `cr140_changestatus` → `sanic_changestatus`
 
-> Estado 2026-08-04: **pasos 1-3 EJECUTADOS en DEV**. Core 1.1.0.0 importado (campo y roles
-> verificados vía Web API), datos migrados (0 registros existentes), Apps 1.1.0.0 importado
-> (incluye el fix de auto-aprobación), y la model-driven purgada del ambiente (12 appactions
-> con sus reglas desasociadas —no eliminadas, son compartidas—, appmodule, sitemap, command
-> library y los 8 web resources). **Pendiente: paso 4 (Studio, manual) y paso 5 (importar
-> Flow, bloqueado hasta completar el 4).** Los flujos del ambiente siguen en cr140 mientras tanto.
+> Estado 2026-08-04: **CUTOVER COMPLETADO en DEV.** Core 1.1.0.0 importado (campo y roles
+> verificados vía Web API), datos migrados (0 registros existentes), Apps importado con el fix
+> de auto-aprobación, model-driven purgada del ambiente (12 appactions con reglas desasociadas
+> —no eliminadas, son compartidas—, appmodule, command library, 8 web resources), Flow 1.1.0.0
+> importado (6 flujos RFC activos sobre `sanic_changestatus`; VR03 reactivado a mano tras
+> fallar su activación en el import), app migrada en Studio (verificada: cero `cr140` en el
+> fuente re-exportado) y repo resincronizado. **E2E verificado por API**: RFC → Approved →
+> webhook disparó en <15s → Applied. Queda el paso 8 (eliminar el campo `cr140_changestatus`
+> del esquema) para cuando el ciclo esté estable con usuarios reales.
+>
+> Hallazgos del deploy: (a) el ambiente Dev tiene TODAS las tablas de configuración/semilla
+> vacías (catálogo de campos, permisos RFC, denominaciones, mesas, transportadoras, catálogo
+> de apps, reglas de validación) — sin estrategia de seed data nada funciona en un ambiente
+> fresco; (b) `Createclientdata` crea el registro destino aun con cero líneas y marca Applied
+> — falta guard de "al menos una línea aprobada" (va a tanda 2).
 
 ## Por qué
 
