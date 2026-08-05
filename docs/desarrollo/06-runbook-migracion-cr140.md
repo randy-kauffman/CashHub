@@ -1,7 +1,11 @@
 # Runbook: migración de `cr140_changestatus` → `sanic_changestatus`
 
-> Estado: **preparado, pendiente de ejecutar en DEV**. El campo nuevo ya existe en el fuente
-> de Core y los 6 flujos ya apuntan al campo nuevo. Falta ejecutar el cutover en el ambiente.
+> Estado 2026-08-04: **pasos 1-3 EJECUTADOS en DEV**. Core 1.1.0.0 importado (campo y roles
+> verificados vía Web API), datos migrados (0 registros existentes), Apps 1.1.0.0 importado
+> (incluye el fix de auto-aprobación), y la model-driven purgada del ambiente (12 appactions
+> con sus reglas desasociadas —no eliminadas, son compartidas—, appmodule, sitemap, command
+> library y los 8 web resources). **Pendiente: paso 4 (Studio, manual) y paso 5 (importar
+> Flow, bloqueado hasta completar el 4).** Los flujos del ambiente siguen en cr140 mientras tanto.
 
 ## Por qué
 
