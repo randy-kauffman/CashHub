@@ -587,7 +587,6 @@
               "runAfter": {},
               "inputs": {
                 "parameters": {
-                  "folderPath": "Inbox",
                   "mailboxAddress": "@parameters('sanic_CHEVSharedMailboxAddress')",
                   "fetchOnlyUnread": false,
                   "includeAttachments": false,
@@ -606,11 +605,11 @@
                 "operationMetadataId": "23a731b4-beb7-4c4b-9bef-8b13b3c4c052"
               },
               "runAfter": {
-                "Leer_buzon": [
+                "Correos_del_buzon": [
                   "Succeeded"
                 ]
               },
-              "foreach": "@outputs('Leer_buzon')?['body/value']",
+              "foreach": "@outputs('Correos_del_buzon')",
               "actions": {
                 "Es_viejo_sin_registrar": {
                   "type": "If",
@@ -704,6 +703,44 @@
                   }
                 }
               }
+            },
+            "Leer_buzon_espanol": {
+              "type": "OpenApiConnection",
+              "metadata": {
+                "operationMetadataId": "bb651d20-381f-443e-be79-8f75aaf7dcb7"
+              },
+              "runAfter": {
+                "Leer_buzon": [
+                  "Failed"
+                ]
+              },
+              "inputs": {
+                "parameters": {
+                  "folderPath": "Bandeja de entrada",
+                  "mailboxAddress": "@parameters('sanic_CHEVSharedMailboxAddress')",
+                  "fetchOnlyUnread": false,
+                  "includeAttachments": false,
+                  "top": 25
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "connectionName": "shared_office365",
+                  "operationId": "GetEmailsV3"
+                }
+              }
+            },
+            "Correos_del_buzon": {
+              "type": "Compose",
+              "metadata": {
+                "operationMetadataId": "05e558eb-321c-4176-a9ab-01616e17e400"
+              },
+              "runAfter": {
+                "Leer_buzon_espanol": [
+                  "Succeeded",
+                  "Skipped"
+                ]
+              },
+              "inputs": "@coalesce(outputs('Leer_buzon')?['body/value'], outputs('Leer_buzon_espanol')?['body/value'], json('[]'))"
             }
           }
         }
