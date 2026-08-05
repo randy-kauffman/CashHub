@@ -30,10 +30,20 @@ H = ['-H', f"Authorization: Bearer {os.environ['TOKEN']}", '-H', 'Content-Type: 
      '-H', 'Prefer: return=representation']
 
 def req(method, path, body=None):
+    # El assembly en base64 supera el limite de argumentos del SO: el body va por archivo.
     cmd = ['curl', '-s', *H, '-X', method, API + path]
+    tmp = None
     if body is not None:
-        cmd += ['-d', json.dumps(body)]
-    out = subprocess.run(cmd, capture_output=True, text=True).stdout
+        import tempfile
+        tmp = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False, encoding='utf-8')
+        json.dump(body, tmp)
+        tmp.close()
+        cmd += ['--data-binary', '@' + tmp.name]
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True).stdout
+    finally:
+        if tmp:
+            os.unlink(tmp.name)
     d = json.loads(out) if out.strip() else {}
     if 'error' in d:
         raise RuntimeError(f"{method} {path}: {d['error'].get('message','')[:300]}")

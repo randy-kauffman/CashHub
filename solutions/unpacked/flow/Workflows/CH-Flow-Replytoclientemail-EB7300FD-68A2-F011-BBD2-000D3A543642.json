@@ -2,12 +2,21 @@
   "properties": {
     "connectionReferences": {
       "shared_office365": {
-        "runtimeSource": "invoker",
+        "runtimeSource": "embedded",
         "connection": {
           "connectionReferenceLogicalName": "sanic_CEADCONNOutlook365"
         },
         "api": {
           "name": "shared_office365"
+        }
+      },
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
         }
       }
     },
@@ -22,97 +31,162 @@
         "$authentication": {
           "defaultValue": {},
           "type": "SecureObject"
+        },
+        "sanic_CHEVSharedMailboxAddress": {
+          "defaultValue": "",
+          "type": "String",
+          "metadata": {
+            "schemaName": "sanic_CHEVSharedMailboxAddress"
+          }
         }
       },
       "triggers": {
-        "manual": {
+        "Cuando_hay_una_respuesta_lista_para_el_cliente": {
+          "type": "OpenApiConnectionWebhook",
           "metadata": {
-            "operationMetadataId": "379a8e4f-3d5a-45d2-b2c4-a75ea3c36f30"
+            "operationMetadataId": "31fcd991-df39-4e95-866e-b4ca6b378239"
           },
-          "type": "Request",
-          "kind": "PowerAppV2",
           "inputs": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "text": {
-                  "title": "CuerpoDelCorreo",
-                  "type": "string",
-                  "x-ms-dynamically-added": true,
-                  "description": "Please enter your input",
-                  "x-ms-content-hint": "TEXT"
-                },
-                "text_1": {
-                  "title": "IDMensaje",
-                  "type": "string",
-                  "x-ms-dynamically-added": true,
-                  "description": "Please enter your input",
-                  "x-ms-content-hint": "TEXT"
-                },
-                "text_2": {
-                  "title": "BuzonDeCorreo",
-                  "type": "string",
-                  "x-ms-dynamically-added": true,
-                  "description": "Please enter your input",
-                  "x-ms-content-hint": "TEXT"
-                }
-              },
-              "required": [
-                "text",
-                "text_1",
-                "text_2"
-              ]
+            "parameters": {
+              "subscriptionRequest/message": 4,
+              "subscriptionRequest/entityname": "sanic_chtblreceivedemails",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filteringattributes": "sanic_replybodyhtml,sanic_emailreplystatus"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "SubscribeWebhookTrigger"
             }
           }
         }
       },
       "actions": {
-        "Reply_to_email_(V3)": {
-          "runAfter": {},
+        "Hay_respuesta_pendiente": {
+          "type": "If",
           "metadata": {
-            "operationMetadataId": "d019dfb2-da3a-4b23-b95c-7f23342f02c0"
+            "operationMetadataId": "ec6c45fa-27cc-408d-86f0-18b420a7be6b"
           },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "host": {
-              "connectionName": "shared_office365",
-              "operationId": "ReplyToV3",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
-            },
-            "parameters": {
-              "messageId": "@triggerBody()['text_1']",
-              "replyParameters/Body": "@triggerBody()['text']",
-              "mailboxAddress": "@{triggerBody()['text_2']};"
-            },
-            "authentication": "@parameters('$authentication')"
-          }
-        },
-        "Respond_to_a_Power_App_or_flow": {
-          "runAfter": {
-            "Reply_to_email_(V3)": [
-              "Succeeded"
+          "runAfter": {},
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@triggerOutputs()?['body/sanic_emailreplystatus']",
+                  159460000
+                ]
+              },
+              {
+                "not": {
+                  "equals": [
+                    "@coalesce(triggerOutputs()?['body/sanic_replybodyhtml'], '')",
+                    ""
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "equals": [
+                    "@coalesce(triggerOutputs()?['body/sanic_receivedemailoutlookuniqueid'], '')",
+                    ""
+                  ]
+                }
+              }
             ]
           },
-          "metadata": {
-            "operationMetadataId": "e5b8b3d8-bac3-4c60-a1f1-5140ae5a4cba"
-          },
-          "type": "Response",
-          "kind": "PowerApp",
-          "inputs": {
-            "statusCode": 200,
-            "body": {
-              "status": "Ok"
+          "actions": {
+            "Try_Responder": {
+              "type": "Scope",
+              "metadata": {
+                "operationMetadataId": "1e958845-3ceb-405a-9925-3aa87e0d0fe3"
+              },
+              "runAfter": {},
+              "actions": {
+                "Responder_al_cliente": {
+                  "type": "OpenApiConnection",
+                  "metadata": {
+                    "operationMetadataId": "9ccba935-8c2e-4d30-934a-e2f90536c7d3"
+                  },
+                  "runAfter": {},
+                  "inputs": {
+                    "parameters": {
+                      "messageId": "@triggerOutputs()?['body/sanic_receivedemailoutlookuniqueid']",
+                      "replyParameters/Body": "@triggerOutputs()?['body/sanic_replybodyhtml']",
+                      "replyParameters/Subject": "@triggerOutputs()?['body/sanic_replysubject']",
+                      "replyParameters/importance": "Normal",
+                      "mailboxAddress": "@parameters('sanic_CHEVSharedMailboxAddress')"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                      "connectionName": "shared_office365",
+                      "operationId": "ReplyToV3"
+                    }
+                  }
+                },
+                "Marcar_como_respondido": {
+                  "type": "OpenApiConnection",
+                  "metadata": {
+                    "operationMetadataId": "e091a075-afe9-4940-b125-a1e1a0a53854"
+                  },
+                  "runAfter": {
+                    "Responder_al_cliente": [
+                      "Succeeded"
+                    ]
+                  },
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "sanic_chtblreceivedemailses",
+                      "recordId": "@triggerOutputs()?['body/sanic_chtblreceivedemailsid']",
+                      "item/sanic_emailreplystatus": 159460001,
+                      "item/sanic_replydatetime": "@utcNow()",
+                      "item/sanic_repliedby": "CashHub (automatico)"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "connectionName": "shared_commondataserviceforapps_1",
+                      "operationId": "UpdateOnlyRecord"
+                    },
+                    "retryPolicy": {
+                      "type": "exponential",
+                      "count": 4,
+                      "interval": "PT10S"
+                    }
+                  }
+                }
+              }
             },
-            "schema": {
-              "type": "object",
-              "properties": {
-                "status": {
-                  "title": "Status",
-                  "x-ms-dynamically-added": true,
-                  "type": "string"
+            "Catch_No_se_pudo_responder": {
+              "type": "OpenApiConnection",
+              "metadata": {
+                "operationMetadataId": "b3c2b6d9-32d8-4198-af03-ff66b2194f05"
+              },
+              "runAfter": {
+                "Try_Responder": [
+                  "Failed",
+                  "TimedOut"
+                ]
+              },
+              "inputs": {
+                "parameters": {
+                  "entityName": "sanic_chtblreceivedemailses",
+                  "recordId": "@triggerOutputs()?['body/sanic_chtblreceivedemailsid']",
+                  "item/sanic_errortext": "@concat(coalesce(triggerOutputs()?['body/sanic_errortext'], ''), '\\n[SISTEMA] No se pudo enviar la respuesta al cliente. La respuesta quedo guardada y puede reenviarse desde la consola de validacion.')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "connectionName": "shared_commondataserviceforapps_1",
+                  "operationId": "UpdateOnlyRecord"
+                },
+                "retryPolicy": {
+                  "type": "exponential",
+                  "count": 4,
+                  "interval": "PT10S"
                 }
               }
             }
+          },
+          "else": {
+            "actions": {}
           }
         }
       },
