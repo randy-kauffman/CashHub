@@ -468,6 +468,13 @@ previa (ver Engram, tema `cashhub/decisiones-validacion-y-cuentas`).
 
 ## 5. PROPUESTA DE MEJORA (priorizada)
 
+> **Estado 2026-08-05 (tanda 2 desplegada en DEV)**: ✅ #4/#5 (conflict-check por registro
+> destino y excluyendo el propio RFC), ✅ #6 (Try/Catch en flujos de materialización), ✅ #7
+> (retryPolicy ×47 acciones), ✅ #8 (CH-Flow-RFCWatchdog + env var de timeout), ✅ #9 (caso
+> OptionSet en ambos flujos). Guard de líneas verificado E2E (RFC sin líneas → Failed sin crear
+> registro). Pendiente: activación manual del watchdog (la conexión es del usuario) + su E2E.
+> El #3 (validación server-side con plugin) sigue para tanda futura.
+>
 > **Estado 2026-08-04 (tanda 1 implementada en fuente, pendiente de deploy)**: ✅ #1 (roles
 > `CH-SR-ClientAdminContributor`/`CH-SR-ClientAdminApprover` creados), ✅ #2 (chequeo de
 > identidad en Aprobar/Rechazar), ✅ #10/#11 (model-driven eliminada de ambas soluciones).

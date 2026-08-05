@@ -6,6 +6,27 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-05
+
+Tanda 2 de mejoras de Client Administration (robustez del motor RFC). Soluciones en 1.2.0.0.
+
+### Added
+
+- `CH-Flow-RFCWatchdog`: flujo programado (cada 15 min) que detecta RFCs en `Approved` más allá del timeout configurado y los marca `Failed` con auditoría; la notificación de Teams sale automáticamente vía `NotifywhenRFCimplementationfinish`.
+- Variable de entorno `sanic_CHEVRfcApplyTimeoutMinutes` (default 30) para el timeout del watchdog.
+- Caso `OptionSet` implementado en la conversión de tipos de `Createclientdata`/`Applyclientdatachanges` (contrato: `sanic_optionsetmap` = JSON etiqueta→valor).
+
+### Changed
+
+- `Createclientdata`/`Applyclientdatachanges` reestructurados con patrón Try/Catch: cualquier fallo — incluido el primer paso — marca el RFC `Failed` con auditoría (antes quedaba en `Approved` para siempre, sin notificación).
+- Guard de líneas: un RFC aprobado sin líneas de cambio pasa a `Failed` sin crear el registro destino (verificado E2E: antes creaba un registro vacío y marcaba `Applied`).
+- `retryPolicy` exponencial explícito en las 47 acciones Dataverse de los 4 flujos de materialización.
+- Conflict-check de la canvas app corregido: exige mismo campo + mismo registro destino + RFC distinto (antes bloqueaba RFCs de clientes sin relación entre sí).
+
+### Fixed
+
+- Restaurado el RootComponent de la canvas app Client Administration (eliminado por error en la limpieza de la model-driven) y purgadas las asociaciones `appaction_appactionrule_classicrulesset` residuales de `Customizations.xml` que rompían el import.
+
 ## [0.2.0] - 2026-08-04
 
 Tanda 1 de mejoras de Client Administration (seguridad). Soluciones en 1.1.0.0.
