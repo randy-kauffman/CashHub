@@ -1,10 +1,10 @@
 {
   "entitySet": "sanic_chtblclienttablelogicalfieldnames",
   "naturalKey": [
-    "sanic_name",
+    "sanic_logicalname",
     "sanic_table"
   ],
-  "comment": "Campos que el módulo RFC permite modificar por tabla. DataType: 159460000 Text, ...4 Lookup, ...5 OptionSet (requiere sanic_optionsetmap JSON etiqueta->valor), ...6 TwoOptions.",
+  "comment": "Campos que el módulo RFC permite modificar por tabla. DataType: 159460000 Text, ...4 Lookup, ...5 OptionSet (requiere sanic_optionsetmap JSON etiqueta->valor), ...6 TwoOptions. Los sanic_name deben coincidir EXACTO con los LookUp() hardcodeados en la canvas app (Sucursal, Correo electronico, Cliente, Nombre/CIFBCO/CIFCOM, Numero de cuenta, Moneda, Notificar siempre).",
   "rows": [
     {
       "sanic_name": "Nombre",
@@ -34,7 +34,7 @@
       "sanic_tablepluralname": "sanic_chtblclients"
     },
     {
-      "sanic_name": "Nombre",
+      "sanic_name": "Sucursal",
       "sanic_table": "sanic_chtblclientbranch",
       "sanic_logicalname": "sanic_name",
       "sanic_datatype": 159460000,
@@ -43,7 +43,7 @@
       "sanic_tablepluralname": "sanic_chtblclientbranches"
     },
     {
-      "sanic_name": "Nombre",
+      "sanic_name": "Correo electronico",
       "sanic_table": "sanic_chtblclientemail",
       "sanic_logicalname": "sanic_name",
       "sanic_datatype": 159460000,
@@ -76,6 +76,36 @@
       "sanic_datatype": 159460005,
       "sanic_isallowed": true,
       "sanic_optionsetmap": "{\"NIO\": 159460000, \"USD\": 159460001, \"EUR\": 159460002}",
+      "sanic_tabledisplayname": "CH-Tbl-ClientAccount",
+      "sanic_tablepluralname": "sanic_chtblclientaccounts"
+    },
+    {
+      "sanic_name": "Cliente",
+      "sanic_table": "sanic_chtblclientbranch",
+      "sanic_logicalname": "sanic_client",
+      "sanic_datatype": 159460004,
+      "sanic_isallowed": true,
+      "sanic_lookuptargettable": "sanic_chtblclients",
+      "sanic_tabledisplayname": "CH-Tbl-ClientBranch",
+      "sanic_tablepluralname": "sanic_chtblclientbranches"
+    },
+    {
+      "sanic_name": "Cliente",
+      "sanic_table": "sanic_chtblclientemail",
+      "sanic_logicalname": "sanic_client",
+      "sanic_datatype": 159460004,
+      "sanic_isallowed": true,
+      "sanic_lookuptargettable": "sanic_chtblclients",
+      "sanic_tabledisplayname": "CH-Tbl-ClientEmail",
+      "sanic_tablepluralname": "sanic_chtblclientemails"
+    },
+    {
+      "sanic_name": "Cliente",
+      "sanic_table": "sanic_chtblclientaccount",
+      "sanic_logicalname": "sanic_client",
+      "sanic_datatype": 159460004,
+      "sanic_isallowed": true,
+      "sanic_lookuptargettable": "sanic_chtblclients",
       "sanic_tabledisplayname": "CH-Tbl-ClientAccount",
       "sanic_tablepluralname": "sanic_chtblclientaccounts"
     }

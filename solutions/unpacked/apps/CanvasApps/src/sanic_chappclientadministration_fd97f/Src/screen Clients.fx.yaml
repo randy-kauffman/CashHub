@@ -3,6 +3,16 @@
     LoadingSpinnerColor: =App.Theme.Colors.Primary
     OnVisible: |-
         =UpdateContext({varShowScreenSpinner:false});
+        ClearCollect(
+            colPendingRFCs,
+            AddColumns(
+                Filter(
+                    'CH-Tbl-ClientDataChangeRequests',
+                    'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved
+                ),
+                "pendingtargetid", TargetRecordID
+            )
+        );
 
     formRFC_Cliente As form:
         AcceptsFocus: =false
@@ -1955,6 +1965,14 @@
                         ColResizable: true,
                         ColSortable: true
                     },{
+                        ColName: "pendingrfc",
+                        ColDisplayName: "Cambios",
+                        ColWidth: 90,
+                        ColResizable: true,
+                        ColCellType: "tag",
+                        ColTagColorColumn: "pendingcolor",
+                        ColHideWhenBlank: true
+                    },{
                         ColName: "Creador",
                         ColDisplayName: "Creador por",
                         ColWidth: 200,
@@ -1984,7 +2002,14 @@
             FillPortions: =1
             Height: =Parent.Height - Self.Y
             InputEvent: =ctxGridEvent
-            Items: =SortByColumns(Search(Filter('CH-Tbl-Clients', 'CH-Tbl-Clients (Views)'.'Fluent Detail List Ready'),SearchBox1.SearchText,Name,CIFBCO,CIFCOM),"modifiedon",SortOrder.Descending)
+            Items: |-
+                =SortByColumns(
+                    AddColumns(
+                        Search(Filter('CH-Tbl-Clients', 'CH-Tbl-Clients (Views)'.'Fluent Detail List Ready'),SearchBox1.SearchText,Name,CIFBCO,CIFCOM),
+                        "pendingrfc", If(!IsBlank(LookUp(colPendingRFCs, pendingtargetid = Text('CH-Tbl-Client'))), "RFC en curso", ""),
+                        "pendingcolor", "#FFF4CE"
+                    ),
+                    "modifiedon", SortOrder.Descending)
             LargeDatasetPaging: =false
             LayoutMaxHeight: =
             LayoutMaxWidth: =

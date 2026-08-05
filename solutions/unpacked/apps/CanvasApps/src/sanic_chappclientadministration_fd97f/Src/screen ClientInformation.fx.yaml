@@ -1,6 +1,17 @@
 "'screen ClientInformation' As screen.'autoLayout_Sidebar_ver1.0'":
     Fill: =Color.White
     LoadingSpinnerColor: =App.Theme.Colors.Primary
+    OnVisible: |-
+        =ClearCollect(
+            colPendingRFCs,
+            AddColumns(
+                Filter(
+                    'CH-Tbl-ClientDataChangeRequests',
+                    'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved
+                ),
+                "pendingtargetid", TargetRecordID
+            )
+        );
 
     formRFC_Cliente_1 As form:
         AcceptsFocus: =false
@@ -2585,6 +2596,15 @@
                                     ColSortable: true
                                 },
                                   {
+                                    ColName: "pendingrfc",
+                                    ColDisplayName: "Cambios",
+                                    ColWidth: 90,
+                                    ColResizable: true,
+                                    ColCellType: "tag",
+                                    ColTagColorColumn: "pendingcolor",
+                                    ColHideWhenBlank: true
+                                },
+                                  {
                                     ColName: "createdby",
                                     ColDisplayName: "Creado Por",
                                     ColWidth: 150,
@@ -2617,7 +2637,12 @@
                         FillPortions: =1
                         Height: =200
                         InputEvent: =ctxGridEvent1
-                        Items: =Filter('CH-Tbl-ClientBranches',Client.'CH-Tbl-Client' = gvarSelectedClient.'CH-Tbl-Client')
+                        Items: |-
+                            =AddColumns(
+                                Filter('CH-Tbl-ClientBranches',Client.'CH-Tbl-Client' = gvarSelectedClient.'CH-Tbl-Client'),
+                                "pendingrfc", If(!IsBlank(LookUp(colPendingRFCs, pendingtargetid = Text('CH-Tbl-ClientBranch'))), "RFC en curso", ""),
+                                "pendingcolor", "#FFF4CE"
+                            )
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
                         LayoutMinHeight: =200
@@ -2998,6 +3023,15 @@
                                     ColSortable: true
                                 },
                                   {
+                                    ColName: "pendingrfc",
+                                    ColDisplayName: "Cambios",
+                                    ColWidth: 90,
+                                    ColResizable: true,
+                                    ColCellType: "tag",
+                                    ColTagColorColumn: "pendingcolor",
+                                    ColHideWhenBlank: true
+                                },
+                                  {
                                     ColName: "createdby",
                                     ColDisplayName: "Creado Por",
                                     ColWidth: 150,
@@ -3035,7 +3069,12 @@
                         HeaderVisible: =true
                         Height: =200
                         InputEvent: =ctxGridEvent2
-                        Items: =Filter('CH-Tbl-ClientEmails',Client.'CH-Tbl-Client' = gvarSelectedClient.'CH-Tbl-Client')
+                        Items: |-
+                            =AddColumns(
+                                Filter('CH-Tbl-ClientEmails',Client.'CH-Tbl-Client' = gvarSelectedClient.'CH-Tbl-Client'),
+                                "pendingrfc", If(!IsBlank(LookUp(colPendingRFCs, pendingtargetid = Text('CH-Tbl-ClientEmail'))), "RFC en curso", ""),
+                                "pendingcolor", "#FFF4CE"
+                            )
                         LargeDatasetPaging: =false
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
