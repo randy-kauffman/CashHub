@@ -28,6 +28,7 @@ operaciones, sin conocimientos técnicos de Power Platform.
 | 05 | [Manual de digitación](05-manual-digitacion.md) | Digitador | **Digitization** | Agrupa las transacciones en lotes ("hace el corte"), gestiona las transacciones con cheques que van manuales, y descarga el archivo de carga masiva para IBS Branch. |
 | 06 | [Manual de administración de clientes](06-manual-administracion-clientes.md) | Administrador de datos maestros | **Client Administration** (canvas + model-driven) | Da de alta o modifica datos de clientes/sucursales/correos mediante una solicitud de cambio (RFC) que otro usuario aprueba. |
 | 07 | [Manual de trazabilidad](07-manual-trazabilidad.md) | Cualquier rol de consulta/auditoría | **Deposits Tracker** + **Hub** | Consulta de solo lectura del estado de lotes, planillas, tulas y depósitos; el Hub es la puerta de entrada a todas las apps. |
+| [08-plan-de-pruebas-validacion.md](08-plan-de-pruebas-validacion.md) | Batería de pruebas del motor de validación y las notificaciones al cliente: 14 archivos de prueba verificados contra el motor, casos de sobre, contingencia y registro de resultados. |
 
 ## Cómo usar estos manuales
 
