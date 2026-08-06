@@ -34,7 +34,7 @@ Screens:
           Layout: Vertical
           Properties:
             DataSource: ='CH-Tbl-Received Emails'
-            OnFailure: |+
+            OnFailure: |
               =UpdateContext(
                   {
                       varSpinnerDetalleCorreoLabel: "Archivando correo...",
@@ -47,7 +47,7 @@ Screens:
               //UpdateContext({varEmailAttachments: Blank()});
               //UpdateContext({varRegistroEnDataverse: Blank()});
               //Select(Icon3);
-            OnReset: |+
+            OnReset: |
               =/**/
             OnSuccess: |
               =ForAll(
@@ -1621,7 +1621,7 @@ Screens:
                                           Appearance: ='ButtonCanvas.Appearance'.Primary
                                           LayoutMaxHeight: =
                                           LayoutMaxWidth: =
-                                          OnSelect: "=UpdateContext(\r\n    {\r\n        \r\n        varLabelSpinnerCompleto: \"Archivando correo...\",\r\n        varSpinnerCompletoVisible: true,\r\n        varEmailReviewMethod: 'EmailReviewMethod (CH-Tbl-Received Emails)'.Manual\r\n    }\r\n);\r\nNewForm(Form1);\r\nSubmitForm(Form1);\r\n"
+                                          OnSelect: "=UpdateContext(\n    {\n        \n        varLabelSpinnerCompleto: \"Archivando correo...\",\n        varSpinnerCompletoVisible: true,\n        varEmailReviewMethod: 'EmailReviewMethod (CH-Tbl-Received Emails)'.Manual\n    }\n);\nNewForm(Form1);\nSubmitForm(Form1);\n"
                                           Text: ="Incluir + Validar Manual"
                                           Visible: =If(Toggle1.Value = false,false,true)
                                           Width: =180
@@ -1631,7 +1631,7 @@ Screens:
                                           BasePaletteColor: =RGBA(189, 178, 176, 1)
                                           LayoutMaxHeight: =
                                           LayoutMaxWidth: =
-                                          OnSelect: |+
+                                          OnSelect: |
                                             =UpdateContext(
                                                 {
                                                     varLabelSpinnerCompleto: "Archivando correo...",

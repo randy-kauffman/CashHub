@@ -2,12 +2,17 @@
     Fill: =Color.White
     LoadingSpinnerColor: =App.Theme.Colors.Primary
     OnVisible: |-
-        =UpdateContext({varSpinnerCompletoVisible: false});
-        NewForm(Form2);
+        =UpdateContext({varSpinnerCompletoVisible: false, varVista: "TODO"});
         // Salud del pipeline: latido del barrido + cola real
         UpdateContext(
             {
                 varLatido: LookUp('CH-Tbl-SystemHeartbeat', Name = "ingesta-correos"),
+                varEsperandoBanca: CountRows(
+                    Filter('CH-Tbl-Received Emails',
+                        EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual')),
+                varSospechosos: CountRows(
+                    Filter('CH-Tbl-Received Emails',
+                        SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso)),
                 varPendientes: CountRows(
                     Filter('CH-Tbl-Received Emails',
                         ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente)),
@@ -54,6 +59,8 @@
             Fill: =RGBA(255, 255, 255, 1)
             FillPortions: =0
             Height: =60
+            LayoutMaxHeight: =0
+            LayoutMaxWidth: =0
             LayoutMinHeight: =60
             RadiusBottomLeft: =6
             RadiusBottomRight: =6
@@ -64,7 +71,7 @@
             icoSemaforo As icon:
                 Color: =If(varMinutosSinLatido < 0, RGBA(168, 0, 0, 1), varMinutosSinLatido <= 20, RGBA(16, 124, 16, 1), varMinutosSinLatido <= 45, RGBA(196, 137, 0, 1), RGBA(168, 0, 0, 1))
                 Height: =20
-                Icon: =Icon.CircleFill
+                Icon: ="Circle"
                 Tooltip: ="Estado del barrido de ingesta"
                 Width: =20
                 X: =16
@@ -76,23 +83,26 @@
                 FontWeight: =FontWeight.Semibold
                 Height: =24
                 Size: =13
-                Text: =If(varMinutosSinLatido < 0, "SIN SEÑAL — el barrido nunca corrió", varMinutosSinLatido <= 20, "Ingesta operando — último control hace " & varMinutosSinLatido & " min", varMinutosSinLatido <= 45, "Atención: sin control hace " & varMinutosSinLatido & " min", "ALERTA: sin control hace " & varMinutosSinLatido & " min — revisar los flujos")
-                VerticalAlign: =VerticalAlign.Middle
+                Text: |-
+                    =If(varMinutosSinLatido < 0, "SIN SEÑAL — el barrido nunca corrió", varMinutosSinLatido <= 20, "Ingesta operando — último control hace " & varMinutosSinLatido & " min", varMinutosSinLatido <= 45, "Atención: sin control hace " & varMinutosSinLatido & " min", "ALERTA: sin control hace " & varMinutosSinLatido & " min — revisar los flujos")
                 Width: =480
                 X: =44
                 Y: =8
                 ZIndex: =2
 
-            lblSemaforoDetalle As label:
-                Color: =RGBA(97, 97, 97, 1)
-                Height: =20
-                Size: =10
-                Text: =If(IsBlank(varLatido), "Configure el flujo CH-Flow-MailboxSweep para vigilar la ingesta", Coalesce(varLatido.Details, ""))
-                VerticalAlign: =VerticalAlign.Middle
-                Width: =480
-                X: =44
-                Y: =32
-                ZIndex: =3
+            lblContBanca As label:
+                Align: =Align.Center
+                Color: =If(varEsperandoBanca > 0, RGBA(196, 137, 0, 1), RGBA(97, 97, 97, 1))
+                FontWeight: =FontWeight.Semibold
+                Height: =44
+                Size: =13
+                Text: |-
+                    ="Esperando a Banca: " & varEsperandoBanca
+                Tooltip: ="Pre-registros de un cliente real cuyo remitente no esta registrado. Banca de Empresas debe registrar el correo y reprocesar."
+                Width: =230
+                X: =Parent.Width - 830
+                Y: =8
+                ZIndex: =2
 
             lblContPendientes As label:
                 Align: =Align.Center
@@ -100,9 +110,9 @@
                 FontWeight: =FontWeight.Semibold
                 Height: =44
                 Size: =13
-                Text: ="Pendientes: " & varPendientes
+                Text: |-
+                    ="Sin validar: " & varPendientes
                 Tooltip: ="Correos esperando validación"
-                VerticalAlign: =VerticalAlign.Middle
                 Width: =190
                 X: =Parent.Width - 600
                 Y: =8
@@ -114,9 +124,9 @@
                 FontWeight: =FontWeight.Semibold
                 Height: =44
                 Size: =13
-                Text: ="Errores: " & varErroresSistema
+                Text: |-
+                    ="Errores: " & varErroresSistema
                 Tooltip: ="Correos con error de sistema"
-                VerticalAlign: =VerticalAlign.Middle
                 Width: =190
                 X: =Parent.Width - 410
                 Y: =8
@@ -128,13 +138,23 @@
                 FontWeight: =FontWeight.Semibold
                 Height: =44
                 Size: =13
-                Text: ="Sin responder: " & varRespuestasPendientes
+                Text: |-
+                    ="Sin responder: " & varRespuestasPendientes
                 Tooltip: ="Respuestas al cliente sin enviar"
-                VerticalAlign: =VerticalAlign.Middle
                 Width: =190
                 X: =Parent.Width - 220
                 Y: =8
                 ZIndex: =2
+
+            lblSemaforoDetalle As label:
+                Color: =RGBA(97, 97, 97, 1)
+                Height: =20
+                Size: =10
+                Text: =If(IsBlank(varLatido), "Configure el flujo CH-Flow-MailboxSweep para vigilar la ingesta", Coalesce(varLatido.Details, ""))
+                Width: =480
+                X: =44
+                Y: =32
+                ZIndex: =3
 
             btnRefrescarSalud As icon:
                 Color: =RGBA(97, 97, 97, 1)
@@ -146,6 +166,12 @@
                     UpdateContext(
                         {
                             varLatido: LookUp('CH-Tbl-SystemHeartbeat', Name = "ingesta-correos"),
+                            varEsperandoBanca: CountRows(
+                                Filter('CH-Tbl-Received Emails',
+                                    EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual')),
+                            varSospechosos: CountRows(
+                                Filter('CH-Tbl-Received Emails',
+                                    SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso)),
                             varPendientes: CountRows(
                                 Filter('CH-Tbl-Received Emails',
                                     ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente)),
@@ -239,6 +265,76 @@
                     RadiusTopRight: =4
                     ZIndex: =1
 
+                    btnVistaTodo As Button:
+                        Appearance: =If(varVista = "TODO", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                        DisplayMode: =DisplayMode.Edit
+                        Height: =32
+                        LayoutMinWidth: =110
+                        OnSelect: =UpdateContext({varVista: "TODO"})
+                        Text: |-
+                            ="Todo lo accionable"
+                        Tooltip: ="Todo lo que necesita una decision o una revision humana. En un dia sano esta lista deberia estar vacia."
+                        Width: =150
+                        X: =0
+                        Y: =0
+                        ZIndex: =1
+
+                    btnVistaBanca As Button:
+                        Appearance: =If(varVista = "BANCA", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                        DisplayMode: =DisplayMode.Edit
+                        Height: =32
+                        LayoutMinWidth: =110
+                        OnSelect: =UpdateContext({varVista: "BANCA"})
+                        Text: |-
+                            ="Esperando a Banca (" & varEsperandoBanca & ")"
+                        Tooltip: ="Pre-registro de un cliente real desde un correo no registrado. Hay que registrar el correo y reprocesar."
+                        Width: =150
+                        X: =0
+                        Y: =0
+                        ZIndex: =1
+
+                    btnVistaSospechoso As Button:
+                        Appearance: =If(varVista = "SOSPECHOSO", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                        DisplayMode: =DisplayMode.Edit
+                        Height: =32
+                        LayoutMinWidth: =110
+                        OnSelect: =UpdateContext({varVista: "SOSPECHOSO"})
+                        Text: |-
+                            ="Sospechosos (" & varSospechosos & ")"
+                        Tooltip: ="Alguien uso nuestra plantilla oficial con un CIF que no existe. Revisar antes de descartar."
+                        Width: =150
+                        X: =0
+                        Y: =0
+                        ZIndex: =1
+
+                    btnVistaError As Button:
+                        Appearance: =If(varVista = "ERROR", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                        DisplayMode: =DisplayMode.Edit
+                        Height: =32
+                        LayoutMinWidth: =110
+                        OnSelect: =UpdateContext({varVista: "ERROR"})
+                        Text: |-
+                            ="Errores (" & varErroresSistema & ")"
+                        Tooltip: ="Fallas de sistema durante la validacion."
+                        Width: =150
+                        X: =0
+                        Y: =0
+                        ZIndex: =1
+
+                    btnVistaSinResp As Button:
+                        Appearance: =If(varVista = "SINRESP", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                        DisplayMode: =DisplayMode.Edit
+                        Height: =32
+                        LayoutMinWidth: =110
+                        OnSelect: =UpdateContext({varVista: "SINRESP"})
+                        Text: |-
+                            ="Sin responder (" & varRespuestasPendientes & ")"
+                        Tooltip: ="La respuesta quedo compuesta pero no salio."
+                        Width: =150
+                        X: =0
+                        Y: =0
+                        ZIndex: =1
+
                     "SearchInput1_1 As 'Text input'":
                         AccessibleLabel: =""
                         Align: =""
@@ -264,53 +360,8 @@
                         LayoutMinWidth: =320
                         MaxLength: =-1
                         Mode: ="SingleLine"
-                        OnChange: |
-                            =UpdateContext(
-                                {
-                                    varFiltrosQueryCorreo: Concatenate(
-                                        "$filter=",
-                                        If(
-                                            !IsBlank('dp FechaDesde'.SelectedDate),
-                                            "receivedDateTime ge " & Text(
-                                                'dp FechaDesde'.SelectedDate,
-                                                "yyyy-mm-dd"
-                                            ) & "T00:00:00Z"
-                                            //,"receivedDateTime ge 2000-01-01T00:00:00Z"
-                                        ),
-                                         If(Or(
-                                                And(
-                                                    !IsBlank(Trim(SearchInput1_1.Value)),
-                                                    !IsBlank('dp FechaDesde'.SelectedDate)
-                                                ),And(
-                                                    !IsBlank('dp FechaHasta'.SelectedDate),
-                                                    !IsBlank('dp FechaDesde'.SelectedDate)
-                                                )
-                                            )," AND "),
-                                        If(
-                                            !IsBlank('dp FechaHasta'.SelectedDate),
-                                            "receivedDateTime le " & Text(
-                                                'dp FechaHasta'.SelectedDate,
-                                                "yyyy-mm-dd"
-                                            ) & "T00:00:00Z"
-                                        ),
-                                        If(
-                                            Or(
-                                                And(
-                                                    !IsBlank(Trim(SearchInput1_1.Value)),
-                                                    !IsBlank('dp FechaHasta'.SelectedDate)
-                                                )
-                                            ),
-                                            " AND "
-                                        ), 
-                                        If(
-                                            !IsBlank(Trim(SearchInput1_1.Value)),
-                                            //"from/emailAddress/address eq '" & Trim(TextInputCanvas1.Value)&"'"
-                                            "contains(from/emailAddress/address,'" & Trim(SearchInput1_1.Value)&"')"
-                                        )
-                                    )
-                                }
-                            );
-                        Placeholder: ="Remitente"
+                        OnChange: =Reset(Self)
+                        Placeholder: ="Buscar por asunto o remitente"
                         Required: =false
                         TabIndex: =0
                         Tooltip: =""
@@ -360,9 +411,25 @@
                     Height: =If(Self.Y + 500 > Parent.Height, Parent.Height - Self.Y, 500)
                     Items: |-
                         =Search(
-                            Filter(
-                                'CH-Tbl-Received Emails',
-                                EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente
+                            Switch(
+                                varVista,
+                                "BANCA",
+                                Filter('CH-Tbl-Received Emails',
+                                    EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'),
+                                "SOSPECHOSO",
+                                Filter('CH-Tbl-Received Emails',
+                                    SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso),
+                                "ERROR",
+                                Filter('CH-Tbl-Received Emails',
+                                    EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error),
+                                "SINRESP",
+                                Filter('CH-Tbl-Received Emails',
+                                    EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente),
+                                Filter('CH-Tbl-Received Emails',
+                                    EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'
+                                    || EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error
+                                    || ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
+                                    || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)
                             ),
                             SearchInput1_1.Value,
                             Subject,
@@ -374,371 +441,13 @@
                     LayoutMinWidth: =1
                     LookupFilterBeginsWith: ="no"
                     NavigationTypesAllowed: ="none"
-                    NoDataText: =""
+                    NoDataText: =If(varVista = "TODO", "Nada pendiente. El pipeline esta al dia.", "Sin resultados en esta vista.")
                     onCellValueChange: =false
                     onFilter: =false
                     onNavigate: =false
                     onRowSelect: =false
                     onSave: =false
-                    OnSelect: |-
-                        =UpdateContext(
-                            {
-                                isItemSelected: true,
-                                newMode: false,
-                                CurrentItem: Table1_1.Selected
-                                ,varSpinnerCompletoVisible: true
-                                ,varLabelSpinnerCompleto: "Cargando..."
-                            }
-                        );
-                        Refresh('CH-Tbl-ValidationResults');
-                        ClearCollect(
-                            colValidatedResults,
-                            Filter(
-                                'CH-Tbl-ValidationResults',
-                                ValidationRun.'CH-Tbl-ValidationRuns' = gvarSelectedVRUN.'CH-Tbl-ValidationRuns'
-                            )
-                        );
-                        Reset(DropdownCanvas1);
-                        UpdateContext(
-                            {
-                                varAttachment: LookUp(
-                                    'CH-Tbl-EmailsAttachments',
-                                    Email.'CH-Tbl-Received Emails' = Table1_1.Selected.'CH-Tbl-Received Emails'
-                                ).'CH-Tbl-EmailsAttachments'
-                            }
-                        );
-                        If(
-                            !IsBlank(varAttachment),
-                            Set(
-                                JSONData,
-                                'CH-Flow-GetJSONdatafromattachment'.Run(varAttachment).jsonstring
-                            );
-                            
-                        );
-                        //Clear(colTopKeys);
-                        Clear(colDepositosCols);
-                        Clear(colChequesCols);
-                        Clear(colDepositosData);
-                        Clear(colChequesData);
-                        Clear(colTablasEnArchivo);
-                        // Replace JSONData.datos with your string variable/column
-                        If(
-                            !IsBlank(JSONData),
-                            Set(
-                                _rootDyn,
-                                ParseJSON(JSONData)
-                            );
-                            Set(
-                                _root,
-                                Table(_rootDyn)
-                            );
-                            ClearCollect(
-                                colTopKeys,
-                                ForAll(
-                                    _root As R,
-                                    First(ColumnNames(R.Value)).Value
-                                )
-                            );
-                            Set(
-                                _okParse,
-                                IfError(
-                                    Set(
-                                        _rootDyn,
-                                        ParseJSON(JSONData)
-                                    );
-                                    Set(
-                                        _root,
-                                        Table(_rootDyn)
-                                    );
-                                    // succeeds only if root is a JSON array
-                        true,
-                                    false
-                                )
-                            );
-                            If(
-                                !_okParse,
-                                Notify(
-                                    "Root is not valid JSON array.",
-                                    NotificationType.Error
-                                )
-                            );
-                            // Cheques array
-                        Set(
-                                _cheArray,
-                                Column(
-                                    LookUp(
-                                        _root,
-                                        !IsBlank(Value.Cheques)
-                                    ).Value,
-                                    "Cheques"
-                                )
-                            );
-                            // Depositos array
-                        Set(
-                                _depArray,
-                                Column(
-                                    LookUp(
-                                        _root,
-                                        !IsBlank(Value.Depositos)
-                                    ).Value,
-                                    "Depositos"
-                                )
-                            );
-                            JSON(_depArray);
-                            // Quick counts (labels)
-                        Set(
-                                _depCount,
-                                CountRows(Table(_depArray))
-                            );
-                            Set(
-                                _cheCount,
-                                CountRows(Table(_cheArray))
-                            );
-                            // Depositos column names
-                        If(
-                                _depCount > 0,
-                                ClearCollect(
-                                    colDepositosCols,
-                                    ColumnNames(First(Table(_depArray)).Value)
-                                ),
-                                ClearCollect(
-                                    colDepositosCols,
-                                    Table({Value: "<no rows>"})
-                                )
-                            );
-                            // Cheques column names
-                        If(
-                                _cheCount > 0,
-                                ClearCollect(
-                                    colChequesCols,
-                                    ColumnNames(First(Table(_cheArray)).Value)
-                                ),
-                                ClearCollect(
-                                    colChequesCols,
-                                    Table({Value: "<no rows>"})
-                                )
-                            );
-                            // Depositos rows as readable JSON (first 3)
-                        ClearCollect(
-                                colDepositosRaw,
-                                ForAll(
-                                    FirstN(
-                                        Table(_depArray),
-                                        3
-                                    ) As Row,
-                                    {
-                                        __json: JSON(
-                                            Row.Value,
-                                            JSONFormat.IndentFour
-                                        )
-                                    }
-                                )
-                            );
-                            // Cheques rows as readable JSON (first 3)
-                        ClearCollect(
-                                colChequesRaw,
-                                ForAll(
-                                    FirstN(
-                                        Table(_cheArray),
-                                        3
-                                    ) As Row,
-                                    {
-                                        __json: JSON(
-                                            Row.Value,
-                                            JSONFormat.IndentFour
-                                        )
-                                    }
-                                )
-                            );
-                            // 6A) Depositos (typed).  Use the exact keys you saw in colDepositosCols / colDepositosRaw.
-                        If(
-                                _depCount > 0,
-                                ClearCollect(
-                                    colDepositosData,
-                                    ForAll(
-                                        Table(_depArray) As R,
-                                        With(
-                                            {F: R.Value},
-                                            {
-                                                ItemInternalId: Text(
-                                                    Column(
-                                                        F,
-                                                        "ItemInternalId"
-                                                    )
-                                                ),
-                                                NoDeposito: Text(
-                                                    Column(
-                                                        F,
-                                                        "No. deposito"
-                                                    )
-                                                ),
-                                                // use precise case & punctuation
-                                                NoBolsa: Text(
-                                                    Column(
-                                                        F,
-                                                        "No. bolsa"
-                                                    )
-                                                ),
-                                                NoCuenta: Text(
-                                                    Column(
-                                                        F,
-                                                        "No. Cuenta"
-                                                    )
-                                                ),
-                                                Moneda: Text(
-                                                    Column(
-                                                        F,
-                                                        "Moneda"
-                                                    )
-                                                ),
-                                                ChequesBAC: Text(
-                                                    Column(
-                                                        F,
-                                                        "Cheques Locales BAC"
-                                                    )
-                                                ),
-                                                ChequesOtros: Text(
-                                                    Column(
-                                                        F,
-                                                        "Cheques Locales Otros"
-                                                    )
-                                                ),
-                                                Efectivo: Value(
-                                                    Coalesce(
-                                                        Text(
-                                                            Column(
-                                                                F,
-                                                                "Efectivo"
-                                                            )
-                                                        ),
-                                                        "0"
-                                                    )
-                                                ),
-                                                Total: Value(
-                                                    Coalesce(
-                                                        Text(
-                                                            Column(
-                                                                F,
-                                                                "Total"
-                                                            )
-                                                        ),
-                                                        "0"
-                                                    )
-                                                ),
-                                                Referencia: Text(
-                                                    Column(
-                                                        F,
-                                                        "Referencia"
-                                                    )
-                                                )
-                                            }
-                                        )
-                                    )
-                                )
-                            );
-                            // 6B) Cheques (typed).
-                        If(
-                                _cheCount > 0,
-                                ClearCollect(
-                                    colChequesData,
-                                    ForAll(
-                                        Table(_cheArray) As R,
-                                        With(
-                                            {F: R.Value},
-                                            {
-                                                ItemInternalId: Text(
-                                                    Column(
-                                                        F,
-                                                        "ItemInternalId"
-                                                    )
-                                                ),
-                                                NoDeposito: Text(
-                                                    Column(
-                                                        F,
-                                                        "No. Deposito"
-                                                    )
-                                                ),
-                                                NoCheque: Text(
-                                                    Column(
-                                                        F,
-                                                        "No. Cheque"
-                                                    )
-                                                ),
-                                                Tipo: Text(
-                                                    Column(
-                                                        F,
-                                                        "Tipo"
-                                                    )
-                                                ),
-                                                Moneda: Text(
-                                                    Column(
-                                                        F,
-                                                        "Moneda"
-                                                    )
-                                                ),
-                                                Monto: Value(
-                                                    Coalesce(
-                                                        Text(
-                                                            Column(
-                                                                F,
-                                                                "Monto"
-                                                            )
-                                                        ),
-                                                        "0"
-                                                    )
-                                                )
-                                            }
-                                        )
-                                    )
-                                )
-                            );
-                            ClearCollect(
-                                colTablasEnArchivo,
-                                {
-                                    Nombre: "Depositos",
-                                    Columnas: colDepositosCols,
-                                    Datos: colDepositosData
-                                },
-                                {
-                                    Nombre: "Cheques",
-                                    Columnas: colChequesCols,
-                                    Datos: colChequesData
-                                }
-                            );
-                            
-                        );
-                        ClearCollect(
-                            colValidatedResults,
-                            AddColumns(
-                                Filter(
-                                    'CH-Tbl-ValidationResults',
-                                    ValidationRun.'CH-Tbl-ValidationRuns' = Last(
-                                        Filter(
-                                            'CH-Tbl-ValidationRuns',
-                                            SourceRecordID = Text(Table1_1.Selected.'CH-Tbl-Received Emails')
-                                        )
-                                    ).'CH-Tbl-ValidationRuns'
-                                ),
-                                "ReglaClave", Coalesce(ValidationRule.'Validation Name', "-"),
-                                "ReglaNombre", Coalesce(ValidationRule.Name, "(regla no identificada)"),
-                                "ReglaOrden", Coalesce(ValidationRule.ValidationOrder, 9999),
-                                "Paso", ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass,
-                                "Ubicacion", If(
-                                    IsBlank(Hoja), "",
-                                    IsBlank(Celda), Hoja & If(IsBlank(Fila), "", " fila " & Fila),
-                                    Hoja & "!" & Celda
-                                )
-                            )
-                        );
-                        Set(gvarSelectedEmail, Table1_1.Selected);
-                        Set(gvarSelectedVRUN, Last(Filter('CH-Tbl-ValidationRuns',SourceRecordID=Text(gvarSelectedEmail.'CH-Tbl-Received Emails'))));
-                        
-                        NewForm('form Declaration');
-                        NewForm('form DeclaredBags');
-                        NewForm('form DeclaredDeposits');
-                        NewForm('form DeclaredChecks');
-                        
-                        UpdateContext({varSpinnerCompletoVisible: false});
+                    OnSelect: =
                     ReflowBehavior: ='PowerAppsOneGrid.ReflowBehavior'.ListOnly
                     ShowAvatar: ="yes"
                     ShowColumnHeaders: ="yes"
@@ -841,1743 +550,201 @@
                         Width: =0
                         ZIndex: =10
 
-            MainContainer2 As groupContainer.verticalAutoLayoutContainer:
-                DropShadow: =DropShadow.Light
-                Fill: =RGBA(255, 255, 255, 1)
-                FillPortions: =7
-                LayoutDirection: =LayoutDirection.Vertical
-                LayoutGridColumnMinWidth: =0
-                LayoutGridColumns: =6
-                LayoutGridRowMinHeight: =0
-                LayoutGridRows: =6
-                LayoutMaxHeight: =
-                LayoutMaxWidth: =
-                LayoutMinHeight: =100
-                LayoutMinWidth: =250
-                LayoutMode: =LayoutMode.Auto
-                RadiusBottomLeft: =8
-                RadiusBottomRight: =8
-                RadiusTopLeft: =8
-                RadiusTopRight: =8
-                Visible: =!IsBlank(gvarSelectedEmail)
-                ZIndex: =5
 
-                Container3 As groupContainer.horizontalAutoLayoutContainer:
-                    DropShadow: =DropShadow.Light
+                'container Acciones' As groupContainer.manualLayoutContainer:
+                    Fill: =RGBA(255, 255, 255, 1)
                     FillPortions: =0
-                    Height: =100
-                    LayoutAlignItems: =LayoutAlignItems.Center
-                    LayoutGap: =10
-                    LayoutGridColumnMinWidth: =0
-                    LayoutGridColumns: =6
-                    LayoutGridRowMinHeight: =0
-                    LayoutGridRows: =6
-                    LayoutMaxHeight: =
-                    LayoutMaxWidth: =
-                    LayoutMinHeight: =100
-                    LayoutMinWidth: =250
-                    LayoutMode: =LayoutMode.Auto
-                    PaddingBottom: =10
-                    PaddingLeft: =10
-                    PaddingRight: =10
-                    PaddingTop: =10
-                    RadiusBottomLeft: =4
-                    RadiusBottomRight: =4
-                    RadiusTopLeft: =4
-                    RadiusTopRight: =4
-                    Visible: =!IsBlank(gvarSelectedEmail)
-                    ZIndex: =1
+                    Height: =150
+                    LayoutMinHeight: =150
+                    PaddingLeft: =12
+                    RadiusBottomLeft: =6
+                    RadiusBottomRight: =6
+                    RadiusTopLeft: =6
+                    RadiusTopRight: =6
+                    Visible: =!IsBlank(Table1_1.Selected)
+                    ZIndex: =3
 
-                    DropdownCanvas1 As Dropdown.pcfdataset:
-                        DefaultSelectedItems: =gvarSelectedVRUN
-                        DisplayMode: =DisplayMode.Edit
-                        Height: =32
-                        Items: =Filter('CH-Tbl-ValidationRuns',SourceRecordID=Text(gvarSelectedEmail.'CH-Tbl-Received Emails')) 
-                        LayoutMaxHeight: =
-                        LayoutMaxWidth: =
-                        LayoutMinHeight: =32
-                        LayoutMinWidth: =320
-                        OnChange: |-
-                            =Refresh('CH-Tbl-ValidationResults');
-                            If(
-                                IsBlank(Self.Selected),
-                                Set(
-                                    gvarSelectedVRUN,
-                                    Last(
-                                        Filter(
-                                            'CH-Tbl-ValidationRuns',
-                                            SourceRecordID = Text(gvarSelectedEmail.'CH-Tbl-Received Emails')
-                                        )
-                                    )
-                                );
-                                ,
-                                Set(
-                                    gvarSelectedVRUN,
-                                    Self.Selected
-                                )
-                            );
-                            ClearCollect(
-                                colValidatedResults,
-                                Filter(
-                                    'CH-Tbl-ValidationResults',
-                                    ValidationRun.'CH-Tbl-ValidationRuns' = gvarSelectedVRUN.'CH-Tbl-ValidationRuns'
-                                )
-                            )
-                        Width: =140
-                        X: =0
-                        Y: =0
+                    lblAccionesTitulo As label:
+                        Color: =RGBA(32, 31, 30, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =24
+                        Size: =13
+                        Text: |-
+                            =Table1_1.Selected.Name & "  |  " & Coalesce(Table1_1.Selected.SourceEmailAddress, "(sin remitente)")
+                        Width: =Parent.Width - 24
+                        X: =12
+                        Y: =8
                         ZIndex: =1
 
-                        Name1 As PowerApps_CoreControls_DropdownCanvasTemplate_dataField.textualColumn:
-                            FieldDisplayName: ="Name"
-                            FieldName: ="sanic_name"
-                            FieldType: ="s"
-                            FieldVariantName: ="textualColumn"
-                            Order: =1
-                            ZIndex: =1
-
-                        "'Created On1' As PowerApps_CoreControls_DropdownCanvasTemplate_dataField.textualColumn":
-                            FieldDisplayName: ="Created On"
-                            FieldName: ="createdon"
-                            FieldType: ="d"
-                            FieldVariantName: ="textualColumn"
-                            Order: =2
-                            ZIndex: =2
-
-                    ButtonCanvas3 As Button:
-                        BasePaletteColor: =
-                        BorderColor: =
-                        DisplayMode: |-
-                            =If(
-                                gvarSelectedEmail.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente,
-                                DisplayMode.Edit,
-                                DisplayMode.View
-                            )
-                        FillPortions: =1
-                        FontColor: =
-                        Height: =32
-                        LayoutMaxHeight: =
-                        LayoutMaxWidth: =
-                        LayoutMinHeight: =32
-                        LayoutMinWidth: =96
-                        OnSelect: |
-                            =NewForm(Form2);
-                            SubmitForm(Form2);
-                        Text: ="Crear lote de validacion"
-                        Visible: =true
-                        Width: =160
-                        X: =0
-                        Y: =0
+                    lblAccionesMotivo As label:
+                        Color: =RGBA(97, 97, 97, 1)
+                        Height: =54
+                        Size: =11
+                        Text: |-
+                            =Coalesce(Table1_1.Selected.TriageNotes, "Este correo no paso por el triage de remitentes.")
+                        Width: =Parent.Width - 24
+                        X: =12
+                        Y: =32
                         ZIndex: =2
 
-                    ButtonCanvas3_1 As Button:
-                        AcceptsFocus: =true
-                        AccessibleLabel: =""
-                        Align: =""
-                        Appearance: ="Primary"
-                        BasePaletteColor: =
-                        BorderColor: =
-                        BorderStyle: =""
-                        ContentLanguage: =""
-                        DisplayMode: |-
-                            =If(
-                                gvarSelectedEmail.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente,
-                                DisplayMode.Edit,
-                                DisplayMode.View
-                            )
-                        FillPortions: =1
-                        Font: =""
-                        FontColor: =
-                        FontItalic: =false
-                        FontSize: =0
-                        FontStrikethrough: =false
-                        FontUnderline: =false
-                        FontWeight: =""
-                        Height: =32
-                        Icon: =""
-                        IconRotation: =0
-                        IconStyle: ="Outline"
-                        Layout: ="Icon before"
-                        LayoutMaxHeight: =
-                        LayoutMaxWidth: =
-                        LayoutMinHeight: =32
-                        LayoutMinWidth: =96
-                        OnSelect: |-
-                            =UpdateContext({varRunAllValidations: true, varValidationToggle:!varValidationToggle});
-                        TabIndex: =0
-                        Text: ="Correr todas las validaciones"
-                        Tooltip: =""
-                        VerticalAlign: =""
-                        Visible: =!IsBlank(gvarSelectedVRUN)
-                        Width: =160
-                        X: =0
-                        Y: =0
-                        ZIndex: =3
-
-                    TextCanvas3 As Text:
-                        Align: ='TextCanvas.Align'.Center
-                        BorderColor: =
-                        DisplayMode: =DisplayMode.Edit
-                        Fill: =
-                        FontColor: =
-                        Height: =32
-                        LayoutMaxHeight: =
-                        LayoutMaxWidth: =
-                        LayoutMinHeight: =32
-                        LayoutMinWidth: =96
-                        Size: =18
-                        Text: =gvarSelectedVRUN.RunResult
-                        VerticalAlign: =VerticalAlign.Middle
-                        Weight: ='TextCanvas.Weight'.Bold
-                        Width: =96
-                        X: =0
-                        Y: =0
-                        ZIndex: =4
-
-                    ButtonCanvas4 As Button:
-                        BasePaletteColor: =
-                        BorderColor: =
-                        BorderRadius: =10
-                        DisplayMode: |-
-                            =If(
-                                gvarSelectedEmail.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente,
-                                If(
-                                    gvarSelectedVRUN.RunResult = 'RunResult (CH-Tbl-ValidationRuns)'.Pass,
-                                    DisplayMode.Edit,
-                                    DisplayMode.View
-                                ),
-                                DisplayMode.View
-                            )
-                        FillPortions: =1
-                        FontColor: =
-                        Height: =40
-                        LayoutMaxHeight: =
-                        LayoutMaxWidth: =
-                        LayoutMinHeight: =32
-                        LayoutMinWidth: =96
-                        OnSelect: |-
-                            =If(
-                                gvarSelectedVRUN.RunResult = 'RunResult (CH-Tbl-ValidationRuns)'.Fail,
-                                UpdateContext(
-                                    {
-                                        varOutgoingEmail: Concatenate(
-                                            "<html>",
-                                            "<body>",
-                                            "<p>El pre-registro de los archivos fue rechazado por estos motivos: </p>",
-                                            "<ul><li>",
-                                            Concat(
-                                                Filter(
-                                                    colValidatedResults,
-                                                    ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail
-                                                ),
-                                                ValidationRule.ValidationFailMessage,
-                                                "</li><li>"
-                                            ),
-                                            "</li></ul>",
-                                            "<p>Numero de seguimiento: ",
-                                            gvarSelectedEmail.Name,
-                                            "</p>",
-                                            "</body>",
-                                            "</html>"
-                                        )
-                                    }
-                                ),
-                                UpdateContext(
-                                    {
-                                        varOutgoingEmail: Concatenate(
-                                            "<html>",
-                                            "<body>",
-                                            "<p>El pre-registro de los archivos fue aceptado. </p>",
-                                            "<p>Numero de seguimiento: ",
-                                            gvarSelectedEmail.Name,
-                                            "</p>",
-                                            "</body>",
-                                            "</html>"
-                                        )
-                                    }
-                                );
-                            NewForm('form Declaration');
-                            SubmitForm('form Declaration');
-                            
-                            
-                            )    
-                        Text: ="Guardar resultados"
-                        Visible: =true //!IsBlank(DropdownCanvas1.Selected.RunResult)
-                        Width: =200
-                        X: =0
-                        Y: =0
-                        ZIndex: =5
-
-                    ButtonCanvas4_1 As Button:
-                        AcceptsFocus: =true
-                        AccessibleLabel: =""
-                        Align: =""
-                        Appearance: ="Primary"
-                        BasePaletteColor: =
-                        BorderColor: =
-                        BorderRadius: =10
-                        BorderStyle: =""
-                        ContentLanguage: =""
-                        DisplayMode: |-
-                            =If(
-                                gvarSelectedEmail.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Aceptado || gvarSelectedEmail.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Denegado,
-                                DisplayMode.Edit,
-                                DisplayMode.Disabled
-                            )
-                        FillPortions: =1
-                        Font: =""
-                        FontColor: =
-                        FontItalic: =false
-                        FontSize: =0
-                        FontStrikethrough: =false
-                        FontUnderline: =false
-                        FontWeight: =""
-                        Height: =40
-                        Icon: =""
-                        IconRotation: =0
-                        IconStyle: ="Outline"
-                        Layout: ="Icon before"
-                        LayoutMaxHeight: =
-                        LayoutMaxWidth: =
-                        LayoutMinHeight: =32
-                        LayoutMinWidth: =96
-                        OnSelect: |
-                            =UpdateContext({varSpinnerCompletoVisible: true, varLabelSpinnerCompleto: "Respondiendo correo..."});
-                            
-                            UpdateContext({varOutgoingEmail:"<!DOCTYPE html>
-                                            <html>
-                                            <head>
-                                            <meta charset='UTF-8'>
-                                            <title>Notificación</title>
-                                            <style>
-                                            body {
-                                                    font-family: Arial, sans-serif;
-                                                    margin: 0;
-                                                    padding: 0;
-                                                    background-color: #f8f8f8;
-                                                }
-                                                .container {
-                                                    max-width: 600px;
-                                                    margin: 20px auto;
-                                                    background-color: #ffffff;
-                                                    border: 1px solid #ddd;
-                                                    border-radius: 8px;
-                                                    overflow: hidden;
-                                                }
-                                                .header {
-                                                    background-color: #c62828; /* Primary Red */
-                                                    color: #ffffff;
-                                                    text-align: center;
-                                                    padding: 20px;
-                                                    font-size: 22px;
-                                                    font-weight: bold;
-                                                }
-                                                .content {
-                                                    padding: 20px;
-                                                    color: #333333;
-                                                    font-size: 16px;
-                                                    line-height: 1.5;
-                                                }
-                                                .content ul {
-                                                    margin: 10px 0;
-                                                    padding-left: 20px;
-                                                }
-                                                .tracking {
-                                                    margin-top: 15px;
-                                                    font-size: 12px;
-                                                }
-                                                .footer {
-                                                    background-color: #f1f1f1;
-                                                    text-align: center;
-                                                    padding: 10px;
-                                                    font-size: 12px;
-                                                    color: #777777;
-                                                }
-                                            </style>
-                                            </head>
-                                            "});
-                            
-                            If(
-                                gvarSelectedVRUN.RunResult = 'RunResult (CH-Tbl-ValidationRuns)'.Fail,
-                                UpdateContext(
-                                    {
-                                        varOutgoingEmail: Concatenate(varOutgoingEmail,
-                                            "<body>",
-                                            "<div class='container'>
-                                                    <div class='header'>
-                                                        Notificación de Pre-registro
-                                                    </div>
-                                                    <div class='content'>
-                                                    <p>El pre-registro de los archivos fue rechazado por estos motivos:</p>
-                                                    <ul><li>",
-                                            
-                                            
-                                            Concat(
-                                                ForAll(Filter(
-                                                    colValidatedResults,
-                                                    ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail
-                                                ) As VR, LookUp(colValidationRules As CVR, CVR.Name = VR.ValidationRule.Name)) ,
-                                                ValidationFailMessage,
-                                                "</li><li>"
-                                            ),
-                                            "</li></ul>",
-                                            "<p class='tracking'>Número de seguimiento: <strong>"&gvarSelectedEmail.Name&"</strong></p>
-                                                    </div>
-                                                    <div class='footer'>
-                                                        Este es un mensaje automático. Por favor, no responda a este correo.
-                                                    </div>
-                                                </div>
-                                            </body>
-                                            </html>
-                                            "
-                                        )
-                                    }
-                                );
-                                ,
-                                UpdateContext(
-                                    {
-                                        varOutgoingEmail: Concatenate(
-                                            varOutgoingEmail,
-                                            "<body>",
-                                            "<div class='container'>
-                                                    <div class='header'>
-                                                        Notificación de Pre-registro
-                                                    </div>
-                                                    <div class='content'>",
-                                            "<p>El pre-registro de los archivos fue aceptado. </p>",
-                                            "<p class='tracking'>Número de seguimiento: <strong>"&gvarSelectedEmail.Name&"</strong></p>
-                                                    </div>
-                                                    <div class='footer'>
-                                                        Este es un mensaje automático. Por favor, no responda a este correo.
-                                                    </div>
-                                                </div>
-                                            </body>
-                                            </html>
-                                            "
-                                        )
-                                    }
-                                );
-                                
-                            );
-                            
-                            
-                            If(
-                                'PowerAppV2->Replytoemail(V3),RespondtoaPowerApporflow'.Run(
-                                    varOutgoingEmail,
-                                    gvarSelectedEmail.ReceivedEmailOutlookUniqueID,
-                                    varBuzonCorreo
-                                ).status = "Ok",
-                                UpdateContext(
-                                    {
-                                        varReply: Office365Outlook.HttpRequest(
-                                            "https://graph.microsoft.com/v1.0/users/" & varBuzonCorreo & "/mailFolders('SentItems')/messages?$filter=singleValueExtendedProperties/Any(ep: ep/id eq 'String 0x1042' and ep/value eq '" & gvarSelectedEmail.ReplyEmailInternetMessageId & "')" & "&$select=subject,id,internetMessageId,receivedDateTime,isRead,from,hasAttachments",
-                                            "GET",
-                                            ""
-                                        )
-                                    }
-                                );
-                                UpdateContext(
-                                    {
-                                        varColReplies: ForAll(
-                                            Table(varReply.value) As email,
-                                            {
-                                                Asunto: Text(email.Value.subject),
-                                                FechaRecibido: DateTimeValue(email.Value.receivedDateTime),
-                                                Leido: Boolean(email.Value.isRead),
-                                                Remitente: Text(email.Value.from.emailAddress.address),
-                                                MessageID: Text(email.Value.id),
-                                                TieneAdjuntos: Boolean(email.Value.hasAttachments),
-                                                InternetMessageID: Text(email.Value.internetMessageId)
-                                            }
-                                        )
-                                    }
-                                );
-                                UpdateContext(
-                                    {
-                                        varLastReply: First(
-                                            SortByColumns(
-                                                varColReplies,
-                                                "FechaRecibido",
-                                                SortOrder.Descending
-                                            )
-                                        )
-                                    }
-                                );
-                                
-                                Patch(
-                                    'CH-Tbl-Received Emails',
-                                    gvarSelectedEmail,
-                                    {
-                                        EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Respondido,
-                                        ReplyDateTime: varLastReply.FechaRecibido,
-                                        ReplyEmailOutlookUniqueID: varLastReply.MessageID,
-                                        ReplyEmailInternetMessageId: varLastReply.InternetMessageID
-                                    }
-                                );
-                                Refresh('CH-Tbl-Received Emails');
-                                Set(gvarSelectedEmail,Blank());
-                                Set(gvarSelectedVRUN,Blank());
-                            );
-                            
-                            
-                            UpdateContext({varSpinnerCompletoVisible: false, varLabelSpinnerCompleto: "Respondiendo correo..."});
-                        TabIndex: =0
-                        Text: ="Responder correo"
-                        Tooltip: =""
-                        VerticalAlign: =""
-                        Visible: =true //!IsBlank(DropdownCanvas1.Selected.RunResult)
-                        Width: =200
-                        X: =0
-                        Y: =0
-                        ZIndex: =6
-
-
-
                     btnReprocesar As Button:
-                        Appearance: ="Primary"
-                        BasePaletteColor: =RGBA(0, 120, 212, 1)
-                        BorderRadius: =10
-                        DisplayMode: =DisplayMode.Edit
-                        Height: =40
-                        OnSelect: |-
-                            =UpdateContext({varSpinnerCompletoVisible: true, varLabelSpinnerCompleto: "Revalidando con el motor..."});
-                            // Encola el correo para el motor: el barrido lo revalida en su
-                            // proxima corrida y deja una nueva corrida de validacion.
-                            Patch(
-                                'CH-Tbl-Received Emails',
-                                gvarSelectedEmail,
-                                {
-                                    ValidationStatus: 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente,
-                                    EmailReviewStatus: 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente
-                                }
-                            );
-                            Refresh('CH-Tbl-Received Emails');
-                            Notify("Correo encolado: el motor lo revalidara en los proximos minutos.", NotificationType.Success);
-                            UpdateContext({varSpinnerCompletoVisible: false})
-                        Text: ="Revalidar con el motor"
-                        Visible: =!IsBlank(gvarSelectedEmail)
-                        Width: =200
-                        X: =0
-                        Y: =ButtonCanvas4_1.Y + 48
-                        ZIndex: =7
-
-                    btnReenviarRespuesta As Button:
-                        Appearance: ="Primary"
-                        BasePaletteColor: =RGBA(96, 94, 92, 1)
-                        BorderRadius: =10
-                        DisplayMode: =DisplayMode.Edit
-                        Height: =40
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        Height: =32
                         OnSelect: |-
                             =Patch(
                                 'CH-Tbl-Received Emails',
-                                gvarSelectedEmail,
+                                Table1_1.Selected,
+                                {ValidationStatus: 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente,
+                                  EmailReviewStatus: 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente}
+                            );
+                            Refresh('CH-Tbl-Received Emails');
+                            Notify("Marcado para reproceso. El barrido lo revalida en su proxima corrida, dentro de 10 minutos como maximo.", NotificationType.Success);
+                        Text: ="Marcar para reproceso"
+                        Tooltip: ="Lo devuelve a Pendiente. CH-Flow-MailboxSweep revalida los pendientes sin corrida en cada barrido."
+                        Width: =190
+                        X: =12
+                        Y: =92
+                        ZIndex: =3
+
+                    btnReenviar As Button:
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        DisplayMode: =If(IsBlank(Table1_1.Selected.ReplyBodyHtml), DisplayMode.Disabled, DisplayMode.Edit)
+                        Height: =32
+                        OnSelect: |-
+                            =Patch(
+                                'CH-Tbl-Received Emails',
+                                Table1_1.Selected,
                                 {EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente}
                             );
                             Refresh('CH-Tbl-Received Emails');
-                            Notify("Respuesta encolada: se enviara al cliente en unos segundos.", NotificationType.Success)
+                            Notify("Respuesta encolada. Si el correo ya se archivo hace tiempo, el envio puede fallar porque Exchange le cambia el id al mover el mensaje.", NotificationType.Warning);
                         Text: ="Reenviar respuesta"
-                        Visible: =!IsBlank(gvarSelectedEmail)
-                        Width: =200
-                        X: =0
-                        Y: =ButtonCanvas4_1.Y + 96
-                        ZIndex: =7
-
+                        Tooltip: ="Solo si ya hay una respuesta compuesta."
+                        Width: =180
+                        X: =212
+                        Y: =92
+                        ZIndex: =4
 
                     btnOverrideAceptar As Button:
-                        Appearance: ="Secondary"
-                        BasePaletteColor: =RGBA(16, 124, 16, 1)
-                        BorderRadius: =10
-                        DisplayMode: =DisplayMode.Edit
-                        Height: =40
-                        OnSelect: |-
-                            =UpdateContext({varOverrideAccion: "aceptar", varOverrideMotivo: "", varOverrideVisible: true})
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        Height: =32
+                        OnSelect: =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: true, varOverrideMotivo: ""})
                         Text: ="Aceptar manualmente"
-                        Visible: =!IsBlank(gvarSelectedEmail)
-                        Width: =200
-                        X: =0
-                        Y: =ButtonCanvas4_1.Y + 144
-                        ZIndex: =7
-
-                    btnOverrideDenegar As Button:
-                        Appearance: ="Secondary"
-                        BasePaletteColor: =RGBA(168, 0, 0, 1)
-                        BorderRadius: =10
-                        DisplayMode: =DisplayMode.Edit
-                        Height: =40
-                        OnSelect: |-
-                            =UpdateContext({varOverrideAccion: "denegar", varOverrideMotivo: "", varOverrideVisible: true})
-                        Text: ="Denegar manualmente"
-                        Visible: =!IsBlank(gvarSelectedEmail)
-                        Width: =200
-                        X: =0
-                        Y: =ButtonCanvas4_1.Y + 192
-                        ZIndex: =7
-
-                Container2 As groupContainer.horizontalAutoLayoutContainer:
-                    DropShadow: =DropShadow.Light
-                    LayoutGridColumnMinWidth: =0
-                    LayoutGridColumns: =6
-                    LayoutGridRowMinHeight: =0
-                    LayoutGridRows: =6
-                    LayoutMaxHeight: =
-                    LayoutMaxWidth: =
-                    LayoutMinHeight: =100
-                    LayoutMinWidth: =250
-                    LayoutMode: =LayoutMode.Auto
-                    RadiusBottomLeft: =4
-                    RadiusBottomRight: =4
-                    RadiusTopLeft: =4
-                    RadiusTopRight: =4
-                    ZIndex: =2
-
-                    Gallery1 As gallery.galleryVertical:
-                        '#CopilotOverlayLabel': ="Filtered"
-                        BorderColor: =App.Theme.Colors.Darker40
-                        DelayItemLoading: =true
-                        Items: |-
-                            =SortByColumns(
-                                Filter(
-                                    colValidationRules As Rule,
-                                    IsBlank(
-                                        LookUp(
-                                            Gallery1_1.AllItems As Result,
-                                            Result.ValidationRule.Name = Rule.Name
-                                        )
-                                    )
-                                ),
-                                "sanic_validationorder",
-                                SortOrder.Ascending
-                            )
-                        Layout: =Layout.Vertical
-                        LayoutMaxHeight: =
-                        LayoutMaxWidth: =
-                        LayoutMinHeight: =287
-                        LayoutMinWidth: =320
-                        LoadingSpinner: =LoadingSpinner.Data
-                        ShowScrollbar: =false
-                        TemplateSize: =60
-                        Visible: =!IsBlank(gvarSelectedVRUN)
-                        ZIndex: =1
-
-                        TextCanvas2 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =26
-                            PaddingLeft: =5
-                            PaddingTop: =5
-                            Text: =ThisItem.Name
-                            Width: =96
-                            X: =0
-                            Y: =0
-                            ZIndex: =1
-
-                        TextCanvas2_1 As Text:
-                            Align: ="Start"
-                            AutoHeight: =false
-                            BorderColor: =
-                            BorderStyle: =""
-                            ContentLanguage: =""
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            Font: =""
-                            FontColor: =
-                            FontItalic: =false
-                            FontStrikethrough: =false
-                            FontUnderline: =false
-                            Height: =26
-                            PaddingLeft: =5
-                            PaddingRight: =10
-                            PaddingTop: =5
-                            Size: =14
-                            TabIndex: =0
-                            Text: =Substitute(ThisItem.'Validation Name',"[X]",ThisItem.ValidationValue)
-                            Tooltip: =""
-                            VerticalAlign: =""
-                            Visible: =true
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =Parent.TemplateWidth
-                            Wrap: =true
-                            X: =0
-                            Y: =TextCanvas2.Y + TextCanvas2.Height
-                            ZIndex: =2
-
-                        ButtonCanvas2 As Button:
-                            BasePaletteColor: =
-                            BorderColor: =
-                            DisplayMode: |-
-                                =If(
-                                    IsBlank(ThisItem.ValidationDependency),
-                                    DisplayMode.Edit,
-                                    If(
-                                        IsBlank(
-                                            LookUp(
-                                                Gallery1_1.AllItems As Result,
-                                                Result.ValidationRule.Name = ThisItem.ValidationDependency.Name
-                                                &&
-                                                Result.ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass
-                                            )
-                                        ),
-                                        DisplayMode.Disabled,
-                                        DisplayMode.Edit
-                                    )
-                                )
-                            FontColor: =
-                            FontSize: =10
-                            Height: =20
-                            OnSelect: |-
-                                =UpdateContext({varValidationRule: ThisItem})
-                            Text: =If(Self.DisplayMode = DisplayMode.Edit, "Ejecutar", ThisItem.ValidationDependency.Name)
-                            Width: =60
-                            X: =Parent.TemplateWidth - Self.Width - 5
-                            Y: =5
-                            ZIndex: =3
-
-                    Gallery1_1 As gallery.galleryVertical:
-                        '#CopilotOverlayLabel': ="Filtered"
-                        BorderColor: =App.Theme.Colors.Darker40
-                        DelayItemLoading: =true
-                        Items: =Filter(colValidatedResults,ValidationRun.'CH-Tbl-ValidationRuns' = gvarSelectedVRUN.'CH-Tbl-ValidationRuns')
-                        Layout: =Layout.Vertical
-                        LayoutMaxHeight: =
-                        LayoutMaxWidth: =
-                        LayoutMinHeight: =80
-                        LayoutMinWidth: =320
-                        LoadingSpinner: =LoadingSpinner.Data
-                        TemplateSize: =60
-                        Visible: =!IsBlank(DropdownCanvas1.Selected)
-                        ZIndex: =2
-
-                        TextCanvas4 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =26
-                            PaddingLeft: =5
-                            PaddingTop: =5
-                            Text: =ThisItem.ValidationRule.Name
-                            Width: =70
-                            X: =0
-                            Y: =0
-                            ZIndex: =2
-
-                        TextCanvas4_1 As Text:
-                            Align: ="Start"
-                            AutoHeight: =false
-                            BorderColor: =
-                            BorderStyle: =""
-                            ContentLanguage: =""
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            Font: =""
-                            FontColor: =
-                            FontItalic: =false
-                            FontStrikethrough: =false
-                            FontUnderline: =false
-                            Height: =26
-                            PaddingLeft: =5
-                            PaddingTop: =5
-                            Size: =14
-                            TabIndex: =0
-                            Text: =Substitute(ThisItem.ValidationRule.'Validation Name',"[X]",ThisItem.ValidationRule.ValidationValue)
-                            Tooltip: =""
-                            VerticalAlign: =""
-                            Visible: =true
-                            Weight: ="Regular"
-                            Width: =Parent.TemplateWidth
-                            Wrap: =true
-                            X: =0
-                            Y: =TextCanvas4.Y + TextCanvas4.Height
-                            ZIndex: =3
-
-                        TextCanvas4_2 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            AutoHeight: =false
-                            BorderColor: =
-                            BorderRadius: =10
-                            BorderStyle: =""
-                            ContentLanguage: =""
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =If(ThisItem.ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass, RGBA(0,120,0,1), RGBA(255,0,0,1))
-                            Font: =""
-                            FontColor: =RGBA(255, 255, 255, 1)
-                            FontItalic: =false
-                            FontStrikethrough: =false
-                            FontUnderline: =false
-                            Height: =20
-                            PaddingBottom: =0
-                            PaddingLeft: =0
-                            PaddingRight: =0
-                            PaddingTop: =0
-                            Size: =10
-                            TabIndex: =0
-                            Text: =ThisItem.ValidationResult
-                            Tooltip: =""
-                            VerticalAlign: =VerticalAlign.Middle
-                            Visible: =true
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =40
-                            Wrap: =true
-                            X: =TextCanvas4.X + TextCanvas4.Width + 5
-                            Y: =TextCanvas4.Y + (TextCanvas4.Height - Self.Height)/2
-                            ZIndex: =4
-
-            "'container LogReglas' As groupContainer.verticalAutoLayoutContainer":
-                Fill: =RGBA(255, 255, 255, 1)
-                FillPortions: =1
-                LayoutDirection: =LayoutDirection.Vertical
-                LayoutMinHeight: =200
-                LayoutMode: =LayoutMode.Auto
-                PaddingLeft: =12
-                PaddingRight: =12
-                PaddingTop: =8
-                RadiusBottomLeft: =6
-                RadiusBottomRight: =6
-                RadiusTopLeft: =6
-                RadiusTopRight: =6
-                Visible: =!IsBlank(gvarSelectedEmail)
-                ZIndex: =5
-
-                lblLogTitulo As label:
-                    Color: =RGBA(36, 36, 36, 1)
-                    FillPortions: =0
-                    FontWeight: =FontWeight.Semibold
-                    Height: =32
-                    Size: =13
-                    Text: |-
-                        ="Reglas aplicadas: " & CountRows(colValidatedResults) &   "  ·  fallidas: " & CountRows(Filter(colValidatedResults, !Paso))
-                    VerticalAlign: =VerticalAlign.Middle
-                    ZIndex: =1
-
-                galLogReglas As gallery.galleryVertical:
-                    DelayItemLoading: =true
-                    FillPortions: =1
-                    Items: |-
-                        =SortByColumns(
-                            // primero lo que fallo: es lo accionable
-                            AddColumns(colValidatedResults, "OrdenVista", If(Paso, 1, 0)),
-                            "OrdenVista", SortOrder.Ascending,
-                            "ReglaOrden", SortOrder.Ascending)
-                    LayoutMinHeight: =150
-                    Loop: =false
-                    ShowScrollbar: =true
-                    TemplatePadding: =0
-                    TemplateSize: =52
-                    ZIndex: =2
-
-                    icoLogEstado As icon:
-                        Color: =If(ThisItem.Paso, RGBA(16, 124, 16, 1), RGBA(168, 0, 0, 1))
-                        Height: =16
-                        Icon: =If(ThisItem.Paso, Icon.CheckBadge, Icon.Error)
-                        Tooltip: =If(ThisItem.Paso, "Regla aprobada", "Regla no aprobada")
-                        Width: =16
-                        X: =8
-                        Y: =18
-                        ZIndex: =1
-
-                    lblLogRegla As label:
-                        Color: =RGBA(36, 36, 36, 1)
-                        FontWeight: =FontWeight.Semibold
-                        Height: =22
-                        Size: =11
-                        Text: =ThisItem.ReglaClave & "  " & ThisItem.ReglaNombre
-                        VerticalAlign: =VerticalAlign.Middle
-                        Width: =330
-                        X: =32
-                        Y: =6
-                        ZIndex: =2
-
-                    lblLogUbicacion As label:
-                        Color: =RGBA(168, 0, 0, 1)
-                        Font: =Font.'Courier New'
-                        Height: =22
-                        Size: =10
-                        Text: =ThisItem.Ubicacion
-                        VerticalAlign: =VerticalAlign.Middle
-                        Visible: =!IsBlank(ThisItem.Ubicacion)
-                        Width: =150
-                        X: =370
-                        Y: =6
-                        ZIndex: =3
-
-                    lblLogDetalle As label:
-                        Color: =If(ThisItem.Paso, RGBA(97, 97, 97, 1), RGBA(36, 36, 36, 1))
-                        Height: =22
-                        Size: =10
-                        Text: |-
-                            =If(IsBlank(ThisItem.Detalle),
-                                If(ThisItem.Paso, "Sin observaciones", "Sin detalle registrado"),
-                                ThisItem.Detalle)
-                        VerticalAlign: =VerticalAlign.Middle
-                        Width: =Parent.TemplateWidth - 200
-                        X: =32
-                        Y: =26
-                        ZIndex: =4
-
-                    lblLogDuracion As label:
-                        Align: =Align.Right
-                        Color: =RGBA(97, 97, 97, 1)
-                        Height: =22
-                        Size: =9
-                        Text: =If(IsBlank(ThisItem.Durationms), "", ThisItem.Durationms & " ms")
-                        VerticalAlign: =VerticalAlign.Middle
-                        Width: =70
-                        X: =Parent.TemplateWidth - 80
-                        Y: =6
+                        Tooltip: ="Reemplaza el resultado del motor. Exige motivo y queda auditado."
+                        Width: =190
+                        X: =402
+                        Y: =92
                         ZIndex: =5
 
-                    sepLogFila As rectangle:
-                        Fill: =RGBA(237, 235, 233, 1)
-                        Height: =1
-                        Width: =Parent.TemplateWidth
-                        X: =0
-                        Y: =51
-                        ZIndex: =0
+                    btnOverrideDenegar As Button:
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        Height: =32
+                        OnSelect: =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: false, varOverrideMotivo: ""})
+                        Text: ="Denegar manualmente"
+                        Tooltip: ="Reemplaza el resultado del motor. Exige motivo y queda auditado."
+                        Width: =190
+                        X: =602
+                        Y: =92
+                        ZIndex: =6
 
-                Form2 As form.PowerApps_CoreControls_Form:
-                    BorderColor: =App.Theme.Colors.Darker40
-                    DataSource: ='CH-Tbl-ValidationRuns'
-                    DefaultMode: =FormMode.New
-                    FillPortions: =0
-                    Height: =1
-                    LayoutMaxHeight: =0
-                    LayoutMaxWidth: =0
-                    LayoutMinHeight: =16
-                    LayoutMinWidth: =16
-                    OnSuccess: |-
-                        =Refresh('CH-Tbl-ValidationRuns');
-                        Set(gvarSelectedVRUN, Self.LastSubmit);
-                        Reset(DropdownCanvas1);
-                        NewForm(Form2);
-                    UseFluentV9Cards: =true
-                    ZIndex: =3
 
-                    Name_DataCard6 As typedDataCard.fluentV9TextualViewCard:
-                        BorderColor: =App.Theme.Colors.Darker40
-                        BorderStyle: =BorderStyle.Solid
-                        DataField: ="sanic_name"
-                        Default: =ThisItem.Name
-                        DisplayMode: =DisplayMode.View
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-ValidationRuns'],DataSourceInfo.DisplayName,'sanic_name')
-                        Fill: =RGBA(0, 0, 0, 0)
-                        Height: =70
-                        Required: =false
-                        Width: =296
-                        X: =0
-                        Y: =0
-                        ZIndex: =4
+    'container OverrideManual' As groupContainer.manualLayoutContainer:
+        Fill: =RGBA(255, 255, 255, 1)
+        DropShadow: =DropShadow.Bold
+        Height: =330
+        RadiusBottomLeft: =8
+        RadiusBottomRight: =8
+        RadiusTopLeft: =8
+        RadiusTopRight: =8
+        Visible: =Coalesce(varOverrideAbierto, false)
+        Width: =560
+        X: =(Parent.Width - 560) / 2
+        Y: =(Parent.Height - 330) / 2
+        ZIndex: =1000
 
-                        DataCardKey53 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =22
-                            Text: =Parent.DisplayName
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =Parent.Width - 48
-                            Wrap: =false
-                            X: =24
-                            Y: =10
-                            ZIndex: =1
+        lblOverrideTitulo As label:
+            Color: =RGBA(32, 31, 30, 1)
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            Size: =15
+            Text: =If(varOverrideAcepta, "Aceptar manualmente", "Denegar manualmente")
+            Width: =520
+            X: =20
+            Y: =16
+            ZIndex: =1
 
-                        "DataCardValue49 As 'Text input'":
-                            AccessibleLabel: =Parent.DisplayName
-                            BasePaletteColor: =
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.View
-                            Fill: =
-                            FontColor: =
-                            Height: =32
-                            Mode: ="'TextInputCanvas.Mode'.TextInputModeSingleLine"
-                            Required: =Parent.Required
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Value: =Parent.Default
-                            Width: =Parent.Width - 48
-                            X: =24
-                            Y: =DataCardKey53.Y + DataCardKey53.Height + 4
-                            ZIndex: =2
+        lblOverrideAviso As label:
+            Color: =RGBA(97, 97, 97, 1)
+            Height: =76
+            Size: =11
+            Text: |-
+                ="Esta decision reemplaza el resultado del motor para " & Table1_1.Selected.Name &
+                 ". Queda registrada con su usuario, la fecha y el motivo, y el correo pasa a metodo Manual."
+            Width: =520
+            X: =20
+            Y: =48
+            ZIndex: =2
 
-                    RunStart_DataCard1 As typedDataCard.fluentV9DateTimeEditCard:
-                        BorderColor: =App.Theme.Colors.Darker40
-                        BorderStyle: =BorderStyle.Solid
-                        DataField: ="sanic_runstart"
-                        Default: =ThisItem.RunStart
-                        DisplayMode: =Parent.DisplayMode
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-ValidationRuns'],DataSourceInfo.DisplayName,'sanic_runstart')
-                        Fill: =RGBA(0, 0, 0, 0)
-                        Height: =70
-                        Required: =false
-                        Update: =Now()
-                        Width: =296
-                        X: =1
-                        Y: =0
-                        ZIndex: =4
+        txtOverrideMotivo As 'Text input':
+            Appearance: ="FilledDarker"
+            Height: =104
+            Mode: ="MultiLine"
+            OnChange: =UpdateContext({varOverrideMotivo: Self.Value})
+            Placeholder: ="Por que toma esta decision? Minimo 10 caracteres."
+            Width: =520
+            X: =20
+            Y: =128
+            ZIndex: =3
 
-                        DataCardKey54 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =22
-                            Text: =Parent.DisplayName
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =Parent.Width - 48
-                            Wrap: =false
-                            X: =24
-                            Y: =10
-                            ZIndex: =1
+        lblOverrideValidacion As label:
+            Color: =RGBA(168, 0, 0, 1)
+            Height: =20
+            Size: =10
+            Text: =If(Len(Trim(Coalesce(varOverrideMotivo, ""))) < 10, "Escriba al menos 10 caracteres explicando la decision.", "")
+            Width: =520
+            X: =20
+            Y: =236
+            ZIndex: =4
 
-                        "DateValue5 As 'Date picker'":
-                            AccessibleLabel: =Parent.DisplayName
-                            BasePaletteColor: =
-                            BorderColor: =
-                            DisplayMode: =Parent.DisplayMode
-                            Fill: =
-                            FontColor: =
-                            Height: =32
-                            Required: =Parent.Required
-                            SelectedDate: =Parent.Default
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =(Parent.Width - 48) / 2
-                            X: =24
-                            Y: =DataCardKey54.Y + DataCardKey54.Height + 4
-                            ZIndex: =2
+        btnOverrideCancelar As Button:
+            Appearance: ='ButtonCanvas.Appearance'.Secondary
+            Height: =36
+            OnSelect: =UpdateContext({varOverrideAbierto: false})
+            Text: ="Cancelar"
+            Width: =140
+            X: =240
+            Y: =266
+            ZIndex: =5
 
-                        HourValue5 As Dropdown.pcfdataset:
-                            AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
-                            DefaultSelectedItems: =[Text(Hour(Parent.Default),"00")]
-                            DisplayMode: =Parent.DisplayMode
-                            Height: =28
-                            Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23"]
-                            Required: =Parent.Required
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =DateValue5.Width / 2 - 10
-                            X: =DateValue5.X + DateValue5.Width + 10
-                            Y: =DateValue5.Y + 1
-                            ZIndex: =3
-
-                        Separator5 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =HourValue5.Height
-                            Text: |-
-                                =":"
-                            Width: =10
-                            X: =HourValue5.X + HourValue5.Width
-                            Y: =HourValue5.Y
-                            ZIndex: =4
-
-                        MinuteValue5 As Dropdown.pcfdataset:
-                            AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
-                            DefaultSelectedItems: =[Text(Minute(Parent.Default),"00")]
-                            DisplayMode: =Parent.DisplayMode
-                            Height: =28
-                            Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59"]
-                            Required: =false
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =HourValue5.Width
-                            X: =HourValue5.X + HourValue5.Width + Separator5.Width
-                            Y: =HourValue5.Y + 1
-                            ZIndex: =5
-
-                        ErrorMessage49 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =30
-                            Text: =Parent.Error
-                            Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =Parent.Width - 48
-                            Wrap: =true
-                            X: =24
-                            Y: =DateValue5.Y + DateValue5.Height
-                            ZIndex: =6
-
-                        StarVisible49 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =20
-                            Text: ="*"
-                            Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =30
-                            X: =0
-                            Y: =DataCardKey54.Y
-                            ZIndex: =7
-
-                    RunEnd_DataCard1 As typedDataCard.fluentV9DateTimeEditCard:
-                        BorderColor: =App.Theme.Colors.Darker40
-                        BorderStyle: =BorderStyle.Solid
-                        DataField: ="sanic_runend"
-                        Default: =ThisItem.RunEnd
-                        DisplayMode: =Parent.DisplayMode
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-ValidationRuns'],DataSourceInfo.DisplayName,'sanic_runend')
-                        Fill: =RGBA(0, 0, 0, 0)
-                        Height: =70
-                        Required: =false
-                        Update: =If(Not IsBlank(DateValue6.SelectedDate), DateTime(Year(DateValue6.SelectedDate), Month(DateValue6.SelectedDate), Day(DateValue6.SelectedDate), Value(HourValue6.Selected.Value), Value(MinuteValue6.Selected.Value), Second(DateValue6.SelectedDate)))
-                        Width: =296
-                        X: =2
-                        Y: =0
-                        ZIndex: =4
-
-                        DataCardKey55 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =22
-                            Text: =Parent.DisplayName
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =Parent.Width - 48
-                            Wrap: =false
-                            X: =24
-                            Y: =10
-                            ZIndex: =1
-
-                        "DateValue6 As 'Date picker'":
-                            AccessibleLabel: =Parent.DisplayName
-                            BasePaletteColor: =
-                            BorderColor: =
-                            DisplayMode: =Parent.DisplayMode
-                            Fill: =
-                            FontColor: =
-                            Height: =32
-                            Required: =Parent.Required
-                            SelectedDate: =Parent.Default
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =(Parent.Width - 48) / 2
-                            X: =24
-                            Y: =DataCardKey55.Y + DataCardKey55.Height + 4
-                            ZIndex: =2
-
-                        HourValue6 As Dropdown.pcfdataset:
-                            AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
-                            DefaultSelectedItems: =[Text(Hour(Parent.Default),"00")]
-                            DisplayMode: =Parent.DisplayMode
-                            Height: =28
-                            Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23"]
-                            Required: =Parent.Required
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =DateValue6.Width / 2 - 10
-                            X: =DateValue6.X + DateValue6.Width + 10
-                            Y: =DateValue6.Y + 1
-                            ZIndex: =3
-
-                        Separator6 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =HourValue6.Height
-                            Text: |-
-                                =":"
-                            Width: =10
-                            X: =HourValue6.X + HourValue6.Width
-                            Y: =HourValue6.Y
-                            ZIndex: =4
-
-                        MinuteValue6 As Dropdown.pcfdataset:
-                            AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
-                            DefaultSelectedItems: =[Text(Minute(Parent.Default),"00")]
-                            DisplayMode: =Parent.DisplayMode
-                            Height: =28
-                            Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59"]
-                            Required: =false
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =HourValue6.Width
-                            X: =HourValue6.X + HourValue6.Width + Separator6.Width
-                            Y: =HourValue6.Y + 1
-                            ZIndex: =5
-
-                        ErrorMessage50 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =30
-                            Text: =Parent.Error
-                            Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =Parent.Width - 48
-                            Wrap: =true
-                            X: =24
-                            Y: =DateValue6.Y + DateValue6.Height
-                            ZIndex: =6
-
-                        StarVisible50 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =20
-                            Text: ="*"
-                            Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =30
-                            X: =0
-                            Y: =DataCardKey55.Y
-                            ZIndex: =7
-
-                    RunResult_DataCard1 As typedDataCard.fluentV9ComboBoxOptionSetSingleEditCard:
-                        BorderColor: =App.Theme.Colors.Darker40
-                        BorderStyle: =BorderStyle.Solid
-                        DataField: ="sanic_runresult"
-                        Default: =ThisItem.RunResult
-                        DisplayMode: =Parent.DisplayMode
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-ValidationRuns'],DataSourceInfo.DisplayName,'sanic_runresult')
-                        Fill: =RGBA(0, 0, 0, 0)
-                        Height: =70
-                        Required: =false
-                        Update: =DataCardValue50.Selected.Value
-                        Width: =296
-                        X: =0
-                        Y: =1
-                        ZIndex: =4
-
-                        DataCardKey56 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =22
-                            Text: =Parent.DisplayName
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =Parent.Width - 48
-                            Wrap: =false
-                            X: =24
-                            Y: =10
-                            ZIndex: =1
-
-                        DataCardValue50 As Combobox.pcfdataset:
-                            AccessibleLabel: =Parent.DisplayName
-                            DefaultSelectedItems: =[Parent.Default]
-                            DisplayMode: =Parent.DisplayMode
-                            Height: =32
-                            Items: =Choices('RunResult (CH-Tbl-ValidationRuns)')
-                            Required: =Parent.Required
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =Parent.Width - 48
-                            X: =24
-                            Y: =DataCardKey56.Y + DataCardKey56.Height + 4
-                            ZIndex: =2
-
-                        ErrorMessage51 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =30
-                            Text: =Parent.Error
-                            Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =Parent.Width - 48
-                            Wrap: =true
-                            X: =24
-                            Y: =DataCardValue50.Y + DataCardValue50.Height
-                            ZIndex: =3
-
-                        StarVisible51 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =20
-                            Text: ="*"
-                            Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =30
-                            X: =0
-                            Y: =DataCardKey56.Y
-                            ZIndex: =4
-
-                    SourceEntity_DataCard2 As typedDataCard.fluentV9TextualEditCard:
-                        BorderColor: =App.Theme.Colors.Darker40
-                        BorderStyle: =BorderStyle.Solid
-                        DataField: ="sanic_sourceentity"
-                        Default: =ThisItem.SourceEntity
-                        DisplayMode: =Parent.DisplayMode
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-ValidationRuns'],DataSourceInfo.DisplayName,'sanic_sourceentity')
-                        Fill: =RGBA(0, 0, 0, 0)
-                        Height: =70
-                        MaxLength: =DataSourceInfo([@'CH-Tbl-ValidationRuns'], DataSourceInfo.MaxLength, 'sanic_sourceentity')
-                        Required: =true
-                        Update: =DataCardValue51.Value
-                        Width: =296
-                        X: =1
-                        Y: =1
-                        ZIndex: =4
-
-                        DataCardKey57 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =22
-                            Text: =Parent.DisplayName
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =Parent.Width - 48
-                            Wrap: =false
-                            X: =24
-                            Y: =10
-                            ZIndex: =1
-
-                        "DataCardValue51 As 'Text input'":
-                            AccessibleLabel: =Parent.DisplayName
-                            BasePaletteColor: =
-                            BorderColor: =
-                            DisplayMode: =Parent.DisplayMode
-                            Fill: =
-                            FontColor: =
-                            Height: =32
-                            Mode: ="'TextInputCanvas.Mode'.TextInputModeSingleLine"
-                            Required: =Parent.Required
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Value: ="sanic_receivedemails"
-                            Width: =Parent.Width - 48
-                            X: =24
-                            Y: =DataCardKey57.Y + DataCardKey57.Height + 4
-                            ZIndex: =2
-
-                        ErrorMessage52 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =30
-                            Text: =Parent.Error
-                            Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =Parent.Width - 48
-                            Wrap: =true
-                            X: =24
-                            Y: =DataCardValue51.Y + DataCardValue51.Height
-                            ZIndex: =3
-
-                        StarVisible52 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =30
-                            Text: ="*"
-                            Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =30
-                            X: =0
-                            Y: =DataCardKey57.Y
-                            ZIndex: =4
-
-                    SourceRecordID_DataCard2 As typedDataCard.fluentV9TextualEditCard:
-                        BorderColor: =App.Theme.Colors.Darker40
-                        BorderStyle: =BorderStyle.Solid
-                        DataField: ="sanic_sourcerecordid"
-                        Default: =ThisItem.SourceRecordID
-                        DisplayMode: =Parent.DisplayMode
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-ValidationRuns'],DataSourceInfo.DisplayName,'sanic_sourcerecordid')
-                        Fill: =RGBA(0, 0, 0, 0)
-                        Height: =70
-                        MaxLength: =DataSourceInfo([@'CH-Tbl-ValidationRuns'], DataSourceInfo.MaxLength, 'sanic_sourcerecordid')
-                        Required: =true
-                        Update: =DataCardValue52.Value
-                        Width: =296
-                        X: =2
-                        Y: =1
-                        ZIndex: =4
-
-                        DataCardKey58 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =22
-                            Text: =Parent.DisplayName
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =Parent.Width - 48
-                            Wrap: =false
-                            X: =24
-                            Y: =10
-                            ZIndex: =1
-
-                        "DataCardValue52 As 'Text input'":
-                            AccessibleLabel: =Parent.DisplayName
-                            BasePaletteColor: =
-                            BorderColor: =
-                            DisplayMode: =Parent.DisplayMode
-                            Fill: =
-                            FontColor: =
-                            Height: =32
-                            Mode: ="'TextInputCanvas.Mode'.TextInputModeSingleLine"
-                            Required: =Parent.Required
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Value: =gvarSelectedEmail.'CH-Tbl-Received Emails'
-                            Width: =Parent.Width - 48
-                            X: =24
-                            Y: =DataCardKey58.Y + DataCardKey58.Height + 4
-                            ZIndex: =2
-
-                        ErrorMessage53 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =30
-                            Text: =Parent.Error
-                            Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =Parent.Width - 48
-                            Wrap: =true
-                            X: =24
-                            Y: =DataCardValue52.Y + DataCardValue52.Height
-                            ZIndex: =3
-
-                        StarVisible53 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =30
-                            Text: ="*"
-                            Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =30
-                            X: =0
-                            Y: =DataCardKey58.Y
-                            ZIndex: =4
-
-                    Status_DataCard6 As typedDataCard.fluentV9ComboBoxOptionSetSingleEditCard:
-                        BorderColor: =App.Theme.Colors.Darker40
-                        BorderStyle: =BorderStyle.Solid
-                        DataField: ="statecode"
-                        Default: =ThisItem.Status
-                        DisplayMode: =Parent.DisplayMode
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-ValidationRuns'],DataSourceInfo.DisplayName,'statecode')
-                        Fill: =RGBA(0, 0, 0, 0)
-                        Height: =70
-                        Required: =false
-                        Update: =DataCardValue53.Selected.Value
-                        Width: =296
-                        X: =0
-                        Y: =2
-                        ZIndex: =4
-
-                        DataCardKey59 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =22
-                            Text: =Parent.DisplayName
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =Parent.Width - 48
-                            Wrap: =false
-                            X: =24
-                            Y: =10
-                            ZIndex: =1
-
-                        DataCardValue53 As Combobox.pcfdataset:
-                            AccessibleLabel: =Parent.DisplayName
-                            DefaultSelectedItems: =[Parent.Default]
-                            DisplayMode: =Parent.DisplayMode
-                            Height: =32
-                            Items: =Choices('Status (CH-Tbl-ValidationRuns)')
-                            Required: =Parent.Required
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =Parent.Width - 48
-                            X: =24
-                            Y: =DataCardKey59.Y + DataCardKey59.Height + 4
-                            ZIndex: =2
-
-                        ErrorMessage54 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =30
-                            Text: =Parent.Error
-                            Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =Parent.Width - 48
-                            Wrap: =true
-                            X: =24
-                            Y: =DataCardValue53.Y + DataCardValue53.Height
-                            ZIndex: =3
-
-                        StarVisible54 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =20
-                            Text: ="*"
-                            Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =30
-                            X: =0
-                            Y: =DataCardKey59.Y
-                            ZIndex: =4
-
-                    "'Status Reason_DataCard5' As typedDataCard.fluentV9ComboBoxOptionSetSingleEditCard":
-                        BorderColor: =App.Theme.Colors.Darker40
-                        BorderStyle: =BorderStyle.Solid
-                        DataField: ="statuscode"
-                        Default: =ThisItem.'Status Reason'
-                        DisplayMode: =Parent.DisplayMode
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-ValidationRuns'],DataSourceInfo.DisplayName,'statuscode')
-                        Fill: =RGBA(0, 0, 0, 0)
-                        Height: =70
-                        Required: =false
-                        Update: =DataCardValue54.Selected.Value
-                        Width: =296
-                        X: =1
-                        Y: =2
-                        ZIndex: =4
-
-                        DataCardKey60 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =22
-                            Text: =Parent.DisplayName
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =Parent.Width - 48
-                            Wrap: =false
-                            X: =24
-                            Y: =10
-                            ZIndex: =1
-
-                        DataCardValue54 As Combobox.pcfdataset:
-                            AccessibleLabel: =Parent.DisplayName
-                            DefaultSelectedItems: =[Parent.Default]
-                            DisplayMode: =Parent.DisplayMode
-                            Height: =32
-                            Items: =Choices('Status Reason (CH-Tbl-ValidationRuns)')
-                            Required: =Parent.Required
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =Parent.Width - 48
-                            X: =24
-                            Y: =DataCardKey60.Y + DataCardKey60.Height + 4
-                            ZIndex: =2
-
-                        ErrorMessage55 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =30
-                            Text: =Parent.Error
-                            Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =Parent.Width - 48
-                            Wrap: =true
-                            X: =24
-                            Y: =DataCardValue54.Y + DataCardValue54.Height
-                            ZIndex: =3
-
-                        StarVisible55 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =20
-                            Text: ="*"
-                            Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =30
-                            X: =0
-                            Y: =DataCardKey60.Y
-                            ZIndex: =4
-
-                    "'Record Created On_DataCard4' As typedDataCard.fluentV9DateTimeEditCard":
-                        BorderColor: =App.Theme.Colors.Darker40
-                        BorderStyle: =BorderStyle.Solid
-                        DataField: ="overriddencreatedon"
-                        Default: =ThisItem.'Record Created On'
-                        DisplayMode: =Parent.DisplayMode
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-ValidationRuns'],DataSourceInfo.DisplayName,'overriddencreatedon')
-                        Fill: =RGBA(0, 0, 0, 0)
-                        Height: =70
-                        Required: =false
-                        Update: =If(Not IsBlank(DateValue7.SelectedDate), DateTime(Year(DateValue7.SelectedDate), Month(DateValue7.SelectedDate), Day(DateValue7.SelectedDate), Value(HourValue7.Selected.Value), Value(MinuteValue7.Selected.Value), Second(DateValue7.SelectedDate)))
-                        Width: =296
-                        X: =2
-                        Y: =2
-                        ZIndex: =4
-
-                        DataCardKey61 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =22
-                            Text: =Parent.DisplayName
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =Parent.Width - 48
-                            Wrap: =false
-                            X: =24
-                            Y: =10
-                            ZIndex: =1
-
-                        "DateValue7 As 'Date picker'":
-                            AccessibleLabel: =Parent.DisplayName
-                            BasePaletteColor: =
-                            BorderColor: =
-                            DisplayMode: =Parent.DisplayMode
-                            Fill: =
-                            FontColor: =
-                            Height: =32
-                            Required: =Parent.Required
-                            SelectedDate: =Parent.Default
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =(Parent.Width - 48) / 2
-                            X: =24
-                            Y: =DataCardKey61.Y + DataCardKey61.Height + 4
-                            ZIndex: =2
-
-                        HourValue7 As Dropdown.pcfdataset:
-                            AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
-                            DefaultSelectedItems: =[Text(Hour(Parent.Default),"00")]
-                            DisplayMode: =Parent.DisplayMode
-                            Height: =28
-                            Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23"]
-                            Required: =Parent.Required
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =DateValue7.Width / 2 - 10
-                            X: =DateValue7.X + DateValue7.Width + 10
-                            Y: =DateValue7.Y + 1
-                            ZIndex: =3
-
-                        Separator7 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =HourValue7.Height
-                            Text: |-
-                                =":"
-                            Width: =10
-                            X: =HourValue7.X + HourValue7.Width
-                            Y: =HourValue7.Y
-                            ZIndex: =4
-
-                        MinuteValue7 As Dropdown.pcfdataset:
-                            AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
-                            DefaultSelectedItems: =[Text(Minute(Parent.Default),"00")]
-                            DisplayMode: =Parent.DisplayMode
-                            Height: =28
-                            Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59"]
-                            Required: =false
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =HourValue7.Width
-                            X: =HourValue7.X + HourValue7.Width + Separator7.Width
-                            Y: =HourValue7.Y + 1
-                            ZIndex: =5
-
-                        ErrorMessage56 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =30
-                            Text: =Parent.Error
-                            Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =Parent.Width - 48
-                            Wrap: =true
-                            X: =24
-                            Y: =DateValue7.Y + DateValue7.Height
-                            ZIndex: =6
-
-                        StarVisible56 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =20
-                            Text: ="*"
-                            Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =30
-                            X: =0
-                            Y: =DataCardKey61.Y
-                            ZIndex: =7
-
-                    SourceType_DataCard1 As typedDataCard.fluentV9ComboBoxOptionSetSingleEditCard:
-                        BorderColor: =App.Theme.Colors.Darker40
-                        BorderStyle: =BorderStyle.Solid
-                        DataField: ="sanic_sourcetype"
-                        Default: =ThisItem.SourceType
-                        DisplayMode: =Parent.DisplayMode
-                        DisplayName: =DataSourceInfo([@'CH-Tbl-ValidationRuns'],DataSourceInfo.DisplayName,'sanic_sourcetype')
-                        Fill: =RGBA(0, 0, 0, 0)
-                        Height: =70
-                        Required: =true
-                        Update: =DataCardValue55.Selected.Value
-                        Width: =296
-                        X: =0
-                        Y: =3
-                        ZIndex: =4
-
-                        DataCardKey62 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =22
-                            Text: =Parent.DisplayName
-                            Weight: ='TextCanvas.Weight'.Semibold
-                            Width: =Parent.Width - 48
-                            Wrap: =false
-                            X: =24
-                            Y: =10
-                            ZIndex: =1
-
-                        DataCardValue55 As Combobox.pcfdataset:
-                            AccessibleLabel: =Parent.DisplayName
-                            DefaultSelectedItems: =['SourceType (CH-Tbl-ValidationRuns)'.'Shared Mailbox']
-                            DisplayMode: =Parent.DisplayMode
-                            Height: =32
-                            Items: =Choices('SourceType (CH-Tbl-ValidationRuns)')
-                            Required: =Parent.Required
-                            ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                            Width: =Parent.Width - 48
-                            X: =24
-                            Y: =DataCardKey62.Y + DataCardKey62.Height + 4
-                            ZIndex: =2
-
-                        ErrorMessage57 As Text:
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =30
-                            Text: =Parent.Error
-                            Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =Parent.Width - 48
-                            Wrap: =true
-                            X: =24
-                            Y: =DataCardValue55.Y + DataCardValue55.Height
-                            ZIndex: =3
-
-                        StarVisible57 As Text:
-                            Align: ='TextCanvas.Align'.Center
-                            BorderColor: =
-                            DisplayMode: =DisplayMode.Edit
-                            Fill: =
-                            FontColor: =
-                            Height: =20
-                            Text: ="*"
-                            Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                            Width: =30
-                            X: =0
-                            Y: =DataCardKey62.Y
-                            ZIndex: =4
+        btnOverrideConfirmar As Button:
+            Appearance: ='ButtonCanvas.Appearance'.Primary
+            DisplayMode: =If(Len(Trim(Coalesce(varOverrideMotivo, ""))) < 10, DisplayMode.Disabled, DisplayMode.Edit)
+            Height: =36
+            OnSelect: |-
+                =Patch(
+                    'CH-Tbl-Received Emails',
+                    Table1_1.Selected,
+                    {
+                        EmailReviewStatus: If(varOverrideAcepta,
+                            'EmailReviewStatus (CH-Tbl-Received Emails)'.Aceptado,
+                            'EmailReviewStatus (CH-Tbl-Received Emails)'.Denegado),
+                        ValidationStatus: If(varOverrideAcepta,
+                            'ValidationStatus (CH-Tbl-Received Emails)'.Valido,
+                            'ValidationStatus (CH-Tbl-Received Emails)'.Invalido),
+                        EmailReviewMethod: 'EmailReviewMethod (CH-Tbl-Received Emails)'.Manual,
+                        OverrideBy: User().Email,
+                        OverrideOn: Now(),
+                        OverrideReason: Trim(varOverrideMotivo)
+                    }
+                );
+                Refresh('CH-Tbl-Received Emails');
+                UpdateContext({varOverrideAbierto: false});
+                Notify("Decision registrada a nombre de " & User().Email & ".", NotificationType.Success);
+            Text: ="Confirmar"
+            Width: =160
+            X: =390
+            Y: =266
+            ZIndex: =6
 
     ExpandMenu_2 As ExpandMenu:
         ChildTabPriority: =true
@@ -13866,238 +12033,3 @@
         Visible: =true
         ZIndex: =2
 
-    "'Container Spinner Completo_1' As groupContainer.manualLayoutContainer":
-        DropShadow: =DropShadow.Light
-        Fill: =RGBA(0,0,0, 0.7)
-        Height: =Parent.Height
-        LayoutGridColumnMinWidth: =0
-        LayoutGridColumns: =6
-        LayoutGridRowMinHeight: =0
-        LayoutGridRows: =6
-        RadiusBottomLeft: =4
-        RadiusBottomRight: =4
-        RadiusTopLeft: =4
-        RadiusTopRight: =4
-        Visible: =varSpinnerCompletoVisible
-        Width: =Parent.Width
-        ZIndex: =3
-
-        Spinner1_1 As Spinner:
-            AccessibleLabel: =""
-            Appearance: ='Spinner.Appearance'.Primary
-            BasePaletteColor: =RGBA(249, 83, 109, 1)
-            ContentLanguage: =""
-            DisplayMode: =DisplayMode.Edit
-            Font: =Font.Arial
-            FontColor: =RGBA(255, 255, 255, 1)
-            FontItalic: =false
-            FontSize: =18
-            FontStrikethrough: =false
-            FontUnderline: =false
-            FontWeight: =FontWeight.Normal
-            Height: =Parent.Height
-            Label: =varLabelSpinnerCompleto
-            LabelPosition: ='Spinner.LabelPosition'.Below
-            OnChange: =false
-            SpinnerColor: =
-            SpinnerSize: ='Spinner.SpinnerSize'.Huge
-            TabIndex: =0
-            Tooltip: =""
-            TrackColor: =
-            Visible: =varSpinnerCompletoVisible
-            Width: =Parent.Width
-            X: =0
-            Y: =0
-            ZIndex: =1
-
-        "Progress1 As 'Progress Bar'":
-            BasePaletteColor: =
-            DisplayMode: =DisplayMode.Edit
-            Height: =45
-            Max: =varProgressBarMax
-            ProgressColor: ='Progress.ProgressColor'.Success
-            Thickness: ='Progress.Thickness'.Large
-            Value: =varProgressBarActual
-            Visible: =varProgressBarMax>0 && varProgressBarMax<varProgressBarActual
-            Width: =450
-            X: =(Parent.Width - Self.Width) / 2
-            Y: =Spinner1_1.Height  / 2 + 50
-            ZIndex: =2
-
-    "'container OverrideManual' As groupContainer.manualLayoutContainer":
-        Fill: =RGBA(0, 0, 0, 0.45)
-        Height: =Parent.Height
-        Visible: =varOverrideVisible
-        Width: =Parent.Width
-        X: =0
-        Y: =0
-        ZIndex: =1000
-
-        "'card Override' As groupContainer.manualLayoutContainer":
-            Fill: =RGBA(255, 255, 255, 1)
-            Height: =330
-            RadiusBottomLeft: =10
-            RadiusBottomRight: =10
-            RadiusTopLeft: =10
-            RadiusTopRight: =10
-            Width: =520
-            X: =(Parent.Width - Self.Width) / 2
-            Y: =(Parent.Height - Self.Height) / 2
-            ZIndex: =1
-
-            lblOverrideTitulo As label:
-                Color: =If(varOverrideAccion = "aceptar", RGBA(16, 124, 16, 1), RGBA(168, 0, 0, 1))
-                FontWeight: =FontWeight.Semibold
-                Height: =30
-                Size: =15
-                Text: =If(varOverrideAccion = "aceptar", "Aceptar la declaracion manualmente", "Denegar la declaracion manualmente")
-                VerticalAlign: =VerticalAlign.Middle
-                Width: =480
-                X: =20
-                Y: =18
-                ZIndex: =1
-
-            lblOverrideAviso As label:
-                Color: =RGBA(97, 97, 97, 1)
-                Height: =54
-                Size: =10
-                Text: |-
-                    ="Esta decision reemplaza el resultado del motor para el correo " & Coalesce(gvarSelectedEmail.Name, "") & ". Queda registrada con su usuario, la fecha y el motivo."
-                Width: =480
-                X: =20
-                Y: =50
-                ZIndex: =2
-
-            "txtOverrideMotivo As 'Text input'":
-                Height: =120
-                HintText: ="Motivo de la decision (minimo 10 caracteres)"
-                Label: ="Motivo"
-                Mode: ='TextInputCanvas.Mode'.MultiLine
-                OnChange: =UpdateContext({varOverrideMotivo: Self.Value})
-                Value: =varOverrideMotivo
-                Width: =480
-                X: =20
-                Y: =110
-                ZIndex: =3
-
-            btnOverrideConfirmar As Button:
-                Appearance: ="Primary"
-                BasePaletteColor: =If(varOverrideAccion = "aceptar", RGBA(16, 124, 16, 1), RGBA(168, 0, 0, 1))
-                BorderRadius: =8
-                Height: =40
-                OnSelect: |-
-                    =If(
-                        Len(Trim(varOverrideMotivo)) < 10,
-                        Notify("Escriba un motivo de al menos 10 caracteres: queda registrado en la auditoria.", NotificationType.Error),
-                        Patch(
-                            'CH-Tbl-Received Emails',
-                            gvarSelectedEmail,
-                            {
-                                EmailReviewStatus: If(
-                                    varOverrideAccion = "aceptar",
-                                    'EmailReviewStatus (CH-Tbl-Received Emails)'.Aceptado,
-                                    'EmailReviewStatus (CH-Tbl-Received Emails)'.Denegado
-                                ),
-                                ValidationStatus: If(
-                                    varOverrideAccion = "aceptar",
-                                    'ValidationStatus (CH-Tbl-Received Emails)'.Valido,
-                                    'ValidationStatus (CH-Tbl-Received Emails)'.Invalido
-                                ),
-                                EmailReviewMethod: 'EmailReviewMethod (CH-Tbl-Received Emails)'.Manual,
-                                OverrideBy: Coalesce(UsuarioOffice.mail, UsuarioOffice.userPrincipalName, "(desconocido)"),
-                                OverrideOn: Now(),
-                                OverrideReason: varOverrideMotivo
-                            }
-                        );
-                        Refresh('CH-Tbl-Received Emails');
-                        Set(gvarSelectedEmail, LookUp('CH-Tbl-Received Emails', 'CH-Tbl-Received Email' = gvarSelectedEmail.'CH-Tbl-Received Email'));
-                        UpdateContext({varOverrideVisible: false});
-                        Notify(
-                            "Decision manual registrada: el correo quedo " & If(varOverrideAccion = "aceptar", "aceptado", "denegado") & " por " & Coalesce(UsuarioOffice.mail, "el usuario actual") & ".",
-                            NotificationType.Success
-                        )
-                    )
-                Text: =If(varOverrideAccion = "aceptar", "Confirmar aceptacion", "Confirmar denegacion")
-                Width: =230
-                X: =270
-                Y: =252
-                ZIndex: =4
-
-            btnOverrideCancelar As Button:
-                Appearance: ="Secondary"
-                BorderRadius: =8
-                Height: =40
-                OnSelect: =UpdateContext({varOverrideVisible: false, varOverrideMotivo: ""})
-                Text: ="Cancelar"
-                Width: =120
-                X: =140
-                Y: =252
-                ZIndex: =5
-
-    Toggle2 As toggleSwitch:
-        BorderColor: =App.Theme.Colors.Darker40
-        Color: =RGBA(0, 0, 0, 1)
-        Default: =varValidationToggle
-        FalseFill: =RGBA(128, 130, 133, 1)
-        Font: =App.Theme.Font
-        HandleFill: =RGBA(255, 255, 255, 1)
-        OnChange: |-
-            =
-            If(!IsEmpty(colValidationQueue),
-            
-            If(IsBlank(varValidationRule), UpdateContext({varValidationRule: First(colValidationQueue)}))
-            
-            
-            ,If(
-                varRunAllValidations,
-                ClearCollect(
-                    colValidationsToRun,
-                        Filter(
-                            colValidationRules As Rule,
-                            IsBlank(
-                                LookUp(
-                                    Filter(
-                                        colValidatedResults,
-                                        ValidationRun.'CH-Tbl-ValidationRuns' = gvarSelectedVRUN.'CH-Tbl-ValidationRuns'
-                                    ) As Result,
-                                    Result.ValidationRule.Name = Rule.Name
-                                )
-                            )
-                        )
-                    );
-            
-                    ClearCollect(colValidationsToRun,
-                    Filter(colValidationsToRun As Rule,
-            
-                    IsBlank(Rule.ValidationDependency) || 
-                    !IsBlank(
-                        LookUp(
-                            Filter(
-                                        colValidatedResults,
-                                        ValidationRun.'CH-Tbl-ValidationRuns' = gvarSelectedVRUN.'CH-Tbl-ValidationRuns'
-                                    ) As Result,
-                            Result.ValidationRule.Name = Rule.ValidationDependency.Name
-                            &&
-                            Result.ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass
-                        )
-                    )))
-                ;
-            
-                //Llenar la cola de validaion
-                If(
-                    IsEmpty(colValidationsToRun),
-                    UpdateContext({varRunAllValidations: false, varSpinnerCompletoVisible: false}),
-                    ClearCollect(colValidationQueue, colValidationsToRun);
-                );
-            
-                UpdateContext({varValidationToggle: !varValidationToggle});
-            ))
-        OnCheck: =
-        OnSelect: =
-        OnUncheck: =
-        Size: =13
-        TrueFill: =App.Theme.Colors.Primary
-        Visible: =false
-        X: =40
-        Y: =40
-        ZIndex: =6
