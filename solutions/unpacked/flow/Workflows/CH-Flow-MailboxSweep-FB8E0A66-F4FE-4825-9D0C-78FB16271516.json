@@ -650,7 +650,7 @@
                           "type": "AppendToArrayVariable",
                           "inputs": {
                             "name": "varAsuntosFaltantes",
-                            "value": "@concat('Rescatado por el barrido (el trigger no lo tomo): ', items('Por_cada_correo_buzon')?['subject'], ' | resultado del rescate: ', result('Rescatar_correo')[0]?['status'])"
+                            "value": "@concat('Rescatado por el barrido (el trigger no lo tomo): ', items('Por_cada_correo_buzon')?['subject'], ' | ', coalesce(outputs('Rescatar_correo')?['body/Resultado'], 'el rescate fallo; el correo queda en el Inbox y se reintenta en la proxima corrida'))"
                           }
                         },
                         "Rescatar_correo": {

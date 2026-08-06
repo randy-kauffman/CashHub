@@ -64,6 +64,19 @@
         }
       },
       "actions": {
+        "Init_varResultado": {
+          "runAfter": {},
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varResultado",
+                "type": "string",
+                "value": ""
+              }
+            ]
+          }
+        },
         "Leer_correo": {
           "type": "OpenApiConnection",
           "inputs": {
@@ -83,7 +96,11 @@
               "interval": "PT10S"
             }
           },
-          "runAfter": {}
+          "runAfter": {
+            "Init_varResultado": [
+              "Succeeded"
+            ]
+          }
         },
         "Buscar_duplicado": {
           "type": "OpenApiConnection",
@@ -146,15 +163,16 @@
               },
               "runAfter": {}
             },
-            "Terminar_duplicado": {
-              "type": "Terminate",
+            "Marcar_duplicado": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "varResultado",
+                "value": "@concat('Duplicado: el correo ya estaba registrado (id ', first(outputs('Buscar_duplicado')?['body/value'])?['sanic_chtblreceivedemailsid'], '). Se archivo sin reprocesar.')"
+              },
               "runAfter": {
                 "Mover_duplicado": [
                   "Succeeded"
                 ]
-              },
-              "inputs": {
-                "runStatus": "Succeeded"
               }
             }
           },
@@ -305,111 +323,158 @@
                     }
                   }
                 }
-              }
-            }
-          }
-        },
-        "Archivar": {
-          "type": "If",
-          "runAfter": {
-            "Es_duplicado": [
-              "Succeeded"
-            ]
-          },
-          "expression": {
-            "or": [
-              {
-                "equals": [
-                  "@outputs('Leer_clasificacion')?['body/sanic_senderclassification']",
-                  159460002
-                ]
               },
-              {
-                "equals": [
-                  "@outputs('Leer_clasificacion')?['body/sanic_senderclassification']",
-                  159460003
-                ]
-              }
-            ]
-          },
-          "actions": {
-            "Mover_a_cuarentena": {
-              "type": "OpenApiConnection",
-              "inputs": {
-                "parameters": {
-                  "messageId": "@triggerBody()?['text']",
-                  "folderPath": "Cuarentena",
-                  "mailboxAddress": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')"
+              "Archivar": {
+                "type": "If",
+                "runAfter": {
+                  "Try_Ingesta": [
+                    "Succeeded"
+                  ]
                 },
-                "host": {
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
-                  "operationId": "MoveV2",
-                  "connectionName": "shared_office365_2"
+                "expression": {
+                  "or": [
+                    {
+                      "equals": [
+                        "@outputs('Leer_clasificacion')?['body/sanic_senderclassification']",
+                        159460002
+                      ]
+                    },
+                    {
+                      "equals": [
+                        "@outputs('Leer_clasificacion')?['body/sanic_senderclassification']",
+                        159460003
+                      ]
+                    }
+                  ]
                 },
-                "retryPolicy": {
-                  "type": "exponential",
-                  "count": 4,
-                  "interval": "PT10S"
-                }
-              },
-              "runAfter": {}
-            }
-          },
-          "else": {
-            "actions": {
-              "Mover_a_procesados": {
-                "type": "OpenApiConnection",
-                "inputs": {
-                  "parameters": {
-                    "messageId": "@triggerBody()?['text']",
-                    "folderPath": "Procesados",
-                    "mailboxAddress": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')"
-                  },
-                  "host": {
-                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
-                    "operationId": "MoveV2",
-                    "connectionName": "shared_office365_2"
-                  },
-                  "retryPolicy": {
-                    "type": "exponential",
-                    "count": 4,
-                    "interval": "PT10S"
+                "actions": {
+                  "Mover_a_cuarentena": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "messageId": "@triggerBody()?['text']",
+                        "folderPath": "Cuarentena",
+                        "mailboxAddress": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                        "operationId": "MoveV2",
+                        "connectionName": "shared_office365_2"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 4,
+                        "interval": "PT10S"
+                      }
+                    },
+                    "runAfter": {}
                   }
                 },
-                "runAfter": {}
+                "else": {
+                  "actions": {
+                    "Mover_a_procesados": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "messageId": "@triggerBody()?['text']",
+                          "folderPath": "Procesados",
+                          "mailboxAddress": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                          "operationId": "MoveV2",
+                          "connectionName": "shared_office365_2"
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT10S"
+                        }
+                      },
+                      "runAfter": {}
+                    }
+                  }
+                }
+              },
+              "Marcar_procesado": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "varResultado",
+                  "value": "@concat('Procesado: registro ', outputs('Crear_correo')?['body/sanic_chtblreceivedemailsid'], ', clasificacion ', string(coalesce(outputs('Leer_clasificacion')?['body/sanic_senderclassification'],'(sin clasificar)')))"
+                },
+                "runAfter": {
+                  "Archivar": [
+                    "Succeeded"
+                  ]
+                }
               }
             }
           }
         },
         "Catch_Proceso": {
-          "type": "If",
           "runAfter": {
             "Es_duplicado": [
               "Failed",
               "TimedOut",
               "Skipped"
-            ],
-            "Archivar": [
-              "Failed",
-              "TimedOut",
-              "Skipped"
             ]
           },
-          "expression": {
-            "equals": [
-              "@true",
-              "@true"
-            ]
-          },
+          "type": "Scope",
           "actions": {
-            "Terminar_con_fallo": {
-              "type": "Terminate",
+            "Respuesta_de_error": {
               "runAfter": {},
+              "type": "Response",
+              "kind": "Http",
+              "inputs": {
+                "statusCode": 500,
+                "body": {
+                  "Resultado": "@concat('FALLO procesando el mensaje ', coalesce(triggerBody()?['text'],'(sin id)'), ' del buzon ', parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)'), '. El correo se DEJA en el Inbox a proposito para que CH-Flow-MailboxSweep lo reintente.')"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "Resultado": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "Terminar_con_fallo": {
+              "runAfter": {
+                "Respuesta_de_error": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Terminate",
               "inputs": {
                 "runStatus": "Failed",
                 "runError": {
                   "code": "CH_PROCESS_EMAIL_FALLO",
-                  "message": "@concat('Fallo procesando el mensaje ', coalesce(triggerBody()?['text'],'(sin id)'), ' del buzon ', parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)'), '. El correo se DEJA en el Inbox a proposito para que CH-Flow-MailboxSweep lo reintente. Revisar el historial de esta corrida para ver que etapa fallo.')"
+                  "message": "@concat('Fallo procesando el mensaje ', coalesce(triggerBody()?['text'],'(sin id)'), '. Revisar el historial de esta corrida para ver que etapa fallo.')"
+                }
+              }
+            }
+          }
+        },
+        "Respuesta": {
+          "runAfter": {
+            "Es_duplicado": [
+              "Succeeded"
+            ]
+          },
+          "type": "Response",
+          "kind": "Http",
+          "inputs": {
+            "statusCode": 200,
+            "body": {
+              "Resultado": "@variables('varResultado')"
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "Resultado": {
+                  "type": "string"
                 }
               }
             }
