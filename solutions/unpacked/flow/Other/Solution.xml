@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ImportExportXml version="9.2.26065.171" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26065.171" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26065.00171">
+<ImportExportXml version="9.2.26074.134" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26074.134" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26074.00134">
   <SolutionManifest>
     <UniqueName>CashHubFlows</UniqueName>
     <LocalizedNames>
@@ -82,8 +82,6 @@
       </Addresses>
     </Publisher>
     <RootComponents>
-      <RootComponent type="29" id="{fb8e0a66-f4fe-4825-9d0c-78fb16271516}" behavior="0" />
-      <RootComponent type="29" id="{de989841-51a1-45c2-820d-7a215e005357}" behavior="0" />
       <RootComponent type="29" id="{0f5b3097-0d44-f111-88b4-00224808c7c9}" behavior="0" />
       <RootComponent type="29" id="{278c8961-1da0-f011-bbd2-7c1e520b464a}" behavior="0" />
       <RootComponent type="29" id="{445602a6-aea8-f011-bbd2-7c1e5280d4ac}" behavior="0" />
@@ -95,8 +93,10 @@
       <RootComponent type="29" id="{c90419b3-a09e-f011-bbd2-7ced8d1ed971}" behavior="0" />
       <RootComponent type="29" id="{d3a3460e-bdaa-f011-bbd2-000d3a52eba2}" behavior="0" />
       <RootComponent type="29" id="{d521d4bc-4aa9-f011-bbd2-7c1e5280d4ac}" behavior="0" />
+      <RootComponent type="29" id="{de989841-51a1-45c2-820d-7a215e005357}" behavior="0" />
       <RootComponent type="29" id="{eb7300fd-68a2-f011-bbd2-000d3a543642}" behavior="0" />
       <RootComponent type="29" id="{f386eeb1-f2aa-f011-bbd2-000d3a52eba2}" behavior="0" />
+      <RootComponent type="29" id="{fb8e0a66-f4fe-4825-9d0c-78fb16271516}" behavior="0" />
       <RootComponent type="9" schemaName="sanic_chchcurrency" behavior="0" />
       <RootComponent type="9" schemaName="sanic_chchrecordstatus" behavior="0" />
       <RootComponent type="9" schemaName="sanic_chrecountingdetailsstatus" behavior="0" />
@@ -115,11 +115,25 @@
         <Dependent type="29" displayName="CH-Flow-Notify when RFC implementation finish" id="{94eafcb8-6bab-f011-bbd2-000d3a52eba2}" />
       </MissingDependency>
       <MissingDependency>
+        <Required type="1" schemaName="environmentvariablevalue" displayName="Environment Variable Value" solution="EnvironmentVariables (1.0.2406.4)">
+          <package appName="EnvironmentVariables" version="1.0.2406.4">EnvironmentVariablesSolutionAnchor (1.0.2406.4)</package>
+        </Required>
+        <Dependent type="29" displayName="CH-Flow-RFCWatchdog" id="{de989841-51a1-45c2-820d-7a215e005357}" />
+      </MissingDependency>
+      <MissingDependency>
         <Required type="1" schemaName="sanic_chtblclient" displayName="CH-Tbl-Client" solution="Active" />
         <Dependent type="29" displayName="CH-Flow-Deactivate row" id="{a9e774a2-4ea9-f011-bbd2-7c1e5280d4ac}" />
       </MissingDependency>
       <MissingDependency>
         <Required type="1" schemaName="sanic_chtblclient" displayName="CH-Tbl-Client" solution="Active" />
+        <Dependent type="29" displayName="CH-Flow-Activate row" id="{d3a3460e-bdaa-f011-bbd2-000d3a52eba2}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="sanic_chtblclientaccount" displayName="CH-Tbl-ClientAccount" solution="Active" />
+        <Dependent type="29" displayName="CH-Flow-Deactivate row" id="{a9e774a2-4ea9-f011-bbd2-7c1e5280d4ac}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="sanic_chtblclientaccount" displayName="CH-Tbl-ClientAccount" solution="Active" />
         <Dependent type="29" displayName="CH-Flow-Activate row" id="{d3a3460e-bdaa-f011-bbd2-000d3a52eba2}" />
       </MissingDependency>
       <MissingDependency>
@@ -159,6 +173,10 @@
         <Dependent type="29" displayName="CH-Flow-Create client data" id="{d521d4bc-4aa9-f011-bbd2-7c1e5280d4ac}" />
       </MissingDependency>
       <MissingDependency>
+        <Required type="1" schemaName="sanic_chtblclientdatachangerequest" displayName="CH-Tbl-ClientDataChangeRequest" solution="Active" />
+        <Dependent type="29" displayName="CH-Flow-RFCWatchdog" id="{de989841-51a1-45c2-820d-7a215e005357}" />
+      </MissingDependency>
+      <MissingDependency>
         <Required type="1" schemaName="sanic_chtblclientdatachangerequestline" displayName="CH-Tbl-ClientDataChangeRequestLine" solution="Active" />
         <Dependent type="29" displayName="CH-Flow-Notify reviewers" id="{445602a6-aea8-f011-bbd2-7c1e5280d4ac}" />
       </MissingDependency>
@@ -187,6 +205,10 @@
         <Dependent type="29" displayName="CH-Flow-Create client data" id="{d521d4bc-4aa9-f011-bbd2-7c1e5280d4ac}" />
       </MissingDependency>
       <MissingDependency>
+        <Required type="1" schemaName="sanic_chtblclientdatachangesaudittrail" displayName="CH-Tbl-ClientDataChangesAuditTrail" solution="Active" />
+        <Dependent type="29" displayName="CH-Flow-RFCWatchdog" id="{de989841-51a1-45c2-820d-7a215e005357}" />
+      </MissingDependency>
+      <MissingDependency>
         <Required type="1" schemaName="sanic_chtblclientemail" displayName="CH-Tbl-ClientEmail" solution="Active" />
         <Dependent type="29" displayName="CH-Flow-Deactivate row" id="{a9e774a2-4ea9-f011-bbd2-7c1e5280d4ac}" />
       </MissingDependency>
@@ -211,12 +233,60 @@
         <Dependent type="29" displayName="CH-Flow-IngestEmails" id="{4fdd7239-309e-f011-bbd2-7ced8d1ed971}" />
       </MissingDependency>
       <MissingDependency>
+        <Required type="1" schemaName="sanic_chtblreceivedemails" displayName="CH-Tbl-Received Emails" solution="Active" />
+        <Dependent type="29" displayName="CH-Flow-Reply to client email" id="{eb7300fd-68a2-f011-bbd2-000d3a543642}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="sanic_chtblreceivedemails" displayName="CH-Tbl-Received Emails" solution="Active" />
+        <Dependent type="29" displayName="CH-Flow-MailboxSweep" id="{fb8e0a66-f4fe-4825-9d0c-78fb16271516}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="sanic_chtblsystemheartbeat" displayName="CH-Tbl-SystemHeartbeat" solution="Active" />
+        <Dependent type="29" displayName="CH-Flow-MailboxSweep" id="{fb8e0a66-f4fe-4825-9d0c-78fb16271516}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="sanic_chtblvalidationruns" displayName="CH-Tbl-ValidationRuns" solution="Active" />
+        <Dependent type="29" displayName="CH-Flow-MailboxSweep" id="{fb8e0a66-f4fe-4825-9d0c-78fb16271516}" />
+      </MissingDependency>
+      <MissingDependency>
         <Required type="1" schemaName="sanic_chtblxmlreading" displayName="CH-Tbl-XMLReading" solution="Active" />
         <Dependent type="29" displayName="CH-Flow-Process XML Files" id="{0f5b3097-0d44-f111-88b4-00224808c7c9}" />
       </MissingDependency>
       <MissingDependency>
         <Required type="1" schemaName="sanic_chtblxmlreadingdetail" displayName="CH-Tbl-XMLReadingDetail" solution="Active" />
         <Dependent type="29" displayName="CH-Flow-Process XML Files" id="{0f5b3097-0d44-f111-88b4-00224808c7c9}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="2" schemaName="sanic_emailreplystatus" displayName="EmailReplyStatus" parentSchemaName="sanic_chtblreceivedemails" parentDisplayName="CH-Tbl-Received Emails" solution="Active" />
+        <Dependent type="29" displayName="CH-Flow-Reply to client email" id="{eb7300fd-68a2-f011-bbd2-000d3a543642}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="2" schemaName="sanic_replybodyhtml" displayName="ReplyBodyHtml" parentSchemaName="sanic_chtblreceivedemails" parentDisplayName="CH-Tbl-Received Emails" solution="Active" />
+        <Dependent type="29" displayName="CH-Flow-Reply to client email" id="{eb7300fd-68a2-f011-bbd2-000d3a543642}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="connectionreference" displayName="sanic_CHCROutlook" solution="Active" id.connectionreferencelogicalname="sanic_CHCROutlook" />
+        <Dependent type="29" displayName="CH-Flow-MailboxSweep" id="{fb8e0a66-f4fe-4825-9d0c-78fb16271516}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="connectionreference" displayName="sanic_conn_wfe_office365outlook" solution="Active" id.connectionreferencelogicalname="sanic_conn_wfe_office365outlook" />
+        <Dependent type="29" displayName="CH-Flow-IngestEmails" id="{4fdd7239-309e-f011-bbd2-7ced8d1ed971}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="EnvironmentVariableDefinition" displayName="sanic_CHEVOpsTeamsGroupId" solution="Active" id.schemaname="sanic_CHEVOpsTeamsGroupId" />
+        <Dependent type="29" displayName="CH-Flow-MailboxSweep" id="{fb8e0a66-f4fe-4825-9d0c-78fb16271516}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="EnvironmentVariableDefinition" displayName="sanic_CHEVSharedMailboxAddress" solution="Active" id.schemaname="sanic_CHEVSharedMailboxAddress" />
+        <Dependent type="29" displayName="CH-Flow-IngestEmails" id="{4fdd7239-309e-f011-bbd2-7ced8d1ed971}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="EnvironmentVariableDefinition" displayName="sanic_CHEVSharedMailboxAddress" solution="Active" id.schemaname="sanic_CHEVSharedMailboxAddress" />
+        <Dependent type="29" displayName="CH-Flow-Reply to client email" id="{eb7300fd-68a2-f011-bbd2-000d3a543642}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="EnvironmentVariableDefinition" displayName="sanic_CHEVSharedMailboxAddress" solution="Active" id.schemaname="sanic_CHEVSharedMailboxAddress" />
+        <Dependent type="29" displayName="CH-Flow-MailboxSweep" id="{fb8e0a66-f4fe-4825-9d0c-78fb16271516}" />
       </MissingDependency>
     </MissingDependencies>
   </SolutionManifest>

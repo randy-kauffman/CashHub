@@ -19,10 +19,10 @@
           "name": "shared_teams"
         }
       },
-      "shared_office365": {
+      "shared_office365-1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "sanic_CEADCONNOutlook365"
+          "connectionReferenceLogicalName": "sanic_CHCROutlook"
         },
         "api": {
           "name": "shared_office365"
@@ -33,48 +33,49 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$connections": {
-          "defaultValue": {},
-          "type": "Object"
-        },
         "$authentication": {
           "defaultValue": {},
           "type": "SecureObject"
         },
-        "sanic_CHEVOpsTeamsGroupId": {
-          "defaultValue": "",
-          "type": "String",
-          "metadata": {
-            "schemaName": "sanic_CHEVOpsTeamsGroupId"
-          }
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
         },
-        "sanic_CHEVSharedMailboxAddress": {
-          "defaultValue": "no-reply-powerplatform-dev@baccredomatic.ni",
+        "CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)": {
+          "defaultValue": "cashhub@55xljh.onmicrosoft.com",
           "type": "String",
           "metadata": {
             "schemaName": "sanic_CHEVSharedMailboxAddress"
+          }
+        },
+        "CH-EV-OpsTeamsGroupId (sanic_CHEVOpsTeamsGroupId)": {
+          "defaultValue": "19:db61af34d3524b8b8c572c649388fa74@thread.v2",
+          "type": "String",
+          "metadata": {
+            "schemaName": "sanic_CHEVOpsTeamsGroupId",
+            "description": "Group chat de Teams del equipo de operaciones para alertas del barrido de ingesta. Vacio = sin alertas de Teams (solo heartbeat)."
           }
         }
       },
       "triggers": {
         "Cada_10_minutos": {
-          "type": "Recurrence",
-          "metadata": {
-            "operationMetadataId": "a0d740ad-2fe6-4ade-9815-b12b47022ee9"
-          },
           "recurrence": {
             "frequency": "Minute",
             "interval": 10
-          }
+          },
+          "metadata": {
+            "operationMetadataId": "a0d740ad-2fe6-4ade-9815-b12b47022ee9"
+          },
+          "type": "Recurrence"
         }
       },
       "actions": {
         "Init_varSanados": {
-          "type": "InitializeVariable",
+          "runAfter": {},
           "metadata": {
             "operationMetadataId": "edf48128-48e0-4bb3-9953-3efef77dd3ef"
           },
-          "runAfter": {},
+          "type": "InitializeVariable",
           "inputs": {
             "variables": [
               {
@@ -86,15 +87,15 @@
           }
         },
         "Init_varFaltantes": {
-          "type": "InitializeVariable",
-          "metadata": {
-            "operationMetadataId": "09f9935b-392d-4cd3-8ab0-89f9e31bcc2c"
-          },
           "runAfter": {
             "Init_varSanados": [
               "Succeeded"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "09f9935b-392d-4cd3-8ab0-89f9e31bcc2c"
+          },
+          "type": "InitializeVariable",
           "inputs": {
             "variables": [
               {
@@ -106,15 +107,15 @@
           }
         },
         "Init_varAsuntos": {
-          "type": "InitializeVariable",
-          "metadata": {
-            "operationMetadataId": "dae76442-bf36-44e4-ad2c-39c0e4be2cda"
-          },
           "runAfter": {
             "Init_varFaltantes": [
               "Succeeded"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "dae76442-bf36-44e4-ad2c-39c0e4be2cda"
+          },
+          "type": "InitializeVariable",
           "inputs": {
             "variables": [
               {
@@ -126,15 +127,15 @@
           }
         },
         "Init_varNotas": {
-          "type": "InitializeVariable",
-          "metadata": {
-            "operationMetadataId": "8c0329db-cce5-402d-aff8-e34ec83af991"
-          },
           "runAfter": {
             "Init_varAsuntos": [
               "Succeeded"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "8c0329db-cce5-402d-aff8-e34ec83af991"
+          },
+          "type": "InitializeVariable",
           "inputs": {
             "variables": [
               {
@@ -146,22 +147,12 @@
           }
         },
         "Sanar_pendientes": {
-          "type": "Scope",
-          "metadata": {
-            "operationMetadataId": "e4e52ab8-1006-4ef6-b66f-b32680b631d6"
-          },
-          "runAfter": {
-            "Init_varNotas": [
-              "Succeeded"
-            ]
-          },
           "actions": {
             "Buscar_pendientes_viejos": {
-              "type": "OpenApiConnection",
               "metadata": {
                 "operationMetadataId": "99260a9c-fe13-4754-a649-e780dedccfd2"
               },
-              "runAfter": {},
+              "type": "OpenApiConnection",
               "inputs": {
                 "parameters": {
                   "entityName": "sanic_chtblreceivedemailses",
@@ -171,8 +162,8 @@
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                  "connectionName": "shared_commondataserviceforapps_1",
-                  "operationId": "ListRecords"
+                  "operationId": "ListRecords",
+                  "connectionName": "shared_commondataserviceforapps_1"
                 },
                 "retryPolicy": {
                   "type": "exponential",
@@ -182,35 +173,25 @@
               }
             },
             "Por_cada_pendiente": {
-              "type": "Foreach",
-              "metadata": {
-                "operationMetadataId": "b29258ba-b6d7-4375-b9a1-ec5a44b69c1b"
-              },
-              "runAfter": {
-                "Buscar_pendientes_viejos": [
-                  "Succeeded"
-                ]
-              },
               "foreach": "@outputs('Buscar_pendientes_viejos')?['body/value']",
               "actions": {
                 "Tiene_run": {
-                  "type": "OpenApiConnection",
                   "metadata": {
                     "operationMetadataId": "d8bd6528-9bd9-4e6a-a945-0c490f31537e"
                   },
-                  "runAfter": {},
+                  "type": "OpenApiConnection",
                   "inputs": {
                     "parameters": {
                       "entityName": "sanic_chtblvalidationrunses",
                       "$select": "sanic_chtblvalidationrunsid,modifiedon",
                       "$filter": "sanic_sourcerecordid eq '@{items('Por_cada_pendiente')?['sanic_chtblreceivedemailsid']}'",
-                      "$top": 1,
-                      "$orderby": "modifiedon desc"
+                      "$orderby": "modifiedon desc",
+                      "$top": 1
                     },
                     "host": {
                       "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                      "connectionName": "shared_commondataserviceforapps_1",
-                      "operationId": "ListRecords"
+                      "operationId": "ListRecords",
+                      "connectionName": "shared_commondataserviceforapps_1"
                     },
                     "retryPolicy": {
                       "type": "exponential",
@@ -220,14 +201,47 @@
                   }
                 },
                 "Sin_run": {
-                  "type": "If",
-                  "metadata": {
-                    "operationMetadataId": "758ac8be-3f0b-4eaf-891a-b15e7ecb1598"
+                  "actions": {
+                    "Revalidar": {
+                      "metadata": {
+                        "operationMetadataId": "3f3dae60-3eab-4ea9-9572-11a3270ebdef"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "actionName": "sanic_CHValidateReceivedEmail",
+                          "item/ReceivedEmailId": "@items('Por_cada_pendiente')?['sanic_chtblreceivedemailsid']"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                          "operationId": "PerformUnboundAction",
+                          "connectionName": "shared_commondataserviceforapps_1"
+                        }
+                      }
+                    },
+                    "Contar_sanado": {
+                      "runAfter": {
+                        "Revalidar": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "da49d54a-6ae0-4668-b30a-1418d0b4b688"
+                      },
+                      "type": "IncrementVariable",
+                      "inputs": {
+                        "name": "varSanados",
+                        "value": 1
+                      }
+                    }
                   },
                   "runAfter": {
                     "Tiene_run": [
                       "Succeeded"
                     ]
+                  },
+                  "else": {
+                    "actions": {}
                   },
                   "expression": {
                     "or": [
@@ -245,85 +259,86 @@
                       }
                     ]
                   },
-                  "actions": {
-                    "Revalidar": {
-                      "type": "OpenApiConnection",
-                      "metadata": {
-                        "operationMetadataId": "3f3dae60-3eab-4ea9-9572-11a3270ebdef"
-                      },
-                      "runAfter": {},
-                      "inputs": {
-                        "parameters": {
-                          "actionName": "sanic_CHValidateReceivedEmail",
-                          "item/ReceivedEmailId": "@items('Por_cada_pendiente')?['sanic_chtblreceivedemailsid']"
-                        },
-                        "host": {
-                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                          "connectionName": "shared_commondataserviceforapps_1",
-                          "operationId": "PerformUnboundAction"
-                        }
-                      }
-                    },
-                    "Contar_sanado": {
-                      "type": "IncrementVariable",
-                      "metadata": {
-                        "operationMetadataId": "da49d54a-6ae0-4668-b30a-1418d0b4b688"
-                      },
-                      "runAfter": {
-                        "Revalidar": [
-                          "Succeeded"
-                        ]
-                      },
-                      "inputs": {
-                        "name": "varSanados",
-                        "value": 1
-                      }
-                    }
+                  "metadata": {
+                    "operationMetadataId": "758ac8be-3f0b-4eaf-891a-b15e7ecb1598"
                   },
-                  "else": {
-                    "actions": {}
-                  }
+                  "type": "If"
                 }
-              }
+              },
+              "runAfter": {
+                "Buscar_pendientes_viejos": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "b29258ba-b6d7-4375-b9a1-ec5a44b69c1b"
+              },
+              "type": "Foreach"
             }
-          }
+          },
+          "runAfter": {
+            "Init_varNotas": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e4e52ab8-1006-4ef6-b66f-b32680b631d6"
+          },
+          "type": "Scope"
         },
         "Nota_sanar_fallo": {
-          "type": "AppendToArrayVariable",
-          "metadata": {
-            "operationMetadataId": "202db9d8-8d9a-434c-a895-9f9c9aa655e3"
-          },
           "runAfter": {
             "Sanar_pendientes": [
               "Failed",
               "TimedOut"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "202db9d8-8d9a-434c-a895-9f9c9aa655e3"
+          },
+          "type": "AppendToArrayVariable",
           "inputs": {
             "name": "varNotas",
             "value": "FALLO el saneo de pendientes (revisar historial del barrido)."
           }
         },
         "Nota_buzon_fallo": {
-          "type": "AppendToArrayVariable",
-          "metadata": {
-            "operationMetadataId": "e64e0057-5b1d-4fab-86e2-978abb1fff03"
-          },
           "runAfter": {
             "Vigilar_buzon": [
               "Failed",
               "TimedOut"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "e64e0057-5b1d-4fab-86e2-978abb1fff03"
+          },
+          "type": "AppendToArrayVariable",
           "inputs": {
             "name": "varNotas",
             "value": "FALLO la lectura del buzon compartido (¿conexion de Outlook caida?)."
           }
         },
         "Alertar_si_faltan": {
-          "type": "If",
-          "metadata": {
-            "operationMetadataId": "ba330cba-91d0-4193-a6f6-904b66b6b8f5"
+          "actions": {
+            "Alertar_Teams": {
+              "metadata": {
+                "operationMetadataId": "f37f8b9c-9236-4dee-a5e8-d95ea0b69cee"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Group chat",
+                  "body/recipient": "@parameters('CH-EV-OpsTeamsGroupId (sanic_CHEVOpsTeamsGroupId)')",
+                  "body/messageBody": "{\"type\":\"AdaptiveCard\",\"$schema\":\"http://adaptivecards.io/schemas/adaptive-card.json\",\"version\":\"1.4\",\"body\":[{\"type\":\"TextBlock\",\"weight\":\"Bolder\",\"size\":\"Medium\",\"color\":\"Attention\",\"text\":\"⚠ Barrido de ingesta CashHub\"},{\"type\":\"TextBlock\",\"wrap\":true,\"text\":\"Incidencias detectadas: @{variables('varFaltantes')}. Detalle: @{join(variables('varAsuntosFaltantes'), ' | ')}\"}]}"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "operationId": "PostCardToConversation",
+                  "connectionName": "shared_teams"
+                }
+              }
+            }
           },
           "runAfter": {
             "Vigilar_buzon": [
@@ -337,6 +352,9 @@
               "Skipped"
             ]
           },
+          "else": {
+            "actions": {}
+          },
           "expression": {
             "and": [
               {
@@ -348,44 +366,19 @@
               {
                 "not": {
                   "equals": [
-                    "@parameters('sanic_CHEVOpsTeamsGroupId')",
+                    "@parameters('CH-EV-OpsTeamsGroupId (sanic_CHEVOpsTeamsGroupId)')",
                     ""
                   ]
                 }
               }
             ]
           },
-          "actions": {
-            "Alertar_Teams": {
-              "type": "OpenApiConnection",
-              "metadata": {
-                "operationMetadataId": "f37f8b9c-9236-4dee-a5e8-d95ea0b69cee"
-              },
-              "runAfter": {},
-              "inputs": {
-                "parameters": {
-                  "poster": "Flow bot",
-                  "location": "Group chat",
-                  "body/recipient": "@parameters('sanic_CHEVOpsTeamsGroupId')",
-                  "body/messageBody": "{\"type\":\"AdaptiveCard\",\"$schema\":\"http://adaptivecards.io/schemas/adaptive-card.json\",\"version\":\"1.4\",\"body\":[{\"type\":\"TextBlock\",\"weight\":\"Bolder\",\"size\":\"Medium\",\"color\":\"Attention\",\"text\":\"⚠ Barrido de ingesta CashHub\"},{\"type\":\"TextBlock\",\"wrap\":true,\"text\":\"Incidencias detectadas: @{variables('varFaltantes')}. Detalle: @{join(variables('varAsuntosFaltantes'), ' | ')}\"}]}"
-                },
-                "host": {
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
-                  "connectionName": "shared_teams",
-                  "operationId": "PostCardToConversation"
-                }
-              }
-            }
+          "metadata": {
+            "operationMetadataId": "ba330cba-91d0-4193-a6f6-904b66b6b8f5"
           },
-          "else": {
-            "actions": {}
-          }
+          "type": "If"
         },
         "Buscar_heartbeat": {
-          "type": "OpenApiConnection",
-          "metadata": {
-            "operationMetadataId": "c52f4f70-0033-438c-8828-9e2d28f93be3"
-          },
           "runAfter": {
             "Alertar_si_faltan": [
               "Succeeded",
@@ -393,6 +386,10 @@
               "Skipped"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "c52f4f70-0033-438c-8828-9e2d28f93be3"
+          },
+          "type": "OpenApiConnection",
           "inputs": {
             "parameters": {
               "entityName": "sanic_chtblsystemheartbeats",
@@ -402,8 +399,8 @@
             },
             "host": {
               "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "connectionName": "shared_commondataserviceforapps_1",
-              "operationId": "ListRecords"
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps_1"
             },
             "retryPolicy": {
               "type": "exponential",
@@ -413,28 +410,12 @@
           }
         },
         "Existe_heartbeat": {
-          "type": "If",
-          "metadata": {
-            "operationMetadataId": "d991cbb3-4fa2-4be8-b270-6792327008eb"
-          },
-          "runAfter": {
-            "Buscar_heartbeat": [
-              "Succeeded"
-            ]
-          },
-          "expression": {
-            "greater": [
-              "@length(outputs('Buscar_heartbeat')?['body/value'])",
-              0
-            ]
-          },
           "actions": {
             "Actualizar_heartbeat": {
-              "type": "OpenApiConnection",
               "metadata": {
                 "operationMetadataId": "d04d49b2-dc1a-47a6-a824-acff7cf3eb66"
               },
-              "runAfter": {},
+              "type": "OpenApiConnection",
               "inputs": {
                 "parameters": {
                   "entityName": "sanic_chtblsystemheartbeats",
@@ -444,8 +425,8 @@
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                  "connectionName": "shared_commondataserviceforapps_1",
-                  "operationId": "UpdateOnlyRecord"
+                  "operationId": "UpdateOnlyRecord",
+                  "connectionName": "shared_commondataserviceforapps_1"
                 },
                 "retryPolicy": {
                   "type": "exponential",
@@ -455,25 +436,29 @@
               }
             }
           },
+          "runAfter": {
+            "Buscar_heartbeat": [
+              "Succeeded"
+            ]
+          },
           "else": {
             "actions": {
               "Crear_heartbeat": {
-                "type": "OpenApiConnection",
                 "metadata": {
                   "operationMetadataId": "d598c981-0732-4cc4-87b3-d7f05dde630f"
                 },
-                "runAfter": {},
+                "type": "OpenApiConnection",
                 "inputs": {
                   "parameters": {
                     "entityName": "sanic_chtblsystemheartbeats",
-                    "item/sanic_name": "ingesta-correos",
                     "item/sanic_lastrunon": "@utcNow()",
-                    "item/sanic_details": "@concat('sanados=', string(variables('varSanados')), ' faltantes=', string(variables('varFaltantes')), ' notas=', join(variables('varNotas'), ' | '))"
+                    "item/sanic_details": "@concat('sanados=', string(variables('varSanados')), ' faltantes=', string(variables('varFaltantes')), ' notas=', join(variables('varNotas'), ' | '))",
+                    "item/sanic_name": "ingesta-correos"
                   },
                   "host": {
                     "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                    "connectionName": "shared_commondataserviceforapps_1",
-                    "operationId": "CreateRecord"
+                    "operationId": "CreateRecord",
+                    "connectionName": "shared_commondataserviceforapps_1"
                   },
                   "retryPolicy": {
                     "type": "exponential",
@@ -483,28 +468,25 @@
                 }
               }
             }
-          }
-        },
-        "Vigilar_flujo_de_ingesta": {
-          "type": "Scope",
-          "metadata": {
-            "operationMetadataId": "8ddb2ddd-284a-47e6-a595-ca594e8bb2fd"
           },
-          "runAfter": {
-            "Sanar_pendientes": [
-              "Succeeded",
-              "Failed",
-              "TimedOut",
-              "Skipped"
+          "expression": {
+            "greater": [
+              "@length(outputs('Buscar_heartbeat')?['body/value'])",
+              0
             ]
           },
+          "metadata": {
+            "operationMetadataId": "d991cbb3-4fa2-4be8-b270-6792327008eb"
+          },
+          "type": "If"
+        },
+        "Vigilar_flujo_de_ingesta": {
           "actions": {
             "Estado_del_flujo_de_ingesta": {
-              "type": "OpenApiConnection",
               "metadata": {
                 "operationMetadataId": "d8ac04a1-f8fe-4473-a24f-46f8b4191234"
               },
-              "runAfter": {},
+              "type": "OpenApiConnection",
               "inputs": {
                 "parameters": {
                   "entityName": "workflows",
@@ -514,8 +496,8 @@
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                  "connectionName": "shared_commondataserviceforapps_1",
-                  "operationId": "ListRecords"
+                  "operationId": "ListRecords",
+                  "connectionName": "shared_commondataserviceforapps_1"
                 },
                 "retryPolicy": {
                   "type": "exponential",
@@ -525,14 +507,40 @@
               }
             },
             "Ingesta_apagada": {
-              "type": "If",
-              "metadata": {
-                "operationMetadataId": "72b97bae-5ad6-4449-a93e-d83cbf730b5e"
+              "actions": {
+                "Contar_ingesta_caida": {
+                  "metadata": {
+                    "operationMetadataId": "6aa5d67d-f130-4aa3-bb78-2145d9db96bb"
+                  },
+                  "type": "IncrementVariable",
+                  "inputs": {
+                    "name": "varFaltantes",
+                    "value": 1
+                  }
+                },
+                "Nota_ingesta_caida": {
+                  "runAfter": {
+                    "Contar_ingesta_caida": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "d9984f48-301b-4624-aa9d-4140431d07dd"
+                  },
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "varAsuntosFaltantes",
+                    "value": "CH-Flow-IngestEmails NO esta activo (apagado o suspendido): los correos se acumulan en el buzon sin procesar."
+                  }
+                }
               },
               "runAfter": {
                 "Estado_del_flujo_de_ingesta": [
                   "Succeeded"
                 ]
+              },
+              "else": {
+                "actions": {}
               },
               "expression": {
                 "not": {
@@ -542,105 +550,56 @@
                   ]
                 }
               },
-              "actions": {
-                "Contar_ingesta_caida": {
-                  "type": "IncrementVariable",
-                  "metadata": {
-                    "operationMetadataId": "6aa5d67d-f130-4aa3-bb78-2145d9db96bb"
-                  },
-                  "runAfter": {},
-                  "inputs": {
-                    "name": "varFaltantes",
-                    "value": 1
-                  }
-                },
-                "Nota_ingesta_caida": {
-                  "type": "AppendToArrayVariable",
-                  "metadata": {
-                    "operationMetadataId": "d9984f48-301b-4624-aa9d-4140431d07dd"
-                  },
-                  "runAfter": {
-                    "Contar_ingesta_caida": [
-                      "Succeeded"
-                    ]
-                  },
-                  "inputs": {
-                    "name": "varAsuntosFaltantes",
-                    "value": "CH-Flow-IngestEmails NO esta activo (apagado o suspendido): los correos se acumulan en el buzon sin procesar."
-                  }
-                }
+              "metadata": {
+                "operationMetadataId": "72b97bae-5ad6-4449-a93e-d83cbf730b5e"
               },
-              "else": {
-                "actions": {}
-              }
+              "type": "If"
             }
-          }
-        },
-        "Vigilar_buzon": {
-          "type": "Scope",
-          "metadata": {
-            "operationMetadataId": "b0fa4ec7-6115-4257-99d0-41948df2431b"
           },
           "runAfter": {
-            "Vigilar_flujo_de_ingesta": [
+            "Sanar_pendientes": [
               "Succeeded",
               "Failed",
               "TimedOut",
               "Skipped"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "8ddb2ddd-284a-47e6-a595-ca594e8bb2fd"
+          },
+          "type": "Scope"
+        },
+        "Vigilar_buzon": {
           "actions": {
             "Leer_buzon": {
-              "type": "OpenApiConnection",
               "metadata": {
                 "operationMetadataId": "576953e2-88a0-4423-832b-17c156b2f630"
               },
-              "runAfter": {},
+              "type": "OpenApiConnection",
               "inputs": {
                 "parameters": {
-                  "mailboxAddress": "@parameters('sanic_CHEVSharedMailboxAddress')",
                   "fetchOnlyUnread": false,
+                  "mailboxAddress": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')",
                   "includeAttachments": false,
                   "top": 25
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
-                  "connectionName": "shared_office365",
-                  "operationId": "GetEmailsV3"
+                  "operationId": "GetEmailsV3",
+                  "connectionName": "shared_office365-1"
                 }
               }
             },
             "Por_cada_correo_buzon": {
-              "type": "Foreach",
-              "metadata": {
-                "operationMetadataId": "23a731b4-beb7-4c4b-9bef-8b13b3c4c052"
-              },
-              "runAfter": {
-                "Correos_del_buzon": [
-                  "Succeeded"
-                ]
-              },
               "foreach": "@outputs('Correos_del_buzon')",
               "actions": {
                 "Es_viejo_sin_registrar": {
-                  "type": "If",
-                  "metadata": {
-                    "operationMetadataId": "db20082b-badd-4d02-9da6-ff1df6608690"
-                  },
-                  "runAfter": {},
-                  "expression": {
-                    "less": [
-                      "@items('Por_cada_correo_buzon')?['receivedDateTime']",
-                      "@addMinutes(utcNow(),-10)"
-                    ]
-                  },
                   "actions": {
                     "Buscar_registro": {
-                      "type": "OpenApiConnection",
                       "metadata": {
                         "operationMetadataId": "06a01cc6-5696-4915-bacd-664a74334890"
                       },
-                      "runAfter": {},
+                      "type": "OpenApiConnection",
                       "inputs": {
                         "parameters": {
                           "entityName": "sanic_chtblreceivedemailses",
@@ -650,8 +609,8 @@
                         },
                         "host": {
                           "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                          "connectionName": "shared_commondataserviceforapps_1",
-                          "operationId": "ListRecords"
+                          "operationId": "ListRecords",
+                          "connectionName": "shared_commondataserviceforapps_1"
                         },
                         "retryPolicy": {
                           "type": "exponential",
@@ -661,14 +620,40 @@
                       }
                     },
                     "No_registrado": {
-                      "type": "If",
-                      "metadata": {
-                        "operationMetadataId": "438c4792-7790-424b-b937-c52ce38d85a9"
+                      "actions": {
+                        "Contar_faltante": {
+                          "metadata": {
+                            "operationMetadataId": "b762987d-4f20-4dd7-b67a-3bd78d83d08a"
+                          },
+                          "type": "IncrementVariable",
+                          "inputs": {
+                            "name": "varFaltantes",
+                            "value": 1
+                          }
+                        },
+                        "Guardar_asunto": {
+                          "runAfter": {
+                            "Contar_faltante": [
+                              "Succeeded"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "596fb7eb-228e-4e1d-a1a0-dd0ef32ec8b1"
+                          },
+                          "type": "AppendToArrayVariable",
+                          "inputs": {
+                            "name": "varAsuntosFaltantes",
+                            "value": "@concat('Correo sin registrar en CashHub: ', items('Por_cada_correo_buzon')?['subject'])"
+                          }
+                        }
                       },
                       "runAfter": {
                         "Buscar_registro": [
                           "Succeeded"
                         ]
+                      },
+                      "else": {
+                        "actions": {}
                       },
                       "expression": {
                         "equals": [
@@ -676,84 +661,88 @@
                           0
                         ]
                       },
-                      "actions": {
-                        "Contar_faltante": {
-                          "type": "IncrementVariable",
-                          "metadata": {
-                            "operationMetadataId": "b762987d-4f20-4dd7-b67a-3bd78d83d08a"
-                          },
-                          "runAfter": {},
-                          "inputs": {
-                            "name": "varFaltantes",
-                            "value": 1
-                          }
-                        },
-                        "Guardar_asunto": {
-                          "type": "AppendToArrayVariable",
-                          "metadata": {
-                            "operationMetadataId": "596fb7eb-228e-4e1d-a1a0-dd0ef32ec8b1"
-                          },
-                          "runAfter": {
-                            "Contar_faltante": [
-                              "Succeeded"
-                            ]
-                          },
-                          "inputs": {
-                            "name": "varAsuntosFaltantes",
-                            "value": "@concat('Correo sin registrar en CashHub: ', items('Por_cada_correo_buzon')?['subject'])"
-                          }
-                        }
+                      "metadata": {
+                        "operationMetadataId": "438c4792-7790-424b-b937-c52ce38d85a9"
                       },
-                      "else": {
-                        "actions": {}
-                      }
+                      "type": "If"
                     }
                   },
                   "else": {
                     "actions": {}
-                  }
+                  },
+                  "expression": {
+                    "less": [
+                      "@items('Por_cada_correo_buzon')?['receivedDateTime']",
+                      "@addMinutes(utcNow(),-10)"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "db20082b-badd-4d02-9da6-ff1df6608690"
+                  },
+                  "type": "If"
                 }
-              }
+              },
+              "runAfter": {
+                "Correos_del_buzon": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "23a731b4-beb7-4c4b-9bef-8b13b3c4c052"
+              },
+              "type": "Foreach"
             },
             "Leer_buzon_espanol": {
-              "type": "OpenApiConnection",
-              "metadata": {
-                "operationMetadataId": "bb651d20-381f-443e-be79-8f75aaf7dcb7"
-              },
               "runAfter": {
                 "Leer_buzon": [
                   "Failed"
                 ]
               },
+              "metadata": {
+                "operationMetadataId": "bb651d20-381f-443e-be79-8f75aaf7dcb7"
+              },
+              "type": "OpenApiConnection",
               "inputs": {
                 "parameters": {
                   "folderPath": "Bandeja de entrada",
-                  "mailboxAddress": "@parameters('sanic_CHEVSharedMailboxAddress')",
                   "fetchOnlyUnread": false,
+                  "mailboxAddress": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')",
                   "includeAttachments": false,
                   "top": 25
                 },
                 "host": {
                   "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
-                  "connectionName": "shared_office365",
-                  "operationId": "GetEmailsV3"
+                  "operationId": "GetEmailsV3",
+                  "connectionName": "shared_office365-1"
                 }
               }
             },
             "Correos_del_buzon": {
-              "type": "Compose",
-              "metadata": {
-                "operationMetadataId": "05e558eb-321c-4176-a9ab-01616e17e400"
-              },
               "runAfter": {
                 "Leer_buzon_espanol": [
                   "Succeeded",
                   "Skipped"
                 ]
               },
+              "metadata": {
+                "operationMetadataId": "05e558eb-321c-4176-a9ab-01616e17e400"
+              },
+              "type": "Compose",
               "inputs": "@coalesce(outputs('Leer_buzon')?['body/value'], outputs('Leer_buzon_espanol')?['body/value'], json('[]'))"
             }
-          }
+          },
+          "runAfter": {
+            "Vigilar_flujo_de_ingesta": [
+              "Succeeded",
+              "Failed",
+              "TimedOut",
+              "Skipped"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b0fa4ec7-6115-4257-99d0-41948df2431b"
+          },
+          "type": "Scope"
         }
       }
     },
