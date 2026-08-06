@@ -74,12 +74,30 @@ namespace CashHub.Plugins
                     .Materialize(receivedEmailId, context.Workbook, context.ResolvedClientId.Value);
             }
 
-            _tracing.Trace("Validate[{0}]: etapa 8 — componiendo respuesta al cliente (gestion {1}).",
-                receivedEmailId, trackingId);
-            var reply = ComposeReply(receivedEmailId, result, context, envelope, trackingId, receivedOn, runId, declarationId);
+            _tracing.Trace("Validate[{0}]: etapa 8 — clasificando al remitente.", receivedEmailId);
+            var triage = SenderTriage.Classify(result);
+            _tracing.Trace("Validate[{0}]: remitente '{1}' clasificado como {2}; responder={3}. Motivo: {4}",
+                receivedEmailId, envelope.SenderEmail ?? "(sin direccion)", triage.Trust,
+                triage.MayReplyToSender, triage.Reason);
 
-            _tracing.Trace("Validate[{0}]: etapa 9 — actualizando estado del correo.", receivedEmailId);
-            UpdateEmail(receivedEmailId, result, context.ResolvedClientId, reply);
+            (string Subject, string Body)? reply = null;
+            if (triage.MayReplyToSender)
+            {
+                _tracing.Trace("Validate[{0}]: etapa 9 — componiendo respuesta al cliente (gestion {1}).",
+                    receivedEmailId, trackingId);
+                reply = ComposeReply(receivedEmailId, result, context, envelope, trackingId, receivedOn, runId, declarationId);
+            }
+            else
+            {
+                // Puerta de seguridad: escribirle a una direccion sin verificar le confirmaria a
+                // un tercero que ese CIF es cliente del banco. No se responde, se escala adentro.
+                _tracing.Trace(
+                    "Validate[{0}]: etapa 9 — respuesta SUPRIMIDA hacia '{1}' por clasificacion {2}. {3}",
+                    receivedEmailId, envelope.SenderEmail ?? "(sin direccion)", triage.Trust, triage.Reason);
+            }
+
+            _tracing.Trace("Validate[{0}]: etapa 10 — actualizando estado del correo.", receivedEmailId);
+            UpdateEmail(receivedEmailId, result, context.ResolvedClientId, reply, triage);
 
             _tracing.Trace("Validate[{0}]: FIN — run={1}, passed={2}, hallazgos={3}, declaracion={4}.",
                 receivedEmailId, runId, result.Passed, result.FailFindings.Count(),
@@ -377,12 +395,18 @@ namespace CashHub.Plugins
         }
 
         private void UpdateEmail(Guid emailId, RunResult result, Guid? resolvedClientId,
-            (string Subject, string Body)? reply = null)
+            (string Subject, string Body)? reply = null, TriageDecision triage = null)
         {
             var update = new Entity(Schema.ReceivedEmail.LogicalName, emailId)
             {
                 [Schema.ReceivedEmail.ReviewMethod] = new OptionSetValue(Schema.ReceivedEmail.MethodAuto)
             };
+
+            if (triage != null)
+            {
+                update[Schema.ReceivedEmail.SenderClassification] = new OptionSetValue(ClassificationValue(triage.Trust));
+                update[Schema.ReceivedEmail.TriageNotes] = triage.Reason;
+            }
 
             if (resolvedClientId != null)
             {
@@ -417,8 +441,32 @@ namespace CashHub.Plugins
                 update[Schema.ReceivedEmail.ReplyBodyHtml] = reply.Value.Body;
                 update[Schema.ReceivedEmail.ReplyStatus] = new OptionSetValue(Schema.ReceivedEmail.ReplyPendiente);
             }
+            else if (triage != null && !triage.MayReplyToSender)
+            {
+                // Omitido, no Pendiente: el flujo de respuesta jamas debe levantar este correo.
+                update[Schema.ReceivedEmail.ReplyStatus] = new OptionSetValue(Schema.ReceivedEmail.ReplyOmitido);
+                update[Schema.ReceivedEmail.ReviewStatus] =
+                    new OptionSetValue(triage.Trust == SenderTrust.UnregisteredClient
+                        ? Schema.ReceivedEmail.ReviewManual   // le toca a Banca de Empresas
+                        : Schema.ReceivedEmail.ReviewOmitido);
+            }
 
             _service.Update(update);
+        }
+
+        private static int ClassificationValue(SenderTrust trust)
+        {
+            switch (trust)
+            {
+                case SenderTrust.Registered: return Schema.ReceivedEmail.SenderRegistrado;
+                case SenderTrust.UnregisteredClient: return Schema.ReceivedEmail.SenderClienteSinRegistrar;
+                case SenderTrust.Suspicious: return Schema.ReceivedEmail.SenderSospechoso;
+                case SenderTrust.Unrelated: return Schema.ReceivedEmail.SenderNoCorresponde;
+                default:
+                    throw new InvalidPluginExecutionException(
+                        $"Triage desconocido '{trust}' al clasificar el remitente: no hay valor de " +
+                        "opcion equivalente en sanic_senderclassification. Revisar SenderTriage.");
+            }
         }
     }
 

@@ -44,6 +44,12 @@ def label(t):
 KEYS = [
     ("sanic_chtblclientemail",   "sanic_KeyCorreoPorCliente", "Correo unico por cliente", ["sanic_name", "sanic_client"]),
     ("sanic_chtblclientaccount", "sanic_KeyNumeroDeCuenta",   "Numero de cuenta unico",   ["sanic_name"]),
+    # 3. Un correo entrante se registra UNA sola vez. Con el trigger y el barrido
+    #    alimentando al mismo procesador, la dedup de "buscar y despues crear" deja de
+    #    alcanzar: sin indice unico dos corridas simultaneas crean dos registros. El
+    #    campo es String(300) = 600 bytes, holgado bajo el limite de 1700 del indice.
+    ("sanic_chtblreceivedemails", "sanic_KeyInternetMessageId", "Correo entrante unico",
+     ["sanic_receivedemailinternetmessageid"]),
 ]
 for entity, schema, display, attrs in KEYS:
     existing = req('GET', f"/EntityDefinitions(LogicalName='{entity}')/Keys?$select=SchemaName").get('value', [])

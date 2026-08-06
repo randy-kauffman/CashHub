@@ -18,6 +18,14 @@ namespace CashHub.Plugins
             public const string ReplyStatus = "sanic_emailreplystatus";
             public const string ReplySubject = "sanic_replysubject";
             public const string ReplyBodyHtml = "sanic_replybodyhtml";
+            public const string SenderClassification = "sanic_senderclassification";
+            public const string TriageNotes = "sanic_triagenotes";
+
+            // Triage del remitente. Solo Registrado habilita que salga correo del banco.
+            public const int SenderRegistrado = 159460000;
+            public const int SenderClienteSinRegistrar = 159460001;
+            public const int SenderSospechoso = 159460002;
+            public const int SenderNoCorresponde = 159460003;
 
             public const int ReplyPendiente = 159460000;
             public const int ReplyRespondido = 159460001;
@@ -29,6 +37,8 @@ namespace CashHub.Plugins
 
             public const int ReviewPendiente = 159460000;
             public const int ReviewAceptado = 159460001;
+            public const int ReviewOmitido = 159460002;
+            public const int ReviewManual = 159460003;
             public const int ReviewError = 159460004;
             public const int ReviewDenegado = 159460005;
 
