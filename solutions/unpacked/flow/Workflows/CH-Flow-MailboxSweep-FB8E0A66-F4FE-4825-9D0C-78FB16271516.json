@@ -629,6 +629,13 @@
                           "inputs": {
                             "name": "varFaltantes",
                             "value": 1
+                          },
+                          "runAfter": {
+                            "Rescatar_correo": [
+                              "Succeeded",
+                              "Failed",
+                              "TimedOut"
+                            ]
                           }
                         },
                         "Guardar_asunto": {
@@ -643,7 +650,19 @@
                           "type": "AppendToArrayVariable",
                           "inputs": {
                             "name": "varAsuntosFaltantes",
-                            "value": "@concat('Correo sin registrar en CashHub: ', items('Por_cada_correo_buzon')?['subject'])"
+                            "value": "@concat('Rescatado por el barrido (el trigger no lo tomo): ', items('Por_cada_correo_buzon')?['subject'], ' | resultado del rescate: ', result('Rescatar_correo')[0]?['status'])"
+                          }
+                        },
+                        "Rescatar_correo": {
+                          "runAfter": {},
+                          "type": "Workflow",
+                          "inputs": {
+                            "host": {
+                              "workflowReferenceName": "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
+                            },
+                            "body": {
+                              "text": "@items('Por_cada_correo_buzon')?['id']"
+                            }
                           }
                         }
                       },
@@ -673,7 +692,7 @@
                   "expression": {
                     "less": [
                       "@items('Por_cada_correo_buzon')?['receivedDateTime']",
-                      "@addMinutes(utcNow(),-10)"
+                      "@addMinutes(utcNow(),-5)"
                     ]
                   },
                   "metadata": {

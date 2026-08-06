@@ -1,0 +1,422 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps-1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      },
+      "shared_office365_2": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_conn_wfe_office365outlook"
+        },
+        "api": {
+          "name": "shared_office365"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)": {
+          "defaultValue": "cashhub@55xljh.onmicrosoft.com",
+          "type": "String",
+          "metadata": {
+            "schemaName": "sanic_CHEVSharedMailboxAddress"
+          }
+        }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "title": "MessageId",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Id del mensaje en el buzon compartido que se debe procesar.",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": [
+                "text"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Leer_correo": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "messageId": "@triggerBody()?['text']",
+              "mailboxAddress": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')",
+              "includeAttachments": true
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+              "operationId": "GetEmailV2",
+              "connectionName": "shared_office365_2"
+            },
+            "retryPolicy": {
+              "type": "exponential",
+              "count": 4,
+              "interval": "PT10S"
+            }
+          },
+          "runAfter": {}
+        },
+        "Buscar_duplicado": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblreceivedemailses",
+              "$select": "sanic_chtblreceivedemailsid",
+              "$filter": "@concat('sanic_receivedemailinternetmessageid eq ''', coalesce(outputs('Leer_correo')?['body']?['internetMessageId'],''), '''')",
+              "$top": 1
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps-1"
+            },
+            "retryPolicy": {
+              "type": "exponential",
+              "count": 4,
+              "interval": "PT10S"
+            }
+          },
+          "runAfter": {
+            "Leer_correo": [
+              "Succeeded"
+            ]
+          }
+        },
+        "Es_duplicado": {
+          "type": "If",
+          "runAfter": {
+            "Buscar_duplicado": [
+              "Succeeded"
+            ]
+          },
+          "expression": {
+            "greater": [
+              "@length(outputs('Buscar_duplicado')?['body/value'])",
+              0
+            ]
+          },
+          "actions": {
+            "Mover_duplicado": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "messageId": "@triggerBody()?['text']",
+                  "folderPath": "Procesados",
+                  "mailboxAddress": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "MoveV2",
+                  "connectionName": "shared_office365_2"
+                },
+                "retryPolicy": {
+                  "type": "exponential",
+                  "count": 4,
+                  "interval": "PT10S"
+                }
+              },
+              "runAfter": {}
+            },
+            "Terminar_duplicado": {
+              "type": "Terminate",
+              "runAfter": {
+                "Mover_duplicado": [
+                  "Succeeded"
+                ]
+              },
+              "inputs": {
+                "runStatus": "Succeeded"
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Try_Ingesta": {
+                "type": "Scope",
+                "runAfter": {},
+                "actions": {
+                  "Crear_correo": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "entityName": "sanic_chtblreceivedemailses",
+                        "item/sanic_receivedemailinternetmessageid": "@outputs('Leer_correo')?['body']?['internetMessageId']",
+                        "item/sanic_receivedemailoutlookuniqueid": "@outputs('Leer_correo')?['body']?['id']",
+                        "item/sanic_sourceemailaddress": "@outputs('Leer_correo')?['body']?['from']",
+                        "item/sanic_subject": "@outputs('Leer_correo')?['body']?['subject']",
+                        "item/sanic_receptiondatetime": "@outputs('Leer_correo')?['body']?['receivedDateTime']",
+                        "item/sanic_emailreplystatus": 159460000,
+                        "item/sanic_emailreviewmethod": 159460001,
+                        "item/sanic_emailreviewstatus": 159460000,
+                        "item/sanic_validationstatus": 159460000
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                        "operationId": "CreateRecord",
+                        "connectionName": "shared_commondataserviceforapps-1"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 4,
+                        "interval": "PT10S"
+                      }
+                    },
+                    "runAfter": {}
+                  },
+                  "For_each_attachment": {
+                    "type": "Foreach",
+                    "foreach": "@outputs('Leer_correo')?['body']?['attachments']",
+                    "runAfter": {
+                      "Crear_correo": [
+                        "Succeeded"
+                      ]
+                    },
+                    "actions": {
+                      "Create_attachment": {
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "entityName": "sanic_chtblemailsattachmentses",
+                            "item/sanic_Email@odata.bind": "sanic_chtblreceivedemailses(@{outputs('Crear_correo')?['body/sanic_chtblreceivedemailsid']})",
+                            "item/sanic_emailattachmentid": "@items('For_each_attachment')?['id']",
+                            "item/sanic_filename": "@item()?['name']",
+                            "item/sanic_fileextention": "@toLower(last(split(item()?['name'],'.')))",
+                            "item/sanic_name": "@item()?['name']",
+                            "item/sanic_tamanoenbytes": "@items('For_each_attachment')?['size']"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                            "operationId": "CreateRecord",
+                            "connectionName": "shared_commondataserviceforapps-1"
+                          },
+                          "retryPolicy": {
+                            "type": "exponential",
+                            "count": 4,
+                            "interval": "PT10S"
+                          }
+                        },
+                        "runAfter": {}
+                      },
+                      "Upload_attachment": {
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "parameters": {
+                            "x-ms-file-name": "@item()?['name']",
+                            "entityName": "sanic_chtblemailsattachmentses",
+                            "recordId": "@outputs('Create_attachment')?['body/sanic_chtblemailsattachmentsid']",
+                            "fileImageFieldName": "sanic_filecontent",
+                            "item": "@items('For_each_attachment')?['contentBytes']"
+                          },
+                          "host": {
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                            "operationId": "UpdateEntityFileImageFieldContent",
+                            "connectionName": "shared_commondataserviceforapps-1"
+                          },
+                          "retryPolicy": {
+                            "type": "exponential",
+                            "count": 4,
+                            "interval": "PT10S"
+                          }
+                        },
+                        "runAfter": {
+                          "Create_attachment": [
+                            "Succeeded"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "Validar_correo": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "actionName": "sanic_CHValidateReceivedEmail",
+                        "item/ReceivedEmailId": "@outputs('Crear_correo')?['body/sanic_chtblreceivedemailsid']"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                        "operationId": "PerformUnboundAction",
+                        "connectionName": "shared_commondataserviceforapps-1"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 4,
+                        "interval": "PT10S"
+                      }
+                    },
+                    "runAfter": {
+                      "For_each_attachment": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Leer_clasificacion": {
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "parameters": {
+                        "entityName": "sanic_chtblreceivedemailses",
+                        "recordId": "@outputs('Crear_correo')?['body/sanic_chtblreceivedemailsid']",
+                        "$select": "sanic_senderclassification"
+                      },
+                      "host": {
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                        "operationId": "GetItem",
+                        "connectionName": "shared_commondataserviceforapps-1"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 4,
+                        "interval": "PT10S"
+                      }
+                    },
+                    "runAfter": {
+                      "Validar_correo": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Archivar": {
+          "type": "If",
+          "runAfter": {
+            "Es_duplicado": [
+              "Succeeded"
+            ]
+          },
+          "expression": {
+            "or": [
+              {
+                "equals": [
+                  "@outputs('Leer_clasificacion')?['body/sanic_senderclassification']",
+                  159460002
+                ]
+              },
+              {
+                "equals": [
+                  "@outputs('Leer_clasificacion')?['body/sanic_senderclassification']",
+                  159460003
+                ]
+              }
+            ]
+          },
+          "actions": {
+            "Mover_a_cuarentena": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "messageId": "@triggerBody()?['text']",
+                  "folderPath": "Cuarentena",
+                  "mailboxAddress": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                  "operationId": "MoveV2",
+                  "connectionName": "shared_office365_2"
+                },
+                "retryPolicy": {
+                  "type": "exponential",
+                  "count": 4,
+                  "interval": "PT10S"
+                }
+              },
+              "runAfter": {}
+            }
+          },
+          "else": {
+            "actions": {
+              "Mover_a_procesados": {
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "parameters": {
+                    "messageId": "@triggerBody()?['text']",
+                    "folderPath": "Procesados",
+                    "mailboxAddress": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')"
+                  },
+                  "host": {
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
+                    "operationId": "MoveV2",
+                    "connectionName": "shared_office365_2"
+                  },
+                  "retryPolicy": {
+                    "type": "exponential",
+                    "count": 4,
+                    "interval": "PT10S"
+                  }
+                },
+                "runAfter": {}
+              }
+            }
+          }
+        },
+        "Catch_Proceso": {
+          "type": "If",
+          "runAfter": {
+            "Es_duplicado": [
+              "Failed",
+              "TimedOut",
+              "Skipped"
+            ],
+            "Archivar": [
+              "Failed",
+              "TimedOut",
+              "Skipped"
+            ]
+          },
+          "expression": {
+            "equals": [
+              "@true",
+              "@true"
+            ]
+          },
+          "actions": {
+            "Terminar_con_fallo": {
+              "type": "Terminate",
+              "runAfter": {},
+              "inputs": {
+                "runStatus": "Failed",
+                "runError": {
+                  "code": "CH_PROCESS_EMAIL_FALLO",
+                  "message": "@concat('Fallo procesando el mensaje ', coalesce(triggerBody()?['text'],'(sin id)'), ' del buzon ', parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)'), '. El correo se DEJA en el Inbox a proposito para que CH-Flow-MailboxSweep lo reintente. Revisar el historial de esta corrida para ver que etapa fallo.')"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "schemaVersion": "1.0.0.0"
+}
