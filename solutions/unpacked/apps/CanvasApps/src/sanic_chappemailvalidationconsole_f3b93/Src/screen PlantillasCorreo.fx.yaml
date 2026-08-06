@@ -1,0 +1,331 @@
+"'screen PlantillasCorreo' As screen":
+    Fill: =RGBA(245, 245, 245, 1)
+    LoadingSpinnerColor: =App.Theme.Colors.Primary
+    OnVisible: |-
+        =Refresh('CH-Tbl-EmailTemplate');
+        UpdateContext(
+            {
+                varPlantilla: Blank(),
+                varAsuntoEdit: "",
+                varCuerpoEdit: "",
+                varHayCambios: false
+            }
+        );
+
+    ScreenContainerPlantillas As groupContainer.verticalAutoLayoutContainer:
+        Fill: =RGBA(245, 245, 245, 1)
+        Height: =Parent.Height
+        LayoutAlignItems: =LayoutAlignItems.Stretch
+        LayoutDirection: =LayoutDirection.Vertical
+        LayoutGap: =12
+        LayoutMode: =LayoutMode.Auto
+        PaddingBottom: =16
+        PaddingLeft: =16
+        PaddingRight: =16
+        PaddingTop: =16
+        Width: =Parent.Width - Self.X
+        X: =46
+        ZIndex: =1
+
+        "'container CabeceraPlantillas' As groupContainer.manualLayoutContainer":
+            Fill: =RGBA(255, 255, 255, 1)
+            FillPortions: =0
+            Height: =64
+            LayoutMinHeight: =64
+            RadiusBottomLeft: =6
+            RadiusBottomRight: =6
+            RadiusTopLeft: =6
+            RadiusTopRight: =6
+            ZIndex: =1
+
+            lblPlantillasTitulo As label:
+                Color: =RGBA(36, 36, 36, 1)
+                FontWeight: =FontWeight.Semibold
+                Height: =28
+                Size: =15
+                Text: ="Plantillas del correo al cliente"
+                VerticalAlign: =VerticalAlign.Middle
+                Width: =420
+                X: =16
+                Y: =8
+                ZIndex: =1
+
+            lblPlantillasAyuda As label:
+                Color: =RGBA(97, 97, 97, 1)
+                Height: =22
+                Size: =10
+                Text: |-
+                    ="Edite el diseno sin tocar codigo. Tokens: {{cliente}} {{archivo}} {{recibido}} {{gestion}} {{validacion}} {{total_errores}}  ·  listas: {{" & Char(35) & "bolsas}} {{" & Char(35) & "errores_correo}} {{" & Char(35) & "errores_archivo}}"
+                VerticalAlign: =VerticalAlign.Middle
+                Width: =Parent.Width - 200
+                X: =16
+                Y: =34
+                ZIndex: =2
+
+            btnRefrescarPlantillas As icon:
+                Color: =RGBA(97, 97, 97, 1)
+                Height: =24
+                Icon: =Icon.Reload
+                OnSelect: |-
+                    =Refresh('CH-Tbl-EmailTemplate');
+                    Notify("Plantillas actualizadas.", NotificationType.Success);
+                Tooltip: ="Recargar las plantillas"
+                Width: =24
+                X: =Parent.Width - 44
+                Y: =20
+                ZIndex: =3
+
+        "'container CuerpoPlantillas' As groupContainer.horizontalAutoLayoutContainer":
+            FillPortions: =1
+            LayoutDirection: =LayoutDirection.Horizontal
+            LayoutGap: =12
+            LayoutMode: =LayoutMode.Auto
+            ZIndex: =2
+
+            "'container ListaPlantillas' As groupContainer.verticalAutoLayoutContainer":
+                Fill: =RGBA(255, 255, 255, 1)
+                FillPortions: =0
+                LayoutDirection: =LayoutDirection.Vertical
+                LayoutMinWidth: =280
+                LayoutMode: =LayoutMode.Auto
+                PaddingLeft: =8
+                PaddingRight: =8
+                PaddingTop: =8
+                RadiusBottomLeft: =6
+                RadiusBottomRight: =6
+                RadiusTopLeft: =6
+                RadiusTopRight: =6
+                Width: =280
+                ZIndex: =1
+
+                galPlantillas As gallery.galleryVertical:
+                    FillPortions: =1
+                    Items: =SortByColumns('CH-Tbl-EmailTemplate', "sanic_name", SortOrder.Ascending)
+                    Loop: =false
+                    OnSelect: |-
+                        =UpdateContext(
+                            {
+                                varPlantilla: ThisItem,
+                                varAsuntoEdit: ThisItem.Subject,
+                                varCuerpoEdit: ThisItem.BodyHtml,
+                                varHayCambios: false
+                            }
+                        );
+                    ShowScrollbar: =true
+                    TemplatePadding: =0
+                    TemplateSize: =64
+                    ZIndex: =1
+
+                    lblItemPlantilla As label:
+                        Color: =RGBA(36, 36, 36, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        Size: =11
+                        Text: =ThisItem.Name
+                        VerticalAlign: =VerticalAlign.Middle
+                        Width: =Parent.TemplateWidth - 24
+                        X: =12
+                        Y: =8
+                        ZIndex: =2
+
+                    lblItemAsunto As label:
+                        Color: =RGBA(97, 97, 97, 1)
+                        Height: =20
+                        Size: =9
+                        Text: =ThisItem.Subject
+                        VerticalAlign: =VerticalAlign.Middle
+                        Width: =Parent.TemplateWidth - 24
+                        X: =12
+                        Y: =28
+                        ZIndex: =3
+
+                    icoItemActiva As icon:
+                        Color: =If(ThisItem.IsActive, RGBA(16, 124, 16, 1), RGBA(168, 0, 0, 1))
+                        Height: =12
+                        Icon: =Icon.CircleFill
+                        Tooltip: =If(ThisItem.IsActive, "Activa: el motor la usa", "Inactiva: el motor usa el diseño de respaldo")
+                        Width: =12
+                        X: =Parent.TemplateWidth - 24
+                        Y: =12
+                        ZIndex: =4
+
+                    sepItemPlantilla As rectangle:
+                        Fill: =RGBA(237, 235, 233, 1)
+                        Height: =1
+                        Width: =Parent.TemplateWidth
+                        X: =0
+                        Y: =63
+                        ZIndex: =1
+
+            "'container EditorPlantilla' As groupContainer.verticalAutoLayoutContainer":
+                Fill: =RGBA(255, 255, 255, 1)
+                FillPortions: =1
+                LayoutDirection: =LayoutDirection.Vertical
+                LayoutGap: =8
+                LayoutMode: =LayoutMode.Auto
+                PaddingBottom: =12
+                PaddingLeft: =12
+                PaddingRight: =12
+                PaddingTop: =12
+                RadiusBottomLeft: =6
+                RadiusBottomRight: =6
+                RadiusTopLeft: =6
+                RadiusTopRight: =6
+                Visible: =!IsBlank(varPlantilla)
+                ZIndex: =2
+
+                "txtAsuntoPlantilla As 'Text input'":
+                    FillPortions: =0
+                    Height: =40
+                    HintText: ="Asunto del correo"
+                    Label: ="Asunto"
+                    OnChange: =UpdateContext({varAsuntoEdit: Self.Value, varHayCambios: true})
+                    Value: =varAsuntoEdit
+                    ZIndex: =1
+
+                "txtCuerpoPlantilla As 'Text input'":
+                    FillPortions: =1
+                    HintText: ="HTML del correo"
+                    Label: ="Cuerpo HTML"
+                    LayoutMinHeight: =220
+                    Mode: ='TextInputCanvas.Mode'.MultiLine
+                    OnChange: =UpdateContext({varCuerpoEdit: Self.Value, varHayCambios: true})
+                    Value: =varCuerpoEdit
+                    ZIndex: =2
+
+                "'container AccionesPlantilla' As groupContainer.horizontalAutoLayoutContainer":
+                    FillPortions: =0
+                    Height: =48
+                    LayoutGap: =8
+                    LayoutMinHeight: =48
+                    LayoutMode: =LayoutMode.Auto
+                    ZIndex: =3
+
+                    btnGuardarPlantilla As Button:
+                        Appearance: ="Primary"
+                        BasePaletteColor: =RGBA(16, 124, 16, 1)
+                        BorderRadius: =8
+                        DisplayMode: =If(varHayCambios, DisplayMode.Edit, DisplayMode.Disabled)
+                        FillPortions: =0
+                        Height: =36
+                        OnSelect: |-
+                            =Patch(
+                                'CH-Tbl-EmailTemplate',
+                                varPlantilla,
+                                {Subject: varAsuntoEdit, BodyHtml: varCuerpoEdit}
+                            );
+                            Refresh('CH-Tbl-EmailTemplate');
+                            UpdateContext({varHayCambios: false});
+                            Notify("Plantilla guardada: el proximo correo saldra con este diseno.", NotificationType.Success);
+                        Text: ="Guardar cambios"
+                        Width: =160
+                        ZIndex: =1
+
+                    btnDescartarPlantilla As Button:
+                        Appearance: ="Secondary"
+                        BorderRadius: =8
+                        DisplayMode: =If(varHayCambios, DisplayMode.Edit, DisplayMode.Disabled)
+                        FillPortions: =0
+                        Height: =36
+                        OnSelect: |-
+                            =UpdateContext(
+                                {
+                                    varAsuntoEdit: varPlantilla.Subject,
+                                    varCuerpoEdit: varPlantilla.BodyHtml,
+                                    varHayCambios: false
+                                }
+                            );
+                            Notify("Cambios descartados.", NotificationType.Information);
+                        Text: ="Descartar"
+                        Width: =120
+                        ZIndex: =2
+
+                    btnActivarPlantilla As Button:
+                        Appearance: ="Secondary"
+                        BorderRadius: =8
+                        FillPortions: =0
+                        Height: =36
+                        OnSelect: |-
+                            =Patch(
+                                'CH-Tbl-EmailTemplate',
+                                varPlantilla,
+                                {IsActive: !varPlantilla.IsActive}
+                            );
+                            Refresh('CH-Tbl-EmailTemplate');
+                            UpdateContext({varPlantilla: LookUp('CH-Tbl-EmailTemplate', Name = varPlantilla.Name)});
+                            Notify("Estado de la plantilla actualizado.", NotificationType.Success);
+                        Text: =If(varPlantilla.IsActive, "Desactivar", "Activar")
+                        Tooltip: ="Si se desactiva, el motor usa el diseno de respaldo embebido"
+                        Width: =120
+                        ZIndex: =3
+
+            "'container VistaPrevia' As groupContainer.verticalAutoLayoutContainer":
+                Fill: =RGBA(255, 255, 255, 1)
+                FillPortions: =1
+                LayoutDirection: =LayoutDirection.Vertical
+                LayoutMode: =LayoutMode.Auto
+                PaddingBottom: =8
+                PaddingLeft: =8
+                PaddingRight: =8
+                PaddingTop: =8
+                RadiusBottomLeft: =6
+                RadiusBottomRight: =6
+                RadiusTopLeft: =6
+                RadiusTopRight: =6
+                Visible: =!IsBlank(varPlantilla)
+                ZIndex: =3
+
+                lblVistaPreviaTitulo As label:
+                    Color: =RGBA(97, 97, 97, 1)
+                    FillPortions: =0
+                    FontWeight: =FontWeight.Semibold
+                    Height: =26
+                    Size: =11
+                    Text: ="Vista previa (con datos de ejemplo)"
+                    VerticalAlign: =VerticalAlign.Middle
+                    ZIndex: =1
+
+                "htmlVistaPrevia As 'HTML text'":
+                    FillPortions: =1
+                    HtmlText: |-
+                        =Substitute(
+                            Substitute(
+                                Substitute(
+                                    Substitute(
+                                        Substitute(
+                                            Substitute(
+                                                Substitute(
+                                                    Substitute(
+                                                        Substitute(
+                                                            Substitute(
+                                                                Substitute(varCuerpoEdit, "{{" & Char(35) & "si:cliente}}", ""),
+                                                            "{{/si}}", ""),
+                                                        "{{cliente}}", "Distribuidora El Porvenir, S.A."),
+                                                    "{{archivo}}", "declaracion-agosto.xlsx"),
+                                                "{{recibido}}", Text(Now(), "dd/mm/yyyy hh:mm")),
+                                            "{{gestion}}", "Email-42"),
+                                        "{{validacion}}", "a1b2c3d4-0000-0000-0000-000000000000"),
+                                    "{{total_errores}}", "2"),
+                                "{{" & Char(35) & "bolsas}}", ""),
+                            "{{/bolsas}}", "")
+                    ZIndex: =2
+
+                lblVistaPreviaNota As label:
+                    Color: =RGBA(97, 97, 97, 1)
+                    FillPortions: =0
+                    Height: =34
+                    Size: =9
+                    Text: |-
+                        ="Los bloques repetibles ({{" & Char(35) & "bolsas}}, {{" & Char(35) & "errores_archivo}}) se muestran una sola vez: el motor los repite por cada fila real al enviar el correo."
+                    VerticalAlign: =VerticalAlign.Middle
+                    ZIndex: =3
+
+        lblSinPlantilla As label:
+            Align: =Align.Center
+            Color: =RGBA(97, 97, 97, 1)
+            FillPortions: =1
+            Size: =12
+            Text: ="Seleccione una plantilla de la lista para editarla"
+            VerticalAlign: =VerticalAlign.Middle
+            Visible: =IsBlank(varPlantilla)
+            ZIndex: =3
