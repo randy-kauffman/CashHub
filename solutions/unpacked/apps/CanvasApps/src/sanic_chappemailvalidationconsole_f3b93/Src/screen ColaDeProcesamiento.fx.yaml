@@ -6,15 +6,15 @@
         UpdateContext(
             {
                 stBase: "color:rgb(28,21,23)",
-                stRot: "font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px 0",
-                stCard: "font-size:13px;background:rgb(250,248,248);border:1px solid rgb(230,223,224);padding:12px 15px;color:rgb(70,59,62);margin:0",
-                stPaso: "font-size:13px;color:rgb(28,21,23);vertical-align:top;padding:0 0 9px 0",
+                stRot: "font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0",
+                stCard: "font-size:13.5px;line-height:1.5;background:rgb(250,248,248);border:1px solid rgb(230,223,224);padding:14px 16px;color:rgb(70,59,62);margin:0",
+                stPaso: "font-size:13.5px;line-height:1.5;color:rgb(28,21,23);vertical-align:top;padding:0 0 10px 0",
                 stNum: "display:inline-block;width:21px;height:21px;line-height:21px;text-align:center;border-radius:11px;background:rgb(251,237,239);color:rgb(158,13,36);font-size:11px;font-weight:700",
-                stNota: "font-size:12px;color:rgb(120,106,109);margin:6px 0 0 0",
+                stNota: "font-size:12.5px;line-height:1.5;color:rgb(120,106,109);margin:10px 0 0 0",
                 stTally: "font-size:11.5px;color:rgb(120,106,109);margin:0 0 11px 0",
-                stFila: "background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin:0 0 9px 0",
+                stFila: "background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:12px 15px;margin:0 0 9px 0;font-size:13.5px",
                 stCod: "font-weight:700;color:rgb(110,22,34);font-size:12px",
-                stMsg: "font-size:13px;color:rgb(28,21,23)",
+                stMsg: "font-size:13.5px;color:rgb(28,21,23)",
                 stCelda: "font-size:11.5px;color:rgb(120,106,109)",
                 stOmi: "font-size:12.5px;color:rgb(138,128,130);font-style:italic;margin:0 0 3px 0",
                 stId: "font-size:19px;font-weight:650;color:rgb(28,21,23)",
@@ -303,8 +303,8 @@
                     AutoHeight: =true
                     Height: =128
                     HtmlText: |-
-                        ="<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px 0'>Que paso</p>" &
-                         "<div style='font-size:13px;background:rgb(250,248,248);border:1px solid rgb(230,223,224);padding:12px 15px;color:rgb(70,59,62);margin:0;border-left:3px solid " &
+                        ="<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Que paso</p>" &
+                         "<div style='font-size:13.5px;line-height:1.5;background:rgb(250,248,248);border:1px solid rgb(230,223,224);padding:14px 16px;color:rgb(70,59,62);margin:0;border-left:3px solid " &
                          If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error,
                             "rgb(110,22,34)", "rgb(154,97,0)") & "'>" &
                          Substitute(Substitute(Coalesce(Coalesce(Table1_1.Selected.TriageNotes, Table1_1.Selected.ErrorText, "Este correo no dejo explicacion: el motor no llego a evaluarlo."),""),"&","&amp;"),"<","&lt;") &
@@ -323,7 +323,7 @@
                     HtmlText: |-
                         =With(
                             {g: LookUp('CH-Tbl-Playbook', Name = Switch(Table1_1.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",  If(Table1_1.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente, "respuesta-sin-enviar", "sin-validar"))))},
-                            "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px 0'>Que hacer" &
+                            "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Que hacer" &
                             If(IsBlank(g.Titulo), "", " &nbsp;&mdash;&nbsp; " & Substitute(Substitute(Coalesce(g.Titulo,""),"&","&amp;"),"<","&lt;")) & "</p>" &
                             Concat(
                                 ForAll(
@@ -332,10 +332,10 @@
                                 ),
                                 "<table cellpadding='0' cellspacing='0'><tr><td width='31' valign='top' style='padding:0 0 9px 0'>" &
                                 "<span style='display:inline-block;width:21px;height:21px;line-height:21px;text-align:center;border-radius:11px;background:rgb(251,237,239);color:rgb(158,13,36);font-size:11px;font-weight:700'>" & i & "</span></td>" &
-                                "<td style='font-size:13px;color:rgb(28,21,23);vertical-align:top;padding:0 0 9px 0'>" &
+                                "<td style='font-size:13.5px;line-height:1.5;color:rgb(28,21,23);vertical-align:top;padding:0 0 10px 0'>" &
                                 Substitute(Substitute(txt, "&", "&amp;"), "<", "&lt;") & "</td></tr></table>"
                             ) &
-                            If(IsBlank(g.Nota), "", "<p style='font-size:12px;color:rgb(120,106,109);margin:6px 0 0 0'>" & Substitute(Substitute(Coalesce(g.Nota,""),"&","&amp;"),"<","&lt;") & "</p>")
+                            If(IsBlank(g.Nota), "", "<p style='font-size:12.5px;line-height:1.5;color:rgb(120,106,109);margin:10px 0 0 0'>" & Substitute(Substitute(Coalesce(g.Nota,""),"&","&amp;"),"<","&lt;") & "</p>")
                         )
                     LayoutMaxHeight: =0
                     LayoutMaxWidth: =0
@@ -624,10 +624,10 @@
                                                 ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail),
                                     ejec: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns')
                                 },
-                                "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px 0'>Reglas que no pasaron</p>" &
+                                "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Reglas que no pasaron</p>" &
                                 If(
                                     IsBlank(r),
-                                    "<div style='font-size:13px;background:rgb(250,248,248);border:1px solid rgb(230,223,224);padding:12px 15px;color:rgb(70,59,62);margin:0'>Este correo todavia no tiene ninguna corrida de validacion.</div>",
+                                    "<div style='font-size:13.5px;line-height:1.5;background:rgb(250,248,248);border:1px solid rgb(230,223,224);padding:14px 16px;color:rgb(70,59,62);margin:0'>Este correo todavia no tiene ninguna corrida de validacion.</div>",
                                     "<p style='font-size:11.5px;color:rgb(120,106,109);margin:0 0 11px 0'><b style='color:rgb(110,22,34)'>" & CountRows(fal) &
                                     "</b> fallaron &nbsp;|&nbsp; <b style='color:rgb(138,128,130)'>" &
                                     (CountRows(Filter('CH-Tbl-ValidationRules', IsActive = true)) - CountRows(ejec)) &
@@ -636,7 +636,7 @@
                                     "</b> pasaron sin novedad</p>" &
                                     Concat(
                                         Sort(fal, Name),
-                                        "<div style='background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin:0 0 9px 0'><span style='font-weight:700;color:rgb(110,22,34);font-size:12px'>" &
+                                        "<div style='background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:12px 15px;margin:0 0 9px 0;font-size:13.5px'><span style='font-weight:700;color:rgb(110,22,34);font-size:12px'>" &
                                         Substitute(Coalesce(Name, ""), "<", "&lt;") & "</span>&nbsp;&nbsp;<span style='font-size:13px;color:rgb(28,21,23)'>" &
                                         Substitute(Substitute(Coalesce(Detalle, ""), "&", "&amp;"), "<", "&lt;") & "</span>" &
                                         If(IsBlank(Celda), "",
@@ -648,10 +648,10 @@
                                                     IsBlank(LookUp(ejec, ValidationRule.'Validation Name' = 'Validation Name')))},
                                         If(
                                             CountRows(om) = 0,
-                                            "<p style='font-size:12px;color:rgb(120,106,109);margin:6px 0 0 0'>Ninguna regla quedo sin intentarse: la cadena corrio completa.</p>",
-                                            "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px 0;margin-top:16px'>No se intentaron porque su dependencia no paso</p>" &
+                                            "<p style='font-size:12.5px;line-height:1.5;color:rgb(120,106,109);margin:10px 0 0 0'>Ninguna regla quedo sin intentarse: la cadena corrio completa.</p>",
+                                            "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0;margin-top:16px'>No se intentaron porque su dependencia no paso</p>" &
                                             Concat(Sort(om, ValidationOrder),
-                                                   "<div style='font-size:12.5px;color:rgb(138,128,130);font-style:italic;margin:0 0 3px 0'>" & 'Validation Name' & " &nbsp; " &
+                                                   "<div style='display:inline-block;width:32%;vertical-align:top;font-size:12px;color:rgb(138,128,130);font-style:italic;margin:0 0 4px 0'>" & 'Validation Name' & " &nbsp; " &
                                                    Substitute(Coalesce(Name, ""), "<", "&lt;") & "</div>")
                                         )
                                     )
