@@ -246,6 +246,8 @@ namespace CashHub.Plugins
                 [Schema.Run.Result] = new OptionSetValue(result.Passed ? Schema.Run.ResultPass : Schema.Run.ResultFail),
                 [Schema.Run.SourceEntity] = Schema.ReceivedEmail.LogicalName,
                 [Schema.Run.SourceRecordId] = emailId.ToString("D"),
+                [Schema.Run.ReceivedEmailLookup] =
+                    new EntityReference(Schema.ReceivedEmail.LogicalName, emailId),
                 [Schema.Run.SourceType] = new OptionSetValue(Schema.Run.SourceSharedMailbox)
             };
             var runId = _service.Create(run);

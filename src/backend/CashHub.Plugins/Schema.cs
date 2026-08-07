@@ -76,6 +76,14 @@ namespace CashHub.Plugins
             public const string Result = "sanic_runresult";
             public const string SourceEntity = "sanic_sourceentity";
             public const string SourceRecordId = "sanic_sourcerecordid";
+
+            /// <summary>
+            /// Vinculo real al correo. SourceRecordId se conserva porque la tabla es
+            /// generica, pero un GUID en texto no se puede delegar: sin este lookup la
+            /// app se trae 500 corridas y filtra en el cliente, y a partir de la 501
+            /// deja de encontrar las nuevas SIN dar error.
+            /// </summary>
+            public const string ReceivedEmailLookup = "sanic_ReceivedEmail";
             public const string SourceType = "sanic_sourcetype";
 
             public const int ResultPass = 159460000;
