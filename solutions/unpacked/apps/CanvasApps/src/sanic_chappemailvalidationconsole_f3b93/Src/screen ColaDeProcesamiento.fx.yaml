@@ -26,17 +26,6 @@
                 stChip: "font-size:11px;font-weight:650;padding:3px 9px;border-radius:11px"
             }
         );
-        // Que area es el usuario. El limite real es el rol de Dataverse sobre las
-        // tablas de RFC; esto solo evita ofrecer un boton que no le corresponde.
-        ClearCollect(colPermisosAlta,
-            Filter('CH-Tbl-ClientDataChangePermissions' As C,
-                C.Name = "sanic_chtblclientemail"));
-        UpdateContext({varPuedeAltaCorreo:
-            CountRows(
-                Filter(colPermisosAlta,
-                    !IsBlank(
-                        LookUp(Office365Groups.ListGroupMembers(AADGroupID).value,
-                               userPrincipalName = User().Email)))) > 0});
         // Salud del pipeline: latido del barrido + cola real
         UpdateContext(
             {
@@ -442,7 +431,6 @@
                     Y: =54
                     ZIndex: =5
 
-
             htmlVacio As htmlViewer:
                 AlignInContainer: =AlignInContainer.Stretch
                 FillPortions: =8
@@ -459,6 +447,7 @@
                      "</div></div>"
                 Visible: =CountRows(galBandeja.AllItems) = 0
                 ZIndex: =3
+
             "'container Detalle' As groupContainer.verticalAutoLayoutContainer":
                 DropShadow: =DropShadow.Light
                 Fill: =RGBA(255, 255, 255, 1)
@@ -573,93 +562,50 @@
                     Width: =Parent.Width - 48
                     ZIndex: =4
 
-                    btnAltaCorreo As Button:
-                        AcceptsFocus: =true
-                        AccessibleLabel: =""
-                        Align: =""
+                    btnAvisarBanca As Button:
                         Appearance: ='ButtonCanvas.Appearance'.Primary
-                        BasePaletteColor: =
-                        BorderColor: =
-                        BorderStyle: =""
-                        ContentLanguage: =""
                         DisplayMode: =If(IsBlank(galBandeja.Selected.'Cliente atribuido'), DisplayMode.Disabled, DisplayMode.Edit)
-                        Font: =""
-                        FontColor: =
-                        FontItalic: =false
-                        FontSize: =0
-                        FontStrikethrough: =false
-                        FontUnderline: =false
-                        FontWeight: =""
                         Height: =36
-                        Icon: =""
-                        IconRotation: =0
-                        IconStyle: ="Outline"
-                        Layout: ="Icon before"
-                        LayoutMaxHeight: =0
-                        LayoutMaxWidth: =0
                         OnSelect: |-
                             =With(
                                 {
+                                    destino: LookUp('Environment Variable Values', 'Schema Name' = "sanic_CHEVBancaMailbox", Value),
+                                    urlAdmin: LookUp('Environment Variable Values', 'Schema Name' = "sanic_CHEVAppUrl_ClientAdmin", Value),
                                     cli: galBandeja.Selected.'Cliente atribuido',
                                     dir: galBandeja.Selected.SourceEmailAddress,
                                     ges: galBandeja.Selected.Name
                                 },
-                                With(
-                                    {
-                                        rfc: Patch(
-                                            'CH-Tbl-ClientDataChangeRequests',
-                                            Defaults('CH-Tbl-ClientDataChangeRequests'),
-                                            {
-                                                Type: 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,
-                                                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,
-                                                TargetTable: "sanic_chtblclientemail",
-                                                RelatedClient: cli,
-                                                Reason: "Alta de remitente detectada por CashHub en " & ges &
-                                                        ". La direccion " & dir &
-                                                        " envio un pre-registro con la plantilla oficial y el CIF de este cliente."
-                                            }
-                                        )
-                                    },
-                                    Patch(
-                                        'CH-Tbl-ClientDataChangeRequestLines',
-                                        Defaults('CH-Tbl-ClientDataChangeRequestLines'),
-                                        {
-                                            ChangeRequestID: rfc,
-                                            'Field Definition': LookUp('CH-Tbl-ClientTableLogicalFieldNames',
-                                                Table = "sanic_chtblclientemail" And LogicalName = "sanic_name"),
-                                            NewValue: dir
-                                        }
+                                If(
+                                    IsBlank(destino),
+                                    Notify("Falta configurar CH-EV-BancaMailbox: no se sabe a que buzon avisarle a Banca de Empresas.", NotificationType.Error),
+                                    Office365Outlook.SendEmailV2(
+                                        destino,
+                                        "CashHub " & ges & ": hay que registrar un remitente de " & cli.Name,
+                                        "<div style='font-family:Segoe UI,sans-serif;font-size:14px;color:rgb(28,21,23)'>" &
+                                        "<p>Un pre-registro llego desde una direccion que no esta registrada, pero el archivo <b>es la plantilla oficial</b> y el CIF declarado corresponde a un cliente real.</p>" &
+                                        "<p>Mientras no se registre esa direccion, <b>al cliente no se le puede responder</b>: escribirle a un correo sin verificar confirmaria que ese CIF opera con el banco.</p>" &
+                                        "<table cellpadding='6' cellspacing='0' style='font-size:13px;border-collapse:collapse'>" &
+                                        "<tr><td style='color:rgb(120,106,109)'>Numero de gestion</td><td><b>" & ges & "</b></td></tr>" &
+                                        "<tr><td style='color:rgb(120,106,109)'>Cliente</td><td><b>" & cli.Name & "</b></td></tr>" &
+                                        "<tr><td style='color:rgb(120,106,109)'>Direccion a registrar</td><td><b>" & dir & "</b></td></tr>" &
+                                        "<tr><td style='color:rgb(120,106,109)'>Recibido</td><td>" & Text(galBandeja.Selected.ReceptionDateTime, "dd/mm/yyyy hh:mm") & "</td></tr>" &
+                                        "</table>" &
+                                        "<p><b>Que hay que hacer:</b> confirmar con el cliente que esa persona esta autorizada y, si corresponde, dar de alta la direccion en Client Administration. Operaciones reprocesa el correo y el cliente recibe su respuesta.</p>" &
+                                        If(IsBlank(urlAdmin), "", "<p><a href='" & urlAdmin & "'>Abrir Client Administration</a></p>") &
+                                        "<p style='font-size:12px;color:rgb(120,106,109)'>Aviso enviado por " & User().FullName & " desde la consola de ingesta de correos.</p></div>",
+                                        {IsHtml: true, Importance: "Normal"}
                                     );
-                                    Patch(
-                                        'CH-Tbl-ClientDataChangeRequestLines',
-                                        Defaults('CH-Tbl-ClientDataChangeRequestLines'),
-                                        {
-                                            ChangeRequestID: rfc,
-                                            'Field Definition': LookUp('CH-Tbl-ClientTableLogicalFieldNames',
-                                                Table = "sanic_chtblclientemail" And LogicalName = "sanic_Client"),
-                                            NewValue: dir
-                                        }
-                                    );
-                                    Notify(
-                                        "Solicitud " & rfc.Name & " creada y enviada a aprobacion. Usted no puede aprobarla: la revisa otra persona de Banca de Empresas.",
-                                        NotificationType.Success
-                                    )
+                                    Patch('CH-Tbl-Received Emails', galBandeja.Selected, {BancaNotifiedOn: Now()});
+                                    Refresh('CH-Tbl-Received Emails');
+                                    Notify("Recordatorio enviado a Banca de Empresas con el detalle del caso.", NotificationType.Success)
                                 )
                             );
-                        TabIndex: =0
-                        Text: ="Registrar correo (crea la solicitud)"
-                        Tooltip: =""
-                        VerticalAlign: =""
-                        Visible: |-
-                            =And(
-                                Coalesce(varPuedeAltaCorreo, false),
-                                galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar'
-                            )
-                        Width: =270
-                        X: =0
-                        Y: =0
+                        Text: |-
+                            =If(IsBlank(galBandeja.Selected.BancaNotifiedOn), "Avisar a Banca de Empresas",
+                                "Volver a avisar (ultimo aviso " & Text(galBandeja.Selected.BancaNotifiedOn, "dd/mm hh:mm") & ")")
+                        Tooltip: ="Le manda a Banca el detalle para que registren la direccion. Operaciones no modifica datos de cliente."
+                        Width: =280
                         ZIndex: =1
-
                     btnReprocesar As Button:
                         AcceptsFocus: =true
                         AccessibleLabel: =""
@@ -787,34 +733,6 @@
                         Y: =0
                         ZIndex: =4
 
-
-                    btnVerAdjunto As Button:
-                        Appearance: ='ButtonCanvas.Appearance'.Secondary
-                        DisplayMode: =If(IsBlank(LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')), DisplayMode.Disabled, DisplayMode.Edit)
-                        Height: =36
-                        OnSelect: |-
-                            =With(
-                                {a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')},
-                                If(
-                                    IsBlank(a),
-                                    Notify("Este correo no tiene adjunto guardado.", NotificationType.Warning),
-                                    Download(a.FileContent.Value)
-                                )
-                            );
-                        Text: |-
-                            ="Ver el archivo adjunto" & With({a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')}, If(IsBlank(a), "", " (" & a.FileName & ")"))
-                        Tooltip: ="Descarga el archivo tal como lo mando el cliente."
-                        Width: =260
-                        ZIndex: =6
-
-                    btnAceptar As Button:
-                        Appearance: ='ButtonCanvas.Appearance'.Secondary
-                        Height: =36
-                        OnSelect: =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: true, varOverrideMotivo: ""})
-                        Text: ="Aceptar manualmente"
-                        Tooltip: ="Reemplaza el resultado del motor y lo da por valido. Exige motivo y queda auditado."
-                        Width: =190
-                        ZIndex: =7
                     btnDenegar As Button:
                         AcceptsFocus: =true
                         AccessibleLabel: =""
@@ -850,6 +768,35 @@
                         X: =0
                         Y: =0
                         ZIndex: =5
+
+                    btnVerAdjunto As Button:
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        DisplayMode: =If(IsBlank(LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')), DisplayMode.Disabled, DisplayMode.Edit)
+                        Height: =36
+                        OnSelect: |-
+                            =With(
+                                {a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')},
+                                If(
+                                    IsBlank(a),
+                                    Notify("Este correo no tiene adjunto guardado.", NotificationType.Warning),
+                                    Download(a.FileContent.Value)
+                                )
+                            );
+                        Text: |-
+                            ="Ver el archivo adjunto" & With({a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')}, If(IsBlank(a), "", " (" & a.FileName & ")"))
+                        Tooltip: ="Descarga el archivo tal como lo mando el cliente."
+                        Width: =260
+                        ZIndex: =6
+
+                    btnAceptar As Button:
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        Height: =36
+                        OnSelect: |-
+                            =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: true, varOverrideMotivo: ""})
+                        Text: ="Aceptar manualmente"
+                        Tooltip: ="Reemplaza el resultado del motor y lo da por valido. Exige motivo y queda auditado."
+                        Width: =190
+                        ZIndex: =7
 
                 htmlReglas As htmlViewer:
                     AutoHeight: =true
