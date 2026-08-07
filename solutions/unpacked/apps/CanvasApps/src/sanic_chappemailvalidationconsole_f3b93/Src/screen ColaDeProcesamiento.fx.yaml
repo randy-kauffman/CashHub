@@ -8,8 +8,8 @@
                 stBase: "font-family:'Segoe UI',sans-serif;color:rgb(28,21,23)",
                 stRot: "font-family:'Segoe UI',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px 0",
                 stCard: "font-family:'Segoe UI',sans-serif;font-size:13px;background:rgb(250,248,248);border:1px solid rgb(230,223,224);padding:12px 15px;color:rgb(70,59,62);margin:0",
-                stPaso: "font-family:'Segoe UI',sans-serif;font-size:13px;margin:0 0 9px 0;padding-left:30px;position:relative;color:rgb(28,21,23)",
-                stNum: "position:absolute;left:0;top:0;width:21px;height:21px;line-height:21px;text-align:center;border-radius:11px;background:rgb(251,237,239);color:rgb(158,13,36);font-size:11px;font-weight:700",
+                stPaso: "font-family:'Segoe UI',sans-serif;font-size:13px;color:rgb(28,21,23);vertical-align:top;padding:0 0 9px 0",
+                stNum: "display:inline-block;width:21px;height:21px;line-height:21px;text-align:center;border-radius:11px;background:rgb(251,237,239);color:rgb(158,13,36);font-size:11px;font-weight:700;font-family:'Segoe UI',sans-serif",
                 stNota: "font-family:'Segoe UI',sans-serif;font-size:12px;color:rgb(120,106,109);margin:6px 0 0 0",
                 stTally: "font-family:'Segoe UI',sans-serif;font-size:11.5px;color:rgb(120,106,109);margin:0 0 11px 0",
                 stFila: "font-family:'Segoe UI',sans-serif;background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin:0 0 9px 0",
@@ -248,6 +248,413 @@
             RadiusTopLeft: =4
             RadiusTopRight: =4
             ZIndex: =2
+
+            "'container Detalle' As groupContainer.verticalAutoLayoutContainer":
+                DropShadow: =DropShadow.Light
+                Fill: =RGBA(255, 255, 255, 1)
+                FillPortions: =5
+                LayoutGap: =16
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                LayoutMaxHeight: =
+                LayoutMaxWidth: =
+                LayoutMinHeight: =16
+                LayoutMinWidth: =420
+                LayoutMode: =LayoutMode.Auto
+                LayoutOverflowY: =LayoutOverflow.Scroll
+                LayoutWrap: =true
+                PaddingBottom: =24
+                PaddingLeft: =24
+                PaddingRight: =24
+                PaddingTop: =18
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Visible: =!IsBlank(Table1_1.Selected)
+                ZIndex: =2
+
+                htmlCabecera As htmlViewer:
+                    AutoHeight: =true
+                    Height: =58
+                    HtmlText: |-
+                        ="<table width='100%' cellpadding='0' cellspacing='0' style='" & stBase &
+                           ";border-bottom:1px solid rgb(230,223,224);padding-bottom:10px'><tr>" &
+                           "<td style='" & stId & "'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.Name,""),"&","&amp;"),"<","&lt;") & "</td>" &
+                           "<td style='" & stDe & ";padding-left:14px'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.SourceEmailAddress,""),"&","&amp;"),"<","&lt;") & "</td>" &
+                           "<td style='padding-left:14px'><span style='" & stChip & ";background:" &
+                           If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error,
+                              "rgb(246,233,235);color:rgb(110,22,34)", "rgb(253,243,227);color:rgb(154,97,0)") & "'>" &
+                           Coalesce(Text(Table1_1.Selected.SenderClassification), "Sin clasificar") & "</span></td>" &
+                           "<td align='right' style='" & stCelda & "'>Recibido " &
+                           Text(Table1_1.Selected.ReceptionDateTime, "dd/mm/yyyy hh:mm") & "</td></tr></table>"
+                    LayoutMaxHeight: =0
+                    LayoutMaxWidth: =0
+                    LayoutMinHeight: =0
+                    Width: =Parent.Width - 48
+                    ZIndex: =1
+
+                htmlQuePaso As htmlViewer:
+                    AutoHeight: =true
+                    Height: =128
+                    HtmlText: |-
+                        ="<p style='" & stRot & "'>Que paso</p>" &
+                         "<div style='" & stCard & ";border-left:3px solid " &
+                         If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error,
+                            "rgb(110,22,34)", "rgb(154,97,0)") & "'>" &
+                         Substitute(Substitute(Coalesce(Coalesce(Table1_1.Selected.TriageNotes, Table1_1.Selected.ErrorText, "Este correo no dejo explicacion: el motor no llego a evaluarlo."),""),"&","&amp;"),"<","&lt;") &
+                         "</div>"
+                    LayoutMaxHeight: =0
+                    LayoutMaxWidth: =0
+                    LayoutMinHeight: =0
+                    Width: =Parent.Width - 48
+                    ZIndex: =2
+
+                htmlQueHacer As htmlViewer:
+                    AutoHeight: =true
+                    Height: =0
+                    HtmlText: |-
+                        =With(
+                            {g: LookUp('CH-Tbl-Playbook', Name = Switch(Table1_1.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",  If(Table1_1.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente, "respuesta-sin-enviar", "sin-validar"))))},
+                            "<p style='" & stRot & "'>Que hacer" &
+                            If(IsBlank(g.Titulo), "", " &nbsp;&mdash;&nbsp; " & Substitute(Substitute(Coalesce(g.Titulo,""),"&","&amp;"),"<","&lt;")) & "</p>" &
+                            Concat(
+                                ForAll(
+                                    Sequence(CountRows(Split(Coalesce(g.Pasos, "No hay instructivo cargado para este caso. Cargarlo en CH-Tbl-Playbook."), Char(10)))) As I,
+                                    {i: I.Value, txt: Last(FirstN(Split(Coalesce(g.Pasos, "No hay instructivo cargado para este caso. Cargarlo en CH-Tbl-Playbook."), Char(10)), I.Value)).Value}
+                                ),
+                                "<table cellpadding='0' cellspacing='0'><tr><td width='31' valign='top' style='padding:0 0 9px 0'>" &
+                                "<span style='" & stNum & "'>" & i & "</span></td>" &
+                                "<td style='" & stPaso & "'>" &
+                                Substitute(Substitute(txt, "&", "&amp;"), "<", "&lt;") & "</td></tr></table>"
+                            ) &
+                            If(IsBlank(g.Nota), "", "<p style='" & stNota & "'>" & Substitute(Substitute(Coalesce(g.Nota,""),"&","&amp;"),"<","&lt;") & "</p>")
+                        )
+                    LayoutMaxHeight: =0
+                    LayoutMaxWidth: =0
+                    LayoutMinHeight: =0
+                    Width: =Parent.Width - 48
+                    ZIndex: =3
+
+                "'container BotonesDetalle' As groupContainer.horizontalAutoLayoutContainer":
+                    AlignInContainer: =AlignInContainer.SetByContainer
+                    Height: =46
+                    LayoutAlignItems: =LayoutAlignItems.Center
+                    LayoutGap: =10
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    LayoutMaxHeight: =0
+                    LayoutMaxWidth: =0
+                    LayoutMinHeight: =0
+                    LayoutMinWidth: =Parent.Width - 48
+                    LayoutMode: =LayoutMode.Auto
+                    Width: =Parent.Width - 48
+                    ZIndex: =4
+
+                    btnAltaCorreo As Button:
+                        AcceptsFocus: =true
+                        AccessibleLabel: =""
+                        Align: =""
+                        Appearance: ='ButtonCanvas.Appearance'.Primary
+                        BasePaletteColor: =
+                        BorderColor: =
+                        BorderStyle: =""
+                        ContentLanguage: =""
+                        DisplayMode: =If(IsBlank(Table1_1.Selected.'Cliente atribuido'), DisplayMode.Disabled, DisplayMode.Edit)
+                        Font: =""
+                        FontColor: =
+                        FontItalic: =false
+                        FontSize: =0
+                        FontStrikethrough: =false
+                        FontUnderline: =false
+                        FontWeight: =""
+                        Height: =36
+                        Icon: =""
+                        IconRotation: =0
+                        IconStyle: ="Outline"
+                        Layout: ="Icon before"
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
+                        OnSelect: |-
+                            =With(
+                                {
+                                    cli: Table1_1.Selected.'Cliente atribuido',
+                                    dir: Table1_1.Selected.SourceEmailAddress,
+                                    ges: Table1_1.Selected.Name
+                                },
+                                With(
+                                    {
+                                        rfc: Patch(
+                                            'CH-Tbl-ClientDataChangeRequests',
+                                            Defaults('CH-Tbl-ClientDataChangeRequests'),
+                                            {
+                                                Type: 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,
+                                                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,
+                                                TargetTable: "sanic_chtblclientemail",
+                                                RelatedClient: cli,
+                                                Reason: "Alta de remitente detectada por CashHub en " & ges &
+                                                        ". La direccion " & dir &
+                                                        " envio un pre-registro con la plantilla oficial y el CIF de este cliente."
+                                            }
+                                        )
+                                    },
+                                    Patch(
+                                        'CH-Tbl-ClientDataChangeRequestLines',
+                                        Defaults('CH-Tbl-ClientDataChangeRequestLines'),
+                                        {
+                                            ChangeRequestID: rfc,
+                                            'Field Definition': LookUp('CH-Tbl-ClientTableLogicalFieldNames',
+                                                Table = "sanic_chtblclientemail" And LogicalName = "sanic_name"),
+                                            NewValue: dir
+                                        }
+                                    );
+                                    Patch(
+                                        'CH-Tbl-ClientDataChangeRequestLines',
+                                        Defaults('CH-Tbl-ClientDataChangeRequestLines'),
+                                        {
+                                            ChangeRequestID: rfc,
+                                            'Field Definition': LookUp('CH-Tbl-ClientTableLogicalFieldNames',
+                                                Table = "sanic_chtblclientemail" And LogicalName = "sanic_Client"),
+                                            NewValue: dir
+                                        }
+                                    );
+                                    Notify(
+                                        "Solicitud " & rfc.Name & " creada y enviada a aprobacion. Usted no puede aprobarla: la revisa otra persona de Banca de Empresas.",
+                                        NotificationType.Success
+                                    )
+                                )
+                            );
+                        TabIndex: =0
+                        Text: ="Registrar correo (crea la solicitud)"
+                        Tooltip: =""
+                        VerticalAlign: =""
+                        Visible: |-
+                            =And(
+                                Coalesce(varPuedeAltaCorreo, false),
+                                Table1_1.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar'
+                            )
+                        Width: =270
+                        X: =0
+                        Y: =0
+                        ZIndex: =1
+
+                    btnReprocesar As Button:
+                        AcceptsFocus: =true
+                        AccessibleLabel: =""
+                        Align: =""
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        BasePaletteColor: =
+                        BorderColor: =
+                        BorderStyle: =""
+                        ContentLanguage: =""
+                        DisplayMode: =DisplayMode.Edit
+                        Font: =""
+                        FontColor: =
+                        FontItalic: =false
+                        FontSize: =0
+                        FontStrikethrough: =false
+                        FontUnderline: =false
+                        FontWeight: =""
+                        Height: =36
+                        Icon: =""
+                        IconRotation: =0
+                        IconStyle: ="Outline"
+                        Layout: ="Icon before"
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
+                        LayoutMinHeight: =32
+                        LayoutMinWidth: =96
+                        OnSelect: |-
+                            =Patch(
+                                'CH-Tbl-Received Emails',
+                                Table1_1.Selected,
+                                {
+                                    ValidationStatus: 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente,
+                                    EmailReviewStatus: 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente
+                                }
+                            );
+                            Refresh('CH-Tbl-Received Emails');
+                            Notify("Marcado para reproceso. El barrido lo revalida en su proxima corrida, dentro de 10 minutos como maximo.", NotificationType.Success);
+                        TabIndex: =0
+                        Text: ="Marcar para reproceso"
+                        Tooltip: =""
+                        VerticalAlign: =""
+                        Visible: =true
+                        Width: =190
+                        X: =0
+                        Y: =0
+                        ZIndex: =2
+
+                    btnReenviar As Button:
+                        AcceptsFocus: =true
+                        AccessibleLabel: =""
+                        Align: =""
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        BasePaletteColor: =
+                        BorderColor: =
+                        BorderStyle: =""
+                        ContentLanguage: =""
+                        DisplayMode: =DisplayMode.Edit
+                        Font: =""
+                        FontColor: =
+                        FontItalic: =false
+                        FontSize: =0
+                        FontStrikethrough: =false
+                        FontUnderline: =false
+                        FontWeight: =""
+                        Height: =36
+                        Icon: =""
+                        IconRotation: =0
+                        IconStyle: ="Outline"
+                        Layout: ="Icon before"
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
+                        LayoutMinHeight: =32
+                        LayoutMinWidth: =96
+                        OnSelect: |-
+                            =Patch(
+                                'CH-Tbl-Received Emails',
+                                Table1_1.Selected,
+                                {EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente}
+                            );
+                            Refresh('CH-Tbl-Received Emails');
+                            Notify("Respuesta encolada. Si el correo se archivo hace tiempo el envio puede fallar: al mover un mensaje, Exchange le cambia el id.", NotificationType.Warning);
+                        TabIndex: =0
+                        Text: ="Reenviar respuesta"
+                        Tooltip: =""
+                        VerticalAlign: =""
+                        Visible: =!IsBlank(Table1_1.Selected.ReplyBodyHtml)
+                        Width: =175
+                        X: =0
+                        Y: =0
+                        ZIndex: =3
+
+                    btnResueltoFuera As Button:
+                        AcceptsFocus: =true
+                        AccessibleLabel: =""
+                        Align: =""
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        BasePaletteColor: =
+                        BorderColor: =
+                        BorderStyle: =""
+                        ContentLanguage: =""
+                        DisplayMode: =DisplayMode.Edit
+                        Font: =""
+                        FontColor: =
+                        FontItalic: =false
+                        FontSize: =0
+                        FontStrikethrough: =false
+                        FontUnderline: =false
+                        FontWeight: =""
+                        Height: =36
+                        Icon: =""
+                        IconRotation: =0
+                        IconStyle: ="Outline"
+                        Layout: ="Icon before"
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
+                        OnSelect: |-
+                            =UpdateContext({varCierreAbierto: true, varCierreMotivo: ""})
+                        TabIndex: =0
+                        Text: ="Resuelto por fuera"
+                        Tooltip: =""
+                        VerticalAlign: =""
+                        Visible: =!IsBlank(Table1_1.Selected.ReplyBodyHtml)
+                        Width: =175
+                        X: =0
+                        Y: =0
+                        ZIndex: =4
+
+                    btnDenegar As Button:
+                        AcceptsFocus: =true
+                        AccessibleLabel: =""
+                        Align: =""
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        BasePaletteColor: =
+                        BorderColor: =
+                        BorderStyle: =""
+                        ContentLanguage: =""
+                        DisplayMode: =DisplayMode.Edit
+                        Font: =""
+                        FontColor: =
+                        FontItalic: =false
+                        FontSize: =0
+                        FontStrikethrough: =false
+                        FontUnderline: =false
+                        FontWeight: =""
+                        Height: =36
+                        Icon: =""
+                        IconRotation: =0
+                        IconStyle: ="Outline"
+                        Layout: ="Icon before"
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
+                        OnSelect: |-
+                            =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: false, varOverrideMotivo: ""})
+                        TabIndex: =0
+                        Text: ="Denegar manualmente"
+                        Tooltip: =""
+                        VerticalAlign: =""
+                        Visible: =true
+                        Width: =190
+                        X: =0
+                        Y: =0
+                        ZIndex: =5
+
+                htmlReglas As htmlViewer:
+                    AutoHeight: =true
+                    Height: =290
+                    HtmlText: |-
+                        =With(
+                            {r: First(Sort(Filter('CH-Tbl-ValidationRuns', ReceivedEmail.'CH-Tbl-Received Emails' = Table1_1.Selected.'CH-Tbl-Received Emails'), 'Created On', SortOrder.Descending))},
+                            With(
+                                {
+                                    fal: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns',
+                                                ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail),
+                                    ejec: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns')
+                                },
+                                "<p style='" & stRot & "'>Reglas que no pasaron</p>" &
+                                If(
+                                    IsBlank(r),
+                                    "<div style='" & stCard & "'>Este correo todavia no tiene ninguna corrida de validacion.</div>",
+                                    "<p style='" & stTally & "'><b style='color:rgb(110,22,34)'>" & CountRows(fal) &
+                                    "</b> fallaron &nbsp;|&nbsp; <b style='color:rgb(138,128,130)'>" &
+                                    (CountRows(Filter('CH-Tbl-ValidationRules', IsActive = true)) - CountRows(ejec)) &
+                                    "</b> no se intentaron &nbsp;|&nbsp; <b style='color:rgb(20,107,58)'>" &
+                                    CountRows(Filter(ejec, ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass)) &
+                                    "</b> pasaron sin novedad</p>" &
+                                    Concat(
+                                        Sort(fal, Name),
+                                        "<div style='" & stFila & "'><span style='" & stCod & "'>" &
+                                        Substitute(Coalesce(Name, ""), "<", "&lt;") & "</span>&nbsp;&nbsp;<span style='" & stMsg & "'>" &
+                                        Substitute(Substitute(Coalesce(Detalle, ""), "&", "&amp;"), "<", "&lt;") & "</span>" &
+                                        If(IsBlank(Celda), "",
+                                           "<div style='" & stCelda & ";margin-top:4px'>Hoja y celda: " &
+                                           Coalesce(Hoja, "") & "!" & Celda & "</div>") & "</div>"
+                                    ) &
+                                    With(
+                                        {om: Filter('CH-Tbl-ValidationRules', IsActive = true,
+                                                    IsBlank(LookUp(ejec, ValidationRule.'Validation Name' = 'Validation Name')))},
+                                        If(
+                                            CountRows(om) = 0,
+                                            "<p style='" & stNota & "'>Ninguna regla quedo sin intentarse: la cadena corrio completa.</p>",
+                                            "<p style='" & stRot & ";margin-top:16px'>No se intentaron porque su dependencia no paso</p>" &
+                                            Concat(Sort(om, ValidationOrder),
+                                                   "<div style='" & stOmi & "'>" & 'Validation Name' & " &nbsp; " &
+                                                   Substitute(Coalesce(Name, ""), "<", "&lt;") & "</div>")
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    LayoutMaxHeight: =0
+                    LayoutMaxWidth: =0
+                    Width: =Parent.Width - 48
+                    ZIndex: =5
 
             SidebarContainer2 As groupContainer.verticalAutoLayoutContainer:
                 DropShadow: =DropShadow.Light
@@ -603,398 +1010,6 @@
                         Order: =10
                         Width: =0
                         ZIndex: =10
-
-            "'container Detalle' As groupContainer.verticalAutoLayoutContainer":
-                LayoutGap: =16
-                LayoutAlignItems: =LayoutAlignItems.Stretch
-                DropShadow: =DropShadow.Light
-                Fill: =RGBA(255, 255, 255, 1)
-                FillPortions: =5
-                LayoutGridColumnMinWidth: =0
-                LayoutGridColumns: =6
-                LayoutGridRowMinHeight: =0
-                LayoutGridRows: =6
-                LayoutMaxHeight: =
-                LayoutMaxWidth: =
-                LayoutMinHeight: =16
-                LayoutMinWidth: =420
-                LayoutMode: =LayoutMode.Auto
-                LayoutOverflowY: =LayoutOverflow.Scroll
-                LayoutWrap: =false
-                PaddingBottom: =24
-                PaddingLeft: =24
-                PaddingRight: =24
-                PaddingTop: =18
-                RadiusBottomLeft: =4
-                RadiusBottomRight: =4
-                RadiusTopLeft: =4
-                RadiusTopRight: =4
-                Visible: =!IsBlank(Table1_1.Selected)
-                ZIndex: =1
-
-
-                htmlCabecera As htmlViewer:
-                    AlignInContainer: =AlignInContainer.Stretch
-                    Height: =58
-                    HtmlText: |-
-                        ="<div style='" & stBase & ";border-bottom:1px solid rgb(230,223,224);padding-bottom:11px'>" &
-                         "<span style='" & stId & "'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.Name,""),"&","&amp;"),"<","&lt;") & "</span>" &
-                         "<span style='" & stDe & ";margin-left:12px'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.SourceEmailAddress,""),"&","&amp;"),"<","&lt;") & "</span>" &
-                         "<span style='" & stChip & ";margin-left:12px;background:" &
-                         If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error,
-                            "rgb(246,233,235);color:rgb(110,22,34)", "rgb(253,243,227);color:rgb(154,97,0)") & "'>" &
-                         Coalesce(Table1_1.Selected.'SenderClassification (CH-Tbl-Received Emails)Label', "Sin clasificar") & "</span>" &
-                         "<span style='" & stCelda & ";float:right'>Recibido " &
-                         Text(Table1_1.Selected.ReceptionDateTime, "dd/mm/yyyy hh:mm") & "</span></div>"
-                    ZIndex: =1
-
-                htmlQuePaso As htmlViewer:
-                    AlignInContainer: =AlignInContainer.Stretch
-                    Height: =128
-                    HtmlText: |-
-                        ="<p style='" & stRot & "'>Que paso</p>" &
-                         "<div style='" & stCard & ";border-left:3px solid " &
-                         If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error,
-                            "rgb(110,22,34)", "rgb(154,97,0)") & "'>" &
-                         Substitute(Substitute(Coalesce(Coalesce(Table1_1.Selected.TriageNotes, Table1_1.Selected.ErrorText, "Este correo no dejo explicacion: el motor no llego a evaluarlo."),""),"&","&amp;"),"<","&lt;") &
-                         "</div>"
-                    ZIndex: =2
-
-                htmlQueHacer As htmlViewer:
-                    AlignInContainer: =AlignInContainer.Stretch
-                    Height: =200
-                    HtmlText: |-
-                        =With(
-                            {g: LookUp('CH-Tbl-Playbook', Name = Switch(Table1_1.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",  If(Table1_1.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente, "respuesta-sin-enviar", "sin-validar"))))},
-                            "<p style='" & stRot & "'>Que hacer" &
-                            If(IsBlank(g.Titulo), "", " &nbsp;&mdash;&nbsp; " & Substitute(Substitute(Coalesce(g.Titulo,""),"&","&amp;"),"<","&lt;")) & "</p>" &
-                            Concat(
-                                ForAll(
-                                    Sequence(CountRows(Split(Coalesce(g.Pasos, "No hay instructivo cargado para este caso. Cargarlo en CH-Tbl-Playbook."), Char(10)))) As I,
-                                    {i: I.Value, txt: Last(FirstN(Split(Coalesce(g.Pasos, "No hay instructivo cargado para este caso. Cargarlo en CH-Tbl-Playbook."), Char(10)), I.Value)).Value}
-                                ),
-                                "<div style='" & stPaso & "'><span style='" & stNum & "'>" & i & "</span>" &
-                                Substitute(Substitute(txt, "&", "&amp;"), "<", "&lt;") & "</div>"
-                            ) &
-                            If(IsBlank(g.Nota), "", "<p style='" & stNota & "'>" & Substitute(Substitute(Coalesce(g.Nota,""),"&","&amp;"),"<","&lt;") & "</p>")
-                        )
-                    ZIndex: =3
-
-                "'container BotonesDetalle' As groupContainer.horizontalAutoLayoutContainer":
-                    AlignInContainer: =AlignInContainer.SetByContainer
-                    Height: =46
-                    LayoutAlignItems: =LayoutAlignItems.Center
-                    LayoutGap: =10
-                    LayoutGridColumnMinWidth: =0
-                    LayoutGridColumns: =6
-                    LayoutGridRowMinHeight: =0
-                    LayoutGridRows: =6
-                    LayoutMaxHeight: =0
-                    LayoutMaxWidth: =0
-                    LayoutMinHeight: =46
-                    LayoutMinWidth: =Parent.Width - 48
-                    LayoutMode: =LayoutMode.Auto
-                    Width: =Parent.Width - 48
-                    ZIndex: =15
-
-                    btnAltaCorreo As Button:
-                        AcceptsFocus: =true
-                        AccessibleLabel: =""
-                        Align: =""
-                        Appearance: ='ButtonCanvas.Appearance'.Primary
-                        BasePaletteColor: =
-                        BorderColor: =
-                        BorderStyle: =""
-                        ContentLanguage: =""
-                        DisplayMode: =If(IsBlank(Table1_1.Selected.'Cliente atribuido'), DisplayMode.Disabled, DisplayMode.Edit)
-                        Font: =""
-                        FontColor: =
-                        FontItalic: =false
-                        FontSize: =0
-                        FontStrikethrough: =false
-                        FontUnderline: =false
-                        FontWeight: =""
-                        Height: =36
-                        Icon: =""
-                        IconRotation: =0
-                        IconStyle: ="Outline"
-                        Layout: ="Icon before"
-                        LayoutMaxHeight: =0
-                        LayoutMaxWidth: =0
-                        OnSelect: |-
-                            =With(
-                                {
-                                    cli: Table1_1.Selected.'Cliente atribuido',
-                                    dir: Table1_1.Selected.SourceEmailAddress,
-                                    ges: Table1_1.Selected.Name
-                                },
-                                With(
-                                    {
-                                        rfc: Patch(
-                                            'CH-Tbl-ClientDataChangeRequests',
-                                            Defaults('CH-Tbl-ClientDataChangeRequests'),
-                                            {
-                                                Type: 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,
-                                                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,
-                                                TargetTable: "sanic_chtblclientemail",
-                                                RelatedClient: cli,
-                                                Reason: "Alta de remitente detectada por CashHub en " & ges &
-                                                        ". La direccion " & dir &
-                                                        " envio un pre-registro con la plantilla oficial y el CIF de este cliente."
-                                            }
-                                        )
-                                    },
-                                    Patch(
-                                        'CH-Tbl-ClientDataChangeRequestLines',
-                                        Defaults('CH-Tbl-ClientDataChangeRequestLines'),
-                                        {
-                                            ChangeRequestID: rfc,
-                                            'Field Definition': LookUp('CH-Tbl-ClientTableLogicalFieldNames',
-                                                Table = "sanic_chtblclientemail" And LogicalName = "sanic_name"),
-                                            NewValue: dir
-                                        }
-                                    );
-                                    Patch(
-                                        'CH-Tbl-ClientDataChangeRequestLines',
-                                        Defaults('CH-Tbl-ClientDataChangeRequestLines'),
-                                        {
-                                            ChangeRequestID: rfc,
-                                            'Field Definition': LookUp('CH-Tbl-ClientTableLogicalFieldNames',
-                                                Table = "sanic_chtblclientemail" And LogicalName = "sanic_Client"),
-                                            NewValue: dir
-                                        }
-                                    );
-                                    Notify(
-                                        "Solicitud " & rfc.Name & " creada y enviada a aprobacion. Usted no puede aprobarla: la revisa otra persona de Banca de Empresas.",
-                                        NotificationType.Success
-                                    )
-                                )
-                            );
-                        TabIndex: =0
-                        Text: ="Registrar correo (crea la solicitud)"
-                        Tooltip: =""
-                        VerticalAlign: =""
-                        Visible: |-
-                            =And(
-                                Coalesce(varPuedeAltaCorreo, false),
-                                Table1_1.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar'
-                            )
-                        Width: =270
-                        X: =0
-                        Y: =0
-                        ZIndex: =1
-
-                    btnReprocesar As Button:
-                        AcceptsFocus: =true
-                        AccessibleLabel: =""
-                        Align: =""
-                        Appearance: ='ButtonCanvas.Appearance'.Secondary
-                        BasePaletteColor: =
-                        BorderColor: =
-                        BorderStyle: =""
-                        ContentLanguage: =""
-                        DisplayMode: =DisplayMode.Edit
-                        Font: =""
-                        FontColor: =
-                        FontItalic: =false
-                        FontSize: =0
-                        FontStrikethrough: =false
-                        FontUnderline: =false
-                        FontWeight: =""
-                        Height: =36
-                        Icon: =""
-                        IconRotation: =0
-                        IconStyle: ="Outline"
-                        Layout: ="Icon before"
-                        LayoutMaxHeight: =0
-                        LayoutMaxWidth: =0
-                        LayoutMinHeight: =32
-                        LayoutMinWidth: =96
-                        OnSelect: |-
-                            =Patch(
-                                'CH-Tbl-Received Emails',
-                                Table1_1.Selected,
-                                {
-                                    ValidationStatus: 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente,
-                                    EmailReviewStatus: 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente
-                                }
-                            );
-                            Refresh('CH-Tbl-Received Emails');
-                            Notify("Marcado para reproceso. El barrido lo revalida en su proxima corrida, dentro de 10 minutos como maximo.", NotificationType.Success);
-                        TabIndex: =0
-                        Text: ="Marcar para reproceso"
-                        Tooltip: =""
-                        VerticalAlign: =""
-                        Visible: =true
-                        Width: =190
-                        X: =0
-                        Y: =0
-                        ZIndex: =2
-
-                    btnReenviar As Button:
-                        AcceptsFocus: =true
-                        AccessibleLabel: =""
-                        Align: =""
-                        Appearance: ='ButtonCanvas.Appearance'.Secondary
-                        BasePaletteColor: =
-                        BorderColor: =
-                        BorderStyle: =""
-                        ContentLanguage: =""
-                        DisplayMode: =DisplayMode.Edit
-                        Font: =""
-                        FontColor: =
-                        FontItalic: =false
-                        FontSize: =0
-                        FontStrikethrough: =false
-                        FontUnderline: =false
-                        FontWeight: =""
-                        Height: =36
-                        Icon: =""
-                        IconRotation: =0
-                        IconStyle: ="Outline"
-                        Layout: ="Icon before"
-                        LayoutMaxHeight: =0
-                        LayoutMaxWidth: =0
-                        LayoutMinHeight: =32
-                        LayoutMinWidth: =96
-                        OnSelect: |-
-                            =Patch(
-                                'CH-Tbl-Received Emails',
-                                Table1_1.Selected,
-                                {EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente}
-                            );
-                            Refresh('CH-Tbl-Received Emails');
-                            Notify("Respuesta encolada. Si el correo se archivo hace tiempo el envio puede fallar: al mover un mensaje, Exchange le cambia el id.", NotificationType.Warning);
-                        TabIndex: =0
-                        Text: ="Reenviar respuesta"
-                        Tooltip: =""
-                        VerticalAlign: =""
-                        Visible: =!IsBlank(Table1_1.Selected.ReplyBodyHtml)
-                        Width: =175
-                        X: =0
-                        Y: =0
-                        ZIndex: =3
-
-                    btnResueltoFuera As Button:
-                        AcceptsFocus: =true
-                        AccessibleLabel: =""
-                        Align: =""
-                        Appearance: ='ButtonCanvas.Appearance'.Secondary
-                        BasePaletteColor: =
-                        BorderColor: =
-                        BorderStyle: =""
-                        ContentLanguage: =""
-                        DisplayMode: =DisplayMode.Edit
-                        Font: =""
-                        FontColor: =
-                        FontItalic: =false
-                        FontSize: =0
-                        FontStrikethrough: =false
-                        FontUnderline: =false
-                        FontWeight: =""
-                        Height: =36
-                        Icon: =""
-                        IconRotation: =0
-                        IconStyle: ="Outline"
-                        Layout: ="Icon before"
-                        LayoutMaxHeight: =0
-                        LayoutMaxWidth: =0
-                        OnSelect: |-
-                            =UpdateContext({varCierreAbierto: true, varCierreMotivo: ""})
-                        TabIndex: =0
-                        Text: ="Resuelto por fuera"
-                        Tooltip: =""
-                        VerticalAlign: =""
-                        Visible: =!IsBlank(Table1_1.Selected.ReplyBodyHtml)
-                        Width: =175
-                        X: =0
-                        Y: =0
-                        ZIndex: =4
-
-                    btnDenegar As Button:
-                        AcceptsFocus: =true
-                        AccessibleLabel: =""
-                        Align: =""
-                        Appearance: ='ButtonCanvas.Appearance'.Secondary
-                        BasePaletteColor: =
-                        BorderColor: =
-                        BorderStyle: =""
-                        ContentLanguage: =""
-                        DisplayMode: =DisplayMode.Edit
-                        Font: =""
-                        FontColor: =
-                        FontItalic: =false
-                        FontSize: =0
-                        FontStrikethrough: =false
-                        FontUnderline: =false
-                        FontWeight: =""
-                        Height: =36
-                        Icon: =""
-                        IconRotation: =0
-                        IconStyle: ="Outline"
-                        Layout: ="Icon before"
-                        LayoutMaxHeight: =0
-                        LayoutMaxWidth: =0
-                        OnSelect: |-
-                            =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: false, varOverrideMotivo: ""})
-                        TabIndex: =0
-                        Text: ="Denegar manualmente"
-                        Tooltip: =""
-                        VerticalAlign: =""
-                        Visible: =true
-                        Width: =190
-                        X: =0
-                        Y: =0
-                        ZIndex: =5
-
-
-                htmlReglas As htmlViewer:
-                    AlignInContainer: =AlignInContainer.Stretch
-                    Height: =290
-                    HtmlText: |-
-                        =With(
-                            {r: First(Sort(Filter('CH-Tbl-ValidationRuns', ReceivedEmail = Table1_1.Selected), 'Created On', SortOrder.Descending))},
-                            With(
-                                {
-                                    fal: Filter('CH-Tbl-ValidationResults', ValidationRun = r,
-                                                ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail),
-                                    ejec: Filter('CH-Tbl-ValidationResults', ValidationRun = r)
-                                },
-                                "<p style='" & stRot & "'>Reglas que no pasaron</p>" &
-                                If(
-                                    IsBlank(r),
-                                    "<div style='" & stCard & "'>Este correo todavia no tiene ninguna corrida de validacion.</div>",
-                                    "<p style='" & stTally & "'><b style='color:rgb(110,22,34)'>" & CountRows(fal) &
-                                    "</b> fallaron &nbsp;|&nbsp; <b style='color:rgb(138,128,130)'>" &
-                                    (CountRows(Filter('CH-Tbl-ValidationRules', IsActive = true)) - CountRows(ejec)) &
-                                    "</b> no se intentaron &nbsp;|&nbsp; <b style='color:rgb(20,107,58)'>" &
-                                    CountRows(Filter(ejec, ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass)) &
-                                    "</b> pasaron sin novedad</p>" &
-                                    Concat(
-                                        Sort(fal, Name),
-                                        "<div style='" & stFila & "'><span style='" & stCod & "'>" &
-                                        Substitute(Coalesce(Name, ""), "<", "&lt;") & "</span>&nbsp;&nbsp;<span style='" & stMsg & "'>" &
-                                        Substitute(Substitute(Coalesce(Detalle, ""), "&", "&amp;"), "<", "&lt;") & "</span>" &
-                                        If(IsBlank(Celda), "",
-                                           "<div style='" & stCelda & ";margin-top:4px'>Hoja y celda: " &
-                                           Coalesce(Hoja, "") & "!" & Celda & "</div>") & "</div>"
-                                    ) &
-                                    With(
-                                        {om: Filter('CH-Tbl-ValidationRules', IsActive = true,
-                                                    IsBlank(LookUp(ejec, ValidationRule.'Validation Name' = 'Validation Name')))},
-                                        If(
-                                            CountRows(om) = 0,
-                                            "<p style='" & stNota & "'>Ninguna regla quedo sin intentarse: la cadena corrio completa.</p>",
-                                            "<p style='" & stRot & ";margin-top:16px'>No se intentaron porque su dependencia no paso</p>" &
-                                            Concat(Sort(om, ValidationOrder),
-                                                   "<div style='" & stOmi & "'>" & 'Validation Name' & " &nbsp; " &
-                                                   Substitute(Coalesce(Name, ""), "<", "&lt;") & "</div>")
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    ZIndex: =9
 
     ExpandMenu_2 As ExpandMenu:
         ChildTabPriority: =true

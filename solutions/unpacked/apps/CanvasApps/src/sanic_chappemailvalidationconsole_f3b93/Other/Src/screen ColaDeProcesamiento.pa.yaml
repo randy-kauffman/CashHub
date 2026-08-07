@@ -11,6 +11,25 @@ Screens:
     Properties:
       OnVisible: |-
         =UpdateContext({varSpinnerCompletoVisible: false, varVista: "TODO"});
+        UpdateContext(
+            {
+                stBase: "font-family:'Segoe UI',sans-serif;color:rgb(28,21,23)",
+                stRot: "font-family:'Segoe UI',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px 0",
+                stCard: "font-family:'Segoe UI',sans-serif;font-size:13px;background:rgb(250,248,248);border:1px solid rgb(230,223,224);padding:12px 15px;color:rgb(70,59,62);margin:0",
+                stPaso: "font-family:'Segoe UI',sans-serif;font-size:13px;margin:0 0 9px 0;padding-left:30px;position:relative;color:rgb(28,21,23)",
+                stNum: "position:absolute;left:0;top:0;width:21px;height:21px;line-height:21px;text-align:center;border-radius:11px;background:rgb(251,237,239);color:rgb(158,13,36);font-size:11px;font-weight:700",
+                stNota: "font-family:'Segoe UI',sans-serif;font-size:12px;color:rgb(120,106,109);margin:6px 0 0 0",
+                stTally: "font-family:'Segoe UI',sans-serif;font-size:11.5px;color:rgb(120,106,109);margin:0 0 11px 0",
+                stFila: "font-family:'Segoe UI',sans-serif;background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin:0 0 9px 0",
+                stCod: "font-weight:700;color:rgb(110,22,34);font-size:12px",
+                stMsg: "font-size:13px;color:rgb(28,21,23)",
+                stCelda: "font-size:11.5px;color:rgb(120,106,109)",
+                stOmi: "font-family:'Segoe UI',sans-serif;font-size:12.5px;color:rgb(138,128,130);font-style:italic;margin:0 0 3px 0",
+                stId: "font-family:'Segoe UI',sans-serif;font-size:19px;font-weight:650;color:rgb(28,21,23)",
+                stDe: "font-family:'Segoe UI',sans-serif;font-size:13px;color:rgb(70,59,62)",
+                stChip: "font-family:'Segoe UI',sans-serif;font-size:11px;font-weight:650;padding:3px 9px;border-radius:11px"
+            }
+        );
         // Que area es el usuario. El limite real es el rol de Dataverse sobre las
         // tablas de RFC; esto solo evita ofrecer un boton que no le corresponde.
         ClearCollect(colPermisosAlta,
@@ -251,8 +270,11 @@ Screens:
                         Fill: =RGBA(255, 255, 255, 1)
                         FillPortions: =5
                         LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutGap: =16
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
                         LayoutMinHeight: =16
-                        LayoutMinWidth: =16
+                        LayoutMinWidth: =420
                         LayoutOverflowY: =LayoutOverflow.Scroll
                         LayoutWrap: =true
                         PaddingBottom: =24
@@ -264,65 +286,65 @@ Screens:
                         - htmlCabecera:
                             Control: HtmlViewer@2.1.0
                             Properties:
+                              AutoHeight: =true
                               DisabledBorderColor: =RGBA(56, 56, 56, 1)
-                              FillPortions: =1
                               Font: =Font.'Open Sans'
-                              Height: =62
+                              Height: =58
                               HtmlText: |-
-                                ="<style>*{box-sizing:border-box}body{margin:0;font-family:'Segoe UI',sans-serif;font-size:13.5px;color:rgb(28,21,23)}.t{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px}.card{background:rgb(250,248,248);border:1px solid rgb(230,223,224);border-radius:0 6px 6px 0;padding:12px 15px;color:rgb(70,59,62)}.w{border-left:3px solid rgb(154,97,0)}.e{border-left:3px solid rgb(110,22,34)}.s{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}.n{flex:none;width:21px;height:21px;border-radius:50%;background:rgb(251,237,239);color:rgb(158,13,36);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}.nota{font-size:12.5px;color:rgb(120,106,109);margin-top:4px}.tal{font-size:11.5px;color:rgb(120,106,109);margin-bottom:11px}.tf{color:rgb(110,22,34)}.ts{color:rgb(138,128,130)}.to{color:rgb(20,107,58)}.fi{background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin-bottom:9px;display:flex;gap:12px}.fc{font-weight:700;color:rgb(110,22,34);font-size:12px;flex:none}.fm{font-size:13.5px}.fl{font-size:11.5px;color:rgb(120,106,109);margin-top:4px}.om{display:flex;flex-wrap:wrap;gap:4px 18px;opacity:.72}.om span{font-size:12.5px;color:rgb(138,128,130);font-style:italic}.hd{display:flex;flex-wrap:wrap;gap:7px 13px;align-items:baseline;border-bottom:1px solid rgb(230,223,224);padding-bottom:13px}.id{font-size:19px;font-weight:650}.fr{font-size:13.5px;color:rgb(70,59,62)}.chip{font-size:11px;font-weight:650;padding:3px 9px;border-radius:99px}.cw{background:rgb(253,243,227);color:rgb(154,97,0)}.ce{background:rgb(246,233,235);color:rgb(110,22,34)}.st{margin-left:auto;font-size:11.5px;color:rgb(120,106,109)}</style>" &
-                                 "<div class='hd'><span class='id'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.Name,""),"&","&amp;"),"<","&lt;") &
-                                 "</span><span class='fr'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.SourceEmailAddress,""),"&","&amp;"),"<","&lt;") &
-                                 "</span><span class='chip " &
-                                 If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "ce", "cw") &
-                                 "'>" & Coalesce(Text(Table1_1.Selected.SenderClassification), "Sin clasificar") &
-                                 "</span><span class='st'>Recibido " &
+                                ="<div style='" & stBase & ";border-bottom:1px solid rgb(230,223,224);padding-bottom:11px'>" &
+                                 "<span style='" & stId & "'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.Name,""),"&","&amp;"),"<","&lt;") & "</span>" &
+                                 "<span style='" & stDe & ";margin-left:12px'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.SourceEmailAddress,""),"&","&amp;"),"<","&lt;") & "</span>" &
+                                 "<span style='" & stChip & ";margin-left:12px;background:" &
+                                 If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error,
+                                    "rgb(246,233,235);color:rgb(110,22,34)", "rgb(253,243,227);color:rgb(154,97,0)") & "'>" &
+                                 Coalesce(Text(Table1_1.Selected.SenderClassification), "Sin clasificar") & "</span>" &
+                                 "<span style='" & stCelda & ";float:right'>Recibido " &
                                  Text(Table1_1.Selected.ReceptionDateTime, "dd/mm/yyyy hh:mm") & "</span></div>"
-                              LayoutMinHeight: =10
-                              LayoutMinWidth: =Parent.Width - 48
+                              LayoutMinHeight: =0
                               Size: =11
-                              Width: =Parent.Width
+                              Width: =Parent.Width - 48
                         - htmlQuePaso:
                             Control: HtmlViewer@2.1.0
                             Properties:
+                              AutoHeight: =true
                               DisabledBorderColor: =RGBA(56, 56, 56, 1)
-                              FillPortions: =1
                               Font: =Font.'Open Sans'
-                              Height: =132
+                              Height: =128
                               HtmlText: |-
-                                ="<style>*{box-sizing:border-box}body{margin:0;font-family:'Segoe UI',sans-serif;font-size:13.5px;color:rgb(28,21,23)}.t{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px}.card{background:rgb(250,248,248);border:1px solid rgb(230,223,224);border-radius:0 6px 6px 0;padding:12px 15px;color:rgb(70,59,62)}.w{border-left:3px solid rgb(154,97,0)}.e{border-left:3px solid rgb(110,22,34)}.s{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}.n{flex:none;width:21px;height:21px;border-radius:50%;background:rgb(251,237,239);color:rgb(158,13,36);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}.nota{font-size:12.5px;color:rgb(120,106,109);margin-top:4px}.tal{font-size:11.5px;color:rgb(120,106,109);margin-bottom:11px}.tf{color:rgb(110,22,34)}.ts{color:rgb(138,128,130)}.to{color:rgb(20,107,58)}.fi{background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin-bottom:9px;display:flex;gap:12px}.fc{font-weight:700;color:rgb(110,22,34);font-size:12px;flex:none}.fm{font-size:13.5px}.fl{font-size:11.5px;color:rgb(120,106,109);margin-top:4px}.om{display:flex;flex-wrap:wrap;gap:4px 18px;opacity:.72}.om span{font-size:12.5px;color:rgb(138,128,130);font-style:italic}.hd{display:flex;flex-wrap:wrap;gap:7px 13px;align-items:baseline;border-bottom:1px solid rgb(230,223,224);padding-bottom:13px}.id{font-size:19px;font-weight:650}.fr{font-size:13.5px;color:rgb(70,59,62)}.chip{font-size:11px;font-weight:650;padding:3px 9px;border-radius:99px}.cw{background:rgb(253,243,227);color:rgb(154,97,0)}.ce{background:rgb(246,233,235);color:rgb(110,22,34)}.st{margin-left:auto;font-size:11.5px;color:rgb(120,106,109)}</style>" &
-                                 "<p class='t'>Que paso</p><div class='card " &
-                                 If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "e", "w") & "'>" &
+                                ="<p style='" & stRot & "'>Que paso</p>" &
+                                 "<div style='" & stCard & ";border-left:3px solid " &
+                                 If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error,
+                                    "rgb(110,22,34)", "rgb(154,97,0)") & "'>" &
                                  Substitute(Substitute(Coalesce(Coalesce(Table1_1.Selected.TriageNotes, Table1_1.Selected.ErrorText, "Este correo no dejo explicacion: el motor no llego a evaluarlo."),""),"&","&amp;"),"<","&lt;") &
                                  "</div>"
-                              LayoutMinWidth: =Parent.Width - 48
+                              LayoutMinHeight: =0
                               Size: =11
-                              Width: =Parent.Width
+                              Width: =Parent.Width - 48
                         - htmlQueHacer:
                             Control: HtmlViewer@2.1.0
                             Properties:
+                              AutoHeight: =true
                               DisabledBorderColor: =RGBA(56, 56, 56, 1)
-                              FillPortions: =1
                               Font: =Font.'Open Sans'
-                              Height: =205
+                              Height: =0
                               HtmlText: |-
                                 =With(
                                     {g: LookUp('CH-Tbl-Playbook', Name = Switch(Table1_1.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",  If(Table1_1.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente, "respuesta-sin-enviar", "sin-validar"))))},
-                                    "<style>*{box-sizing:border-box}body{margin:0;font-family:'Segoe UI',sans-serif;font-size:13.5px;color:rgb(28,21,23)}.t{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px}.card{background:rgb(250,248,248);border:1px solid rgb(230,223,224);border-radius:0 6px 6px 0;padding:12px 15px;color:rgb(70,59,62)}.w{border-left:3px solid rgb(154,97,0)}.e{border-left:3px solid rgb(110,22,34)}.s{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}.n{flex:none;width:21px;height:21px;border-radius:50%;background:rgb(251,237,239);color:rgb(158,13,36);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}.nota{font-size:12.5px;color:rgb(120,106,109);margin-top:4px}.tal{font-size:11.5px;color:rgb(120,106,109);margin-bottom:11px}.tf{color:rgb(110,22,34)}.ts{color:rgb(138,128,130)}.to{color:rgb(20,107,58)}.fi{background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin-bottom:9px;display:flex;gap:12px}.fc{font-weight:700;color:rgb(110,22,34);font-size:12px;flex:none}.fm{font-size:13.5px}.fl{font-size:11.5px;color:rgb(120,106,109);margin-top:4px}.om{display:flex;flex-wrap:wrap;gap:4px 18px;opacity:.72}.om span{font-size:12.5px;color:rgb(138,128,130);font-style:italic}.hd{display:flex;flex-wrap:wrap;gap:7px 13px;align-items:baseline;border-bottom:1px solid rgb(230,223,224);padding-bottom:13px}.id{font-size:19px;font-weight:650}.fr{font-size:13.5px;color:rgb(70,59,62)}.chip{font-size:11px;font-weight:650;padding:3px 9px;border-radius:99px}.cw{background:rgb(253,243,227);color:rgb(154,97,0)}.ce{background:rgb(246,233,235);color:rgb(110,22,34)}.st{margin-left:auto;font-size:11.5px;color:rgb(120,106,109)}</style>" &
-                                    "<p class='t'>Que hacer" &
+                                    "<p style='" & stRot & "'>Que hacer" &
                                     If(IsBlank(g.Titulo), "", " &nbsp;&mdash;&nbsp; " & Substitute(Substitute(Coalesce(g.Titulo,""),"&","&amp;"),"<","&lt;")) & "</p>" &
                                     Concat(
                                         ForAll(
                                             Sequence(CountRows(Split(Coalesce(g.Pasos, "No hay instructivo cargado para este caso. Cargarlo en CH-Tbl-Playbook."), Char(10)))) As I,
                                             {i: I.Value, txt: Last(FirstN(Split(Coalesce(g.Pasos, "No hay instructivo cargado para este caso. Cargarlo en CH-Tbl-Playbook."), Char(10)), I.Value)).Value}
                                         ),
-                                        "<div class='s'><span class='n'>" & i & "</span><span>" &
-                                        Substitute(Substitute(txt, "&", "&amp;"), "<", "&lt;") & "</span></div>"
+                                        "<div style='" & stPaso & "'><span style='" & stNum & "'>" & i & "</span>" &
+                                        Substitute(Substitute(txt, "&", "&amp;"), "<", "&lt;") & "</div>"
                                     ) &
-                                    If(IsBlank(g.Nota), "", "<div class='nota'>" & Substitute(Substitute(Coalesce(g.Nota,""),"&","&amp;"),"<","&lt;") & "</div>")
+                                    If(IsBlank(g.Nota), "", "<p style='" & stNota & "'>" & Substitute(Substitute(Coalesce(g.Nota,""),"&","&amp;"),"<","&lt;") & "</p>")
                                 )
-                              LayoutMinWidth: =Parent.Width - 48
+                              LayoutMinHeight: =0
                               Size: =11
-                              Width: =Parent.Width
+                              Width: =Parent.Width - 48
                         - container BotonesDetalle:
                             Control: GroupContainer@1.5.0
                             Variant: AutoLayout
@@ -333,7 +355,7 @@ Screens:
                               LayoutAlignItems: =LayoutAlignItems.Center
                               LayoutDirection: =LayoutDirection.Horizontal
                               LayoutGap: =10
-                              LayoutMinHeight: =46
+                              LayoutMinHeight: =0
                               LayoutMinWidth: =Parent.Width - 48
                               RadiusBottomLeft: =0
                               RadiusBottomRight: =0
@@ -467,9 +489,8 @@ Screens:
                             Properties:
                               AutoHeight: =true
                               DisabledBorderColor: =RGBA(56, 56, 56, 1)
-                              FillPortions: =1
                               Font: =Font.'Open Sans'
-                              Height: =300
+                              Height: =290
                               HtmlText: |-
                                 =With(
                                     {r: First(Sort(Filter('CH-Tbl-ValidationRuns', ReceivedEmail.'CH-Tbl-Received Emails' = Table1_1.Selected.'CH-Tbl-Received Emails'), 'Created On', SortOrder.Descending))},
@@ -479,43 +500,42 @@ Screens:
                                                         ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail),
                                             ejec: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns')
                                         },
-                                        "<style>*{box-sizing:border-box}body{margin:0;font-family:'Segoe UI',sans-serif;font-size:13.5px;color:rgb(28,21,23)}.t{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px}.card{background:rgb(250,248,248);border:1px solid rgb(230,223,224);border-radius:0 6px 6px 0;padding:12px 15px;color:rgb(70,59,62)}.w{border-left:3px solid rgb(154,97,0)}.e{border-left:3px solid rgb(110,22,34)}.s{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}.n{flex:none;width:21px;height:21px;border-radius:50%;background:rgb(251,237,239);color:rgb(158,13,36);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}.nota{font-size:12.5px;color:rgb(120,106,109);margin-top:4px}.tal{font-size:11.5px;color:rgb(120,106,109);margin-bottom:11px}.tf{color:rgb(110,22,34)}.ts{color:rgb(138,128,130)}.to{color:rgb(20,107,58)}.fi{background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin-bottom:9px;display:flex;gap:12px}.fc{font-weight:700;color:rgb(110,22,34);font-size:12px;flex:none}.fm{font-size:13.5px}.fl{font-size:11.5px;color:rgb(120,106,109);margin-top:4px}.om{display:flex;flex-wrap:wrap;gap:4px 18px;opacity:.72}.om span{font-size:12.5px;color:rgb(138,128,130);font-style:italic}.hd{display:flex;flex-wrap:wrap;gap:7px 13px;align-items:baseline;border-bottom:1px solid rgb(230,223,224);padding-bottom:13px}.id{font-size:19px;font-weight:650}.fr{font-size:13.5px;color:rgb(70,59,62)}.chip{font-size:11px;font-weight:650;padding:3px 9px;border-radius:99px}.cw{background:rgb(253,243,227);color:rgb(154,97,0)}.ce{background:rgb(246,233,235);color:rgb(110,22,34)}.st{margin-left:auto;font-size:11.5px;color:rgb(120,106,109)}</style>" & "<p class='t'>Reglas que no pasaron</p>" &
+                                        "<p style='" & stRot & "'>Reglas que no pasaron</p>" &
                                         If(
                                             IsBlank(r),
-                                            "<div class='card'>Este correo todavia no tiene ninguna corrida de validacion.</div>",
-                                            "<div class='tal'><b class='tf'>" & CountRows(fal) &
-                                            "</b> fallaron &nbsp;&nbsp;|&nbsp;&nbsp; <b class='ts'>" &
+                                            "<div style='" & stCard & "'>Este correo todavia no tiene ninguna corrida de validacion.</div>",
+                                            "<p style='" & stTally & "'><b style='color:rgb(110,22,34)'>" & CountRows(fal) &
+                                            "</b> fallaron &nbsp;|&nbsp; <b style='color:rgb(138,128,130)'>" &
                                             (CountRows(Filter('CH-Tbl-ValidationRules', IsActive = true)) - CountRows(ejec)) &
-                                            "</b> no se intentaron &nbsp;&nbsp;|&nbsp;&nbsp; <b class='to'>" &
+                                            "</b> no se intentaron &nbsp;|&nbsp; <b style='color:rgb(20,107,58)'>" &
                                             CountRows(Filter(ejec, ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass)) &
-                                            "</b> pasaron sin novedad</div>" &
+                                            "</b> pasaron sin novedad</p>" &
                                             Concat(
                                                 Sort(fal, Name),
-                                                "<div class='fi'><span class='fc'>" & Substitute(Coalesce(Name, ""), "<", "&lt;") &
-                                                "</span><span><span class='fm'>" &
+                                                "<div style='" & stFila & "'><span style='" & stCod & "'>" &
+                                                Substitute(Coalesce(Name, ""), "<", "&lt;") & "</span>&nbsp;&nbsp;<span style='" & stMsg & "'>" &
                                                 Substitute(Substitute(Coalesce(Detalle, ""), "&", "&amp;"), "<", "&lt;") & "</span>" &
                                                 If(IsBlank(Celda), "",
-                                                   "<div class='fl'>Hoja y celda: " & Coalesce(Hoja, "") & "!" & Celda & "</div>") &
-                                                "</span></div>"
+                                                   "<div style='" & stCelda & ";margin-top:4px'>Hoja y celda: " &
+                                                   Coalesce(Hoja, "") & "!" & Celda & "</div>") & "</div>"
                                             ) &
                                             With(
                                                 {om: Filter('CH-Tbl-ValidationRules', IsActive = true,
                                                             IsBlank(LookUp(ejec, ValidationRule.'Validation Name' = 'Validation Name')))},
                                                 If(
                                                     CountRows(om) = 0,
-                                                    "<div class='nota'>Ninguna regla quedo sin intentarse: la cadena corrio completa.</div>",
-                                                    "<p class='t' style='margin-top:16px'>No se intentaron porque su dependencia no paso</p><div class='om'>" &
+                                                    "<p style='" & stNota & "'>Ninguna regla quedo sin intentarse: la cadena corrio completa.</p>",
+                                                    "<p style='" & stRot & ";margin-top:16px'>No se intentaron porque su dependencia no paso</p>" &
                                                     Concat(Sort(om, ValidationOrder),
-                                                           "<span>" & 'Validation Name' & " &nbsp; " &
-                                                           Substitute(Coalesce(Name, ""), "<", "&lt;") & "</span>") & "</div>"
+                                                           "<div style='" & stOmi & "'>" & 'Validation Name' & " &nbsp; " &
+                                                           Substitute(Coalesce(Name, ""), "<", "&lt;") & "</div>")
                                                 )
                                             )
                                         )
                                     )
                                 )
-                              LayoutMinWidth: =Parent.Width - 48
                               Size: =11
-                              Width: =Parent.Width
+                              Width: =Parent.Width - 48
                   - SidebarContainer2:
                       Control: GroupContainer@1.5.0
                       Variant: AutoLayout
