@@ -1,5 +1,14 @@
 # Referencia — CashHub
 
+> ⚠️ **Parcialmente desactualizada (agosto 2026).** Estos documentos se
+> escribieron antes del rediseño del pipeline de correo. Los números actuales:
+> **40 tablas** (no 38), **8 roles** (no 6), **21 variables de entorno** (no
+> 19), **16 flujos** (no 19) y un plugin C# con 28 reglas que reemplazó al
+> motor Power Fx de la Console. La referencia al día, solución por solución,
+> está en [`../soluciones/`](../soluciones/00-vision-general.md); usá esta
+> carpeta para el detalle fino (campos, choices, typos) sabiendo que puede
+> estar corrida respecto de la fuente.
+
 Documentación de referencia (tipo contrato) del sistema CashHub: digitalización del
 procesamiento bancario de depósitos en efectivo enviados en bolsas de seguridad
 (tulas) vía transportadora de valores. Reemplaza minuta física + digitación manual

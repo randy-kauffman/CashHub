@@ -805,52 +805,10 @@
                     Font: =App.Theme.Font
                     Height: =290
                     HtmlText: |-
-                        =With(
-                            {r: First(Sort(Filter('CH-Tbl-ValidationRuns', SourceRecordID = Text(galBandeja.Selected.'CH-Tbl-Received Emails')), 'Created On', SortOrder.Descending))},
-                            With(
-                                {
-                                    fal: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns',
-                                                ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail),
-                                    ejec: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns')
-                                },
-                                "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Reglas que no pasaron</p>" &
-                                If(
-                                    IsBlank(r),
-                                    "<div style='font-size:13.5px;line-height:1.5;background:rgb(250,248,248);border:1px solid rgb(230,223,224);padding:14px 16px;color:rgb(70,59,62);margin:0'>Este correo todavia no tiene ninguna corrida de validacion.</div>",
-                                    "<p style='font-size:11.5px;color:rgb(120,106,109);margin:0 0 11px 0'><b style='color:rgb(110,22,34)'>" & CountRows(fal) &
-                                    "</b> fallaron &nbsp;|&nbsp; <b style='color:rgb(138,128,130)'>" &
-                                    (CountRows(Filter('CH-Tbl-ValidationRules', IsActive = true)) - CountRows(ejec)) &
-                                    "</b> no se intentaron &nbsp;|&nbsp; <b style='color:rgb(20,107,58)'>" &
-                                    CountRows(Filter(ejec, ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass)) &
-                                    "</b> pasaron sin novedad</p>" &
-                                    Concat(
-                                        Sort(fal, Name),
-                                        "<div style='background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:12px 15px;margin:0 0 9px 0;font-size:13.5px'><span style='font-weight:700;color:rgb(110,22,34);font-size:12px'>" &
-                                        Substitute(Coalesce(Name, ""), "<", "&lt;") & "</span>&nbsp;&nbsp;<span style='font-size:13px;color:rgb(28,21,23)'>" &
-                                        Substitute(Substitute(Coalesce(Detalle, ""), "&", "&amp;"), "<", "&lt;") & "</span>" &
-                                        If(IsBlank(Celda), "",
-                                           "<div style='font-size:11.5px;color:rgb(120,106,109);margin-top:4px'>Hoja y celda: " &
-                                           Coalesce(Hoja, "") & "!" & Celda & "</div>") & "</div>"
-                                    ) &
-                                    With(
-                                        {om: Filter('CH-Tbl-ValidationRules', IsActive = true,
-                                                    IsBlank(LookUp(ejec, ValidationRule.'Validation Name' = 'Validation Name')))},
-                                        If(
-                                            CountRows(om) = 0,
-                                            "<p style='font-size:12.5px;line-height:1.5;color:rgb(120,106,109);margin:10px 0 0 0'>Ninguna regla quedo sin intentarse: la cadena corrio completa.</p>",
-                                            "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0;margin-top:16px'>No se intentaron porque su dependencia no paso</p>" &
-                                            Concat(Sort(om, ValidationOrder),
-                                                   "<div style='display:inline-block;width:32%;vertical-align:top;font-size:12px;color:rgb(138,128,130);font-style:italic;margin:0 0 4px 0'>" & 'Validation Name' & " &nbsp; " &
-                                                   Substitute(Coalesce(Name, ""), "<", "&lt;") & "</div>")
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    LayoutMaxHeight: =0
-                    LayoutMaxWidth: =0
-                    Width: =Parent.Width - 48
-                    ZIndex: =5
+                        ="<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Reglas que no pasaron</p>" &
+                         "<div style='font-size:13.5px;line-height:1.5;background:rgb(250,248,248);border:1px solid rgb(230,223,224);border-left:3px solid rgb(154,97,0);padding:14px 16px;color:rgb(70,59,62)'>" &
+                         "Bloque en pausa mientras se refresca el origen de datos de las corridas. La formula original esta guardada y se restaura en cuanto termines." &
+                         "</div>"
 
                 btnDetTecnico As Button:
                     Appearance: ='ButtonCanvas.Appearance'.Subtle

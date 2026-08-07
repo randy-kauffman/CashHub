@@ -1,5 +1,13 @@
 # CashHub — Síntesis del análisis de las 3 soluciones
 
+> ⚠️ **DOCUMENTO HISTÓRICO (julio 2026, pre-rediseño).** Describe el estado
+> as-is encontrado en el análisis inicial: 19 flujos, motor EvaluateEV de 23
+> reglas Power Fx dentro de la Email Validation Console, flujos VR0x stub.
+> **Nada de eso existe ya**: la validación vive en el plugin C# (28 reglas) y
+> la Console es una consola de contingencia. El estado actual está en
+> [`../soluciones/`](../soluciones/00-vision-general.md). Este documento se
+> conserva como registro del punto de partida.
+
 > Documento de síntesis. El detalle está en:
 > [01-core-data-model.md](01-core-data-model.md) · [02-flows.md](02-flows.md) · [03-apps-operativas.md](03-apps-operativas.md) · [04-apps-administrativas.md](04-apps-administrativas.md)
 
