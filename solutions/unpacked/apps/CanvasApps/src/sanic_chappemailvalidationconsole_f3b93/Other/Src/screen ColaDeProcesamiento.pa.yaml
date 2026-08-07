@@ -239,7 +239,6 @@ Screens:
                   LayoutGap: =16
                   LayoutMaxHeight: =
                   LayoutMaxWidth: =
-                  LayoutWrap: =true
                   PaddingBottom: =2
                   PaddingLeft: =2
                   PaddingRight: =2
@@ -249,143 +248,93 @@ Screens:
                       Control: GroupContainer@1.5.0
                       Variant: AutoLayout
                       Properties:
-                        DropShadow: =DropShadow.None
                         Fill: =RGBA(255, 255, 255, 1)
+                        FillPortions: =5
                         LayoutDirection: =LayoutDirection.Horizontal
-                        LayoutMinHeight: =32
-                        LayoutMinWidth: =420
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        LayoutOverflowY: =LayoutOverflow.Scroll
+                        LayoutWrap: =true
                         PaddingBottom: =24
                         PaddingLeft: =24
                         PaddingRight: =24
                         PaddingTop: =18
-                        RadiusBottomLeft: =0
-                        RadiusBottomRight: =0
-                        RadiusTopLeft: =0
-                        RadiusTopRight: =0
                         Visible: =!IsBlank(Table1_1.Selected)
                       Children:
-                        - lblDetTitulo:
-                            Control: Label@2.5.1
+                        - htmlCabecera:
+                            Control: HtmlViewer@2.1.0
                             Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              Color: =RGBA(28, 21, 23, 1)
-                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                              FillPortions: =1
                               Font: =Font.'Open Sans'
-                              FontWeight: =FontWeight.Semibold
-                              Height: =30
-                              Size: =16
-                              Text: =Table1_1.Selected.Name & "   " & Coalesce(Table1_1.Selected.SourceEmailAddress, "(sin remitente)")
-                              Width: =Parent.Width - 48
-                        - lblDetEstado:
-                            Control: Label@2.5.1
-                            Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              Color: =If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, RGBA(110, 22, 34, 1), RGBA(154, 97, 0, 1))
-                              DisabledColor: =RGBA(186, 186, 186, 1)
-                              Font: =Font.'Open Sans'
-                              FontWeight: =FontWeight.Semibold
-                              Height: =22
+                              Height: =62
+                              HtmlText: |-
+                                ="<style>*{box-sizing:border-box}body{margin:0;font-family:'Segoe UI',sans-serif;font-size:13.5px;color:rgb(28,21,23)}.t{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px}.card{background:rgb(250,248,248);border:1px solid rgb(230,223,224);border-radius:0 6px 6px 0;padding:12px 15px;color:rgb(70,59,62)}.w{border-left:3px solid rgb(154,97,0)}.e{border-left:3px solid rgb(110,22,34)}.s{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}.n{flex:none;width:21px;height:21px;border-radius:50%;background:rgb(251,237,239);color:rgb(158,13,36);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}.nota{font-size:12.5px;color:rgb(120,106,109);margin-top:4px}.tal{font-size:11.5px;color:rgb(120,106,109);margin-bottom:11px}.tf{color:rgb(110,22,34)}.ts{color:rgb(138,128,130)}.to{color:rgb(20,107,58)}.fi{background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin-bottom:9px;display:flex;gap:12px}.fc{font-weight:700;color:rgb(110,22,34);font-size:12px;flex:none}.fm{font-size:13.5px}.fl{font-size:11.5px;color:rgb(120,106,109);margin-top:4px}.om{display:flex;flex-wrap:wrap;gap:4px 18px;opacity:.72}.om span{font-size:12.5px;color:rgb(138,128,130);font-style:italic}.hd{display:flex;flex-wrap:wrap;gap:7px 13px;align-items:baseline;border-bottom:1px solid rgb(230,223,224);padding-bottom:13px}.id{font-size:19px;font-weight:650}.fr{font-size:13.5px;color:rgb(70,59,62)}.chip{font-size:11px;font-weight:650;padding:3px 9px;border-radius:99px}.cw{background:rgb(253,243,227);color:rgb(154,97,0)}.ce{background:rgb(246,233,235);color:rgb(110,22,34)}.st{margin-left:auto;font-size:11.5px;color:rgb(120,106,109)}</style>" &
+                                 "<div class='hd'><span class='id'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.Name,""),"&","&amp;"),"<","&lt;") &
+                                 "</span><span class='fr'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.SourceEmailAddress,""),"&","&amp;"),"<","&lt;") &
+                                 "</span><span class='chip " &
+                                 If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "ce", "cw") &
+                                 "'>" & Coalesce(Text(Table1_1.Selected.SenderClassification), "Sin clasificar") &
+                                 "</span><span class='st'>Recibido " &
+                                 Text(Table1_1.Selected.ReceptionDateTime, "dd/mm/yyyy hh:mm") & "</span></div>"
+                              LayoutMinHeight: =10
+                              LayoutMinWidth: =Parent.Width - 48
                               Size: =11
-                              Text: |-
-                                =Coalesce(Text(Table1_1.Selected.SenderClassification,
-                                          "Sin clasificar")) & "   |   recibido " &
-                                 Text(Table1_1.Selected.ReceptionDateTime, "dd/mm/yyyy hh:mm")
-                              Width: =Parent.Width - 48
-                        - lblDetQuePasoTit:
-                            Control: Label@2.5.1
+                              Width: =Parent.Width
+                        - htmlQuePaso:
+                            Control: HtmlViewer@2.1.0
                             Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              Color: =RGBA(120, 106, 109, 1)
-                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                              FillPortions: =1
                               Font: =Font.'Open Sans'
-                              FontWeight: =FontWeight.Bold
-                              Height: =20
-                              Size: =9
-                              Text: ="QUE PASO"
-                              Width: =260
-                        - lblDetQuePaso:
-                            Control: Label@2.5.1
-                            Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              Color: =RGBA(70, 59, 62, 1)
-                              DisabledColor: =RGBA(186, 186, 186, 1)
-                              Fill: =RGBA(250, 248, 248, 1)
-                              Font: =Font.'Open Sans'
-                              Height: =84
-                              PaddingLeft: =14
-                              PaddingTop: =10
+                              Height: =132
+                              HtmlText: |-
+                                ="<style>*{box-sizing:border-box}body{margin:0;font-family:'Segoe UI',sans-serif;font-size:13.5px;color:rgb(28,21,23)}.t{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px}.card{background:rgb(250,248,248);border:1px solid rgb(230,223,224);border-radius:0 6px 6px 0;padding:12px 15px;color:rgb(70,59,62)}.w{border-left:3px solid rgb(154,97,0)}.e{border-left:3px solid rgb(110,22,34)}.s{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}.n{flex:none;width:21px;height:21px;border-radius:50%;background:rgb(251,237,239);color:rgb(158,13,36);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}.nota{font-size:12.5px;color:rgb(120,106,109);margin-top:4px}.tal{font-size:11.5px;color:rgb(120,106,109);margin-bottom:11px}.tf{color:rgb(110,22,34)}.ts{color:rgb(138,128,130)}.to{color:rgb(20,107,58)}.fi{background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin-bottom:9px;display:flex;gap:12px}.fc{font-weight:700;color:rgb(110,22,34);font-size:12px;flex:none}.fm{font-size:13.5px}.fl{font-size:11.5px;color:rgb(120,106,109);margin-top:4px}.om{display:flex;flex-wrap:wrap;gap:4px 18px;opacity:.72}.om span{font-size:12.5px;color:rgb(138,128,130);font-style:italic}.hd{display:flex;flex-wrap:wrap;gap:7px 13px;align-items:baseline;border-bottom:1px solid rgb(230,223,224);padding-bottom:13px}.id{font-size:19px;font-weight:650}.fr{font-size:13.5px;color:rgb(70,59,62)}.chip{font-size:11px;font-weight:650;padding:3px 9px;border-radius:99px}.cw{background:rgb(253,243,227);color:rgb(154,97,0)}.ce{background:rgb(246,233,235);color:rgb(110,22,34)}.st{margin-left:auto;font-size:11.5px;color:rgb(120,106,109)}</style>" &
+                                 "<p class='t'>Que paso</p><div class='card " &
+                                 If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "e", "w") & "'>" &
+                                 Substitute(Substitute(Coalesce(Coalesce(Table1_1.Selected.TriageNotes, Table1_1.Selected.ErrorText, "Este correo no dejo explicacion: el motor no llego a evaluarlo."),""),"&","&amp;"),"<","&lt;") &
+                                 "</div>"
+                              LayoutMinWidth: =Parent.Width - 48
                               Size: =11
-                              Text: |-
-                                =Coalesce(Table1_1.Selected.TriageNotes, Table1_1.Selected.ErrorText,
-                                          "Este correo no dejo explicacion: el motor no llego a evaluarlo.")
-                              Width: =Parent.Width - 48
-                        - lblDetQueHacerTit:
-                            Control: Label@2.5.1
+                              Width: =Parent.Width
+                        - htmlQueHacer:
+                            Control: HtmlViewer@2.1.0
                             Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              Color: =RGBA(120, 106, 109, 1)
-                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                              FillPortions: =1
                               Font: =Font.'Open Sans'
-                              FontWeight: =FontWeight.Bold
-                              Height: =20
-                              Size: =9
-                              Text: |-
-                                ="QUE HACER" & With({g: LookUp('CH-Tbl-Playbook', Name = Switch(Table1_1.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",    If(Table1_1.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente, "respuesta-sin-enviar", "sin-validar"))))},
-                                    If(IsBlank(g.Titulo), "", "   -   " & g.Titulo))
-                              Width: =Parent.Width - 48
-                        - galDetPasos:
-                            Control: Gallery@2.15.0
-                            Variant: Vertical
-                            Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              DelayItemLoading: =false
-                              Height: =116
-                              Items: |-
-                                =With({g: LookUp('CH-Tbl-Playbook', Name = Switch(Table1_1.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",    If(Table1_1.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente, "respuesta-sin-enviar", "sin-validar"))))},
-                                    ForAll(
-                                        Split(Coalesce(g.Pasos,
-                                            "No hay instructivo cargado para este caso. Revisar CH-Tbl-Playbook."),
-                                            Char(10)) As L,
-                                        {Paso: L.Value}))
-                              LayoutMinHeight: =32
-                              LayoutMinWidth: =32
-                              LoadingSpinner: =LoadingSpinner.None
-                              TemplatePadding: =0
-                              TemplateSize: =32
-                              Width: =Parent.Width - 48
-                            Children:
-                              - lblPaso:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    BorderColor: =RGBA(0, 0, 0, 1)
-                                    Color: =RGBA(28, 21, 23, 1)
-                                    DisabledColor: =RGBA(186, 186, 186, 1)
-                                    Font: =Font.'Open Sans'
-                                    Height: =30
-                                    Size: =11
-                                    Text: =ThisItem.Paso
-                                    Width: =Parent.Width - 20
-                                    X: =10
-                        - lblDetNota:
-                            Control: Label@2.5.1
-                            Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              Color: =RGBA(120, 106, 109, 1)
-                              DisabledColor: =RGBA(186, 186, 186, 1)
-                              Font: =Font.'Open Sans'
-                              Height: =38
-                              Size: =10
-                              Text: =Coalesce(LookUp('CH-Tbl-Playbook', Name = Switch(Table1_1.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",    If(Table1_1.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente, "respuesta-sin-enviar", "sin-validar")))).Nota, "")
-                              Width: =Parent.Width - 48
+                              Height: =205
+                              HtmlText: |-
+                                =With(
+                                    {g: LookUp('CH-Tbl-Playbook', Name = Switch(Table1_1.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",  If(Table1_1.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente, "respuesta-sin-enviar", "sin-validar"))))},
+                                    "<style>*{box-sizing:border-box}body{margin:0;font-family:'Segoe UI',sans-serif;font-size:13.5px;color:rgb(28,21,23)}.t{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px}.card{background:rgb(250,248,248);border:1px solid rgb(230,223,224);border-radius:0 6px 6px 0;padding:12px 15px;color:rgb(70,59,62)}.w{border-left:3px solid rgb(154,97,0)}.e{border-left:3px solid rgb(110,22,34)}.s{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}.n{flex:none;width:21px;height:21px;border-radius:50%;background:rgb(251,237,239);color:rgb(158,13,36);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}.nota{font-size:12.5px;color:rgb(120,106,109);margin-top:4px}.tal{font-size:11.5px;color:rgb(120,106,109);margin-bottom:11px}.tf{color:rgb(110,22,34)}.ts{color:rgb(138,128,130)}.to{color:rgb(20,107,58)}.fi{background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin-bottom:9px;display:flex;gap:12px}.fc{font-weight:700;color:rgb(110,22,34);font-size:12px;flex:none}.fm{font-size:13.5px}.fl{font-size:11.5px;color:rgb(120,106,109);margin-top:4px}.om{display:flex;flex-wrap:wrap;gap:4px 18px;opacity:.72}.om span{font-size:12.5px;color:rgb(138,128,130);font-style:italic}.hd{display:flex;flex-wrap:wrap;gap:7px 13px;align-items:baseline;border-bottom:1px solid rgb(230,223,224);padding-bottom:13px}.id{font-size:19px;font-weight:650}.fr{font-size:13.5px;color:rgb(70,59,62)}.chip{font-size:11px;font-weight:650;padding:3px 9px;border-radius:99px}.cw{background:rgb(253,243,227);color:rgb(154,97,0)}.ce{background:rgb(246,233,235);color:rgb(110,22,34)}.st{margin-left:auto;font-size:11.5px;color:rgb(120,106,109)}</style>" &
+                                    "<p class='t'>Que hacer" &
+                                    If(IsBlank(g.Titulo), "", " &nbsp;&mdash;&nbsp; " & Substitute(Substitute(Coalesce(g.Titulo,""),"&","&amp;"),"<","&lt;")) & "</p>" &
+                                    Concat(
+                                        ForAll(
+                                            Sequence(CountRows(Split(Coalesce(g.Pasos, "No hay instructivo cargado para este caso. Cargarlo en CH-Tbl-Playbook."), Char(10)))) As I,
+                                            {i: I.Value, txt: Last(FirstN(Split(Coalesce(g.Pasos, "No hay instructivo cargado para este caso. Cargarlo en CH-Tbl-Playbook."), Char(10)), I.Value)).Value}
+                                        ),
+                                        "<div class='s'><span class='n'>" & i & "</span><span>" &
+                                        Substitute(Substitute(txt, "&", "&amp;"), "<", "&lt;") & "</span></div>"
+                                    ) &
+                                    If(IsBlank(g.Nota), "", "<div class='nota'>" & Substitute(Substitute(Coalesce(g.Nota,""),"&","&amp;"),"<","&lt;") & "</div>")
+                                )
+                              LayoutMinWidth: =Parent.Width - 48
+                              Size: =11
+                              Width: =Parent.Width
                         - container BotonesDetalle:
                             Control: GroupContainer@1.5.0
                             Variant: AutoLayout
                             Properties:
+                              AlignInContainer: =AlignInContainer.SetByContainer
                               DropShadow: =DropShadow.None
                               Height: =46
+                              LayoutAlignItems: =LayoutAlignItems.Center
                               LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =10
                               LayoutMinHeight: =46
-                              LayoutMinWidth: =32
+                              LayoutMinWidth: =Parent.Width - 48
                               RadiusBottomLeft: =0
                               RadiusBottomRight: =0
                               RadiusTopLeft: =0
@@ -416,7 +365,7 @@ Screens:
                                                           Type: 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,
                                                           ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,
                                                           TargetTable: "sanic_chtblclientemail",
-                                                          'RelatedClient': cli,
+                                                          RelatedClient: cli,
                                                           Reason: "Alta de remitente detectada por CashHub en " & ges &
                                                                   ". La direccion " & dir &
                                                                   " envio un pre-registro con la plantilla oficial y el CIF de este cliente."
@@ -513,139 +462,60 @@ Screens:
                                       =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: false, varOverrideMotivo: ""})
                                     Text: ="Denegar manualmente"
                                     Width: =190
-                        - lblRegTit:
-                            Control: Label@2.5.1
+                        - htmlReglas:
+                            Control: HtmlViewer@2.1.0
                             Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              Color: =RGBA(120, 106, 109, 1)
-                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              AutoHeight: =true
+                              DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                              FillPortions: =1
                               Font: =Font.'Open Sans'
-                              FontWeight: =FontWeight.Bold
-                              Height: =20
-                              Size: =9
-                              Text: ="REGLAS QUE NO PASARON"
-                              Width: =Parent.Width - 48
-                        - lblRegConteo:
-                            Control: Label@2.5.1
-                            Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              Color: =RGBA(120, 106, 109, 1)
-                              DisabledColor: =RGBA(186, 186, 186, 1)
-                              Font: =Font.'Open Sans'
-                              Height: =20
-                              Size: =10
-                              Text: |-
-                                =With({r: First(Sort(Filter('CH-Tbl-ValidationRuns', SourceRecordID = Text(Table1_1.Selected.'CH-Tbl-Received Emails')), 'Created On', SortOrder.Descending))},
-                                    With({res: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns')},
-                                        If(IsBlank(r),
-                                           "Este correo no tiene ninguna corrida de validacion todavia.",
-                                           CountRows(Filter(res, ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail)) & " fallaron   |   " &
-                                           (CountRows(Filter('CH-Tbl-ValidationRules', IsActive = true)) - CountRows(res)) & " no se intentaron   |   " &
-                                           CountRows(Filter(res, ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass)) & " pasaron sin novedad")))
-                              Width: =Parent.Width - 48
-                        - galRegFallidas:
-                            Control: Gallery@2.15.0
-                            Variant: Vertical
-                            Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              DelayItemLoading: =false
-                              Height: =150
-                              Items: |-
-                                =Sort(
-                                    Filter('CH-Tbl-ValidationResults',
-                                        ValidationRun.'CH-Tbl-ValidationRuns' = First(Sort(Filter('CH-Tbl-ValidationRuns', SourceRecordID = Text(Table1_1.Selected.'CH-Tbl-Received Emails')), 'Created On', SortOrder.Descending)).'CH-Tbl-ValidationRuns',
-                                        ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail),
-                                    Name)
-                              LayoutMinHeight: =32
-                              LayoutMinWidth: =32
-                              LoadingSpinner: =LoadingSpinner.None
-                              TemplatePadding: =4
-                              TemplateSize: =62
-                              Width: =Parent.Width - 48
-                            Children:
-                              - lblRegCodigo:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    BorderColor: =RGBA(0, 0, 0, 1)
-                                    Color: =RGBA(110, 22, 34, 1)
-                                    DisabledColor: =RGBA(186, 186, 186, 1)
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =FontWeight.Bold
-                                    Height: =20
-                                    Size: =10
-                                    Text: =ThisItem.Name
-                                    Width: =120
-                                    X: =10
-                                    Y: =4
-                              - lblRegDetalle:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    BorderColor: =RGBA(0, 0, 0, 1)
-                                    Color: =RGBA(28, 21, 23, 1)
-                                    DisabledColor: =RGBA(186, 186, 186, 1)
-                                    Font: =Font.'Open Sans'
-                                    Height: =36
-                                    Size: =10
-                                    Text: =ThisItem.Detalle
-                                    Width: =Parent.Width - 150
-                                    X: =134
-                                    Y: =4
-                              - lblRegCelda:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    BorderColor: =RGBA(0, 0, 0, 1)
-                                    Color: =RGBA(120, 106, 109, 1)
-                                    DisabledColor: =RGBA(186, 186, 186, 1)
-                                    Font: =Font.'Open Sans'
-                                    Height: =18
-                                    Size: =9
-                                    Text: |-
-                                      =If(IsBlank(ThisItem.Celda), "", "Hoja y celda: " & ThisItem.Hoja & "!" & ThisItem.Celda)
-                                    Width: =260
-                                    X: =134
-                                    Y: =40
-                        - lblRegOmitidasTit:
-                            Control: Label@2.5.1
-                            Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              Color: =RGBA(120, 106, 109, 1)
-                              DisabledColor: =RGBA(186, 186, 186, 1)
-                              Font: =Font.'Open Sans'
-                              Height: =20
-                              Size: =9
-                              Text: ="NO SE INTENTARON PORQUE SU DEPENDENCIA NO PASO"
-                              Width: =Parent.Width - 48
-                        - galRegOmitidas:
-                            Control: Gallery@2.15.0
-                            Variant: Vertical
-                            Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              DelayItemLoading: =false
-                              Height: =92
-                              Items: |-
-                                =With({ejec: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = First(Sort(Filter('CH-Tbl-ValidationRuns', SourceRecordID = Text(Table1_1.Selected.'CH-Tbl-Received Emails')), 'Created On', SortOrder.Descending)).'CH-Tbl-ValidationRuns')},
-                                    Filter('CH-Tbl-ValidationRules',
-                                        IsActive = true,
-                                        IsBlank(LookUp(ejec, ValidationRule.'Validation Name' = 'Validation Name'))))
-                              LayoutMinHeight: =32
-                              LayoutMinWidth: =32
-                              LoadingSpinner: =LoadingSpinner.None
-                              TemplatePadding: =0
-                              TemplateSize: =24
-                              Width: =Parent.Width - 48
-                            Children:
-                              - lblOmiCodigo:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    BorderColor: =RGBA(0, 0, 0, 1)
-                                    Color: =RGBA(138, 128, 130, 1)
-                                    DisabledColor: =RGBA(186, 186, 186, 1)
-                                    Font: =Font.'Open Sans'
-                                    Height: =22
-                                    Size: =10
-                                    Text: =ThisItem.'Validation Name' & "   " & ThisItem.Name
-                                    Width: =Parent.Width - 20
-                                    X: =10
+                              Height: =300
+                              HtmlText: |-
+                                =With(
+                                    {r: First(Sort(Filter('CH-Tbl-ValidationRuns', ReceivedEmail.'CH-Tbl-Received Emails' = Table1_1.Selected.'CH-Tbl-Received Emails'), 'Created On', SortOrder.Descending))},
+                                    With(
+                                        {
+                                            fal: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns',
+                                                        ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail),
+                                            ejec: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns')
+                                        },
+                                        "<style>*{box-sizing:border-box}body{margin:0;font-family:'Segoe UI',sans-serif;font-size:13.5px;color:rgb(28,21,23)}.t{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 8px}.card{background:rgb(250,248,248);border:1px solid rgb(230,223,224);border-radius:0 6px 6px 0;padding:12px 15px;color:rgb(70,59,62)}.w{border-left:3px solid rgb(154,97,0)}.e{border-left:3px solid rgb(110,22,34)}.s{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}.n{flex:none;width:21px;height:21px;border-radius:50%;background:rgb(251,237,239);color:rgb(158,13,36);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center}.nota{font-size:12.5px;color:rgb(120,106,109);margin-top:4px}.tal{font-size:11.5px;color:rgb(120,106,109);margin-bottom:11px}.tf{color:rgb(110,22,34)}.ts{color:rgb(138,128,130)}.to{color:rgb(20,107,58)}.fi{background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:11px 14px;margin-bottom:9px;display:flex;gap:12px}.fc{font-weight:700;color:rgb(110,22,34);font-size:12px;flex:none}.fm{font-size:13.5px}.fl{font-size:11.5px;color:rgb(120,106,109);margin-top:4px}.om{display:flex;flex-wrap:wrap;gap:4px 18px;opacity:.72}.om span{font-size:12.5px;color:rgb(138,128,130);font-style:italic}.hd{display:flex;flex-wrap:wrap;gap:7px 13px;align-items:baseline;border-bottom:1px solid rgb(230,223,224);padding-bottom:13px}.id{font-size:19px;font-weight:650}.fr{font-size:13.5px;color:rgb(70,59,62)}.chip{font-size:11px;font-weight:650;padding:3px 9px;border-radius:99px}.cw{background:rgb(253,243,227);color:rgb(154,97,0)}.ce{background:rgb(246,233,235);color:rgb(110,22,34)}.st{margin-left:auto;font-size:11.5px;color:rgb(120,106,109)}</style>" & "<p class='t'>Reglas que no pasaron</p>" &
+                                        If(
+                                            IsBlank(r),
+                                            "<div class='card'>Este correo todavia no tiene ninguna corrida de validacion.</div>",
+                                            "<div class='tal'><b class='tf'>" & CountRows(fal) &
+                                            "</b> fallaron &nbsp;&nbsp;|&nbsp;&nbsp; <b class='ts'>" &
+                                            (CountRows(Filter('CH-Tbl-ValidationRules', IsActive = true)) - CountRows(ejec)) &
+                                            "</b> no se intentaron &nbsp;&nbsp;|&nbsp;&nbsp; <b class='to'>" &
+                                            CountRows(Filter(ejec, ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass)) &
+                                            "</b> pasaron sin novedad</div>" &
+                                            Concat(
+                                                Sort(fal, Name),
+                                                "<div class='fi'><span class='fc'>" & Substitute(Coalesce(Name, ""), "<", "&lt;") &
+                                                "</span><span><span class='fm'>" &
+                                                Substitute(Substitute(Coalesce(Detalle, ""), "&", "&amp;"), "<", "&lt;") & "</span>" &
+                                                If(IsBlank(Celda), "",
+                                                   "<div class='fl'>Hoja y celda: " & Coalesce(Hoja, "") & "!" & Celda & "</div>") &
+                                                "</span></div>"
+                                            ) &
+                                            With(
+                                                {om: Filter('CH-Tbl-ValidationRules', IsActive = true,
+                                                            IsBlank(LookUp(ejec, ValidationRule.'Validation Name' = 'Validation Name')))},
+                                                If(
+                                                    CountRows(om) = 0,
+                                                    "<div class='nota'>Ninguna regla quedo sin intentarse: la cadena corrio completa.</div>",
+                                                    "<p class='t' style='margin-top:16px'>No se intentaron porque su dependencia no paso</p><div class='om'>" &
+                                                    Concat(Sort(om, ValidationOrder),
+                                                           "<span>" & 'Validation Name' & " &nbsp; " &
+                                                           Substitute(Coalesce(Name, ""), "<", "&lt;") & "</span>") & "</div>"
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                              LayoutMinWidth: =Parent.Width - 48
+                              Size: =11
+                              Width: =Parent.Width
                   - SidebarContainer2:
                       Control: GroupContainer@1.5.0
                       Variant: AutoLayout
