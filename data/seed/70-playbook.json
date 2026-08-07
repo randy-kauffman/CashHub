@@ -1,0 +1,47 @@
+{
+  "entitySet": "sanic_chtblplaybooks",
+  "naturalKey": ["sanic_name"],
+  "comment": "Instructivo por categoria de la bandeja de trabajo de la Email Validation Console. Responde 'que hacer' ante cada caso. Es PROCEDIMIENTO del banco, no evidencia: cambia cuando cambia el proceso, no cuando cambia el codigo, por eso vive en tabla y no en la app. Editable desde el editor de tablas de Dataverse sin desplegar nada. El 'que paso' NO esta aca: eso lo escribe el motor por registro en sanic_triagenotes y queda congelado para auditoria.",
+  "rows": [
+    {
+      "sanic_name": "cliente-sin-registrar",
+      "sanic_titulo": "Registrar el correo y reprocesar",
+      "sanic_orden": 10,
+      "sanic_isactive": true,
+      "sanic_pasos": "Confirma con el cliente que esa persona esta autorizada a enviar pre-registros.\nRegistra el correo en Client Administration, asociado al cliente que el motor ya atribuyo.\nMarca para reproceso. El barrido lo revalida en 10 minutos como maximo y ahi si el cliente recibe su respuesta.",
+      "sanic_nota": "Si la direccion no debe quedar autorizada, denega manualmente dejando el motivo por escrito. No le escribas al remitente: confirmarle que ese CIF opera con el banco seria divulgar informacion de un cliente a un tercero sin verificar."
+    },
+    {
+      "sanic_name": "sospechoso",
+      "sanic_titulo": "Revisar antes de descartar",
+      "sanic_orden": 20,
+      "sanic_isactive": true,
+      "sanic_pasos": "Revisa el adjunto desde la vista previa. No lo descargues ni lo abras fuera del entorno controlado.\nCompara el CIF declarado contra clientes dados de baja: puede ser un cliente viejo y no un intento de fraude.\nEscala a Seguridad de la Informacion si aparece mas de uno con el mismo patron.",
+      "sanic_nota": "Cierra el caso denegando manualmente. El motivo que escribas queda como constancia para la investigacion. Para llegar hasta aca hay que conocer la plantilla oficial, su identificador interno y su version: no es un correo al azar."
+    },
+    {
+      "sanic_name": "error-sistema",
+      "sanic_titulo": "Reintentar y, si insiste, mirar el flujo",
+      "sanic_orden": 30,
+      "sanic_isactive": true,
+      "sanic_pasos": "Lee el mensaje del motor en el detalle tecnico para saber en que etapa se corto.\nMarca para reproceso. El barrido reintenta en 10 minutos como maximo.\nSi vuelve a fallar, el problema no esta en los datos sino en el flujo: revisa CH-Flow-ProcessEmail en Power Automate.",
+      "sanic_nota": "Mientras esto no se resuelva hay un cliente esperando una respuesta que no llega, y la falla no es suya. Es el caso mas urgente de la bandeja."
+    },
+    {
+      "sanic_name": "respuesta-sin-enviar",
+      "sanic_titulo": "Destrabar el envio de la respuesta",
+      "sanic_orden": 40,
+      "sanic_isactive": true,
+      "sanic_pasos": "Verifica que CH-Flow-Reply to client email este activo. Si esta apagado, prendelo y todas las respuestas encoladas salen solas.\nReenvia la respuesta desde aca.\nSi el envio falla, es porque el correo se archivo hace tiempo y Exchange le cambio el id al mensaje. En ese caso hay que escribirle al cliente por fuera.",
+      "sanic_nota": "Podes leer exactamente lo que se le iba a decir antes de reenviarlo."
+    },
+    {
+      "sanic_name": "sin-validar",
+      "sanic_titulo": "El correo entro pero nadie lo valido",
+      "sanic_orden": 50,
+      "sanic_isactive": true,
+      "sanic_pasos": "Espera una corrida del barrido: revalida solo los pendientes sin corrida, cada 10 minutos.\nSi sigue igual despues de dos barridos, marca para reproceso a mano.\nSi tampoco asi, revisa que el plugin de validacion este registrado y que CH-Flow-MailboxSweep este activo.",
+      "sanic_nota": "Este estado casi siempre se resuelve solo. Si se acumulan varios, el problema es del motor o del barrido, no de los correos."
+    }
+  ]
+}
