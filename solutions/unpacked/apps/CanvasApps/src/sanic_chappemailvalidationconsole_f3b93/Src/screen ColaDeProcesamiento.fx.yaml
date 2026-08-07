@@ -809,9 +809,9 @@
                             {r: First(Sort(Filter('CH-Tbl-ValidationRuns', SourceRecordID = Text(galBandeja.Selected.'CH-Tbl-Received Emails')), 'Created On', SortOrder.Descending))},
                             With(
                                 {
-                                    fal: Filter('CH-Tbl-ValidationResults', ValidationRun = r,
+                                    fal: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns',
                                                 ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail),
-                                    ejec: Filter('CH-Tbl-ValidationResults', ValidationRun = r)
+                                    ejec: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns')
                                 },
                                 "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Reglas que no pasaron</p>" &
                                 If(
