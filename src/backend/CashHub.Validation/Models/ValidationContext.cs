@@ -51,5 +51,13 @@ namespace CashHub.Validation.Models
 
         /// <summary>Cliente resuelto por VR-25 vía CIF: la ATRIBUCIÓN de la declaración.</summary>
         public Guid? ResolvedClientId { get; set; }
+
+        /// <summary>
+        /// CIF que el cliente declaro en el Excel, exista o no en CashHub. Se guarda
+        /// aparte de ResolvedClientId porque cuando el CIF NO resuelve es justamente
+        /// cuando hace falta: permite que el barrido detecte despues que Banca cargo
+        /// ese cliente y reprocese el correo solo.
+        /// </summary>
+        public string? DeclaredCif { get; set; }
     }
 }

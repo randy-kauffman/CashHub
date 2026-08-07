@@ -34,6 +34,7 @@ namespace CashHub.Validation.Rules
         public IReadOnlyList<Finding> Evaluate(RuleDefinition definition, ValidationContext context)
         {
             var cif = context.Workbook!.ReadCell("Depositos!J2")!.Trim();
+            context.DeclaredCif = cif;
             var clientId = context.DataAccess.FindClientIdByCif(cif);
             if (clientId == null)
             {

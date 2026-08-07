@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "1.0.0.0",
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps-1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "Cuando_Banca_toca_los_datos": {
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "subscriptionRequest/message": 4,
+              "subscriptionRequest/entityname": "sanic_chtblclientemail",
+              "subscriptionRequest/scope": 4
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "connectionName": "shared_commondataserviceforapps-1"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Buscar_correos_bloqueados": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblreceivedemailses",
+              "$select": "sanic_chtblreceivedemailsid,sanic_name",
+              "$filter": "sanic_emailreviewstatus eq 159460003 and sanic_sourceemailaddress eq '@{triggerOutputs()?['body/sanic_name']}'",
+              "$top": 50
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps-1"
+            },
+            "retryPolicy": {
+              "type": "exponential",
+              "count": 4,
+              "interval": "PT10S"
+            }
+          },
+          "runAfter": {}
+        },
+        "Por_cada_bloqueado": {
+          "type": "Foreach",
+          "foreach": "@outputs('Buscar_correos_bloqueados')?['body/value']",
+          "runAfter": {
+            "Buscar_correos_bloqueados": [
+              "Succeeded"
+            ]
+          },
+          "actions": {
+            "Reprocesar": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "sanic_chtblreceivedemailses",
+                  "recordId": "@items('Por_cada_bloqueado')?['sanic_chtblreceivedemailsid']",
+                  "item/sanic_validationstatus": 159460000,
+                  "item/sanic_emailreviewstatus": 159460000
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "UpdateOnlyRecord",
+                  "connectionName": "shared_commondataserviceforapps-1"
+                },
+                "retryPolicy": {
+                  "type": "exponential",
+                  "count": 4,
+                  "interval": "PT10S"
+                }
+              },
+              "runAfter": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}

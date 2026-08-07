@@ -97,7 +97,7 @@ namespace CashHub.Plugins
             }
 
             _tracing.Trace("Validate[{0}]: etapa 10 — actualizando estado del correo.", receivedEmailId);
-            UpdateEmail(receivedEmailId, result, context.ResolvedClientId, reply, triage);
+            UpdateEmail(receivedEmailId, result, context.ResolvedClientId, reply, triage, context.DeclaredCif);
 
             _tracing.Trace("Validate[{0}]: FIN — run={1}, passed={2}, hallazgos={3}, declaracion={4}.",
                 receivedEmailId, runId, result.Passed, result.FailFindings.Count(),
@@ -397,12 +397,18 @@ namespace CashHub.Plugins
         }
 
         private void UpdateEmail(Guid emailId, RunResult result, Guid? resolvedClientId,
-            (string Subject, string Body)? reply = null, TriageDecision triage = null)
+            (string Subject, string Body)? reply = null, TriageDecision triage = null,
+            string declaredCif = null)
         {
             var update = new Entity(Schema.ReceivedEmail.LogicalName, emailId)
             {
                 [Schema.ReceivedEmail.ReviewMethod] = new OptionSetValue(Schema.ReceivedEmail.MethodAuto)
             };
+
+            if (!string.IsNullOrWhiteSpace(declaredCif))
+            {
+                update[Schema.ReceivedEmail.DeclaredCif] = declaredCif;
+            }
 
             if (triage != null)
             {

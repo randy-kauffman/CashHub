@@ -20,6 +20,7 @@ namespace CashHub.Plugins
             public const string ReplyBodyHtml = "sanic_replybodyhtml";
             public const string SenderClassification = "sanic_senderclassification";
             public const string TriageNotes = "sanic_triagenotes";
+            public const string DeclaredCif = "sanic_declaredcif";
 
             // Triage del remitente. Solo Registrado habilita que salga correo del banco.
             public const int SenderRegistrado = 159460000;
