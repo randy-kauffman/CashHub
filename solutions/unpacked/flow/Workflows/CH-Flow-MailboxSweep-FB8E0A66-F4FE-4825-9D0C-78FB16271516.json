@@ -762,6 +762,96 @@
             "operationMetadataId": "b0fa4ec7-6115-4257-99d0-41948df2431b"
           },
           "type": "Scope"
+        },
+        "Sanar_respuestas": {
+          "type": "Scope",
+          "runAfter": {
+            "Sanar_pendientes": [
+              "Succeeded",
+              "Failed",
+              "Skipped"
+            ]
+          },
+          "actions": {
+            "Buscar_respuestas_encoladas": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "sanic_chtblreceivedemailses",
+                  "$select": "sanic_chtblreceivedemailsid,sanic_name,sanic_replyattempts,modifiedon",
+                  "$filter": "sanic_emailreplystatus eq 159460000 and sanic_replybodyhtml ne null and (sanic_replyattempts eq null or sanic_replyattempts lt 3)",
+                  "$top": 20
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "connectionName": "shared_commondataserviceforapps_1"
+                },
+                "retryPolicy": {
+                  "type": "exponential",
+                  "count": 4,
+                  "interval": "PT10S"
+                }
+              },
+              "runAfter": {}
+            },
+            "Por_cada_respuesta": {
+              "type": "Foreach",
+              "foreach": "@outputs('Buscar_respuestas_encoladas')?['body/value']",
+              "runAfter": {
+                "Buscar_respuestas_encoladas": [
+                  "Succeeded"
+                ]
+              },
+              "actions": {
+                "Espero_unos_minutos": {
+                  "type": "If",
+                  "runAfter": {},
+                  "expression": {
+                    "less": [
+                      "@items('Por_cada_respuesta')?['modifiedon']",
+                      "@addMinutes(utcNow(),-5)"
+                    ]
+                  },
+                  "actions": {
+                    "Reintentar_envio": {
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "entityName": "sanic_chtblreceivedemailses",
+                          "recordId": "@items('Por_cada_respuesta')?['sanic_chtblreceivedemailsid']",
+                          "item/sanic_replyattempts": "@add(coalesce(items('Por_cada_respuesta')?['sanic_replyattempts'],0),1)"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                          "operationId": "UpdateOnlyRecord",
+                          "connectionName": "shared_commondataserviceforapps_1"
+                        },
+                        "retryPolicy": {
+                          "type": "exponential",
+                          "count": 4,
+                          "interval": "PT10S"
+                        }
+                      },
+                      "runAfter": {}
+                    },
+                    "Nota_reintento": {
+                      "type": "AppendToArrayVariable",
+                      "runAfter": {
+                        "Reintentar_envio": [
+                          "Succeeded"
+                        ]
+                      },
+                      "inputs": {
+                        "name": "varNotas",
+                        "value": "@concat('Reintento de respuesta ', add(coalesce(items('Por_cada_respuesta')?['sanic_replyattempts'],0),1), ' de 3 para ', items('Por_cada_respuesta')?['sanic_name'])"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
