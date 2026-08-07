@@ -98,94 +98,28 @@
             RadiusTopRight: =6
             ZIndex: =1
 
-            icoSemaforo As icon:
-                Color: =If(varMinutosSinLatido < 0, RGBA(168, 0, 0, 1), varMinutosSinLatido <= 20, RGBA(16, 124, 16, 1), varMinutosSinLatido <= 45, RGBA(196, 137, 0, 1), RGBA(168, 0, 0, 1))
-                Height: =20
-                Icon: ="Circle"
-                Tooltip: ="Estado del barrido de ingesta"
-                Width: =20
+            htmlSalud As htmlViewer:
+                Font: =App.Theme.Font
+                Height: =56
+                HtmlText: |-
+                    ="<table width='100%' cellpadding='0' cellspacing='0'><tr>" &
+                                         "<td valign='middle' width='14'><span style='display:inline-block;width:9px;height:9px;border-radius:5px;background:" &
+                                         If(varMinutosSinLatido < 0, "rgb(164,38,44)", varMinutosSinLatido <= 20, "rgb(20,107,58)", varMinutosSinLatido <= 45, "rgb(154,97,0)", "rgb(164,38,44)") & "'></span></td>" &
+                                         "<td valign='middle'><div style='font-size:14px;font-weight:600;color:rgb(28,21,23)'>" &
+                                         If(varMinutosSinLatido < 0, "Sin latido del barrido", varMinutosSinLatido <= 20, "Ingesta operando", varMinutosSinLatido <= 45, "El barrido se atraso", "Ingesta detenida") &
+                                         "</div><div style='font-size:11.5px;color:rgb(120,106,109)'>" &
+                                         If(IsBlank(varLatido), "Configure CH-Flow-MailboxSweep para vigilar la ingesta",
+                                            "Ultimo control hace " & varMinutosSinLatido & " min &middot; " & Coalesce(varLatido.Details, "")) &
+                                         "</div></td>" &
+                                         "<td align='right' style='padding-left:34px'>" & "<div style='font-size:19px;font-weight:650;color:" & If(varEsperandoBanca > 0, "rgb(154,97,0)", "rgb(120,106,109)") & "'>" & varEsperandoBanca & "</div>" & "<div style='font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109)'>" & "Esperando a Banca" & "</div></td>" &
+                                         "<td align='right' style='padding-left:34px'>" & "<div style='font-size:19px;font-weight:650;color:" & If(varPendientes > 0, "rgb(154,97,0)", "rgb(120,106,109)") & "'>" & varPendientes & "</div>" & "<div style='font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109)'>" & "Sin validar" & "</div></td>" &
+                                         "<td align='right' style='padding-left:34px'>" & "<div style='font-size:19px;font-weight:650;color:" & If(varErroresSistema > 0, "rgb(110,22,34)", "rgb(120,106,109)") & "'>" & varErroresSistema & "</div>" & "<div style='font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109)'>" & "Errores" & "</div></td>" &
+                                         "<td align='right' style='padding-left:34px'>" & "<div style='font-size:19px;font-weight:650;color:" & If(varRespuestasPendientes > 0, "rgb(154,97,0)", "rgb(120,106,109)") & "'>" & varRespuestasPendientes & "</div>" & "<div style='font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109)'>" & "Sin responder" & "</div></td>" &
+                                         "</tr></table>"
+                Width: =Parent.Width - 60
                 X: =16
-                Y: =20
+                Y: =6
                 ZIndex: =1
-
-            lblSemaforo As label:
-                Color: =If(varMinutosSinLatido < 0, RGBA(168, 0, 0, 1), varMinutosSinLatido <= 20, RGBA(16, 124, 16, 1), varMinutosSinLatido <= 45, RGBA(196, 137, 0, 1), RGBA(168, 0, 0, 1))
-                FontWeight: =FontWeight.Semibold
-                Height: =24
-                Size: =13
-                Text: |-
-                    =If(varMinutosSinLatido < 0, "SIN SEÑAL — el barrido nunca corrió", varMinutosSinLatido <= 20, "Ingesta operando — último control hace " & varMinutosSinLatido & " min", varMinutosSinLatido <= 45, "Atención: sin control hace " & varMinutosSinLatido & " min", "ALERTA: sin control hace " & varMinutosSinLatido & " min — revisar los flujos")
-                Width: =480
-                X: =44
-                Y: =8
-                ZIndex: =2
-
-            lblContBanca As label:
-                Align: =Align.Center
-                Color: =If(varEsperandoBanca > 0, RGBA(196, 137, 0, 1), RGBA(97, 97, 97, 1))
-                FontWeight: =FontWeight.Semibold
-                Height: =44
-                Size: =13
-                Text: |-
-                    ="Esperando a Banca: " & varEsperandoBanca
-                Tooltip: ="Pre-registros de un cliente real cuyo remitente no esta registrado. Banca de Empresas debe registrar el correo y reprocesar."
-                Width: =230
-                X: =Parent.Width - 830
-                Y: =8
-                ZIndex: =2
-
-            lblContPendientes As label:
-                Align: =Align.Center
-                Color: =If(varPendientes > 0, RGBA(196, 137, 0, 1), RGBA(97, 97, 97, 1))
-                FontWeight: =FontWeight.Semibold
-                Height: =44
-                Size: =13
-                Text: |-
-                    ="Sin validar: " & varPendientes
-                Tooltip: ="Correos esperando validación"
-                Width: =190
-                X: =Parent.Width - 600
-                Y: =8
-                ZIndex: =2
-
-            lblContErrores As label:
-                Align: =Align.Center
-                Color: =If(varErroresSistema > 0, RGBA(168, 0, 0, 1), RGBA(97, 97, 97, 1))
-                FontWeight: =FontWeight.Semibold
-                Height: =44
-                Size: =13
-                Text: |-
-                    ="Errores: " & varErroresSistema
-                Tooltip: ="Correos con error de sistema"
-                Width: =190
-                X: =Parent.Width - 410
-                Y: =8
-                ZIndex: =2
-
-            lblContRespuestas As label:
-                Align: =Align.Center
-                Color: =If(varRespuestasPendientes > 0, RGBA(196, 137, 0, 1), RGBA(97, 97, 97, 1))
-                FontWeight: =FontWeight.Semibold
-                Height: =44
-                Size: =13
-                Text: |-
-                    ="Sin responder: " & varRespuestasPendientes
-                Tooltip: ="Respuestas al cliente sin enviar"
-                Width: =190
-                X: =Parent.Width - 220
-                Y: =8
-                ZIndex: =2
-
-            lblSemaforoDetalle As label:
-                Color: =RGBA(97, 97, 97, 1)
-                Height: =20
-                Size: =10
-                Text: =If(IsBlank(varLatido), "Configure el flujo CH-Flow-MailboxSweep para vigilar la ingesta", Coalesce(varLatido.Details, ""))
-                Width: =480
-                X: =44
-                Y: =32
-                ZIndex: =3
-
             btnRefrescarSalud As icon:
                 Color: =RGBA(97, 97, 97, 1)
                 Height: =24
@@ -226,6 +160,161 @@
                 Y: =18
                 ZIndex: =9
 
+        SearchContainer1_1 As groupContainer.horizontalAutoLayoutContainer:
+            Fill: =RGBA(245, 245, 245, 1)
+            FillPortions: =0
+            Height: =44
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            LayoutMaxHeight: =
+            LayoutMaxWidth: =
+            LayoutMinHeight: =100
+            LayoutMinWidth: =250
+            LayoutMode: =LayoutMode.Auto
+            PaddingRight: =5
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            ZIndex: =1
+
+            btnVistaTodo As Button:
+                Appearance: =If(varVista = "TODO", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                BasePaletteColor: =
+                BorderColor: =
+                DisplayMode: =DisplayMode.Edit
+                FontColor: =
+                Height: =32
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinWidth: =110
+                OnSelect: |-
+                    =UpdateContext({varVista: "TODO"})
+                Text: ="Todo lo accionable"
+                Tooltip: ="Todo lo que necesita una decision o una revision humana. En un dia sano esta lista deberia estar vacia."
+                Width: =150
+                X: =0
+                Y: =0
+                ZIndex: =1
+
+            btnVistaBanca As Button:
+                Appearance: =If(varVista = "BANCA", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                BasePaletteColor: =
+                BorderColor: =
+                DisplayMode: =DisplayMode.Edit
+                FontColor: =
+                Height: =32
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinWidth: =110
+                OnSelect: |-
+                    =UpdateContext({varVista: "BANCA"})
+                Text: ="Esperando a Banca (" & varEsperandoBanca & ")"
+                Tooltip: ="Pre-registro de un cliente real desde un correo no registrado. Hay que registrar el correo y reprocesar."
+                Width: =150
+                X: =0
+                Y: =0
+                ZIndex: =1
+
+            btnVistaSospechoso As Button:
+                Appearance: =If(varVista = "SOSPECHOSO", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                BasePaletteColor: =
+                BorderColor: =
+                DisplayMode: =DisplayMode.Edit
+                FontColor: =
+                Height: =32
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinWidth: =110
+                OnSelect: |-
+                    =UpdateContext({varVista: "SOSPECHOSO"})
+                Text: ="Sospechosos (" & varSospechosos & ")"
+                Tooltip: ="Alguien uso nuestra plantilla oficial con un CIF que no existe. Revisar antes de descartar."
+                Width: =150
+                X: =0
+                Y: =0
+                ZIndex: =1
+
+            btnVistaError As Button:
+                Appearance: =If(varVista = "ERROR", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                BasePaletteColor: =
+                BorderColor: =
+                DisplayMode: =DisplayMode.Edit
+                FontColor: =
+                Height: =32
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinWidth: =110
+                OnSelect: |-
+                    =UpdateContext({varVista: "ERROR"})
+                Text: ="Errores (" & varErroresSistema & ")"
+                Tooltip: ="Fallas de sistema durante la validacion."
+                Width: =150
+                X: =0
+                Y: =0
+                ZIndex: =1
+
+            btnVistaSinResp As Button:
+                Appearance: =If(varVista = "SINRESP", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                BasePaletteColor: =
+                BorderColor: =
+                DisplayMode: =DisplayMode.Edit
+                FontColor: =
+                Height: =32
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinWidth: =110
+                OnSelect: |-
+                    =UpdateContext({varVista: "SINRESP"})
+                Text: ="Sin responder (" & varRespuestasPendientes & ")"
+                Tooltip: ="La respuesta quedo compuesta pero no salio."
+                Width: =150
+                X: =0
+                Y: =0
+                ZIndex: =1
+
+            "SearchInput1_1 As 'Text input'":
+                AccessibleLabel: =""
+                Align: =""
+                Appearance: ="FilledDarker"
+                BasePaletteColor: =
+                BorderColor: =
+                BorderStyle: =""
+                ContentLanguage: =""
+                DisplayMode: =DisplayMode.Edit
+                Fill: =
+                FillPortions: =1
+                Font: =""
+                FontColor: =
+                FontItalic: =false
+                FontSize: =0
+                FontStrikethrough: =false
+                FontUnderline: =false
+                FontWeight: =""
+                Height: =44
+                LayoutMaxHeight: =
+                LayoutMaxWidth: =
+                LayoutMinHeight: =32
+                LayoutMinWidth: =320
+                MaxLength: =-1
+                Mode: ="SingleLine"
+                OnChange: =Reset(Self)
+                Placeholder: ="Buscar por asunto o remitente"
+                Required: =false
+                TabIndex: =0
+                Tooltip: =""
+                TriggerOutput: ="FocusOut"
+                Type: ="Text"
+                ValidationState: ="None"
+                Value: =""
+                Visible: =true
+                Width: =320
+                X: =0
+                Y: =0
+                ZIndex: =1
+
         BottomContainer1 As groupContainer.horizontalAutoLayoutContainer:
             Fill: =RGBA(245, 245, 245, 1)
             LayoutAlignItems: =LayoutAlignItems.Stretch
@@ -248,6 +337,206 @@
             RadiusTopLeft: =4
             RadiusTopRight: =4
             ZIndex: =2
+
+            SidebarContainer2 As groupContainer.verticalAutoLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =RGBA(255, 255, 255, 1)
+                FillPortions: =3
+                LayoutDirection: =LayoutDirection.Vertical
+                LayoutGap: =10
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                LayoutMaxHeight: =
+                LayoutMaxWidth: =
+                LayoutMinHeight: =100
+                LayoutMinWidth: =250
+                LayoutMode: =LayoutMode.Auto
+                PaddingBottom: =10
+                PaddingLeft: =10
+                PaddingRight: =10
+                PaddingTop: =10
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                ZIndex: =3
+
+                Table1_1 As Table.pcfdataset:
+                    AccessibleLabel: =""
+                    AlignInContainer: =AlignInContainer.Stretch
+                    ContentLanguage: =""
+                    ContextualLookupColumnFilters: ="yes"
+                    DateOnlyFormat: ='PowerAppsOneGrid.DateOnlyFormat'.ShortDate
+                    DateTimeFormat: ='PowerAppsOneGrid.DateTimeFormat'.ShortDateTime
+                    DisableChildItemsEditing: ="no"
+                    DisableStatusColumn: =""
+                    DisableStatusColumnSavingIcons: =""
+                    DisplayMode: =DisplayMode.Edit
+                    EnableAggregation: ="no"
+                    EnableColumnMoving: ="no"
+                    EnableDropdownColor: ="no"
+                    EnableEditing: ="no"
+                    EnableFiltering: ="no"
+                    EnableGrouping: ="no"
+                    EnableJumpBar: ="no"
+                    EnableMultipleSelection: ="no"
+                    EnablePagination: ="no"
+                    EnableRangeSelection: ='PowerAppsOneGrid.EnableRangeSelection'.Disable
+                    EnableSorting: ='PowerAppsOneGrid.EnableSorting'.Enable
+                    EnableStatusColumn: ="yes"
+                    EnableStatusIcons: ="no"
+                    EnableTypeIcons: ="no"
+                    FillPortions: =1
+                    Font: =""
+                    FontSize: =0
+                    FontWeight: =""
+                    GridCustomizerControlFullName: =""
+                    HeaderFont: =""
+                    HeaderFontSize: =0
+                    HeaderFontWeight: =""
+                    Height: =If(Self.Y + 500 > Parent.Height, Parent.Height - Self.Y, 500)
+                    Items: |-
+                        =Search(
+                            Switch(
+                                varVista,
+                                "BANCA",
+                                Filter('CH-Tbl-Received Emails',
+                                    EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'),
+                                "SOSPECHOSO",
+                                Filter('CH-Tbl-Received Emails',
+                                    SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso),
+                                "ERROR",
+                                Filter('CH-Tbl-Received Emails',
+                                    EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error),
+                                "SINRESP",
+                                Filter('CH-Tbl-Received Emails',
+                                    EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente),
+                                Filter('CH-Tbl-Received Emails',
+                                    EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'
+                                    || EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error
+                                    || ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
+                                    || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)
+                            ),
+                            SearchInput1_1.Value,
+                            Subject,
+                            SourceEmailAddress
+                        )
+                    LayoutMaxHeight: =
+                    LayoutMaxWidth: =
+                    LayoutMinHeight: =If(Self.Y + 500 > Parent.Height, Parent.Height - Self.Y, 500)
+                    LayoutMinWidth: =1
+                    LookupFilterBeginsWith: ="no"
+                    NavigationTypesAllowed: ="none"
+                    NoDataText: =If(varVista = "TODO", "Nada pendiente. El pipeline esta al dia.", "Sin resultados en esta vista.")
+                    onCellValueChange: =false
+                    onFilter: =false
+                    onNavigate: =false
+                    onRowSelect: =false
+                    onSave: =false
+                    OnSelect: =
+                    ReflowBehavior: ='PowerAppsOneGrid.ReflowBehavior'.ListOnly
+                    ShowAvatar: ="yes"
+                    ShowColumnHeaders: ="yes"
+                    ShowFooter: ="yes"
+                    TabIndex: =0
+                    Tooltip: =""
+                    Visible: =true
+                    Width: =If(Self.X + 800 > Parent.Width, Parent.Width - Self.X, 800)
+                    X: =0
+                    Y: =0
+                    ZIndex: =2
+
+                    Subject1 As PowerAppsOneGridTemplate_dataField.textualColumn:
+                        FieldDisplayName: ="Subject"
+                        FieldName: ="sanic_subject"
+                        FieldType: ="s"
+                        FieldVariantName: ="textualColumn"
+                        Order: =1
+                        Width: =0
+                        ZIndex: =1
+
+                    "'Email Address1' As PowerAppsOneGridTemplate_dataField.textualColumn":
+                        FieldDisplayName: ="Email Address"
+                        FieldName: ="emailaddress"
+                        FieldType: ="s"
+                        FieldVariantName: ="textualColumn"
+                        Order: =2
+                        Width: =0
+                        ZIndex: =2
+
+                    ReceptionDateTime1 As PowerAppsOneGridTemplate_dataField.textualColumn:
+                        FieldDisplayName: ="ReceptionDateTime"
+                        FieldName: ="sanic_receptiondatetime"
+                        FieldType: ="d"
+                        FieldVariantName: ="textualColumn"
+                        Order: =3
+                        Width: =0
+                        ZIndex: =3
+
+                    Attachment1 As PowerAppsOneGridTemplate_dataField.textualColumn:
+                        FieldDisplayName: ="Attachment"
+                        FieldName: ="sanic_attachment"
+                        FieldType: ="F"
+                        FieldVariantName: ="textualColumn"
+                        Order: =4
+                        Width: =0
+                        ZIndex: =4
+
+                    Status1 As PowerAppsOneGridTemplate_dataField.textualColumn:
+                        FieldDisplayName: ="Status"
+                        FieldName: ="statecode"
+                        FieldType: ="l"
+                        FieldVariantName: ="textualColumn"
+                        Order: =5
+                        Width: =0
+                        ZIndex: =5
+
+                    ErrorCode1 As PowerAppsOneGridTemplate_dataField.textualColumn:
+                        FieldDisplayName: ="ErrorCode"
+                        FieldName: ="sanic_errorcode"
+                        FieldType: ="s"
+                        FieldVariantName: ="textualColumn"
+                        Order: =6
+                        Width: =0
+                        ZIndex: =6
+
+                    ErrorText1 As PowerAppsOneGridTemplate_dataField.textualColumn:
+                        FieldDisplayName: ="ErrorText"
+                        FieldName: ="sanic_errortext"
+                        FieldType: ="s"
+                        FieldVariantName: ="textualColumn"
+                        Order: =7
+                        Width: =0
+                        ZIndex: =7
+
+                    ReplyDateTime1 As PowerAppsOneGridTemplate_dataField.textualColumn:
+                        FieldDisplayName: ="ReplyDateTime"
+                        FieldName: ="sanic_replydatetime"
+                        FieldType: ="d"
+                        FieldVariantName: ="textualColumn"
+                        Order: =8
+                        Width: =0
+                        ZIndex: =8
+
+                    RepliedBy1 As PowerAppsOneGridTemplate_dataField.textualColumn:
+                        FieldDisplayName: ="RepliedBy"
+                        FieldName: ="sanic_repliedby"
+                        FieldType: ="s"
+                        FieldVariantName: ="textualColumn"
+                        Order: =9
+                        Width: =0
+                        ZIndex: =9
+
+                    SourceEmailAddress1 As PowerAppsOneGridTemplate_dataField.textualColumn:
+                        FieldDisplayName: ="SourceEmailAddress"
+                        FieldName: ="sanic_sourceemailaddress"
+                        FieldType: ="s"
+                        FieldVariantName: ="textualColumn"
+                        Order: =10
+                        Width: =0
+                        ZIndex: =10
 
             "'container Detalle' As groupContainer.verticalAutoLayoutContainer":
                 DropShadow: =DropShadow.Light
@@ -283,9 +572,9 @@
                     Height: =58
                     HtmlText: |-
                         ="<table width='100%' cellpadding='0' cellspacing='0' style='color:rgb(28,21,23);border-bottom:1px solid rgb(230,223,224);padding-bottom:10px'><tr>" &
-                           "<td style='font-size:19px;font-weight:650;color:rgb(28,21,23)'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.Name,""),"&","&amp;"),"<","&lt;") & "</td>" &
-                           "<td style='font-size:13px;color:rgb(70,59,62);padding-left:14px'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.SourceEmailAddress,""),"&","&amp;"),"<","&lt;") & "</td>" &
-                           "<td style='padding-left:14px'><span style='font-size:11px;font-weight:650;padding:3px 9px;border-radius:11px;background:" &
+                           "<td width='1%' nowrap style='font-size:19px;font-weight:650;color:rgb(28,21,23)'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.Name,""),"&","&amp;"),"<","&lt;") & "</td>" &
+                           "<td width='1%' nowrap style='font-size:13.5px;color:rgb(70,59,62);padding-left:14px'>" & Substitute(Substitute(Coalesce(Table1_1.Selected.SourceEmailAddress,""),"&","&amp;"),"<","&lt;") & "</td>" &
+                           "<td width='1%' nowrap style='padding-left:14px'><span style='font-size:11px;font-weight:650;padding:3px 9px;border-radius:11px;background:" &
                            If(Table1_1.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error,
                               "rgb(246,233,235);color:rgb(110,22,34)", "rgb(253,243,227);color:rgb(154,97,0)") & "'>" &
                            Coalesce(Text(Table1_1.Selected.SenderClassification), "Sin clasificar") & "</span></td>" &
@@ -333,7 +622,12 @@
                                 "<table cellpadding='0' cellspacing='0'><tr><td width='31' valign='top' style='padding:0 0 9px 0'>" &
                                 "<span style='display:inline-block;width:21px;height:21px;line-height:21px;text-align:center;border-radius:11px;background:rgb(251,237,239);color:rgb(158,13,36);font-size:11px;font-weight:700'>" & i & "</span></td>" &
                                 "<td style='font-size:13.5px;line-height:1.5;color:rgb(28,21,23);vertical-align:top;padding:0 0 10px 0'>" &
-                                Substitute(Substitute(txt, "&", "&amp;"), "<", "&lt;") & "</td></tr></table>"
+                                If(
+                                    CountRows(Split(txt, "|")) > 1,
+                                    "<b>" & Substitute(Substitute(First(Split(txt, "|")).Value, "&", "&amp;"), "<", "&lt;") & "</b> " &
+                                    Substitute(Substitute(Last(Split(txt, "|")).Value, "&", "&amp;"), "<", "&lt;"),
+                                    Substitute(Substitute(txt, "&", "&amp;"), "<", "&lt;")
+                                ) & "</td></tr></table>"
                             ) &
                             If(IsBlank(g.Nota), "", "<p style='font-size:12.5px;line-height:1.5;color:rgb(120,106,109);margin:10px 0 0 0'>" & Substitute(Substitute(Coalesce(g.Nota,""),"&","&amp;"),"<","&lt;") & "</p>")
                         )
@@ -663,361 +957,36 @@
                     Width: =Parent.Width - 48
                     ZIndex: =5
 
-            SidebarContainer2 As groupContainer.verticalAutoLayoutContainer:
-                DropShadow: =DropShadow.Light
-                Fill: =RGBA(255, 255, 255, 1)
-                FillPortions: =3
-                LayoutDirection: =LayoutDirection.Vertical
-                LayoutGap: =10
-                LayoutGridColumnMinWidth: =0
-                LayoutGridColumns: =6
-                LayoutGridRowMinHeight: =0
-                LayoutGridRows: =6
-                LayoutMaxHeight: =
-                LayoutMaxWidth: =
-                LayoutMinHeight: =100
-                LayoutMinWidth: =250
-                LayoutMode: =LayoutMode.Auto
-                PaddingBottom: =10
-                PaddingLeft: =10
-                PaddingRight: =10
-                PaddingTop: =10
-                RadiusBottomLeft: =8
-                RadiusBottomRight: =8
-                RadiusTopLeft: =8
-                RadiusTopRight: =8
-                ZIndex: =3
 
-                SearchContainer1_1 As groupContainer.horizontalAutoLayoutContainer:
-                    Fill: =RGBA(245, 245, 245, 1)
-                    FillPortions: =0
-                    Height: =44
-                    LayoutGridColumnMinWidth: =0
-                    LayoutGridColumns: =6
-                    LayoutGridRowMinHeight: =0
-                    LayoutGridRows: =6
-                    LayoutMaxHeight: =
-                    LayoutMaxWidth: =
-                    LayoutMinHeight: =100
-                    LayoutMinWidth: =250
-                    LayoutMode: =LayoutMode.Auto
-                    PaddingRight: =5
-                    RadiusBottomLeft: =4
-                    RadiusBottomRight: =4
-                    RadiusTopLeft: =4
-                    RadiusTopRight: =4
-                    ZIndex: =1
+                btnDetTecnico As Button:
+                    Appearance: ='ButtonCanvas.Appearance'.Subtle
+                    Height: =28
+                    OnSelect: =UpdateContext({varTecnicoAbierto: !Coalesce(varTecnicoAbierto, false)})
+                    Text: =If(Coalesce(varTecnicoAbierto, false), "Ocultar detalle tecnico", "Detalle tecnico")
+                    Width: =190
+                    ZIndex: =10
 
-                    btnVistaTodo As Button:
-                        Appearance: =If(varVista = "TODO", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
-                        BasePaletteColor: =
-                        BorderColor: =
-                        DisplayMode: =DisplayMode.Edit
-                        FontColor: =
-                        Height: =32
-                        LayoutMaxHeight: =0
-                        LayoutMaxWidth: =0
-                        LayoutMinWidth: =110
-                        OnSelect: |-
-                            =UpdateContext({varVista: "TODO"})
-                        Text: ="Todo lo accionable"
-                        Tooltip: ="Todo lo que necesita una decision o una revision humana. En un dia sano esta lista deberia estar vacia."
-                        Width: =150
-                        X: =0
-                        Y: =0
-                        ZIndex: =1
-
-                    btnVistaBanca As Button:
-                        Appearance: =If(varVista = "BANCA", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
-                        BasePaletteColor: =
-                        BorderColor: =
-                        DisplayMode: =DisplayMode.Edit
-                        FontColor: =
-                        Height: =32
-                        LayoutMaxHeight: =0
-                        LayoutMaxWidth: =0
-                        LayoutMinWidth: =110
-                        OnSelect: |-
-                            =UpdateContext({varVista: "BANCA"})
-                        Text: ="Esperando a Banca (" & varEsperandoBanca & ")"
-                        Tooltip: ="Pre-registro de un cliente real desde un correo no registrado. Hay que registrar el correo y reprocesar."
-                        Width: =150
-                        X: =0
-                        Y: =0
-                        ZIndex: =1
-
-                    btnVistaSospechoso As Button:
-                        Appearance: =If(varVista = "SOSPECHOSO", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
-                        BasePaletteColor: =
-                        BorderColor: =
-                        DisplayMode: =DisplayMode.Edit
-                        FontColor: =
-                        Height: =32
-                        LayoutMaxHeight: =0
-                        LayoutMaxWidth: =0
-                        LayoutMinWidth: =110
-                        OnSelect: |-
-                            =UpdateContext({varVista: "SOSPECHOSO"})
-                        Text: ="Sospechosos (" & varSospechosos & ")"
-                        Tooltip: ="Alguien uso nuestra plantilla oficial con un CIF que no existe. Revisar antes de descartar."
-                        Width: =150
-                        X: =0
-                        Y: =0
-                        ZIndex: =1
-
-                    btnVistaError As Button:
-                        Appearance: =If(varVista = "ERROR", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
-                        BasePaletteColor: =
-                        BorderColor: =
-                        DisplayMode: =DisplayMode.Edit
-                        FontColor: =
-                        Height: =32
-                        LayoutMaxHeight: =0
-                        LayoutMaxWidth: =0
-                        LayoutMinWidth: =110
-                        OnSelect: |-
-                            =UpdateContext({varVista: "ERROR"})
-                        Text: ="Errores (" & varErroresSistema & ")"
-                        Tooltip: ="Fallas de sistema durante la validacion."
-                        Width: =150
-                        X: =0
-                        Y: =0
-                        ZIndex: =1
-
-                    btnVistaSinResp As Button:
-                        Appearance: =If(varVista = "SINRESP", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
-                        BasePaletteColor: =
-                        BorderColor: =
-                        DisplayMode: =DisplayMode.Edit
-                        FontColor: =
-                        Height: =32
-                        LayoutMaxHeight: =0
-                        LayoutMaxWidth: =0
-                        LayoutMinWidth: =110
-                        OnSelect: |-
-                            =UpdateContext({varVista: "SINRESP"})
-                        Text: ="Sin responder (" & varRespuestasPendientes & ")"
-                        Tooltip: ="La respuesta quedo compuesta pero no salio."
-                        Width: =150
-                        X: =0
-                        Y: =0
-                        ZIndex: =1
-
-                    "SearchInput1_1 As 'Text input'":
-                        AccessibleLabel: =""
-                        Align: =""
-                        Appearance: ="FilledDarker"
-                        BasePaletteColor: =
-                        BorderColor: =
-                        BorderStyle: =""
-                        ContentLanguage: =""
-                        DisplayMode: =DisplayMode.Edit
-                        Fill: =
-                        FillPortions: =1
-                        Font: =""
-                        FontColor: =
-                        FontItalic: =false
-                        FontSize: =0
-                        FontStrikethrough: =false
-                        FontUnderline: =false
-                        FontWeight: =""
-                        Height: =44
-                        LayoutMaxHeight: =
-                        LayoutMaxWidth: =
-                        LayoutMinHeight: =32
-                        LayoutMinWidth: =320
-                        MaxLength: =-1
-                        Mode: ="SingleLine"
-                        OnChange: =Reset(Self)
-                        Placeholder: ="Buscar por asunto o remitente"
-                        Required: =false
-                        TabIndex: =0
-                        Tooltip: =""
-                        TriggerOutput: ="FocusOut"
-                        Type: ="Text"
-                        ValidationState: ="None"
-                        Value: =""
-                        Visible: =true
-                        Width: =320
-                        X: =0
-                        Y: =0
-                        ZIndex: =1
-
-                Table1_1 As Table.pcfdataset:
-                    AccessibleLabel: =""
-                    AlignInContainer: =AlignInContainer.Stretch
-                    ContentLanguage: =""
-                    ContextualLookupColumnFilters: ="yes"
-                    DateOnlyFormat: ='PowerAppsOneGrid.DateOnlyFormat'.ShortDate
-                    DateTimeFormat: ='PowerAppsOneGrid.DateTimeFormat'.ShortDateTime
-                    DisableChildItemsEditing: ="no"
-                    DisableStatusColumn: =""
-                    DisableStatusColumnSavingIcons: =""
-                    DisplayMode: =DisplayMode.Edit
-                    EnableAggregation: ="no"
-                    EnableColumnMoving: ="no"
-                    EnableDropdownColor: ="no"
-                    EnableEditing: ="no"
-                    EnableFiltering: ="no"
-                    EnableGrouping: ="no"
-                    EnableJumpBar: ="no"
-                    EnableMultipleSelection: ="no"
-                    EnablePagination: ="no"
-                    EnableRangeSelection: ='PowerAppsOneGrid.EnableRangeSelection'.Disable
-                    EnableSorting: ='PowerAppsOneGrid.EnableSorting'.Enable
-                    EnableStatusColumn: ="yes"
-                    EnableStatusIcons: ="no"
-                    EnableTypeIcons: ="no"
-                    FillPortions: =1
-                    Font: =""
-                    FontSize: =0
-                    FontWeight: =""
-                    GridCustomizerControlFullName: =""
-                    HeaderFont: =""
-                    HeaderFontSize: =0
-                    HeaderFontWeight: =""
-                    Height: =If(Self.Y + 500 > Parent.Height, Parent.Height - Self.Y, 500)
-                    Items: |-
-                        =Search(
-                            Switch(
-                                varVista,
-                                "BANCA",
-                                Filter('CH-Tbl-Received Emails',
-                                    EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'),
-                                "SOSPECHOSO",
-                                Filter('CH-Tbl-Received Emails',
-                                    SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso),
-                                "ERROR",
-                                Filter('CH-Tbl-Received Emails',
-                                    EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error),
-                                "SINRESP",
-                                Filter('CH-Tbl-Received Emails',
-                                    EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente),
-                                Filter('CH-Tbl-Received Emails',
-                                    EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'
-                                    || EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error
-                                    || ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
-                                    || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)
-                            ),
-                            SearchInput1_1.Value,
-                            Subject,
-                            SourceEmailAddress
-                        )
-                    LayoutMaxHeight: =
-                    LayoutMaxWidth: =
-                    LayoutMinHeight: =If(Self.Y + 500 > Parent.Height, Parent.Height - Self.Y, 500)
-                    LayoutMinWidth: =1
-                    LookupFilterBeginsWith: ="no"
-                    NavigationTypesAllowed: ="none"
-                    NoDataText: =If(varVista = "TODO", "Nada pendiente. El pipeline esta al dia.", "Sin resultados en esta vista.")
-                    onCellValueChange: =false
-                    onFilter: =false
-                    onNavigate: =false
-                    onRowSelect: =false
-                    onSave: =false
-                    OnSelect: =
-                    ReflowBehavior: ='PowerAppsOneGrid.ReflowBehavior'.ListOnly
-                    ShowAvatar: ="yes"
-                    ShowColumnHeaders: ="yes"
-                    ShowFooter: ="yes"
-                    TabIndex: =0
-                    Tooltip: =""
-                    Visible: =true
-                    Width: =If(Self.X + 800 > Parent.Width, Parent.Width - Self.X, 800)
-                    X: =0
-                    Y: =0
-                    ZIndex: =2
-
-                    Subject1 As PowerAppsOneGridTemplate_dataField.textualColumn:
-                        FieldDisplayName: ="Subject"
-                        FieldName: ="sanic_subject"
-                        FieldType: ="s"
-                        FieldVariantName: ="textualColumn"
-                        Order: =1
-                        Width: =0
-                        ZIndex: =1
-
-                    "'Email Address1' As PowerAppsOneGridTemplate_dataField.textualColumn":
-                        FieldDisplayName: ="Email Address"
-                        FieldName: ="emailaddress"
-                        FieldType: ="s"
-                        FieldVariantName: ="textualColumn"
-                        Order: =2
-                        Width: =0
-                        ZIndex: =2
-
-                    ReceptionDateTime1 As PowerAppsOneGridTemplate_dataField.textualColumn:
-                        FieldDisplayName: ="ReceptionDateTime"
-                        FieldName: ="sanic_receptiondatetime"
-                        FieldType: ="d"
-                        FieldVariantName: ="textualColumn"
-                        Order: =3
-                        Width: =0
-                        ZIndex: =3
-
-                    Attachment1 As PowerAppsOneGridTemplate_dataField.textualColumn:
-                        FieldDisplayName: ="Attachment"
-                        FieldName: ="sanic_attachment"
-                        FieldType: ="F"
-                        FieldVariantName: ="textualColumn"
-                        Order: =4
-                        Width: =0
-                        ZIndex: =4
-
-                    Status1 As PowerAppsOneGridTemplate_dataField.textualColumn:
-                        FieldDisplayName: ="Status"
-                        FieldName: ="statecode"
-                        FieldType: ="l"
-                        FieldVariantName: ="textualColumn"
-                        Order: =5
-                        Width: =0
-                        ZIndex: =5
-
-                    ErrorCode1 As PowerAppsOneGridTemplate_dataField.textualColumn:
-                        FieldDisplayName: ="ErrorCode"
-                        FieldName: ="sanic_errorcode"
-                        FieldType: ="s"
-                        FieldVariantName: ="textualColumn"
-                        Order: =6
-                        Width: =0
-                        ZIndex: =6
-
-                    ErrorText1 As PowerAppsOneGridTemplate_dataField.textualColumn:
-                        FieldDisplayName: ="ErrorText"
-                        FieldName: ="sanic_errortext"
-                        FieldType: ="s"
-                        FieldVariantName: ="textualColumn"
-                        Order: =7
-                        Width: =0
-                        ZIndex: =7
-
-                    ReplyDateTime1 As PowerAppsOneGridTemplate_dataField.textualColumn:
-                        FieldDisplayName: ="ReplyDateTime"
-                        FieldName: ="sanic_replydatetime"
-                        FieldType: ="d"
-                        FieldVariantName: ="textualColumn"
-                        Order: =8
-                        Width: =0
-                        ZIndex: =8
-
-                    RepliedBy1 As PowerAppsOneGridTemplate_dataField.textualColumn:
-                        FieldDisplayName: ="RepliedBy"
-                        FieldName: ="sanic_repliedby"
-                        FieldType: ="s"
-                        FieldVariantName: ="textualColumn"
-                        Order: =9
-                        Width: =0
-                        ZIndex: =9
-
-                    SourceEmailAddress1 As PowerAppsOneGridTemplate_dataField.textualColumn:
-                        FieldDisplayName: ="SourceEmailAddress"
-                        FieldName: ="sanic_sourceemailaddress"
-                        FieldType: ="s"
-                        FieldVariantName: ="textualColumn"
-                        Order: =10
-                        Width: =0
-                        ZIndex: =10
-
+                htmlTecnico As htmlViewer:
+                    AutoHeight: =true
+                    Font: =App.Theme.Font
+                    Height: =150
+                    HtmlText: |-
+                        ="<table cellpadding='0' cellspacing='0' style='font-size:12.5px'>" &
+                         Concat(
+                             Table(
+                                 {k: "Clasificacion del remitente", v: Coalesce(Text(Table1_1.Selected.SenderClassification), "sin clasificar — el motor no llego a esa etapa")},
+                                 {k: "Cliente atribuido", v: Coalesce(Table1_1.Selected.'Cliente atribuido'.Name, "ninguno")},
+                                 {k: "Mensaje del motor", v: Coalesce(Table1_1.Selected.ErrorText, "sin mensaje")},
+                                 {k: "Respuesta al cliente", v: Coalesce(Text(Table1_1.Selected.EmailReplyStatus), "-")},
+                                 {k: "Numero de gestion", v: Coalesce(Table1_1.Selected.Name, "-")}
+                             ),
+                             "<tr><td valign='top' style='color:rgb(120,106,109);padding:0 20px 7px 0;white-space:nowrap'>" & k &
+                             "</td><td valign='top' style='color:rgb(28,21,23);padding:0 0 7px 0'>" &
+                             Substitute(Substitute(v, "&", "&amp;"), "<", "&lt;") & "</td></tr>"
+                         ) & "</table>"
+                    Visible: =Coalesce(varTecnicoAbierto, false)
+                    Width: =Parent.Width - 48
+                    ZIndex: =11
     ExpandMenu_2 As ExpandMenu:
         ChildTabPriority: =true
         ContentLanguage: =""
