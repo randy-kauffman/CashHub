@@ -442,6 +442,23 @@
                     Y: =54
                     ZIndex: =5
 
+
+            htmlVacio As htmlViewer:
+                AlignInContainer: =AlignInContainer.Stretch
+                FillPortions: =8
+                Font: =App.Theme.Font
+                Height: =300
+                HtmlText: |-
+                    ="<div style='text-align:center;padding-top:90px'>" &
+                     "<div style='display:inline-block;width:52px;height:52px;line-height:52px;border-radius:26px;background:rgb(232,242,236);color:rgb(20,107,58);font-size:24px;font-weight:700'>&check;</div>" &
+                     "<div style='font-size:19px;font-weight:650;color:rgb(28,21,23);margin-top:14px'>Todo al dia</div>" &
+                     "<div style='font-size:13.5px;color:rgb(120,106,109);margin-top:6px'>" &
+                     If(varVista = "TODO",
+                        "No hay nada esperando una decision. Si aparece algo, va a estar aca.",
+                        "Sin casos en esta vista.") &
+                     "</div></div>"
+                Visible: =CountRows(galBandeja.AllItems) = 0
+                ZIndex: =3
             "'container Detalle' As groupContainer.verticalAutoLayoutContainer":
                 DropShadow: =DropShadow.Light
                 Fill: =RGBA(255, 255, 255, 1)
@@ -466,7 +483,7 @@
                 RadiusBottomRight: =4
                 RadiusTopLeft: =4
                 RadiusTopRight: =4
-                Visible: =!IsBlank(galBandeja.Selected)
+                Visible: =And(!IsBlank(galBandeja.Selected), CountRows(galBandeja.AllItems) > 0)
                 ZIndex: =3
 
                 htmlCabecera As htmlViewer:
@@ -770,6 +787,34 @@
                         Y: =0
                         ZIndex: =4
 
+
+                    btnVerAdjunto As Button:
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        DisplayMode: =If(IsBlank(LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')), DisplayMode.Disabled, DisplayMode.Edit)
+                        Height: =36
+                        OnSelect: |-
+                            =With(
+                                {a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')},
+                                If(
+                                    IsBlank(a),
+                                    Notify("Este correo no tiene adjunto guardado.", NotificationType.Warning),
+                                    Download(a.FileContent.Value)
+                                )
+                            );
+                        Text: |-
+                            ="Ver el archivo adjunto" & With({a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')}, If(IsBlank(a), "", " (" & a.FileName & ")"))
+                        Tooltip: ="Descarga el archivo tal como lo mando el cliente."
+                        Width: =260
+                        ZIndex: =6
+
+                    btnAceptar As Button:
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        Height: =36
+                        OnSelect: =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: true, varOverrideMotivo: ""})
+                        Text: ="Aceptar manualmente"
+                        Tooltip: ="Reemplaza el resultado del motor y lo da por valido. Exige motivo y queda auditado."
+                        Width: =190
+                        ZIndex: =7
                     btnDenegar As Button:
                         AcceptsFocus: =true
                         AccessibleLabel: =""
