@@ -343,18 +343,7 @@
             galBandeja As gallery.galleryVertical:
                 BorderColor: =App.Theme.Colors.Darker40
                 DelayItemLoading: =true
-                Layout: =Layout.Vertical
-                LayoutMinHeight: =16
-                LoadingSpinner: =LoadingSpinner.Data
-                ZIndex: =1
-
                 FillPortions: =3
-                LayoutMaxHeight: =
-                LayoutMaxWidth: =
-                LayoutMinWidth: =260
-                TemplatePadding: =0
-                TemplateSize: =84
-                ShowScrollbar: =true
                 Items: |-
                     =Search(
                         Switch(
@@ -377,13 +366,20 @@
                         Subject,
                         SourceEmailAddress
                     )
+                Layout: =Layout.Vertical
+                LayoutMaxHeight: =
+                LayoutMaxWidth: =
+                LayoutMinHeight: =16
+                LayoutMinWidth: =260
+                LoadingSpinner: =LoadingSpinner.Data
+                TemplatePadding: =0
+                TemplateSize: =84
+                ZIndex: =1
 
                 recFranja As rectangle:
                     Fill: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error || ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, RGBA(110, 22, 34, 1), RGBA(154, 97, 0, 1))
                     Height: =Parent.TemplateHeight
                     Width: =3
-                    X: =0
-                    Y: =0
                     ZIndex: =1
 
                 lblGalAsunto As label:
@@ -403,7 +399,8 @@
                     Color: =RGBA(120, 106, 109, 1)
                     Height: =18
                     Size: =9
-                    Text: =With({h: DateDiff(ThisItem.ReceptionDateTime, Now(), TimeUnit.Hours)}, If(h < 1, "hace " & DateDiff(ThisItem.ReceptionDateTime, Now(), TimeUnit.Minutes) & " min", h < 24, "hace " & h & " h", "hace " & RoundDown(h / 24, 0) & " d"))
+                    Text: |-
+                        =With({h: DateDiff(ThisItem.ReceptionDateTime, Now(), TimeUnit.Hours)}, If(h < 1, "hace " & DateDiff(ThisItem.ReceptionDateTime, Now(), TimeUnit.Minutes) & " min", h < 24, "hace " & h & " h", "hace " & RoundDown(h / 24, 0) & " d"))
                     Width: =92
                     X: =Parent.TemplateWidth - 104
                     Y: =12
@@ -438,6 +435,7 @@
                     X: =16
                     Y: =54
                     ZIndex: =5
+
             "'container Detalle' As groupContainer.verticalAutoLayoutContainer":
                 DropShadow: =DropShadow.Light
                 Fill: =RGBA(255, 255, 255, 1)
@@ -808,7 +806,7 @@
                     Height: =290
                     HtmlText: |-
                         =With(
-                            {r: First(Sort(Filter('CH-Tbl-ValidationRuns', ReceivedEmail.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails'), 'Created On', SortOrder.Descending))},
+                            {r: First(Sort(Filter('CH-Tbl-ValidationRuns', SourceRecordID = galBandeja.Selected.'CH-Tbl-Received Emails'), 'Created On', SortOrder.Descending))},
                             With(
                                 {
                                     fal: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = r.'CH-Tbl-ValidationRuns',
