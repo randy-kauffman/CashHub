@@ -44,7 +44,7 @@
                         EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error)),
                 varRespuestasPendientes: CountRows(
                     Filter('CH-Tbl-Received Emails',
-                        EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes)))
+                        EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3))
             }
         );
         UpdateContext(
@@ -138,7 +138,7 @@
                                     EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error)),
                             varRespuestasPendientes: CountRows(
                                 Filter('CH-Tbl-Received Emails',
-                                    EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes)))
+                                    EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3))
                         }
                     );
                     UpdateContext(
@@ -348,12 +348,12 @@
                             "ERROR",
                             Filter('CH-Tbl-Received Emails', EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error),
                             "SINRESP",
-                            Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes)),
+                            Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3),
                             Filter('CH-Tbl-Received Emails',
                                 EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'
                                 || EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error
                                 || ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
-                                || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes))
+                                || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3)
                         ),
                         SearchInput1_1.Value,
                         Subject,
@@ -425,7 +425,7 @@
                     PaddingLeft: =8
                     PaddingRight: =8
                     Size: =8
-                    Text: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "Fallo el sistema", ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Sospechoso", ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual', "Cliente sin registrar", ThisItem.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes), "Respuesta sin enviar", "Sin validar")
+                    Text: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "Fallo el sistema", ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Sospechoso", ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual', "Cliente sin registrar", ThisItem.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ThisItem.ReplyAttempts >= 3, "Respuesta sin enviar", "Sin validar")
                     Width: =152
                     X: =16
                     Y: =54
@@ -445,6 +445,8 @@
                         "No hay nada esperando una decision. Si aparece algo, va a estar aca.",
                         "Sin casos en esta vista.") &
                      "</div></div>"
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
                 Visible: =CountRows(galBandeja.AllItems) = 0
                 ZIndex: =3
 
@@ -518,7 +520,7 @@
                     Height: =0
                     HtmlText: |-
                         =With(
-                            {g: LookUp('CH-Tbl-Playbook', Name = Switch(galBandeja.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(galBandeja.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",  If(galBandeja.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes), "respuesta-sin-enviar", "sin-validar"))))},
+                            {g: LookUp('CH-Tbl-Playbook', Name = Switch(galBandeja.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(galBandeja.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",  If(galBandeja.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3, "respuesta-sin-enviar", "sin-validar"))))},
                             "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Que hacer" &
                             If(IsBlank(g.Titulo), "", " &nbsp;&mdash;&nbsp; " & Substitute(Substitute(Coalesce(g.Titulo,""),"&","&amp;"),"<","&lt;")) & "</p>" &
                             Concat(
@@ -564,8 +566,13 @@
 
                     btnAvisarBanca As Button:
                         Appearance: ='ButtonCanvas.Appearance'.Primary
+                        BasePaletteColor: =
+                        BorderColor: =
                         DisplayMode: =If(Or(!IsBlank(galBandeja.Selected.'Cliente atribuido'), galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso), DisplayMode.Edit, DisplayMode.Disabled)
+                        FontColor: =
                         Height: =36
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
                         OnSelect: |-
                             =With(
                                 {
@@ -603,13 +610,19 @@
                                         {IsHtml: true, Importance: "Normal"}
                                     );
                                     Refresh('CH-Tbl-Received Emails');
-                                    Notify("Recordatorio enviado a Banca de Empresas con el detalle del caso.", NotificationType.Success)
+                                    Patch('CH-Tbl-Received Emails', galBandeja.Selected, {BancaNotifiedOn: Now()});
+                                Refresh('CH-Tbl-Received Emails');
+                                Notify("Recordatorio enviado a Banca de Empresas con el detalle del caso.", NotificationType.Success)
                                 )
                             );
                         Text: |-
-                            =If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Consultar a Banca por este CIF", "Avisar a Banca de Empresas")
+                            =If(IsBlank(galBandeja.Selected.BancaNotifiedOn),
+                            If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Consultar a Banca por este CIF", "Avisar a Banca de Empresas"),
+                            "Volver a avisar (ultimo aviso " & Text(galBandeja.Selected.BancaNotifiedOn, "dd/mm hh:mm") & ")")
                         Tooltip: ="Le manda a Banca el detalle para que registren la direccion. Operaciones no modifica datos de cliente."
                         Width: =280
+                        X: =0
+                        Y: =0
                         ZIndex: =1
 
                     btnReprocesar As Button:
@@ -777,8 +790,13 @@
 
                     btnVerAdjunto As Button:
                         Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        BasePaletteColor: =
+                        BorderColor: =
                         DisplayMode: =If(IsBlank(LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')), DisplayMode.Disabled, DisplayMode.Edit)
+                        FontColor: =
                         Height: =36
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
                         OnSelect: |-
                             =With(
                                 {a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')},
@@ -792,16 +810,26 @@
                             ="Ver el archivo adjunto" & With({a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')}, If(IsBlank(a), "", " (" & a.Filename & ")"))
                         Tooltip: ="Descarga el archivo tal como lo mando el cliente."
                         Width: =260
+                        X: =0
+                        Y: =0
                         ZIndex: =6
 
                     btnAceptar As Button:
                         Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        BasePaletteColor: =
+                        BorderColor: =
+                        DisplayMode: =DisplayMode.Edit
+                        FontColor: =
                         Height: =36
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
                         OnSelect: |-
                             =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: true, varOverrideMotivo: ""})
                         Text: ="Aceptar manualmente"
                         Tooltip: ="Reemplaza el resultado del motor y lo da por valido. Exige motivo y queda auditado."
                         Width: =190
+                        X: =0
+                        Y: =0
                         ZIndex: =7
 
                 htmlReglas As htmlViewer:

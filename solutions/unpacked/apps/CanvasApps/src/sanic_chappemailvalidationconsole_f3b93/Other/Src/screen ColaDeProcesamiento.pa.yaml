@@ -11,6 +11,10 @@ Screens:
     Properties:
       OnVisible: |-
         =UpdateContext({varSpinnerCompletoVisible: false, varVista: "TODO"});
+        // Catalogo de reglas: 28 filas fijas. Se carga una vez para poder cruzarlo
+        // contra los resultados en memoria sin advertencias de delegacion.
+        ClearCollect(colReglasActivas, Filter('CH-Tbl-ValidationRules', IsActive = true));
+        Select(galBandeja);
         UpdateContext(
             {
                 stBase: "color:rgb(28,21,23)",
@@ -30,17 +34,6 @@ Screens:
                 stChip: "font-size:11px;font-weight:650;padding:3px 9px;border-radius:11px"
             }
         );
-        // Que area es el usuario. El limite real es el rol de Dataverse sobre las
-        // tablas de RFC; esto solo evita ofrecer un boton que no le corresponde.
-        ClearCollect(colPermisosAlta,
-            Filter('CH-Tbl-ClientDataChangePermissions' As C,
-                C.Name = "sanic_chtblclientemail"));
-        UpdateContext({varPuedeAltaCorreo:
-            CountRows(
-                Filter(colPermisosAlta,
-                    !IsBlank(
-                        LookUp(Office365Groups.ListGroupMembers(AADGroupID).value,
-                               userPrincipalName = User().Email)))) > 0});
         // Salud del pipeline: latido del barrido + cola real
         UpdateContext(
             {
@@ -59,7 +52,7 @@ Screens:
                         EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error)),
                 varRespuestasPendientes: CountRows(
                     Filter('CH-Tbl-Received Emails',
-                        EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente))
+                        EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes)))
             }
         );
         UpdateContext(
@@ -153,7 +146,7 @@ Screens:
                                           EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error)),
                                   varRespuestasPendientes: CountRows(
                                       Filter('CH-Tbl-Received Emails',
-                                          EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente))
+                                          EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes)))
                               }
                           );
                           UpdateContext(
@@ -272,12 +265,12 @@ Screens:
                                   "ERROR",
                                   Filter('CH-Tbl-Received Emails', EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error),
                                   "SINRESP",
-                                  Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente),
+                                  Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes)),
                                   Filter('CH-Tbl-Received Emails',
                                       EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'
                                       || EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error
                                       || ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
-                                      || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)
+                                      || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes))
                               ),
                               SearchInput1_1.Value,
                               Subject,
@@ -287,6 +280,12 @@ Screens:
                         LayoutMaxWidth: =
                         LayoutMinHeight: =16
                         LayoutMinWidth: =260
+                        OnSelect: |-
+                          =UpdateContext(
+                              {varRunId: First(Sort(Filter('CH-Tbl-ValidationRuns',
+                                  SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')),
+                                  'Created On', SortOrder.Descending)).'CH-Tbl-ValidationRuns'}
+                          );
                         TemplatePadding: =0
                         TemplateSize: =84
                       Children:
@@ -355,10 +354,28 @@ Screens:
                               PaddingLeft: =8
                               PaddingRight: =8
                               Size: =8
-                              Text: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "Fallo el sistema", ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Sospechoso", ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual', "Cliente sin registrar", ThisItem.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente, "Respuesta sin enviar", "Sin validar")
+                              Text: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "Fallo el sistema", ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Sospechoso", ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual', "Cliente sin registrar", ThisItem.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ThisItem.'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes), "Respuesta sin enviar", "Sin validar")
                               Width: =152
                               X: =16
                               Y: =54
+                  - htmlVacio:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Stretch
+                        DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                        FillPortions: =8
+                        Height: =300
+                        HtmlText: |-
+                          ="<div style='text-align:center;padding-top:90px'>" &
+                           "<div style='display:inline-block;width:52px;height:52px;line-height:52px;border-radius:26px;background:rgb(232,242,236);color:rgb(20,107,58);font-size:24px;font-weight:700'>&check;</div>" &
+                           "<div style='font-size:19px;font-weight:650;color:rgb(28,21,23);margin-top:14px'>Todo al dia</div>" &
+                           "<div style='font-size:13.5px;color:rgb(120,106,109);margin-top:6px'>" &
+                           If(varVista = "TODO",
+                              "No hay nada esperando una decision. Si aparece algo, va a estar aca.",
+                              "Sin casos en esta vista.") &
+                           "</div></div>"
+                        Size: =11
+                        Visible: =CountRows(galBandeja.AllItems) = 0
                   - container Detalle:
                       Control: GroupContainer@1.5.0
                       Variant: AutoLayout
@@ -377,20 +394,8 @@ Screens:
                         PaddingLeft: =24
                         PaddingRight: =24
                         PaddingTop: =18
-                        Visible: =!IsBlank(galBandeja.Selected)
+                        Visible: =And(!IsBlank(galBandeja.Selected), CountRows(galBandeja.AllItems) > 0)
                       Children:
-                        - htmlReglas:
-                            Control: HtmlViewer@2.1.0
-                            Properties:
-                              AutoHeight: =true
-                              DisabledBorderColor: =RGBA(56, 56, 56, 1)
-                              Height: =290
-                              HtmlText: |-
-                                ="<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Reglas que no pasaron</p>" &
-                                 "<div style='font-size:13.5px;line-height:1.5;background:rgb(250,248,248);border:1px solid rgb(230,223,224);border-left:3px solid rgb(154,97,0);padding:14px 16px;color:rgb(70,59,62)'>" &
-                                 "Bloque en pausa mientras se refresca el origen de datos de las corridas. La formula original esta guardada y se restaura en cuanto termines." &
-                                 "</div>"
-                              Size: =11
                         - htmlCabecera:
                             Control: HtmlViewer@2.1.0
                             Properties:
@@ -434,7 +439,7 @@ Screens:
                               Height: =0
                               HtmlText: |-
                                 =With(
-                                    {g: LookUp('CH-Tbl-Playbook', Name = Switch(galBandeja.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(galBandeja.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",  If(galBandeja.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente, "respuesta-sin-enviar", "sin-validar"))))},
+                                    {g: LookUp('CH-Tbl-Playbook', Name = Switch(galBandeja.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(galBandeja.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",  If(galBandeja.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes), "respuesta-sin-enviar", "sin-validar"))))},
                                     "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Que hacer" &
                                     If(IsBlank(g.Titulo), "", " &nbsp;&mdash;&nbsp; " & Substitute(Substitute(Coalesce(g.Titulo,""),"&","&amp;"),"<","&lt;")) & "</p>" &
                                     Concat(
@@ -476,70 +481,56 @@ Screens:
                               RadiusTopRight: =0
                               Width: =Parent.Width - 48
                             Children:
-                              - btnAltaCorreo:
+                              - btnAvisarBanca:
                                   Control: Button@0.0.45
                                   Properties:
                                     Appearance: ='ButtonCanvas.Appearance'.Primary
-                                    DisplayMode: =If(IsBlank(galBandeja.Selected.'Cliente atribuido'), DisplayMode.Disabled, DisplayMode.Edit)
+                                    DisplayMode: =If(Or(!IsBlank(galBandeja.Selected.'Cliente atribuido'), galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso), DisplayMode.Edit, DisplayMode.Disabled)
                                     Height: =36
                                     LayoutMinHeight: =0
                                     LayoutMinWidth: =0
                                     OnSelect: |-
                                       =With(
                                           {
+                                              destino: LookUp('Environment Variable Values', 'Schema Name' = "sanic_CHEVBancaMailbox", Value),
+                                              urlAdmin: LookUp('Environment Variable Values', 'Schema Name' = "sanic_CHEVAppUrl_ClientAdmin", Value),
                                               cli: galBandeja.Selected.'Cliente atribuido',
                                               dir: galBandeja.Selected.SourceEmailAddress,
                                               ges: galBandeja.Selected.Name
                                           },
-                                          With(
-                                              {
-                                                  rfc: Patch(
-                                                      'CH-Tbl-ClientDataChangeRequests',
-                                                      Defaults('CH-Tbl-ClientDataChangeRequests'),
-                                                      {
-                                                          Type: 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,
-                                                          ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequests)'.Submited,
-                                                          TargetTable: "sanic_chtblclientemail",
-                                                          RelatedClient: cli,
-                                                          Reason: "Alta de remitente detectada por CashHub en " & ges &
-                                                                  ". La direccion " & dir &
-                                                                  " envio un pre-registro con la plantilla oficial y el CIF de este cliente."
-                                                      }
-                                                  )
-                                              },
-                                              Patch(
-                                                  'CH-Tbl-ClientDataChangeRequestLines',
-                                                  Defaults('CH-Tbl-ClientDataChangeRequestLines'),
-                                                  {
-                                                      ChangeRequestID: rfc,
-                                                      'Field Definition': LookUp('CH-Tbl-ClientTableLogicalFieldNames',
-                                                          Table = "sanic_chtblclientemail" And LogicalName = "sanic_name"),
-                                                      NewValue: dir
-                                                  }
+                                          If(
+                                              IsBlank(destino),
+                                              Notify("Falta configurar CH-EV-BancaMailbox: no se sabe a que buzon avisarle a Banca de Empresas.", NotificationType.Error),
+                                              Office365Outlook.SendEmailV2(
+                                                  destino,
+                                                  If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso,
+                                      "CashHub " & ges & ": llego un pre-registro con un CIF que no existe en CashHub",
+                                      "CashHub " & ges & ": hay que registrar un remitente de " & cli.Name),
+                                                  "<div style='font-family:Segoe UI,sans-serif;font-size:14px;color:rgb(28,21,23)'>" &
+                                                  If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso,
+                                      "<p>Llego un pre-registro con la <b>plantilla oficial</b>, pero el CIF declarado <b>no existe en CashHub</b>. Lo mas probable es que sea un cliente real al que todavia le falta la carga operativa.</p>" &
+                                      "<p>Necesitamos que confirmen: si es cliente del banco y falta cargarlo, o si ese CIF no corresponde a nadie. En ese segundo caso lo escalamos a Seguridad, porque alguien tendria nuestra plantilla oficial.</p>",
+                                      "<p>Un pre-registro llego desde una direccion que no esta registrada, pero el archivo <b>es la plantilla oficial</b> y el CIF declarado corresponde a un cliente real.</p>" &
+                                      "<p>Mientras no se registre esa direccion, <b>al cliente no se le puede responder</b>: escribirle a un correo sin verificar confirmaria que ese CIF opera con el banco.</p>") &
+                                                                                          "<table cellpadding='6' cellspacing='0' style='font-size:13px;border-collapse:collapse'>" &
+                                                  "<tr><td style='color:rgb(120,106,109)'>Numero de gestion</td><td><b>" & ges & "</b></td></tr>" &
+                                                  If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "", "<tr><td style='color:rgb(120,106,109)'>Cliente</td><td><b>" & cli.Name & "</b></td></tr>") &
+                                                  "<tr><td style='color:rgb(120,106,109)'>Direccion a registrar</td><td><b>" & dir & "</b></td></tr>" &
+                                                  "<tr><td style='color:rgb(120,106,109)'>Recibido</td><td>" & Text(galBandeja.Selected.ReceptionDateTime, "dd/mm/yyyy hh:mm") & "</td></tr>" &
+                                                  "</table>" &
+                                                  If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso,
+                                      "<p><b>Que hay que hacer:</b> verificar si ese CIF corresponde a un cliente del banco. Si falta cargarlo, cargarlo en Client Administration y avisarnos para reprocesar. Si no corresponde a nadie, decirnoslo para escalarlo.</p>",
+                                      "<p><b>Que hay que hacer:</b> confirmar con el cliente que esa persona esta autorizada y, si corresponde, dar de alta la direccion en Client Administration. Operaciones reprocesa el correo y el cliente recibe su respuesta.</p>") &
+                                                  If(IsBlank(urlAdmin), "", "<p><a href='" & urlAdmin & "'>Abrir Client Administration</a></p>") &
+                                                  "<p style='font-size:12px;color:rgb(120,106,109)'>Aviso enviado por " & User().FullName & " desde la consola de ingesta de correos.</p></div>",
+                                                  {IsHtml: true, Importance: "Normal"}
                                               );
-                                              Patch(
-                                                  'CH-Tbl-ClientDataChangeRequestLines',
-                                                  Defaults('CH-Tbl-ClientDataChangeRequestLines'),
-                                                  {
-                                                      ChangeRequestID: rfc,
-                                                      'Field Definition': LookUp('CH-Tbl-ClientTableLogicalFieldNames',
-                                                          Table = "sanic_chtblclientemail" And LogicalName = "sanic_Client"),
-                                                      NewValue: dir
-                                                  }
-                                              );
-                                              Notify(
-                                                  "Solicitud " & rfc.Name & " creada y enviada a aprobacion. Usted no puede aprobarla: la revisa otra persona de Banca de Empresas.",
-                                                  NotificationType.Success
-                                              )
+                                              Refresh('CH-Tbl-Received Emails');
+                                              Notify("Recordatorio enviado a Banca de Empresas con el detalle del caso.", NotificationType.Success)
                                           )
                                       );
-                                    Text: ="Registrar correo (crea la solicitud)"
-                                    Visible: |-
-                                      =And(
-                                          Coalesce(varPuedeAltaCorreo, false),
-                                          galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar'
-                                      )
-                                    Width: =270
+                                    Text: =If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Consultar a Banca por este CIF", "Avisar a Banca de Empresas")
+                                    Width: =280
                               - btnReprocesar:
                                   Control: Button@0.0.45
                                   Properties:
@@ -597,6 +588,88 @@ Screens:
                                       =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: false, varOverrideMotivo: ""})
                                     Text: ="Denegar manualmente"
                                     Width: =190
+                              - btnVerAdjunto:
+                                  Control: Button@0.0.45
+                                  Properties:
+                                    Appearance: ='ButtonCanvas.Appearance'.Secondary
+                                    DisplayMode: =If(IsBlank(LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')), DisplayMode.Disabled, DisplayMode.Edit)
+                                    Height: =36
+                                    LayoutMinHeight: =0
+                                    LayoutMinWidth: =0
+                                    OnSelect: |-
+                                      =With(
+                                          {a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')},
+                                          If(
+                                              IsBlank(a),
+                                              Notify("Este correo no tiene adjunto guardado.", NotificationType.Warning),
+                                              Download(a.FileContent.Value)
+                                          )
+                                      );
+                                    Text: |-
+                                      ="Ver el archivo adjunto" & With({a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')}, If(IsBlank(a), "", " (" & a.Filename & ")"))
+                                    Width: =260
+                              - btnAceptar:
+                                  Control: Button@0.0.45
+                                  Properties:
+                                    Appearance: ='ButtonCanvas.Appearance'.Secondary
+                                    Height: =36
+                                    LayoutMinHeight: =0
+                                    LayoutMinWidth: =0
+                                    OnSelect: |-
+                                      =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: true, varOverrideMotivo: ""})
+                                    Text: ="Aceptar manualmente"
+                                    Width: =190
+                        - htmlReglas:
+                            Control: HtmlViewer@2.1.0
+                            Properties:
+                              AutoHeight: =true
+                              DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                              Height: =290
+                              HtmlText: |-
+                                =With(
+                                    {r: varRunId},
+                                    With(
+                                        {
+                                            fal: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = varRunId,
+                                                        ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Fail),
+                                            ejec: Filter('CH-Tbl-ValidationResults', ValidationRun.'CH-Tbl-ValidationRuns' = varRunId)
+                                        },
+                                        "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Reglas que no pasaron</p>" &
+                                        If(
+                                            IsBlank(varRunId),
+                                            "<div style='font-size:13.5px;line-height:1.5;background:rgb(250,248,248);border:1px solid rgb(230,223,224);padding:14px 16px;color:rgb(70,59,62);margin:0'>Este correo todavia no tiene ninguna corrida de validacion.</div>",
+                                            "<p style='font-size:11.5px;color:rgb(120,106,109);margin:0 0 11px 0'><b style='color:rgb(110,22,34)'>" & CountRows(fal) &
+                                            "</b> fallaron &nbsp;|&nbsp; <b style='color:rgb(138,128,130)'>" &
+                                            (CountRows(colReglasActivas) - CountRows(ejec)) &
+                                            "</b> no se intentaron &nbsp;|&nbsp; <b style='color:rgb(20,107,58)'>" &
+                                            CountRows(Filter(ejec, ValidationResult = 'ValidationResult (CH-Tbl-ValidationResults)'.Pass)) &
+                                            "</b> pasaron sin novedad</p>" &
+                                            Concat(
+                                                Sort(fal, Name),
+                                                "<div style='background:rgb(246,233,235);border:1px solid rgb(226,205,208);border-radius:7px;padding:12px 15px;margin:0 0 9px 0;font-size:13.5px'><span style='font-weight:700;color:rgb(110,22,34);font-size:12px'>" &
+                                                Substitute(Coalesce(Name, ""), "<", "&lt;") & "</span>&nbsp;&nbsp;<span style='font-size:13px;color:rgb(28,21,23)'>" &
+                                                Substitute(Substitute(Coalesce(Detalle, ""), "&", "&amp;"), "<", "&lt;") & "</span>" &
+                                                If(IsBlank(Celda), "",
+                                                   "<div style='font-size:11.5px;color:rgb(120,106,109);margin-top:4px'>Hoja y celda: " &
+                                                   Coalesce(Hoja, "") & "!" & Celda & "</div>") & "</div>"
+                                            ) &
+                                            With(
+                                                {om: Filter(colReglasActivas,
+                                                            IsBlank(LookUp(ejec, ValidationRule.'Validation Name' = 'Validation Name')))},
+                                                If(
+                                                    CountRows(om) = 0,
+                                                    "<p style='font-size:12.5px;line-height:1.5;color:rgb(120,106,109);margin:10px 0 0 0'>Ninguna regla quedo sin intentarse: la cadena corrio completa.</p>",
+                                                    "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0;margin-top:16px'>No se intentaron porque su dependencia no paso</p>" &
+                                                    Concat(Sort(om, ValidationOrder),
+                                                           "<div style='display:inline-block;width:32%;vertical-align:top;font-size:12px;color:rgb(138,128,130);font-style:italic;margin:0 0 4px 0'>" & 'Validation Name' & " &nbsp; " &
+                                                           Substitute(Coalesce(Name, ""), "<", "&lt;") & "</div>")
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                              Size: =11
+                              Width: =Parent.Width - 48
                         - btnDetTecnico:
                             Control: Button@0.0.45
                             Properties:
