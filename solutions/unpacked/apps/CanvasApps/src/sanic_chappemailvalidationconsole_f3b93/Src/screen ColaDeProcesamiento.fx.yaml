@@ -564,7 +564,7 @@
 
                     btnAvisarBanca As Button:
                         Appearance: ='ButtonCanvas.Appearance'.Primary
-                        DisplayMode: =If(IsBlank(galBandeja.Selected.'Cliente atribuido'), DisplayMode.Disabled, DisplayMode.Edit)
+                        DisplayMode: =If(Or(!IsBlank(galBandeja.Selected.'Cliente atribuido'), galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso), DisplayMode.Edit, DisplayMode.Disabled)
                         Height: =36
                         OnSelect: |-
                             =With(
@@ -580,17 +580,24 @@
                                     Notify("Falta configurar CH-EV-BancaMailbox: no se sabe a que buzon avisarle a Banca de Empresas.", NotificationType.Error),
                                     Office365Outlook.SendEmailV2(
                                         destino,
-                                        "CashHub " & ges & ": hay que registrar un remitente de " & cli.Name,
+                                        If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso,
+                            "CashHub " & ges & ": llego un pre-registro con un CIF que no existe en CashHub",
+                            "CashHub " & ges & ": hay que registrar un remitente de " & cli.Name),
                                         "<div style='font-family:Segoe UI,sans-serif;font-size:14px;color:rgb(28,21,23)'>" &
-                                        "<p>Un pre-registro llego desde una direccion que no esta registrada, pero el archivo <b>es la plantilla oficial</b> y el CIF declarado corresponde a un cliente real.</p>" &
-                                        "<p>Mientras no se registre esa direccion, <b>al cliente no se le puede responder</b>: escribirle a un correo sin verificar confirmaria que ese CIF opera con el banco.</p>" &
-                                        "<table cellpadding='6' cellspacing='0' style='font-size:13px;border-collapse:collapse'>" &
+                                        If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso,
+                            "<p>Llego un pre-registro con la <b>plantilla oficial</b>, pero el CIF declarado <b>no existe en CashHub</b>. Lo mas probable es que sea un cliente real al que todavia le falta la carga operativa.</p>" &
+                            "<p>Necesitamos que confirmen: si es cliente del banco y falta cargarlo, o si ese CIF no corresponde a nadie. En ese segundo caso lo escalamos a Seguridad, porque alguien tendria nuestra plantilla oficial.</p>",
+                            "<p>Un pre-registro llego desde una direccion que no esta registrada, pero el archivo <b>es la plantilla oficial</b> y el CIF declarado corresponde a un cliente real.</p>" &
+                            "<p>Mientras no se registre esa direccion, <b>al cliente no se le puede responder</b>: escribirle a un correo sin verificar confirmaria que ese CIF opera con el banco.</p>") &
+                                                                                "<table cellpadding='6' cellspacing='0' style='font-size:13px;border-collapse:collapse'>" &
                                         "<tr><td style='color:rgb(120,106,109)'>Numero de gestion</td><td><b>" & ges & "</b></td></tr>" &
-                                        "<tr><td style='color:rgb(120,106,109)'>Cliente</td><td><b>" & cli.Name & "</b></td></tr>" &
+                                        If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "", "<tr><td style='color:rgb(120,106,109)'>Cliente</td><td><b>" & cli.Name & "</b></td></tr>") &
                                         "<tr><td style='color:rgb(120,106,109)'>Direccion a registrar</td><td><b>" & dir & "</b></td></tr>" &
                                         "<tr><td style='color:rgb(120,106,109)'>Recibido</td><td>" & Text(galBandeja.Selected.ReceptionDateTime, "dd/mm/yyyy hh:mm") & "</td></tr>" &
                                         "</table>" &
-                                        "<p><b>Que hay que hacer:</b> confirmar con el cliente que esa persona esta autorizada y, si corresponde, dar de alta la direccion en Client Administration. Operaciones reprocesa el correo y el cliente recibe su respuesta.</p>" &
+                                        If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso,
+                            "<p><b>Que hay que hacer:</b> verificar si ese CIF corresponde a un cliente del banco. Si falta cargarlo, cargarlo en Client Administration y avisarnos para reprocesar. Si no corresponde a nadie, decirnoslo para escalarlo.</p>",
+                            "<p><b>Que hay que hacer:</b> confirmar con el cliente que esa persona esta autorizada y, si corresponde, dar de alta la direccion en Client Administration. Operaciones reprocesa el correo y el cliente recibe su respuesta.</p>") &
                                         If(IsBlank(urlAdmin), "", "<p><a href='" & urlAdmin & "'>Abrir Client Administration</a></p>") &
                                         "<p style='font-size:12px;color:rgb(120,106,109)'>Aviso enviado por " & User().FullName & " desde la consola de ingesta de correos.</p></div>",
                                         {IsHtml: true, Importance: "Normal"}
@@ -601,11 +608,12 @@
                                 )
                             );
                         Text: |-
-                            =If(IsBlank(galBandeja.Selected.BancaNotifiedOn), "Avisar a Banca de Empresas",
+                            =If(IsBlank(galBandeja.Selected.BancaNotifiedOn), If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Consultar a Banca por este CIF", "Avisar a Banca de Empresas"),
                                 "Volver a avisar (ultimo aviso " & Text(galBandeja.Selected.BancaNotifiedOn, "dd/mm hh:mm") & ")")
                         Tooltip: ="Le manda a Banca el detalle para que registren la direccion. Operaciones no modifica datos de cliente."
                         Width: =280
                         ZIndex: =1
+
                     btnReprocesar As Button:
                         AcceptsFocus: =true
                         AccessibleLabel: =""
