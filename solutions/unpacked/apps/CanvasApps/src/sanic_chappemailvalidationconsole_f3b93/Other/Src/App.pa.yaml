@@ -8,18 +8,5 @@
 # ************************************************************************************************
 App:
   Properties:
-    OnStart: |-
-      =/*Set(varBuzonCorreo, LookUp('Environment Variable Values', 'Schema Name' = "sanic_CHEVSharedMailboxAddress", Value));*/
-
-      Set(varBuzonCorreo, Coalesce(LookUp('Environment Variable Values', 'Schema Name' = "sanic_CHEVSharedMailboxAddress", Value), LookUp('Environment Variable Definitions', 'Schema Name' = "sanic_CHEVSharedMailboxAddress", 'Default Value')));
-
-      Set(varIDFolderArchivado, "AAMkADgzNTc3NDg0LWNiOWQtNDIzYy1iZmI5LTFjY2VmYWQwYzUwNgAuAAAAAABInfc4Xs2oTI8aweUBvBa6AQBwR7J4pM4WQKNKSgid6I4wAAAAAAEYAAA=");//LookUp('Environment Variable Values', 'Schema Name' = "sanic_CEADEVIDFolderArchivado", Value));
-      Set(UsuarioOffice, Office365Users.MyProfileV2());
-      Set(varHoy, Today());
-      ClearCollect(colExpandMenu,
-      Table(
-      {Icon: "OutlookLogo", Label: "Emails", Screen:'screen CorreosElectronicos', Tooltip:"Mailbox emails"}, 
-      {Icon: "BulletedList", Label: "Cola de procesamiento", Screen:'screen ColaDeProcesamiento', Tooltip:"Cola de procesamiento"}
-      ));
-      ClearCollect(colValidationRules, Filter('CH-Tbl-ValidationRules',IsActive=true));
+    StartScreen: ='screen ColaDeProcesamiento'
     Theme: =PowerAppsTheme

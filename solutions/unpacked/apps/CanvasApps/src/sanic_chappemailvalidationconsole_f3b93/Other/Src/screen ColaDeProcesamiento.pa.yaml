@@ -52,7 +52,7 @@ Screens:
                         EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error)),
                 varRespuestasPendientes: CountRows(
                     Filter('CH-Tbl-Received Emails',
-                        EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes)))
+                        EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3))
             }
         );
         UpdateContext(
@@ -76,7 +76,6 @@ Screens:
             PaddingRight: =16
             PaddingTop: =16
             Width: =Parent.Width - Self.X
-            X: =46
           Children:
             - container Salud:
                 Control: GroupContainer@1.5.0
@@ -146,7 +145,7 @@ Screens:
                                           EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error)),
                                   varRespuestasPendientes: CountRows(
                                       Filter('CH-Tbl-Received Emails',
-                                          EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes)))
+                                          EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3))
                               }
                           );
                           UpdateContext(
@@ -177,6 +176,10 @@ Screens:
                   - SearchInput1_1:
                       Control: TextInput@0.0.54
                       Properties:
+                        BorderColor: =RGBA(214, 221, 224, 1)
+                        BorderStyle: =BorderStyle.Solid
+                        BorderThickness: =1
+                        Fill: =RGBA(255, 255, 255, 1)
                         FillPortions: =1
                         Height: =44
                         LayoutMaxHeight: =
@@ -265,12 +268,12 @@ Screens:
                                   "ERROR",
                                   Filter('CH-Tbl-Received Emails', EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error),
                                   "SINRESP",
-                                  Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes)),
+                                  Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3),
                                   Filter('CH-Tbl-Received Emails',
                                       EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'
                                       || EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error
                                       || ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
-                                      || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes))
+                                      || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3)
                               ),
                               SearchInput1_1.Value,
                               Subject,
@@ -289,6 +292,14 @@ Screens:
                         TemplatePadding: =0
                         TemplateSize: =84
                       Children:
+                        - recBlandoFondo:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Fill: =If(ThisItem.IsSelected,Color.White,Color.Transparent)
+                              Height: =Parent.TemplateHeight
+                              Width: =Parent.TemplateWidth
                         - recFranja:
                             Control: Rectangle@2.3.0
                             Properties:
@@ -354,7 +365,7 @@ Screens:
                               PaddingLeft: =8
                               PaddingRight: =8
                               Size: =8
-                              Text: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "Fallo el sistema", ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Sospechoso", ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual', "Cliente sin registrar", ThisItem.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ThisItem.'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes), "Respuesta sin enviar", "Sin validar")
+                              Text: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "Fallo el sistema", ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Sospechoso", ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual', "Cliente sin registrar", ThisItem.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ThisItem.ReplyAttempts >= 3, "Respuesta sin enviar", "Sin validar")
                               Width: =152
                               X: =16
                               Y: =54
@@ -375,7 +386,7 @@ Screens:
                               "Sin casos en esta vista.") &
                            "</div></div>"
                         Size: =11
-                        Visible: =CountRows(galBandeja.AllItems) = 0
+                        Visible: =galBandeja.AllItemsCount = 0
                   - container Detalle:
                       Control: GroupContainer@1.5.0
                       Variant: AutoLayout
@@ -394,7 +405,7 @@ Screens:
                         PaddingLeft: =24
                         PaddingRight: =24
                         PaddingTop: =18
-                        Visible: =And(!IsBlank(galBandeja.Selected), CountRows(galBandeja.AllItems) > 0)
+                        Visible: =And(!IsBlank(galBandeja.Selected), galBandeja.AllItemsCount > 0)
                       Children:
                         - htmlCabecera:
                             Control: HtmlViewer@2.1.0
@@ -439,7 +450,7 @@ Screens:
                               Height: =0
                               HtmlText: |-
                                 =With(
-                                    {g: LookUp('CH-Tbl-Playbook', Name = Switch(galBandeja.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(galBandeja.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",  If(galBandeja.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And 'Modified On' < DateAdd(Now(), -45, TimeUnit.Minutes), "respuesta-sin-enviar", "sin-validar"))))},
+                                    {g: LookUp('CH-Tbl-Playbook', Name = Switch(galBandeja.Selected.SenderClassification, 'SenderClassification (CH-Tbl-Received Emails)'.'Cliente sin registrar', "cliente-sin-registrar", 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "sospechoso", If(galBandeja.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, "error-sistema",  If(galBandeja.Selected.EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente, "respuesta-sin-enviar", "sin-validar"))))},
                                     "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Que hacer" &
                                     If(IsBlank(g.Titulo), "", " &nbsp;&mdash;&nbsp; " & Substitute(Substitute(Coalesce(g.Titulo,""),"&","&amp;"),"<","&lt;")) & "</p>" &
                                     Concat(
@@ -526,10 +537,15 @@ Screens:
                                                   {IsHtml: true, Importance: "Normal"}
                                               );
                                               Refresh('CH-Tbl-Received Emails');
-                                              Notify("Recordatorio enviado a Banca de Empresas con el detalle del caso.", NotificationType.Success)
+                                              Patch('CH-Tbl-Received Emails', galBandeja.Selected, {BancaNotifiedOn: Now()});
+                                          Refresh('CH-Tbl-Received Emails');
+                                          Notify("Recordatorio enviado a Banca de Empresas con el detalle del caso.", NotificationType.Success)
                                           )
                                       );
-                                    Text: =If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Consultar a Banca por este CIF", "Avisar a Banca de Empresas")
+                                    Text: |-
+                                      =If(IsBlank(galBandeja.Selected.BancaNotifiedOn),
+                                      If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, "Consultar a Banca por este CIF", "Avisar a Banca de Empresas"),
+                                      "Volver a avisar (ultimo aviso " & Text(galBandeja.Selected.BancaNotifiedOn, "dd/mm hh:mm") & ")")
                                     Width: =280
                               - btnReprocesar:
                                   Control: Button@0.0.45
@@ -704,46 +720,6 @@ Screens:
                               Size: =11
                               Visible: =Coalesce(varTecnicoAbierto, false)
                               Width: =Parent.Width - 48
-      - ExpandMenu_2:
-          Control: CanvasComponent
-          ComponentName: ExpandMenu
-          ComponentLibraryUniqueName: cat_powercatcomponentlibrary_0be3a
-          Properties:
-            DefaultExpandValue: =false
-            Fill: =ColorValue(ExpandMenu_2.Theme.palette.white)
-            Height: =Parent.Height
-            IsNavigationEnabled: =true
-            Items: =colExpandMenu
-            OnButtonSelect: =
-            OnExpandSelect: =
-            Theme: |-
-              ={
-              	palette: {
-              		themePrimary: "#0078d4",
-              		themeLighterAlt: "#eff6fc",
-              		themeLighter: "#deecf9",
-              		themeLight: "#c7e0f4",
-              		themeTertiary: "#71afe5",
-              		themeSecondary: "#2b88d8",
-              		themeDarkAlt: "#106ebe",
-              		themeDark: "#005a9e",
-              		themeDarker: "#004578",
-              		neutralLighterAlt: "#faf9f8",
-              		neutralLighter: "#f3f2f1",
-              		neutralLight: "#edebe9",
-              		neutralQuaternaryAlt: "#e1dfdd",
-              		neutralQuaternary: "#d0d0d0",
-              		neutralTertiaryAlt: "#c8c6c4",
-              		neutralTertiary: "#a19f9d",
-              		neutralSecondary: "#605e5c",
-              		neutralPrimaryAlt: "#3b3a39",
-              		neutralPrimary: "#323130",
-              		neutralDark: "#201f1e",
-              		black: "#000000",
-              		white: "#ffffff"
-              	}
-              }
-            Width: =If(!Self.IsExpanded, 46, 221)
       - container OverrideManual:
           Control: GroupContainer@1.5.0
           Variant: ManualLayout
