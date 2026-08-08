@@ -346,70 +346,148 @@
                 LayoutMinHeight: =16
                 LayoutMinWidth: =260
                 LoadingSpinner: =LoadingSpinner.Data
-                OnSelect: |-
+                OnSelect: |
                     =UpdateContext(
-                        {varRunId: First(Sort(Filter('CH-Tbl-ValidationRuns',
-                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')),
-                            'Created On', SortOrder.Descending)).'CH-Tbl-ValidationRuns'}
+                        {
+                            varRunId: First(
+                                Sort(
+                                    Filter(
+                                        'CH-Tbl-ValidationRuns',
+                                        SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
+                                    ),
+                                    'Created On',
+                                    SortOrder.Descending
+                                )
+                            ).'CH-Tbl-ValidationRuns'
+                        }
                     );
+                    
+                    Notify( Text(ThisItem.'CH-Tbl-Received Emails'));
                 TemplatePadding: =0
                 TemplateSize: =84
                 ZIndex: =1
 
-                recBlandoFondo As groupContainer.manualLayoutContainer:
+                recBlandoFondo As rectangle:
                     Fill: =If(ThisItem.IsSelected,Color.White,Color.Transparent)
                     Height: =Parent.TemplateHeight
-                    LayoutGridColumnMinWidth: =0
-                    LayoutGridColumns: =6
-                    LayoutGridRowMinHeight: =0
-                    LayoutGridRows: =6
-                    RadiusBottomLeft: =4
-                    RadiusBottomRight: =4
-                    RadiusTopLeft: =4
-                    RadiusTopRight: =4
+                    OnSelect: |
+                        =UpdateContext(
+                            {
+                                varRunId: First(
+                                    Sort(
+                                        Filter(
+                                            'CH-Tbl-ValidationRuns',
+                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
+                                        ),
+                                        'Created On',
+                                        SortOrder.Descending
+                                    )
+                                ).'CH-Tbl-ValidationRuns'
+                            }
+                        );
                     Width: =Parent.TemplateWidth
-                    ZIndex: =2
+                    ZIndex: =1
 
                 recFranja As rectangle:
                     Fill: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error || ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, RGBA(110, 22, 34, 1), RGBA(154, 97, 0, 1))
                     Height: =Parent.TemplateHeight
+                    OnSelect: |
+                        =UpdateContext(
+                            {
+                                varRunId: First(
+                                    Sort(
+                                        Filter(
+                                            'CH-Tbl-ValidationRuns',
+                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
+                                        ),
+                                        'Created On',
+                                        SortOrder.Descending
+                                    )
+                                ).'CH-Tbl-ValidationRuns'
+                            }
+                        );
                     Width: =3
-                    ZIndex: =3
+                    ZIndex: =2
 
                 lblGalAsunto As label:
                     Color: =RGBA(28, 21, 23, 1)
                     FontWeight: =FontWeight.Semibold
                     Height: =20
+                    OnSelect: |
+                        =UpdateContext(
+                            {
+                                varRunId: First(
+                                    Sort(
+                                        Filter(
+                                            'CH-Tbl-ValidationRuns',
+                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
+                                        ),
+                                        'Created On',
+                                        SortOrder.Descending
+                                    )
+                                ).'CH-Tbl-ValidationRuns'
+                            }
+                        );
                     PaddingLeft: =0
                     Size: =11
                     Text: =Coalesce(ThisItem.Subject, "(sin asunto)")
                     Width: =Parent.TemplateWidth - 112
                     X: =16
                     Y: =11
-                    ZIndex: =4
+                    ZIndex: =3
 
                 lblGalCuando As label:
                     Align: =Align.Right
                     Color: =RGBA(120, 106, 109, 1)
                     Height: =18
+                    OnSelect: |
+                        =UpdateContext(
+                            {
+                                varRunId: First(
+                                    Sort(
+                                        Filter(
+                                            'CH-Tbl-ValidationRuns',
+                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
+                                        ),
+                                        'Created On',
+                                        SortOrder.Descending
+                                    )
+                                ).'CH-Tbl-ValidationRuns'
+                            }
+                        );
                     Size: =9
                     Text: |-
                         =With({h: DateDiff(ThisItem.ReceptionDateTime, Now(), TimeUnit.Hours)}, If(h < 1, "hace " & DateDiff(ThisItem.ReceptionDateTime, Now(), TimeUnit.Minutes) & " min", h < 24, "hace " & h & " h", "hace " & RoundDown(h / 24, 0) & " d"))
                     Width: =92
                     X: =Parent.TemplateWidth - 104
                     Y: =12
-                    ZIndex: =5
+                    ZIndex: =4
 
                 lblGalRemitente As label:
                     Color: =RGBA(120, 106, 109, 1)
                     Height: =18
+                    OnSelect: |
+                        =UpdateContext(
+                            {
+                                varRunId: First(
+                                    Sort(
+                                        Filter(
+                                            'CH-Tbl-ValidationRuns',
+                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
+                                        ),
+                                        'Created On',
+                                        SortOrder.Descending
+                                    )
+                                ).'CH-Tbl-ValidationRuns'
+                            }
+                        );
                     PaddingLeft: =0
                     Size: =10
                     Text: =Coalesce(ThisItem.SourceEmailAddress, "(sin remitente)")
                     Width: =Parent.TemplateWidth - 30
                     X: =16
                     Y: =31
-                    ZIndex: =6
+                    ZIndex: =5
 
                 lblGalChip As label:
                     Align: =Align.Center
@@ -417,6 +495,21 @@
                     Fill: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error || ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, RGBA(246, 233, 235, 1), RGBA(253, 243, 227, 1))
                     FontWeight: =FontWeight.Semibold
                     Height: =20
+                    OnSelect: |
+                        =UpdateContext(
+                            {
+                                varRunId: First(
+                                    Sort(
+                                        Filter(
+                                            'CH-Tbl-ValidationRuns',
+                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
+                                        ),
+                                        'Created On',
+                                        SortOrder.Descending
+                                    )
+                                ).'CH-Tbl-ValidationRuns'
+                            }
+                        );
                     PaddingLeft: =8
                     PaddingRight: =8
                     Size: =8
@@ -424,7 +517,7 @@
                     Width: =152
                     X: =16
                     Y: =54
-                    ZIndex: =7
+                    ZIndex: =6
 
             htmlVacio As htmlViewer:
                 AlignInContainer: =AlignInContainer.Stretch
@@ -921,219 +1014,371 @@
                     ZIndex: =11
 
     "'container OverrideManual' As groupContainer.manualLayoutContainer":
-        DropShadow: =DropShadow.Bold
-        Fill: =RGBA(255, 255, 255, 1)
-        Height: =330
-        RadiusBottomLeft: =8
-        RadiusBottomRight: =8
-        RadiusTopLeft: =8
-        RadiusTopRight: =8
+        Fill: =RGBA(0, 0, 0, 0.70)
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
         Visible: =Coalesce(varOverrideAbierto, false)
-        Width: =560
-        X: =(Parent.Width - 560) / 2
-        Y: =(Parent.Height - 330) / 2
-        ZIndex: =1000
+        Width: =Parent.Width
+        ZIndex: =3
 
-        lblOverrideTitulo As label:
-            Color: =RGBA(32, 31, 30, 1)
-            FontWeight: =FontWeight.Semibold
-            Height: =32
-            Size: =15
-            Text: =If(varOverrideAcepta, "Aceptar manualmente", "Denegar manualmente")
-            Width: =520
-            X: =20
-            Y: =16
-            ZIndex: =1
+        "'container OverrideManual Dialog' As groupContainer.manualLayoutContainer":
+            DropShadow: =DropShadow.Bold
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =330
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Visible: =Coalesce(varOverrideAbierto, false)
+            Width: =560
+            X: =(Parent.Width - 560) / 2
+            Y: =(Parent.Height - 330) / 2
+            ZIndex: =13
 
-        lblOverrideAviso As label:
-            Color: =RGBA(97, 97, 97, 1)
-            Height: =76
-            Size: =11
-            Text: |-
-                ="Esta decision reemplaza el resultado del motor para " & galBandeja.Selected.Name &
-                 ". Queda registrada con su usuario, la fecha y el motivo, y el correo pasa a metodo Manual."
-            Width: =520
-            X: =20
-            Y: =48
-            ZIndex: =2
+            lblOverrideTitulo As label:
+                Color: =RGBA(32, 31, 30, 1)
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                Size: =15
+                Text: =If(varOverrideAcepta, "Aceptar manualmente", "Denegar manualmente")
+                Width: =520
+                X: =20
+                Y: =16
+                ZIndex: =1
 
-        "txtOverrideMotivo As 'Text input'":
-            Appearance: ="FilledDarker"
-            BasePaletteColor: =
-            BorderColor: =
-            DisplayMode: =DisplayMode.Edit
-            Fill: =
-            FontColor: =
-            Height: =104
-            Mode: ="MultiLine"
-            OnChange: |-
-                =UpdateContext({varOverrideMotivo: Self.Value})
-            Placeholder: ="Por que toma esta decision? Minimo 10 caracteres."
-            Width: =520
-            X: =20
-            Y: =128
-            ZIndex: =3
+            lblOverrideAviso As label:
+                Color: =RGBA(97, 97, 97, 1)
+                Height: =76
+                Size: =11
+                Text: |-
+                    ="Esta decision reemplaza el resultado del motor para " & galBandeja.Selected.Name &
+                     ". Queda registrada con su usuario, la fecha y el motivo, y el correo pasa a metodo Manual."
+                Width: =520
+                X: =20
+                Y: =48
+                ZIndex: =2
 
-        lblOverrideValidacion As label:
-            Color: =RGBA(168, 0, 0, 1)
-            Height: =20
-            Size: =10
-            Text: =If(Len(Trim(Coalesce(varOverrideMotivo, ""))) < 10, "Escriba al menos 10 caracteres explicando la decision.", "")
-            Width: =520
-            X: =20
-            Y: =236
-            ZIndex: =4
+            "txtOverrideMotivo As 'Text input'":
+                AccessibleLabel: =""
+                Align: =""
+                Appearance: ="FilledDarker"
+                BasePaletteColor: =
+                BorderColor: =
+                BorderStyle: =""
+                ContentLanguage: =""
+                DisplayMode: =DisplayMode.Edit
+                Fill: =
+                Font: =""
+                FontColor: =
+                FontItalic: =false
+                FontSize: =0
+                FontStrikethrough: =false
+                FontUnderline: =false
+                FontWeight: =""
+                Height: =104
+                MaxLength: =-1
+                Mode: ="MultiLine"
+                OnChange: |-
+                    =UpdateContext({varOverrideMotivo: Self.Value})
+                Placeholder: ="Por que toma esta decision? Minimo 10 caracteres."
+                Required: =false
+                TabIndex: =0
+                Tooltip: =""
+                TriggerOutput: ="FocusOut"
+                Type: ="Text"
+                ValidationState: ="None"
+                Value: =""
+                Visible: =true
+                Width: =520
+                X: =20
+                Y: =128
+                ZIndex: =3
 
-        btnOverrideCancelar As Button:
-            Appearance: ='ButtonCanvas.Appearance'.Secondary
-            BasePaletteColor: =
-            BorderColor: =
-            DisplayMode: =DisplayMode.Edit
-            FontColor: =
-            Height: =36
-            OnSelect: |-
-                =UpdateContext({varOverrideAbierto: false})
-            Text: ="Cancelar"
-            Width: =140
-            X: =240
-            Y: =266
-            ZIndex: =5
+            lblOverrideValidacion As label:
+                Color: =RGBA(168, 0, 0, 1)
+                Height: =20
+                Size: =10
+                Text: =If(Len(Trim(Coalesce(varOverrideMotivo, ""))) < 10, "Escriba al menos 10 caracteres explicando la decision.", "")
+                Width: =520
+                X: =20
+                Y: =236
+                ZIndex: =4
 
-        btnOverrideConfirmar As Button:
-            Appearance: ='ButtonCanvas.Appearance'.Primary
-            BasePaletteColor: =
-            BorderColor: =
-            DisplayMode: =If(Len(Trim(Coalesce(varOverrideMotivo, ""))) < 10, DisplayMode.Disabled, DisplayMode.Edit)
-            FontColor: =
-            Height: =36
-            OnSelect: |-
-                =Patch(
-                    'CH-Tbl-Received Emails',
-                    galBandeja.Selected,
-                    {
-                        EmailReviewStatus: If(varOverrideAcepta,
-                            'EmailReviewStatus (CH-Tbl-Received Emails)'.Aceptado,
-                            'EmailReviewStatus (CH-Tbl-Received Emails)'.Denegado),
-                        ValidationStatus: If(varOverrideAcepta,
-                            'ValidationStatus (CH-Tbl-Received Emails)'.Valido,
-                            'ValidationStatus (CH-Tbl-Received Emails)'.Invalido),
-                        EmailReviewMethod: 'EmailReviewMethod (CH-Tbl-Received Emails)'.Manual,
-                        OverrideBy: User().Email,
-                        OverrideOn: Now(),
-                        OverrideReason: Trim(varOverrideMotivo)
-                    }
-                );
-                Refresh('CH-Tbl-Received Emails');
-                UpdateContext({varOverrideAbierto: false});
-                Notify("Decision registrada a nombre de " & User().Email & ".", NotificationType.Success);
-            Text: ="Confirmar"
-            Width: =160
-            X: =390
-            Y: =266
-            ZIndex: =6
+            btnOverrideCancelar As Button:
+                AcceptsFocus: =true
+                AccessibleLabel: =""
+                Align: =""
+                Appearance: ='ButtonCanvas.Appearance'.Secondary
+                BasePaletteColor: =
+                BorderColor: =
+                BorderStyle: =""
+                ContentLanguage: =""
+                DisplayMode: =DisplayMode.Edit
+                Font: =""
+                FontColor: =
+                FontItalic: =false
+                FontSize: =0
+                FontStrikethrough: =false
+                FontUnderline: =false
+                FontWeight: =""
+                Height: =36
+                Icon: =""
+                IconRotation: =0
+                IconStyle: ="Outline"
+                Layout: ="Icon before"
+                OnSelect: |-
+                    =UpdateContext({varOverrideAbierto: false})
+                TabIndex: =0
+                Text: ="Cancelar"
+                Tooltip: =""
+                VerticalAlign: =""
+                Visible: =true
+                Width: =140
+                X: =240
+                Y: =266
+                ZIndex: =5
+
+            btnOverrideConfirmar As Button:
+                AcceptsFocus: =true
+                AccessibleLabel: =""
+                Align: =""
+                Appearance: ='ButtonCanvas.Appearance'.Primary
+                BasePaletteColor: =
+                BorderColor: =
+                BorderStyle: =""
+                ContentLanguage: =""
+                DisplayMode: =If(Len(Trim(Coalesce(varOverrideMotivo, ""))) < 10, DisplayMode.Disabled, DisplayMode.Edit)
+                Font: =""
+                FontColor: =
+                FontItalic: =false
+                FontSize: =0
+                FontStrikethrough: =false
+                FontUnderline: =false
+                FontWeight: =""
+                Height: =36
+                Icon: =""
+                IconRotation: =0
+                IconStyle: ="Outline"
+                Layout: ="Icon before"
+                OnSelect: |-
+                    =Patch(
+                        'CH-Tbl-Received Emails',
+                        galBandeja.Selected,
+                        {
+                            EmailReviewStatus: If(varOverrideAcepta,
+                                'EmailReviewStatus (CH-Tbl-Received Emails)'.Aceptado,
+                                'EmailReviewStatus (CH-Tbl-Received Emails)'.Denegado),
+                            ValidationStatus: If(varOverrideAcepta,
+                                'ValidationStatus (CH-Tbl-Received Emails)'.Valido,
+                                'ValidationStatus (CH-Tbl-Received Emails)'.Invalido),
+                            EmailReviewMethod: 'EmailReviewMethod (CH-Tbl-Received Emails)'.Manual,
+                            OverrideBy: User().Email,
+                            OverrideOn: Now(),
+                            OverrideReason: Trim(varOverrideMotivo)
+                        }
+                    );
+                    Refresh('CH-Tbl-Received Emails');
+                    UpdateContext({varOverrideAbierto: false});
+                    Notify("Decision registrada a nombre de " & User().Email & ".", NotificationType.Success);
+                TabIndex: =0
+                Text: ="Confirmar"
+                Tooltip: =""
+                VerticalAlign: =""
+                Visible: =true
+                Width: =160
+                X: =390
+                Y: =266
+                ZIndex: =6
 
     "'container CierreFuera' As groupContainer.manualLayoutContainer":
-        DropShadow: =DropShadow.Bold
-        Fill: =RGBA(255, 255, 255, 1)
-        Height: =320
-        RadiusBottomLeft: =8
-        RadiusBottomRight: =8
-        RadiusTopLeft: =8
-        RadiusTopRight: =8
+        Fill: =RGBA(0, 0, 0, 0.70)
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
         Visible: =Coalesce(varCierreAbierto, false)
-        Width: =560
-        X: =(Parent.Width - 560) / 2
-        Y: =(Parent.Height - 320) / 2
-        ZIndex: =1001
+        Width: =Parent.Width
+        ZIndex: =4
 
-        lblCierreTitulo As label:
-            Color: =RGBA(28, 21, 23, 1)
-            FontWeight: =FontWeight.Semibold
-            Height: =32
-            Size: =15
-            Text: ="Marcar como resuelto por fuera"
-            Width: =520
-            X: =20
-            Y: =16
-            ZIndex: =1
+        "'container CierreFuera Dialog' As groupContainer.manualLayoutContainer":
+            DropShadow: =DropShadow.Bold
+            Fill: =RGBA(255, 255, 255, 1)
+            Height: =320
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Visible: =Coalesce(varCierreAbierto, false)
+            Width: =560
+            X: =(Parent.Width - 560) / 2
+            Y: =(Parent.Height - 320) / 2
+            ZIndex: =12
 
-        lblCierreAviso As label:
-            Color: =RGBA(120, 106, 109, 1)
-            Height: =72
-            Size: =11
-            Text: |-
-                ="La respuesta a " & galBandeja.Selected.Name & " deja de estar pendiente porque alguien ya le escribio al cliente por fuera del sistema. A partir de aca, lo que se le dijo NO queda registrado en CashHub: por eso el motivo es obligatorio."
-            Width: =520
-            X: =20
-            Y: =48
-            ZIndex: =2
+            lblCierreTitulo As label:
+                Color: =RGBA(28, 21, 23, 1)
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                Size: =15
+                Text: ="Marcar como resuelto por fuera"
+                Width: =520
+                X: =20
+                Y: =16
+                ZIndex: =1
 
-        "txtCierreMotivo As 'Text input'":
-            Appearance: ="FilledDarker"
-            BasePaletteColor: =
-            BorderColor: =
-            DisplayMode: =DisplayMode.Edit
-            Fill: =
-            FontColor: =
-            Height: =100
-            Mode: ="MultiLine"
-            OnChange: |-
-                =UpdateContext({varCierreMotivo: Self.Value})
-            Placeholder: ="A quien se le escribio, por que medio y que se le dijo. Minimo 10 caracteres."
-            Width: =520
-            X: =20
-            Y: =126
-            ZIndex: =3
+            lblCierreAviso As label:
+                Color: =RGBA(120, 106, 109, 1)
+                Height: =72
+                Size: =11
+                Text: |-
+                    ="La respuesta a " & galBandeja.Selected.Name & " deja de estar pendiente porque alguien ya le escribio al cliente por fuera del sistema. A partir de aca, lo que se le dijo NO queda registrado en CashHub: por eso el motivo es obligatorio."
+                Width: =520
+                X: =20
+                Y: =48
+                ZIndex: =2
 
-        lblCierreValidacion As label:
-            Color: =RGBA(110, 22, 34, 1)
-            Height: =20
-            Size: =10
-            Text: =If(Len(Trim(Coalesce(varCierreMotivo, ""))) < 10, "Escriba al menos 10 caracteres explicando como se resolvio.", "")
-            Width: =520
-            X: =20
-            Y: =230
-            ZIndex: =4
+            "txtCierreMotivo As 'Text input'":
+                AccessibleLabel: =""
+                Align: =""
+                Appearance: ="FilledDarker"
+                BasePaletteColor: =
+                BorderColor: =
+                BorderStyle: =""
+                ContentLanguage: =""
+                DisplayMode: =DisplayMode.Edit
+                Fill: =
+                Font: =""
+                FontColor: =
+                FontItalic: =false
+                FontSize: =0
+                FontStrikethrough: =false
+                FontUnderline: =false
+                FontWeight: =""
+                Height: =100
+                MaxLength: =-1
+                Mode: ="MultiLine"
+                OnChange: |-
+                    =UpdateContext({varCierreMotivo: Self.Value})
+                Placeholder: ="A quien se le escribio, por que medio y que se le dijo. Minimo 10 caracteres."
+                Required: =false
+                TabIndex: =0
+                Tooltip: =""
+                TriggerOutput: ="FocusOut"
+                Type: ="Text"
+                ValidationState: ="None"
+                Value: =""
+                Visible: =true
+                Width: =520
+                X: =20
+                Y: =126
+                ZIndex: =3
 
-        btnCierreCancelar As Button:
-            Appearance: ='ButtonCanvas.Appearance'.Secondary
-            BasePaletteColor: =
-            BorderColor: =
-            DisplayMode: =DisplayMode.Edit
-            FontColor: =
-            Height: =36
-            OnSelect: |-
-                =UpdateContext({varCierreAbierto: false})
-            Text: ="Cancelar"
-            Width: =140
-            X: =240
-            Y: =258
-            ZIndex: =5
+            lblCierreValidacion As label:
+                Color: =RGBA(110, 22, 34, 1)
+                Height: =20
+                Size: =10
+                Text: =If(Len(Trim(Coalesce(varCierreMotivo, ""))) < 10, "Escriba al menos 10 caracteres explicando como se resolvio.", "")
+                Width: =520
+                X: =20
+                Y: =230
+                ZIndex: =4
 
-        btnCierreConfirmar As Button:
-            Appearance: ='ButtonCanvas.Appearance'.Primary
-            BasePaletteColor: =
-            BorderColor: =
-            DisplayMode: =If(Len(Trim(Coalesce(varCierreMotivo, ""))) < 10, DisplayMode.Disabled, DisplayMode.Edit)
-            FontColor: =
-            Height: =36
-            OnSelect: |-
-                =Patch(
-                    'CH-Tbl-Received Emails',
-                    galBandeja.Selected,
-                    {
-                        EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido,
-                        RepliedBy: User().Email,
-                        ReplyDateTime: Now(),
-                        ReplyCloseNote: Trim(varCierreMotivo)
-                    }
-                );
-                Refresh('CH-Tbl-Received Emails');
-                UpdateContext({varCierreAbierto: false});
-                Notify("Cerrado a nombre de " & User().Email & ".", NotificationType.Success);
-            Text: ="Confirmar"
-            Width: =160
-            X: =390
-            Y: =258
-            ZIndex: =6
+            btnCierreCancelar As Button:
+                AcceptsFocus: =true
+                AccessibleLabel: =""
+                Align: =""
+                Appearance: ='ButtonCanvas.Appearance'.Secondary
+                BasePaletteColor: =
+                BorderColor: =
+                BorderStyle: =""
+                ContentLanguage: =""
+                DisplayMode: =DisplayMode.Edit
+                Font: =""
+                FontColor: =
+                FontItalic: =false
+                FontSize: =0
+                FontStrikethrough: =false
+                FontUnderline: =false
+                FontWeight: =""
+                Height: =36
+                Icon: =""
+                IconRotation: =0
+                IconStyle: ="Outline"
+                Layout: ="Icon before"
+                OnSelect: |-
+                    =UpdateContext({varCierreAbierto: false})
+                TabIndex: =0
+                Text: ="Cancelar"
+                Tooltip: =""
+                VerticalAlign: =""
+                Visible: =true
+                Width: =140
+                X: =240
+                Y: =258
+                ZIndex: =5
+
+            btnCierreConfirmar As Button:
+                AcceptsFocus: =true
+                AccessibleLabel: =""
+                Align: =""
+                Appearance: ='ButtonCanvas.Appearance'.Primary
+                BasePaletteColor: =
+                BorderColor: =
+                BorderStyle: =""
+                ContentLanguage: =""
+                DisplayMode: =If(Len(Trim(Coalesce(varCierreMotivo, ""))) < 10, DisplayMode.Disabled, DisplayMode.Edit)
+                Font: =""
+                FontColor: =
+                FontItalic: =false
+                FontSize: =0
+                FontStrikethrough: =false
+                FontUnderline: =false
+                FontWeight: =""
+                Height: =36
+                Icon: =""
+                IconRotation: =0
+                IconStyle: ="Outline"
+                Layout: ="Icon before"
+                OnSelect: |-
+                    =Patch(
+                        'CH-Tbl-Received Emails',
+                        galBandeja.Selected,
+                        {
+                            EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido,
+                            RepliedBy: User().Email,
+                            ReplyDateTime: Now(),
+                            ReplyCloseNote: Trim(varCierreMotivo)
+                        }
+                    );
+                    Refresh('CH-Tbl-Received Emails');
+                    UpdateContext({varCierreAbierto: false});
+                    Notify("Cerrado a nombre de " & User().Email & ".", NotificationType.Success);
+                TabIndex: =0
+                Text: ="Confirmar"
+                Tooltip: =""
+                VerticalAlign: =""
+                Visible: =true
+                Width: =160
+                X: =390
+                Y: =258
+                ZIndex: =6
 
