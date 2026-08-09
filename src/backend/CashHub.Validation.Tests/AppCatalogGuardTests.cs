@@ -1,3 +1,4 @@
+using System;
 using CashHub.Validation.Security;
 using Xunit;
 using static CashHub.Validation.Security.AppCatalogGuard;
@@ -86,63 +87,66 @@ namespace CashHub.Validation.Tests
             Assert.False(EvaluateAppUrl("esto no es una url").IsAllowed);
         }
 
-        // ---- sanic_aadgroupid (multi-valor separado por ';') ----
+        // ---- catalogo: sanic_aadgroupid esta DEPRECADO (los grupos viven en CH-Tbl-AppCatalogAccess) ----
 
         [Fact]
-        public void Groups_Blank_IsAllowed()
+        public void CatalogGroups_Blank_IsAllowed()
         {
-            // Sin grupo = app visible para todos: es un estado legitimo del catalogo.
-            Assert.True(EvaluateAadGroupIds(null).IsAllowed);
-            Assert.True(EvaluateAadGroupIds("   ").IsAllowed);
+            // Limpiar la columna deprecada (o no tocarla) es legitimo.
+            Assert.True(EvaluateDeprecatedCatalogGroups(null).IsAllowed);
+            Assert.True(EvaluateDeprecatedCatalogGroups("   ").IsAllowed);
         }
 
         [Fact]
-        public void Groups_SingleGuid_IsAllowed()
+        public void CatalogGroups_AnyValue_IsBlocked()
         {
-            Assert.True(EvaluateAadGroupIds(G1).IsAllowed);
+            // Nadie vuelve al modelo viejo por accidente: el guard señala la tabla nueva.
+            var result = EvaluateDeprecatedCatalogGroups(G1);
+            Assert.False(result.IsAllowed);
+            Assert.Contains("CH-Tbl-AppCatalogAccess", result.Reason);
+        }
+
+        // ---- tabla de accesos: sanic_aadgroupid = UN grupo AAD por fila ----
+
+        [Fact]
+        public void AccessGroup_SingleGuid_IsAllowed()
+        {
+            var result = EvaluateAccessGroupId(G1, out var parsed);
+            Assert.True(result.IsAllowed);
+            Assert.Equal(Guid.Parse(G1), parsed);
         }
 
         [Fact]
-        public void Groups_MultipleGuids_IsAllowed()
+        public void AccessGroup_GuidWithSpaces_IsAllowed()
         {
-            Assert.True(EvaluateAadGroupIds($"{G1};{G2}").IsAllowed);
+            var result = EvaluateAccessGroupId($"  {G1}  ", out var parsed);
+            Assert.True(result.IsAllowed);
+            Assert.Equal(Guid.Parse(G1), parsed);
         }
 
         [Fact]
-        public void Groups_TokensWithSpaces_IsAllowed()
+        public void AccessGroup_Blank_IsBlocked()
         {
-            // El OnStart del hub hace Substitute(" ", "") antes de comparar: espacios alrededor no rompen.
-            Assert.True(EvaluateAadGroupIds($" {G1} ; {G2} ").IsAllowed);
+            // La fila SOLO existe para declarar un grupo: sin grupo no tiene sentido.
+            Assert.False(EvaluateAccessGroupId(null, out _).IsAllowed);
+            Assert.False(EvaluateAccessGroupId("   ", out _).IsAllowed);
         }
 
         [Fact]
-        public void Groups_TrailingSeparator_IsAllowed()
+        public void AccessGroup_MultipleGuids_IsBlocked()
         {
-            Assert.True(EvaluateAadGroupIds($"{G1};").IsAllowed);
+            // El ';' murio con el modelo viejo: un grupo por fila.
+            var result = EvaluateAccessGroupId($"{G1};{G2}", out _);
+            Assert.False(result.IsAllowed);
+            Assert.Contains("una fila por grupo", result.Reason);
         }
 
         [Fact]
-        public void Groups_InvalidToken_IsBlocked()
+        public void AccessGroup_NotAGuid_IsBlocked()
         {
-            var result = EvaluateAadGroupIds($"{G1};no-soy-un-guid");
+            var result = EvaluateAccessGroupId("no-soy-un-guid", out _);
             Assert.False(result.IsAllowed);
             Assert.Contains("no-soy-un-guid", result.Reason);
-        }
-
-        [Fact]
-        public void Groups_OnlySeparators_IsBlocked()
-        {
-            // ";;" no es blanco pero tampoco declara ningun grupo: config rota, mejor avisar.
-            var result = EvaluateAadGroupIds(";;");
-            Assert.False(result.IsAllowed);
-        }
-
-        [Fact]
-        public void Groups_DuplicateGuids_IsBlocked()
-        {
-            var result = EvaluateAadGroupIds($"{G1};{G1}");
-            Assert.False(result.IsAllowed);
-            Assert.Contains("duplicado", result.Reason);
         }
     }
 }

@@ -112,7 +112,7 @@ upsert('sdkmessageprocessingsteps',
 upsert('sdkmessageprocessingsteps',
     "name eq 'CashHub.GuardAppCatalog: Update de app del catalogo'", {
     'name': 'CashHub.GuardAppCatalog: Update de app del catalogo',
-    'description': 'Valida sanic_appurl (solo player de Power Apps) y sanic_aadgroupid (GUIDs separados por ;).',
+    'description': 'Valida sanic_appurl (solo player de Power Apps) y bloquea el sanic_aadgroupid deprecado.',
     'plugintypeid@odata.bind': f"/plugintypes({type_id})",
     'sdkmessageid@odata.bind': f"/sdkmessages({msg_update})",
     'sdkmessagefilterid@odata.bind': f"/sdkmessagefilters({filter_update})",
@@ -120,6 +120,45 @@ upsert('sdkmessageprocessingsteps',
     'filteringattributes': 'sanic_appurl,sanic_aadgroupid',
     'asyncautodelete': False, 'invocationsource': 0,
 }, 'paso Update catalogo', 'sdkmessageprocessingstepid')
+
+# --- CH-Tbl-AppCatalogAccess: un grupo AAD por fila, sin duplicados ---
+ACCESS = 'sanic_chtblappcatalogaccess'
+
+access_type_id = upsert('plugintypes', "typename eq 'CashHub.Plugins.GuardAppCatalogAccessPlugin'", {
+    'typename': 'CashHub.Plugins.GuardAppCatalogAccessPlugin',
+    'friendlyname': 'CashHub Guard App Catalog Access',
+    'name': 'CashHub.Plugins.GuardAppCatalogAccessPlugin',
+    'pluginassemblyid@odata.bind': f"/pluginassemblies({asm_id})",
+}, 'plugintype GuardAppCatalogAccessPlugin', 'plugintypeid')
+
+filter_access_create = one('sdkmessagefilters',
+    f"primaryobjecttypecode eq '{ACCESS}' and _sdkmessageid_value eq {msg_create}", 'sdkmessagefilterid')
+filter_access_update = one('sdkmessagefilters',
+    f"primaryobjecttypecode eq '{ACCESS}' and _sdkmessageid_value eq {msg_update}", 'sdkmessagefilterid')
+
+# Pre-operation (20) porque el plugin normaliza el GUID en el Target.
+upsert('sdkmessageprocessingsteps',
+    "name eq 'CashHub.GuardAppCatalogAccess: Create de acceso'", {
+    'name': 'CashHub.GuardAppCatalogAccess: Create de acceso',
+    'description': 'Un grupo AAD (GUID) por fila, app obligatoria, sin duplicados (app, grupo).',
+    'plugintypeid@odata.bind': f"/plugintypes({access_type_id})",
+    'sdkmessageid@odata.bind': f"/sdkmessages({msg_create})",
+    'sdkmessagefilterid@odata.bind': f"/sdkmessagefilters({filter_access_create})",
+    'stage': 20, 'mode': 0, 'rank': 1, 'supporteddeployment': 0,
+    'asyncautodelete': False, 'invocationsource': 0,
+}, 'paso Create acceso', 'sdkmessageprocessingstepid')
+
+upsert('sdkmessageprocessingsteps',
+    "name eq 'CashHub.GuardAppCatalogAccess: Update de acceso'", {
+    'name': 'CashHub.GuardAppCatalogAccess: Update de acceso',
+    'description': 'Un grupo AAD (GUID) por fila, app obligatoria, sin duplicados (app, grupo).',
+    'plugintypeid@odata.bind': f"/plugintypes({access_type_id})",
+    'sdkmessageid@odata.bind': f"/sdkmessages({msg_update})",
+    'sdkmessagefilterid@odata.bind': f"/sdkmessagefilters({filter_access_update})",
+    'stage': 20, 'mode': 0, 'rank': 1, 'supporteddeployment': 0,
+    'filteringattributes': 'sanic_aadgroupid,sanic_appcatalog',
+    'asyncautodelete': False, 'invocationsource': 0,
+}, 'paso Update acceso', 'sdkmessageprocessingstepid')
 
 print("Registro del guard del catalogo completo.")
 PYEOF

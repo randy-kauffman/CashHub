@@ -45,9 +45,9 @@ namespace CashHub.Plugins
             if (target.Contains(Schema.AppCatalog.AadGroupId))
             {
                 var groups = target.GetAttributeValue<string>(Schema.AppCatalog.AadGroupId);
-                tracing.Trace("GuardAppCatalog: {0} valida AadGroupId='{1}'.", context.MessageName, groups ?? "(null)");
+                tracing.Trace("GuardAppCatalog: {0} valida AadGroupId deprecado='{1}'.", context.MessageName, groups ?? "(null)");
 
-                var groupsResult = AppCatalogGuard.EvaluateAadGroupIds(groups);
+                var groupsResult = AppCatalogGuard.EvaluateDeprecatedCatalogGroups(groups);
                 if (!groupsResult.IsAllowed)
                 {
                     tracing.Trace("GuardAppCatalog: BLOQUEADO — {0}", groupsResult.Reason);

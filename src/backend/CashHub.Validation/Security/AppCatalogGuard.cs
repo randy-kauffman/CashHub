@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace CashHub.Validation.Security
 {
@@ -80,45 +79,50 @@ namespace CashHub.Validation.Security
         }
 
         /// <summary>
-        /// Valida sanic_aadgroupid: lista de GUIDs de grupos AAD separados por ';'.
-        /// Blanco es valido (app visible para todos). Con valor, cada token no vacio debe ser
-        /// un GUID, debe quedar al menos un token, y no se admiten duplicados.
+        /// El sanic_aadgroupid del catalogo esta DEPRECADO: los grupos viven en
+        /// CH-Tbl-AppCatalogAccess (una fila por grupo, con relacion real). Limpiarlo es
+        /// valido; cualquier intento de escribirle un valor se bloquea para que nadie
+        /// vuelva al modelo multi-valor con ';' por accidente.
         /// </summary>
-        public static AppCatalogGuardResult EvaluateAadGroupIds(string? aadGroupIds)
+        public static AppCatalogGuardResult EvaluateDeprecatedCatalogGroups(string? aadGroupIds)
         {
             if (string.IsNullOrWhiteSpace(aadGroupIds))
             {
                 return AppCatalogGuardResult.Allow();
             }
 
-            var seen = new HashSet<Guid>();
-            foreach (var rawToken in aadGroupIds!.Split(';'))
-            {
-                var token = rawToken.Trim();
-                if (token.Length == 0)
-                {
-                    continue;
-                }
+            return AppCatalogGuardResult.Block(
+                "El campo de grupos AAD del catalogo esta deprecado. " +
+                "Declare los grupos en la tabla CH-Tbl-AppCatalogAccess (una fila por grupo).");
+        }
 
-                if (!Guid.TryParse(token, out var groupId))
-                {
-                    return AppCatalogGuardResult.Block(
-                        $"El grupo AAD '{token}' no es un GUID valido. " +
-                        "El campo admite GUIDs separados por ';'.");
-                }
+        /// <summary>
+        /// Valida el sanic_aadgroupid de una fila de CH-Tbl-AppCatalogAccess: exactamente UN
+        /// GUID de grupo AAD (la fila existe solo para declarar ese grupo). Devuelve el GUID
+        /// parseado para que el plugin lo normalice y chequee duplicados.
+        /// </summary>
+        public static AppCatalogGuardResult EvaluateAccessGroupId(string? aadGroupId, out Guid groupId)
+        {
+            groupId = Guid.Empty;
 
-                if (!seen.Add(groupId))
-                {
-                    return AppCatalogGuardResult.Block(
-                        $"El grupo AAD '{token}' esta duplicado en la lista.");
-                }
-            }
-
-            if (seen.Count == 0)
+            if (string.IsNullOrWhiteSpace(aadGroupId))
             {
                 return AppCatalogGuardResult.Block(
-                    "El campo de grupos AAD tiene separadores pero ningun GUID. " +
-                    "Dejelo vacio (app publica) o declare al menos un grupo.");
+                    "La fila de acceso debe declarar el GUID del grupo AAD.");
+            }
+
+            var candidate = aadGroupId!.Trim();
+
+            if (candidate.Contains(";"))
+            {
+                return AppCatalogGuardResult.Block(
+                    "Una fila de acceso admite un solo grupo AAD: es una fila por grupo, sin ';'.");
+            }
+
+            if (!Guid.TryParse(candidate, out groupId))
+            {
+                return AppCatalogGuardResult.Block(
+                    $"El grupo AAD '{candidate}' no es un GUID valido.");
             }
 
             return AppCatalogGuardResult.Allow();

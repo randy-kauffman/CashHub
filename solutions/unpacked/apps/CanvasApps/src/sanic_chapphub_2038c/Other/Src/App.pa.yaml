@@ -13,16 +13,22 @@ App:
           colCatalog,
           Filter('CH-Tbl-AppCatalogs', Enabled)
       );
+      // Una fila de acceso = (app, grupo AAD). Sin filas para una app, la app es pública.
+      ClearCollect(
+          colAccess,
+          ForAll(
+              'CH-Tbl-AppCatalogAccesses' As row,
+              {
+                  AppId: row.'App Catalog'.'CH-Tbl-AppCatalog',
+                  GroupId: Substitute(Trim(row.'AAD Group Id'), " ", "")
+              }
+          )
+      );
       Set(gvarAccessError, false);
       Clear(colMyGroupIds);
-      // 'AAD Group Id' admite varios GUIDs separados por ';' (máx. 255 caracteres = 6 grupos)
-      With(
-          {allIds: Concat(Filter(colCatalog, !IsBlank('AAD Group Id')), Substitute(Trim('AAD Group Id'), " ", "") & ";")},
-          ClearCollect(colGroupIds, Distinct(Filter(Split(allIds, ";"), !IsBlank(Value)), Value))
-      );
-      // Una sola llamada a Graph resuelve la membresía (transitiva) contra todos los grupos del catálogo. Tope de checkMemberGroups: 20 grupos.
+      // Una sola llamada a Graph resuelve la membresía (transitiva) contra todos los grupos declarados. Tope de checkMemberGroups: 20 grupos.
       If(
-          !IsEmpty(colGroupIds),
+          !IsEmpty(colAccess),
           IfError(
               ClearCollect(
                   colMyGroupIds,
@@ -31,7 +37,7 @@ App:
                           Office365Groups.HttpRequest(
                               "https://graph.microsoft.com/v1.0/me/checkMemberGroups",
                               "POST",
-                              "{""groupIds"": [" & Concat(FirstN(colGroupIds, 20), """" & Value & """", ",") & "]}"
+                              "{""groupIds"": [" & Concat(FirstN(Distinct(colAccess, GroupId), 20), """" & Value & """", ",") & "]}"
                           ).value
                       ),
                       {GroupId: Text(Value)}
@@ -44,13 +50,13 @@ App:
       ClearCollect(
           colAppData,
           Filter(
-              colCatalog,
-              IsBlank('AAD Group Id') ||
+              colCatalog As app,
+              IsEmpty(Filter(colAccess, AppId = app.'CH-Tbl-AppCatalog')) ||
                   gvarAccessError ||
                   CountRows(
                       Filter(
-                          Split(Substitute(Trim('AAD Group Id'), " ", ""), ";"),
-                          !IsBlank(Value) && Value in colMyGroupIds.GroupId
+                          colAccess,
+                          AppId = app.'CH-Tbl-AppCatalog' && GroupId in colMyGroupIds.GroupId
                       )
                   ) > 0
           )

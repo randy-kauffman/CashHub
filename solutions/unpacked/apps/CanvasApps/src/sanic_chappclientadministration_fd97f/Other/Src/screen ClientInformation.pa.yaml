@@ -3242,7 +3242,7 @@ Screens:
             DialogWidth: =400
             Fill: =sidePanel_1.OverlayColor
             Height: =App.Height
-            OnButtonSelect: "=Switch(\n    Self.SelectedButton.Label,\n    \"Ok\",\n    If(\n        (formSucursales.Visible && formSucursales.Valid) || (formCorreos.Visible && formCorreos.Valid) || (formCuentas.Visible && formCuentas.Valid),\n        Notify(\n            \"Creando RFC\",\n            NotificationType.Information\n        );\n        If(formSucursales.Visible,\n        NewForm(formRFC_Cliente_1);\n        UpdateContext({varShowScreenSpinner: true,varShowScreenSpinnerLabel: \"Guardando...\"});\n        SubmitForm(formRFC_Cliente_1););\n        If(formCorreos.Visible,\n        NewForm(formRFC_Cliente_1);\n        UpdateContext({varShowScreenSpinner: true,varShowScreenSpinnerLabel: \"Guardando...\"});\n        SubmitForm(formRFC_Cliente_1););\n        If(formCuentas.Visible,\n        NewForm(formRFC_Cliente_1);\n        UpdateContext({varShowScreenSpinner: true,varShowScreenSpinnerLabel: \"Guardando...\"});\n        SubmitForm(formRFC_Cliente_1);)\n        \n        ,\n        Notify(\n            \"Campos incompeltos\",\n            NotificationType.Error\n        )\n    ),\n    \"Cancelar\",\n    UpdateContext({varShowSidePanel: false})\n)"
+            OnButtonSelect: "=Switch(\n    Self.SelectedButton.Label,\n    \"Ok\",\n    If(\n        (formSucursales.Visible && formSucursales.Valid) || (formCorreos.Visible && formCorreos.Valid) || (formCuentas.Visible && formCuentas.Valid),\n        Notify(\n            \"Creando RFC\",\n            NotificationType.Information\n        );\n        If(formSucursales.Visible,\n        NewForm(formRFC_Cliente_1);\n        UpdateContext({varShowScreenSpinner: true,varShowScreenSpinnerLabel: \"Guardando...\"});\n        SubmitForm(formRFC_Cliente_1););\n        If(formCorreos.Visible,\n        NewForm(formRFC_Cliente_1);\n        UpdateContext({varShowScreenSpinner: true,varShowScreenSpinnerLabel: \"Guardando...\"});\n        SubmitForm(formRFC_Cliente_1););\n        If(formCuentas.Visible,\n        NewForm(formRFC_Cliente_1);\n        UpdateContext({varShowScreenSpinner: true,varShowScreenSpinnerLabel: \"Guardando...\"});\n        SubmitForm(formRFC_Cliente_1);)\n        \n        ,\n        Notify(\n            \"Campos incompletos\",\n            NotificationType.Error\n        )\n    ),\n    \"Cancelar\",\n    UpdateContext({varShowSidePanel: false})\n)"
             OnCloseSelect: |-
               =UpdateContext({varShowSidePanel: false}); formClient.Visible = false;
             OverlayColor: =RGBA(255, 255, 255, 0.4)
@@ -3563,7 +3563,7 @@ Screens:
                         BorderColor: =RGBA(0, 0, 0, 1)
                         Color: =App.Theme.Colors.Darker30
                         Height: =34
-                        Text: ="Nombre de sucursal"
+                        Text: ="Numero de cuenta"
                         Width: =Parent.Width - 60
                         Wrap: =false
                         X: =30
@@ -3637,7 +3637,7 @@ Screens:
                         BorderColor: =RGBA(0, 0, 0, 1)
                         Color: =App.Theme.Colors.Darker30
                         Height: =34
-                        Text: ="Notificar siempre"
+                        Text: ="Moneda"
                         Width: =Parent.Width - 60
                         Wrap: =false
                         X: =30
