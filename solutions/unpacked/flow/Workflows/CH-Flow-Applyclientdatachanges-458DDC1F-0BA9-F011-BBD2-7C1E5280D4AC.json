@@ -254,7 +254,7 @@
                     "parameters": {
                       "entityName": "sanic_chtblclientdatachangerequestlines",
                       "recordId": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']",
-                      "item/sanic_changestatus": 159460004
+                      "item/sanic_changestatus": 159460005
                     },
                     "host": {
                       "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
@@ -539,7 +539,7 @@
                               "type": "Compose",
                               "inputs": "@int(json(coalesce(items('Aplicar_a_cada_linea_del_RFC')?['sanic_FieldDefinition/sanic_optionsetmap'], '{}'))?[items('Aplicar_a_cada_linea_del_RFC')?['sanic_newvalue']])"
                             },
-                            "Añadir_propiedad_de_OptionSet": {
+                            "Update_a_row_optionset": {
                               "runAfter": {
                                 "Convertir_a_optionset": [
                                   "Succeeded"
@@ -548,10 +548,25 @@
                               "metadata": {
                                 "operationMetadataId": "0bdf978e-059c-49b5-b45f-2ab1fb0f435e"
                               },
-                              "type": "AppendToArrayVariable",
+                              "type": "OpenApiConnection",
                               "inputs": {
-                                "name": "varItem",
-                                "value": "\"@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}\":@{string(outputs('Convertir_a_optionset'))}"
+                                "parameters": {
+                                  "entityName": "@triggerOutputs()?['body/sanic_targettablepluralname']",
+                                  "recordId": "@triggerOutputs()?['body/sanic_targetrecordid']",
+                                  "item": {
+                                    "@{items('Aplicar_a_cada_linea_del_RFC')?['sanic_fielddefinition/sanic_logicalname']}": "@outputs('Convertir_a_optionset')"
+                                  }
+                                },
+                                "host": {
+                                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                                  "operationId": "UpdateOnlyRecord",
+                                  "connectionName": "shared_commondataserviceforapps_1"
+                                },
+                                "retryPolicy": {
+                                  "type": "exponential",
+                                  "count": 4,
+                                  "interval": "PT10S"
+                                }
                               }
                             }
                           }

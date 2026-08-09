@@ -158,7 +158,9 @@
                     "inputs": {
                       "parameters": {
                         "entityName": "sanic_chtblclientdatachangerequests",
-                        "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']"
+                        "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']",
+                        "item/sanic_targetrecordid": "@outputs('Crear_nuevo_registro')?['body/sanic_chtblclientid']",
+                        "item/sanic_RelatedClient@odata.bind": "/sanic_chtblclients(@{outputs('Crear_nuevo_registro')?['body/sanic_chtblclientid']})"
                       },
                       "host": {
                         "connectionName": "shared_commondataserviceforapps_1",
@@ -370,7 +372,7 @@
                     "parameters": {
                       "entityName": "sanic_chtblclientdatachangerequestlines",
                       "recordId": "@items('Aplicar_a_cada_linea_del_RFC')?['sanic_chtblclientdatachangerequestlineid']",
-                      "item/sanic_changestatus": 159460004
+                      "item/sanic_changestatus": 159460005
                     },
                     "host": {
                       "connectionName": "shared_commondataserviceforapps_1",
@@ -898,7 +900,8 @@
                       "inputs": {
                         "parameters": {
                           "entityName": "sanic_chtblclientdatachangesaudittrails",
-                          "recordId": "@item()"
+                          "recordId": "@item()",
+                          "item/sanic_RelatedClient@odata.bind": "/sanic_chtblclients(@{outputs('Crear_nuevo_registro')?['body/sanic_chtblclientid']})"
                         },
                         "host": {
                           "connectionName": "shared_commondataserviceforapps_1",
