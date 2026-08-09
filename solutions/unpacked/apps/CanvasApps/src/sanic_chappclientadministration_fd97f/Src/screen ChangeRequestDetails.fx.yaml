@@ -1652,6 +1652,11 @@
                                 LookUp(
                                     'CH-Tbl-ClientEmails',
                                     'CH-Tbl-ClientEmail' = GUID(gvarSelectedChangeRequest.TargetRecordID)
+                                ),
+                                "sanic_chtblclientaccount",
+                                LookUp(
+                                    'CH-Tbl-ClientAccounts',
+                                    'CH-Tbl-ClientAccount' = GUID(gvarSelectedChangeRequest.TargetRecordID)
                                 )
                             )));
                     
@@ -2362,6 +2367,7 @@
                         }
                     );
                     Clear(colConflictRegistrie);
+                    Clear(colSubmittionErrors);
                     ClearCollect(
                         colRegistriesToSubmit,
                         Filter(
@@ -2492,6 +2498,7 @@
                             varNow: Now()
                         }
                     );
+                    Clear(colSubmittionErrors);
                     ClearCollect(
                         colRegistriesToSubmit,
                         Filter(
@@ -2520,6 +2527,8 @@
                         )
                     );
                     Clear(colRegistriesToSubmit);
+                    If(
+                        IsEmpty(colSubmittionErrors),
                     Patch(
                         'CH-Tbl-ClientDataChangeRequests',
                         gvarSelectedChangeRequest,
@@ -2551,6 +2560,12 @@
                             ScreenTransition.Fade
                         ),// no hay historial → pantalla por defecto
                         Back()// hay historial → volver normalmente
+                    ),
+                    Notify(
+                        "Hubo problemas al cancelar algunas lineas, intentelo nuevamente",
+                        NotificationType.Error
+                    );
+                    UpdateContext({varScreenSpinnerVisibility: false})
                     );
                 )
             );
