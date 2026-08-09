@@ -6,6 +6,24 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+### Fixed
+
+- **Líneas de RFC fallidas quedaban marcadas como Applied.** En `CH-Flow-Applyclientdatachanges` y `CH-Flow-Createclientdata`, la acción `Actualizar_status_CRL_a_FAILED` escribía `sanic_changestatus = 159460004` (Applied) — el mismo valor que la rama de éxito —, así que una línea que fallaba al aplicarse quedaba registrada como aplicada correctamente y la bitácora mentía. Corregido a `159460005` (Failed). Desplegado en DEV vía patch de `clientdata` de ambos flujos.
+- **`CH-Flow-Applyclientdatachanges` estaba desactivado e inválido; los RFC tipo Update no se aplicaban.** El caso OptionSet hacía `AppendToArrayVariable` sobre `varItem`, una variable **nunca inicializada** en ese flujo (patrón copiado de `Createclientdata`, donde sí se inicializa), y sin `Update_a_row` que escribiera el valor. La definición no validaba (`InvalidVariableOperation`), el flujo quedaba en Draft y los cambios de campos tipo OptionSet nunca se escribían. Reemplazado por un `Update_a_row_optionset` que escribe el entero mapeado al registro (igual que los demás tipos). El flujo volvió a activarse. Verificado en vivo: sin referencias a `varItem`, `Update_a_row_optionset` presente, flujo activo.
+- **Al crear un cliente por RFC, el RFC no guardaba el id del cliente creado ni se enlazaba la bitácora.** En `CH-Flow-Createclientdata`, `Update_a_row_1` (backfill del RFC tras crear el cliente) y el `Update_a_row` del `Apply_to_each` (backfill de la bitácora) tenían el `item` **vacío** — eran PATCH no-op. Ahora `Update_a_row_1` escribe `sanic_targetrecordid` y enlaza `sanic_RelatedClient` al cliente recién creado, y el `Apply_to_each` enlaza `sanic_RelatedClient` en cada audit trail de creación de cliente (que se creaban sin cliente porque este aún no existía). Desplegado en DEV.
+
+### Security
+
+- **Separación de funciones en los RFC de administración de clientes** (`GuardChangeRequestApprovalPlugin`). Hasta ahora el control de aprobación vivía solo en la app canvas (visibilidad de botones): un Contributor con `prvWrite`/`prvCreate` podía pegarle `Approved` a su propio RFC por Web API o Excel y auto-aprobarse, y los flujos de aplicación lo tomaban. El guard corre **síncrono en Pre-operation** de `Create` y `Update` de `sanic_chtblclientdatachangerequest` y bloquea la transición ilegítima antes de que el pipeline la vea:
+  - Aprobar/rechazar exige estado previo `Submitted` **y** que quien decide **no sea el creador** del RFC.
+  - Impide **crear** un RFC ya resuelto (`Approved`/`Rejected`/`Applied`/`Failed`), cerrando el bypass por `Create`.
+  - Las transiciones de sistema (`Approved→Applied/Failed` de los flujos, `→Canceled`, `Draft→Submitted`) pasan sin fricción.
+  - **Fase 2**: además, aprobar/rechazar exige que el usuario **pertenezca al grupo Approver** de la tabla objetivo. Se resuelve server-side leyendo `CH-Tbl-ClientDataChangePermission` (tabla → grupo AAD) y la membresía del **Azure AD group team** correspondiente (`teammembership`). Fail-closed: sin grupo configurado o sin membresía, se bloquea.
+  - Lógica de decisión en el dominio puro (`ChangeRequestApprovalGuard`, `netstandard2.0`, sin SDK) con 24 casos de test; el plugin es solo la cáscara que arma el contexto, resuelve la membresía y propaga el bloqueo.
+  - Provisión idempotente de los AAD group teams de aprobadores: `scripts/provision-approver-teams.sh` (data-driven desde la tabla de permisos).
+  - Registro idempotente del guard: `scripts/register-clientadmin-guard.sh` (requiere `dotnet build -c Release` previo). Dos pasos síncronos Pre-operation en Create y Update de `sanic_chtblclientdatachangerequest`.
+  - Verificado end-to-end contra el entorno: se bloquean el create-en-resuelto, la transición inválida y la auto-aprobación del creador; la resolución del grupo Approver acierta los cuatro casos de prueba.
+
 ## [0.11.0] - 2026-08-05
 
 Fase E (parte 1): respuesta automática al cliente con diseño parametrizable. Core 1.5.1.0, Flow 1.5.0.0.

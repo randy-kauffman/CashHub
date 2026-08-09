@@ -124,5 +124,45 @@ namespace CashHub.Plugins
             public const string OutResult = "Result";
             public const string OutFailedFindings = "FailedFindings";
         }
+
+        /// <summary>Solicitud de cambio de datos de cliente (RFC).</summary>
+        internal static class ChangeRequest
+        {
+            public const string LogicalName = "sanic_chtblclientdatachangerequest";
+            public const string Id = "sanic_chtblclientdatachangerequestid";
+            public const string ChangeStatus = "sanic_changestatus";
+            public const string TargetTable = "sanic_targettable";
+            public const string CreatedBy = "createdby";
+
+            /// <summary>Pre-image registrada con sanic_changestatus, sanic_targettable y createdby (solo Update).</summary>
+            public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Permiso de cambio de datos de cliente: mapea tabla objetivo -> grupo AAD por tipo.</summary>
+        internal static class ChangePermission
+        {
+            public const string LogicalName = "sanic_chtblclientdatachangepermission";
+            public const string TargetTable = "sanic_name";
+            public const string Type = "sanic_type";
+            public const string AadGroupId = "sanic_aadgroupid";
+
+            public const int TypeContributor = 159460000;
+            public const int TypeApprover = 159460001;
+        }
+
+        /// <summary>Team de Dataverse. Los AAD group teams materializan su membresia en teammembership.</summary>
+        internal static class Team
+        {
+            public const string LogicalName = "team";
+            public const string Id = "teamid";
+            public const string AadObjectId = "azureactivedirectoryobjectid";
+            public const string MembershipRelationship = "teammembership";
+        }
+
+        internal static class SystemUser
+        {
+            public const string LogicalName = "systemuser";
+            public const string Id = "systemuserid";
+        }
     }
 }
