@@ -1,34 +1,63 @@
 # ************************************************************************************************
 # Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
 # Use the maker portal to create and edit your Power Apps.
-# 
+#
 # The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
-# 
+#
 # For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
 # ************************************************************************************************
 App:
   Properties:
     OnStart: |
       =ClearCollect(
-          colAppData,
-          Filter(
-              Filter(
-                  'CH-Tbl-AppCatalogs',
-                  !IsBlank('AAD Group Id') && Enabled
-              ),
-              (!IsBlank(
-                  LookUp(
-                      Office365Groups.ListGroupMembers(Trim('AAD Group Id')).value,
-                      userPrincipalName = User().Email
+          colCatalog,
+          Filter('CH-Tbl-AppCatalogs', Enabled)
+      );
+      Set(gvarAccessError, false);
+      Clear(colMyGroupIds);
+      // 'AAD Group Id' admite varios GUIDs separados por ';' (máx. 255 caracteres = 6 grupos)
+      With(
+          {allIds: Concat(Filter(colCatalog, !IsBlank('AAD Group Id')), Substitute(Trim('AAD Group Id'), " ", "") & ";")},
+          ClearCollect(colGroupIds, Distinct(Filter(Split(allIds, ";"), !IsBlank(Value)), Value))
+      );
+      // Una sola llamada a Graph resuelve la membresía (transitiva) contra todos los grupos del catálogo. Tope de checkMemberGroups: 20 grupos.
+      If(
+          !IsEmpty(colGroupIds),
+          IfError(
+              ClearCollect(
+                  colMyGroupIds,
+                  ForAll(
+                      Table(
+                          Office365Groups.HttpRequest(
+                              "https://graph.microsoft.com/v1.0/me/checkMemberGroups",
+                              "POST",
+                              "{""groupIds"": [" & Concat(FirstN(colGroupIds, 20), """" & Value & """", ",") & "]}"
+                          ).value
+                      ),
+                      {GroupId: Text(Value)}
                   )
-              ) )
+              ),
+              // Si Graph falla no bloqueamos el hub: se muestra todo con aviso; la autorización real la imponen las apps destino
+              Set(gvarAccessError, true); Clear(colMyGroupIds)
           )
       );
-      Collect(
+      ClearCollect(
           colAppData,
           Filter(
-              'CH-Tbl-AppCatalogs',
-              IsBlank('AAD Group Id') && Enabled
+              colCatalog,
+              IsBlank('AAD Group Id') ||
+                  gvarAccessError ||
+                  CountRows(
+                      Filter(
+                          Split(Substitute(Trim('AAD Group Id'), " ", ""), ";"),
+                          !IsBlank(Value) && Value in colMyGroupIds.GroupId
+                      )
+                  ) > 0
           )
       );
+      Set(gvarLoaded, true);
+      If(
+          CountRows(colAppData) = 1 && !gvarAccessError,
+          Launch(First(colAppData).AppURL, {}, LaunchTarget.Replace)
+      )
     Theme: =PowerAppsTheme

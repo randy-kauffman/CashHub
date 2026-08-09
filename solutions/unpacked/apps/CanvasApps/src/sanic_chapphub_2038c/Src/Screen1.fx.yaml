@@ -6,7 +6,7 @@ Screen1 As screen:
         BorderColor: =App.Theme.Colors.Darker40
         DelayItemLoading: =true
         Height: =Parent.Height - Self.Y
-        Items: ='CH-Tbl-AppCatalogs'
+        Items: =Sort(colAppData, 'Order')
         Layout: =Layout.Vertical
         LoadingSpinner: =LoadingSpinner.Data
         ShowScrollbar: =false
@@ -16,7 +16,7 @@ Screen1 As screen:
         Width: =Parent.Width
         WrapCount: =Trunc(Self.Width/300)
         X: =0.00
-        Y: =Image2.Height
+        Y: =Image2.Height + If(gvarAccessError, AccessBanner1.Height, 0)
         ZIndex: =1
 
         Container1 As groupContainer.manualLayoutContainer:
@@ -38,6 +38,7 @@ Screen1 As screen:
             ZIndex: =1
 
             Image3 As image:
+                AccessibleLabel: ="Abrir " & ThisItem.'Display Name'
                 BorderColor: =App.Theme.Colors.Darker40
                 DisabledBorderColor: =RGBA(166, 166, 166, 1)
                 DisabledFill: =RGBA(244, 244, 244, 1)
@@ -60,7 +61,7 @@ Screen1 As screen:
                 Font: =App.Theme.Font
                 FontWeight: =FontWeight.Lighter
                 Height: =Parent.Height - Self.Y - 5
-                OnSelect: =
+                OnSelect: =Launch(ThisItem.AppURL,{},LaunchTarget.Replace)
                 PaddingBottom: =0
                 PaddingLeft: =0
                 PaddingRight: =0
@@ -80,7 +81,7 @@ Screen1 As screen:
                 Font: =App.Theme.Font
                 FontWeight: =If(ThisItem.IsSelected, FontWeight.Bold, FontWeight.Semibold)
                 Height: =Self.Size * 1.8
-                OnSelect: =
+                OnSelect: =Launch(ThisItem.AppURL,{},LaunchTarget.Replace)
                 PaddingBottom: =0
                 PaddingLeft: =0
                 PaddingRight: =0
@@ -102,7 +103,7 @@ Screen1 As screen:
                 Height: =20
                 Icon: =Icon.ChevronRight
                 OnSelect: =Launch(ThisItem.AppURL,{},LaunchTarget.Replace)
-                Tooltip: ="View item details"
+                Tooltip: ="Abrir " & ThisItem.'Display Name'
                 Width: =20
                 X: =Parent.Width - Self.Width - 12
                 Y: =(Parent.Height / 2) - (Self.Height / 2)
@@ -481,371 +482,28 @@ Screen1 As screen:
         Y: =0.00
         ZIndex: =2
 
-    HtmlText1 As htmlViewer:
-        DisabledBorderColor: =RGBA(166, 166, 166, 1)
-        Font: =App.Theme.Font
-        Height: =271.74
-        HtmlText: |-
-            ="<svg xmlns='http://www.w3.org/2000/svg' role='img' aria-labelledby='title desc'
-                 viewBox='0 0 1200 260' width='100%' preserveAspectRatio='xMidYMid slice'>
-              <title id='title'>CASH HUB</title>
-              <desc id='desc'>Ilustración con bóveda, cinta transportadora, bolsas de dinero animadas y contadores.</desc>
-            
-              <!-- ====== THEME (ajusta colores aquí) ====== -->
-              <style>
-                :root{
-                  --bg1:#0b2738; --bg2:#0e3a4a;
-                  --accent:#2dd4bf; --accent2:#60a5fa; --accent3:#f59e0b;
-                  --text:#e6f1f4; --muted:#9fb6c3;
-                  --success:#22c55e; --warn:#f59e0b; --danger:#ef4444;
-                  --belt:#0f2530; --beltEdge:#163341; --bag1:#1fa38a; --bag2:#0ea5e9; --bag3:#7c3aed;
-                  --bill:#16a34a;   /* billetes               */
-                  --coin:#f59e0b;   /* monedas                */
-                  --stroke:rgba(255,255,255,.6);
-                  --speed:12s;      /* velocidad recorrido    */
-                  --drop:1.8s;      /* duración caída         */
-                }
-                text{font-family: 'Segoe UI', Roboto, Arial, sans-serif}
-                .h1{font-weight:700; font-size:28px; letter-spacing:.3px; fill:var(--text)}
-                .h2{font-weight:500; font-size:14px; fill:var(--muted)}
-                .label{font-size:12px; fill:var(--muted)}
-                .value{font-weight:700; font-size:20px; fill:var(--text)}
-            
-                /* Animations */
-                @keyframes rotate360{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-                @keyframes moveBags{from{transform:translateX(-180px)}to{transform:translateX(1740px)}}
-                @keyframes pulse{0%,100%{opacity:.55; transform:scale(1)}50%{opacity:1; transform:scale(1.08)}}
-            
-                .rotating{transform-box:fill-box; transform-origin:center; animation:rotate360 18s linear infinite}
-                .bagMove{transform-box:fill-box; transform-origin:center; animation:moveBags 20s linear infinite}
-                .pulse{transform-box:fill-box; transform-origin:center; animation:pulse 2.2s ease-in-out infinite}
-                .delay1{animation-delay:.7s}.delay2{animation-delay:1.4s}.delay3{animation-delay:2.1s}
-            
-                    /* Billetes/monedas */
-                .bill { fill: var(--bill); stroke: var(--stroke); stroke-width:1.5; rx:4; ry:4; }
-                .bill-line { stroke: rgba(255,255,255,.55); stroke-width:1.5; }
-                .coin { fill: var(--coin); stroke: #b45309; stroke-width:1.2; }
-            
-                    /* Caída de billetes/monedas (relativa a la bolsa) */
-                .shower > g {
-                  transform-box: fill-box;
-                  transform-origin: center;
-                  animation: fall var(--drop) ease-in infinite;
-                }
-                
-                /* desfaces individuales con CSS variables */
-                .shower > g { opacity: 0; }
-                .shower > g:nth-child(1){ animation-delay: .2s; }
-                .shower > g:nth-child(2){ animation-delay: .6s; }
-                .shower > g:nth-child(3){ animation-delay: 1.0s; }
-                .shower > g:nth-child(4){ animation-delay: 1.4s; }
-                .shower > g:nth-child(5){ animation-delay: 1.8s; }
-                .shower > g:nth-child(6){ animation-delay: 2.2s; }
-                .shower > g:nth-child(7){ animation-delay: 2.6s; }
-                .shower > g:nth-child(8){ animation-delay: 3.0s; }
-            
-                    @keyframes fall {
-                  0%   { opacity:0; transform: translate(0,-6px) rotate(0deg); }
-                  10%  { opacity:1; }
-                  100% { opacity:0; transform: translate(0,120px) rotate(180deg); }
-                }
-            
-                /* Accesibilidad: respeta reduce motion */
-                @media (prefers-reduced-motion: reduce){
-                  .rotating,.bagMove,.pulse{animation:none}
-                  #treadAnim{display:none}
-                }
-            
-              </style>
-            
-              <!-- ====== DEFS ====== -->
-              <defs>
-                <!-- Fondo -->
-                <linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>
-                  <stop offset='0' stop-color='var(--bg1)'/>
-                  <stop offset='1' stop-color='var(--bg2)'/>
-                </linearGradient>
-            
-                <!-- Brillo sutil -->
-                <radialGradient id='glow' cx='65%' cy='30%' r='80%'>
-                  <stop offset='0' stop-color='white' stop-opacity='.08'/>
-                  <stop offset='1' stop-color='white' stop-opacity='0'/>
-                </radialGradient>
-            
-                <!-- Patrón de la banda de la cinta -->
-                <pattern id='tread' width='40' height='10' patternUnits='userSpaceOnUse'>
-                  <rect x='0' y='0' width='40' height='10' fill='rgba(255,255,255,.05)'/>
-                  <circle cx='8' cy='5' r='2' fill='rgba(255,255,255,.16)'/>
-                  <circle cx='28' cy='5' r='2' fill='rgba(255,255,255,.16)'/>
-                  <!-- Animación del patrón -->
-                  <animate id='treadAnim' attributeName='patternTransform' type='translate'
-                           from='0 0' to='40 0' dur='1.6s' repeatCount='indefinite'/>
-                </pattern>
-            
-                <!-- Símbolo: Bolsa de dinero -->
-                <symbol id='bag' viewBox='0 0 50 300'>
-                  <!-- Sombra -->
-                  <ellipse cx='60' cy='120' rx='36' ry='10' fill='black' opacity='.18'/>
-                  <!-- Cuerpo -->
-                  <path d='M38.14,21.15c-1.9-5.6-3.6-11.25-5.05-17c5.38-5.9,26.15-5.12,32.13-0.09l-5.53,13.15 c2.98-3.91,3.98-5.51,5.75-7.69c0.75,0.49,1.45,1.04,2.11,1.64c1.57,1.42,2.98,3,3.26,5.19c0.18,1.42-0.22,2.87-1.49,4.35 L56.63,35.48c-1.63-0.27-3.23-0.66-4.78-1.21c0.72-1.69,1.59-3.56,2.31-5.25L49.54,34c-4.81-1.02-8.69-0.41-12.29,1.5L24.37,20.05 c-0.76-0.92-1.11-1.84-1.11-2.76c0.01-3.73,5.57-6.96,8.5-8.18L38.14,21.15L38.14,21.15z M54.64,49.06l-2.51-11.49 c10.76,2,28.01,23.89,33.58,33.84c2.84,5.08,5.34,10.68,7.38,16.93c4.06,15.14,0.15,29.3-16.27,32.6 c-10.29,2.07-29.48,2.21-40.3,1.65c-11.63-0.6-29.64-0.58-34.34-12.53c-7.59-19.28,6.32-42.25,19-56.31 c1.67-1.85,3.39-3.57,5.18-5.17c4.61-4.06,9.59-8.87,15.52-10.88l-5.74,10.68l8.33-11.04h4.39L54.64,49.06L54.64,49.06z M49.29,58.49v2.03c2.15,0.23,4,0.67,5.54,1.33c1.54,0.67,2.88,1.67,4.03,3.02c0.91,1.03,1.61,2.09,2.1,3.17 c0.49,1.09,0.74,2.08,0.74,2.99c0,1.01-0.37,1.88-1.1,2.61c-0.74,0.73-1.63,1.1-2.68,1.1c-1.98,0-3.26-1.07-3.84-3.2 c-0.67-2.51-2.26-4.19-4.8-5.01v12.55c2.49,0.68,4.49,1.31,5.96,1.87c1.48,0.56,2.81,1.37,3.97,2.44c1.25,1.1,2.21,2.43,2.89,3.96 c0.67,1.54,1.01,3.22,1.01,5.05c0,2.29-0.53,4.44-1.62,6.43c-1.08,2.01-2.67,3.63-4.76,4.91c-2.1,1.27-4.58,2.02-7.46,2.25v2.05 c0,1.18-0.12,2.05-0.35,2.59c-0.23,0.54-0.73,0.81-1.52,0.81c-0.72,0-1.23-0.22-1.52-0.66c-0.29-0.44-0.43-1.13-0.43-2.06v-2.68 c-2.35-0.26-4.41-0.81-6.17-1.66c-1.76-0.84-3.23-1.89-4.41-3.15c-1.17-1.27-2.05-2.57-2.6-3.92c-0.57-1.36-0.84-2.7-0.84-4 c0-0.96,0.37-1.83,1.13-2.6c0.75-0.77,1.69-1.16,2.81-1.16c0.91,0,1.67,0.21,2.3,0.63c0.62,0.42,1.05,1.02,1.3,1.78 c0.54,1.65,1.01,2.91,1.41,3.79c0.41,0.87,1.02,1.68,1.83,2.4c0.81,0.72,1.89,1.28,3.24,1.66V85.79c-2.7-0.75-4.94-1.57-6.75-2.49 c-1.81-0.92-3.28-2.21-4.4-3.9c-1.12-1.69-1.69-3.86-1.69-6.51c0-3.46,1.1-6.3,3.3-8.5c2.2-2.21,5.38-3.5,9.54-3.86v-1.97 c0-1.69,0.64-2.53,1.9-2.53C48.65,56.02,49.29,56.84,49.29,58.49L49.29,58.49z M45.46,77.95V66.4c-1.69,0.5-3.01,1.16-3.95,1.99 c-0.95,0.82-1.42,2.08-1.42,3.75c0,1.58,0.44,2.79,1.33,3.6C42.3,76.55,43.65,77.29,45.46,77.95L45.46,77.95z M49.29,86.9v13.22 c2.03-0.4,3.59-1.21,4.7-2.44c1.1-1.24,1.66-2.66,1.66-4.29c0-1.75-0.54-3.1-1.62-4.06C52.96,88.37,51.38,87.56,49.29,86.9 L49.29,86.9z'
-                        fill='url(#bagGrad)' stroke='rgba(0,0,0,.35)' stroke-width='1'/>
-                  <g class='shower' transform='translate(78,16)'>
-                    <!-- Billete 1 -->
-                    <g>
-                      <rect class='bill' x='-36' y='0' width='32' height='18'/>
-                      <line class='bill-line' x1='-28' y1='4' x2='-12' y2='4'/>
-                      <circle cx='-20' cy='9' r='3.5' fill='rgba(255,255,255,.35)'/>
-                    </g>
-                    <!-- Moneda 1 -->
-                    <g>
-                      <circle class='coin' cx='-30' cy='2' r='5'/>
-                    </g>
-                    <!-- Billete 2 -->
-                    <g>
-                      <rect class='bill' x='4' y='0' width='30' height='16'/>
-                      <line class='bill-line' x1='8' y1='4' x2='26' y2='4'/>
-                      <circle cx='19' cy='8' r='3' fill='rgba(255,255,255,.35)'/>
-                    </g>
-                    <!-- Moneda 2 -->
-                    <g>
-                      <circle class='coin' cx='-34' cy='-2' r='4.5'/>
-                    </g>
-                    <!-- Billete 3 -->
-                    <g>
-                      <rect class='bill' x='-10' y='-4' width='28' height='16'/>
-                      <line class='bill-line' x1='-6' y1='0' x2='14' y2='0'/>
-                    </g>
-                    <!-- Moneda 3 -->
-                    <g>
-                      <circle class='coin' cx='-45' cy='-6' r='4'/>
-                    </g>
-                    <!-- Billete 4 -->
-                    <g>
-                      <rect class='bill' x='-30' y='-8' width='26' height='14'/>
-                      <line class='bill-line' x1='-26' y1='-4' x2='-8' y2='-4'/>
-                    </g>
-                    <!-- Moneda 4 -->
-                    <g>
-                      <circle class='coin' cx='-24' cy='-10' r='3.6'/>
-                    </g>
-                  </g>
-            
-                </symbol>
-            
-                <!-- Gradiente para bolsas (se sobreescribe por clase) -->
-                <linearGradient id='bagGrad' x1='0' y1='0' x2='0' y2='1'>
-                  <stop offset='0' stop-color='#9b6a3e'/>
-                  <stop offset='1' stop-color='#6f4a2c'/>
-                </linearGradient>
-            
-                <!-- Símbolo: Bóveda -->
-                <symbol id='vault' viewBox='-60 -60 120 120'>
-                  <circle r='56' fill='rgba(0,0,0,.25)'/>
-                  <circle r='52' fill='#0b1f2b' stroke='rgba(255,255,255,.15)' stroke-width='2'/>
-                  <g class='rotating'>
-                    <circle r='30' fill='none' stroke='var(--accent2)' stroke-width='6' stroke-dasharray='12 10' stroke-linecap='round'/>
-                    <!-- Pernos -->
-                    <g fill='var(--accent)'>
-                      <rect x='-4' y='-50' width='8' height='12' rx='2'/>
-                      <rect x='-4' y='38' width='8' height='12' rx='2'/>
-                      <rect x='-50' y='-4' width='12' height='8' rx='2'/>
-                      <rect x='38' y='-4' width='12' height='8' rx='2'/>
-                    </g>
-                  </g>
-                  <circle r='10' fill='var(--accent2)' stroke='white' stroke-width='2'/>
-                </symbol>
-            
-                <!-- Clip para odómetros -->
-                <clipPath id='clipOdo'><rect x='0' y='0' width='28' height='28' rx='4'/></clipPath>
-              </defs>
-            
-              <!-- ====== BACKGROUND ====== -->
-              <rect width='1200' height='260' fill='url(#bg)'/>
-              <ellipse cx='800' cy='40' rx='500' ry='160' fill='url(#glow)'/>
-            
-              <!-- ====== HEADER TEXT ====== -->
-              <g transform='translate(120,64)'>
-                <text class='h1'>CASH HUB</text>
-                <!-- <text class='h2' y='26'>Recepción • Validación • Recuento • Conciliación</text> -->
-              </g>
-            
-              <!-- ====== VAULT (izquierda) ====== -->
-              <g transform='translate(60,120) scale(1.2)'>
-                <use href='#vault'/>
-              </g>
-            
-              <!-- ====== CONVEYOR BELT ====== -->
-              <g transform='translate(0,172)'>
-                <!-- Sombras laterales -->
-                <rect x='0' y='8' width='1200' height='30' rx='16' fill='rgba(0,0,0,.25)'/>
-                <!-- Base -->
-                <rect x='0' y='0' width='1200' height='30' rx='16' fill='var(--belt)' stroke='var(--beltEdge)' stroke-width='2'/>
-                <!-- Banda -->
-                <rect x='8' y='6' width='1184' height='18' rx='10' fill='url(#tread)'/>
-                <!-- Rodillos -->
-                <circle cx='60' cy='30' r='10' fill='#0b1f2b'/><circle cx='1140' cy='30' r='10' fill='#0b1f2b'/>
-              </g>
-            
-              <!-- ====== MOVING BAGS ====== -->
-              <!-- Cambia fill de gradiente para variedad -->
-              <linearGradient id='bagGrad1' x1='0' y1='0' x2='0' y2='1'>
-                <stop offset='0' stop-color='var(--bag1)'/><stop offset='1' stop-color='#0b7a68'/>
-              </linearGradient>
-              <linearGradient id='bagGrad2' x1='0' y1='0' x2='0' y2='1'>
-                <stop offset='0' stop-color='var(--bag2)'/><stop offset='1' stop-color='#086ea7'/>
-              </linearGradient>
-              <linearGradient id='bagGrad3' x1='0' y1='0' x2='0' y2='1'>
-                <stop offset='0' stop-color='var(--bag3)'/><stop offset='1' stop-color='#5b21b6'/>
-              </linearGradient>
-            
-              <!-- Bolsa 1 -->
-              <g class='bagMove' style='animation-duration: 10s;'>
-                <g transform='translate(-480,80)'>
-                  <g transform='translate(0,0) scale(1)'>
-                    <use href='#bag' />
-                  </g>
-                </g>
-              </g>
-            
-              <!-- Bolsa 2 -->
-              <g class='bagMove delay1' style='animation-duration: 10s;'>
-                <g transform='translate(-780,80)'>
-                  <g transform='translate(0,0) scale(1)'>
-                    <use href='#bag'>
-                      
-                    </use>
-                  </g>
-                </g>
-              </g>
-            
-              <!-- Bolsa 3 -->
-              <g class='bagMove delay2' style='animation-duration: 10s;'>
-                <g transform='translate(-1080,80)'>
-                  <g transform='translate(0,0) scale(1)'>
-                    <use href='#bag'>
-             
-                    </use>
-                  </g>
-                </g>
-              </g>
-            
-              <!-- Cambia dinámicamente el gradiente del símbolo base según la posición (truco simple con overlays) -->
-              <rect x='-9999' y='-9999' width='1' height='1' fill='url(#bagGrad1)'/>
-            
-              <!-- ====== STATUS + ODOMETERS (derecha) ====== -->
-              <g transform='translate(820,52)'>
-                <!-- Tarjeta -->
-                <rect x='0' y='0' width='340' height='156' rx='16'
-                      fill='rgba(255,255,255,.30)' stroke='rgba(255,255,255,.12)' />
-                <!-- Título -->
-                <text class='label' x='16' y='24'>Estado en tiempo real</text>
-            
-                <!-- Luces -->
-                <g transform='translate(16,36)'>
-                  <g class='pulse'>
-                    <circle cx='0' cy='0' r='6' fill='var(--success)'/>
-                    <text x='14' y='4' class='label'>Recuento activo</text>
-                  </g>
-                  <g transform='translate(130,0)'>
-                    <g class='pulse delay2'>
-                      <circle cx='0' cy='0' r='6' fill='var(--warn)'/>
-                      <text x='14' y='4' class='label'>Pendientes</text>
-                    </g>
-                  </g>
-                  <g transform='translate(240,0)'>
-                    <g class='pulse delay3' >
-                      <circle cx='0' cy='0' r='6' fill='var(--danger)'/>
-                      <text x='14' y='4' class='label'>Incidencias</text>
-                    </g>
-                  </g>
-                </g>
-            
-                <!-- Métricas -->
-                <g transform='translate(16,72)'>
-                  <!-- Métrica 1 -->
-                  <text class='label' x='0' y='0'>Bolsas recibidas</text>
-                  <g transform='translate(0,10)'>
-                    <!-- Odómetro '000' -->
-                    <g transform='translate(0,6)'>
-                      <rect width='28' height='28' rx='4' fill='rgba(255,255,255,.08)'/>
-                      <g clip-path='url(#clipOdo)'>
-                        <g>
-                          <text class='value' x='6' y='22'>
-                            <tspan>0</tspan><tspan x='6' dy='28'>1</tspan><tspan x='6' dy='28'>2</tspan>
-                            <tspan x='6' dy='28'>3</tspan><tspan x='6' dy='28'>4</tspan>
-                            <tspan x='6' dy='28'>5</tspan><tspan x='6' dy='28'>6</tspan>
-                            <tspan x='6' dy='28'>7</tspan><tspan x='6' dy='28'>8</tspan>
-                            <tspan x='6' dy='28'>9</tspan>
-                          </text>
-                          <animateTransform attributeName='transform' type='translate' from='0 0' to='0 -280' dur='3s' repeatCount='indefinite'/>
-                        </g>
-                      </g>
-                    </g>
-                    <g transform='translate(36,6)'>
-                      <rect width='28' height='28' rx='4' fill='rgba(255,255,255,.08)'/>
-                      <g clip-path='url(#clipOdo)'>
-                        <g>
-                          <text class='value' x='6' y='22'>
-                            <tspan>0</tspan><tspan x='6' dy='28'>1</tspan><tspan x='6' dy='28'>2</tspan>
-                            <tspan x='6' dy='28'>3</tspan><tspan x='6' dy='28'>4</tspan>
-                            <tspan x='6' dy='28'>5</tspan><tspan x='6' dy='28'>6</tspan>
-                            <tspan x='6' dy='28'>7</tspan><tspan x='6' dy='28'>8</tspan>
-                            <tspan x='6' dy='28'>9</tspan>
-                          </text>
-                          <animateTransform attributeName='transform' type='translate' from='0 0' to='0 -280' dur='2.2s' repeatCount='indefinite'/>
-                        </g>
-                      </g>
-                    </g>
-                    <g transform='translate(72,6)'>
-                      <rect width='28' height='28' rx='4' fill='rgba(255,255,255,.08)'/>
-                      <g clip-path='url(#clipOdo)'>
-                        <g>
-                          <text class='value' x='6' y='22'>
-                            <tspan>0</tspan><tspan x='6' dy='28'>1</tspan><tspan x='6' dy='28'>2</tspan>
-                            <tspan x='6' dy='28'>3</tspan><tspan x='6' dy='28'>4</tspan>
-                            <tspan x='6' dy='28'>5</tspan><tspan x='6' dy='28'>6</tspan>
-                            <tspan x='6' dy='28'>7</tspan><tspan x='6' dy='28'>8</tspan>
-                            <tspan x='6' dy='28'>9</tspan>
-                          </text>
-                          <animateTransform attributeName='transform' type='translate' from='0 0' to='0 -280' dur='2.8s' repeatCount='indefinite'/>
-                        </g>
-                      </g>
-                    </g>
-                  </g>
-            
-                  <!-- Métrica 2 -->
-                  <g transform='translate(140,0)'>
-                    <text class='label' x='0' y='0'>Procesadas</text>
-                    <g transform='translate(0,16)'>
-                      <rect width='80' height='28' rx='6' fill='rgba(34,197,94,.18)' stroke='rgba(34,197,94,.35)'/>
-                      <text class='value' x='10' y='21'>128</text>
-                    </g>
-                  </g>
-            
-                  <!-- Métrica 3 -->
-                  <g transform='translate(240,0)'>
-                    <text class='label' x='0' y='0'>En revisión</text>
-                    <g transform='translate(0,16)'>
-                      <rect width='80' height='28' rx='6' fill='rgba(245,158,11,.18)' stroke='rgba(245,158,11,.35)'/>
-                      <text class='value' x='10' y='21'>7</text>
-                    </g>
-                  </g>
-                </g>
-              </g>
-            
-              <!-- Sutilezas finales -->
-              <g opacity='.25'>
-                <path d='M0,120 L1200,80' stroke='rgba(255,255,255,.08)'/>
-                <path d='M0,140 L1200,110' stroke='rgba(255,255,255,.06)'/>
-              </g>
-            </svg>"
-        PaddingBottom: =5.76
-        PaddingLeft: =5.76
-        PaddingRight: =2.11
-        PaddingTop: =2.11
-        Size: =6.30
-        Width: =260.21
-        X: =25.26
-        Y: =465.18
+    AccessBanner1 As label:
+        Align: =Align.Center
+        Color: =RGBA(102, 60, 0, 1)
+        Fill: =RGBA(255, 244, 206, 1)
+        Height: =32
+        Size: =9
+        Text: ="No pudimos verificar sus accesos. Se muestran todas las aplicaciones; algunas podrían estar restringidas."
+        Visible: =gvarAccessError
+        Width: =Parent.Width
+        X: =0
+        Y: =Image2.Height
         ZIndex: =3
+
+    EmptyState1 As label:
+        Align: =Align.Center
+        Color: =RGBA(96, 94, 92, 1)
+        Height: =80
+        Size: =12
+        Text: ="No tiene acceso a ninguna aplicación de Cash Hub." & Char(10) & "Contacte al administrador si cree que es un error."
+        Visible: =gvarLoaded && CountRows(colAppData) = 0
+        Width: =Parent.Width
+        X: =0
+        Y: =Image2.Height + 60
+        ZIndex: =4
 
