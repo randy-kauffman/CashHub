@@ -61,7 +61,7 @@ Screens:
                            varShowScreenSpinner: false
                       }
                   );
-            OnSuccess: "=UpdateContext({varRFC: formRFC_Cliente_1.LastSubmit});\nNotify(\n    \"RFC creado con exito\",\n    NotificationType.Success\n);\nIf(\n    varRFC.Type = 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,\n    Switch(\n        varTableDisplayName,\n        \"Sucursales\",\n//Name\n        Patch(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            Defaults('CH-Tbl-ClientDataChangeRequestLines'),\n            {\n                NewValue: Trim(DataCardValue2.Text),\n                ChangeRequestID: varRFC,\n                'Field Definition': LookUp(\n                    'CH-Tbl-ClientTableLogicalFieldNames',\n                    Name = \"Sucursal\" && Table = \"sanic_chtblclientbranch\"\n                ),\n                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted\n            }\n        );\n        //Cliente\nPatch(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            Defaults('CH-Tbl-ClientDataChangeRequestLines'),\n            {\n                NewValue: gvarSelectedClient.'CH-Tbl-Client',\n                ChangeRequestID: varRFC,\n                'Field Definition': LookUp(\n                    'CH-Tbl-ClientTableLogicalFieldNames',\n                    Name = \"Cliente\" && Table = \"sanic_chtblclientbranch\"\n                ),\n                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted\n            }\n        );\n        ,\n        \"Emails\",\n    //Email\n        Patch(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            Defaults('CH-Tbl-ClientDataChangeRequestLines'),\n            {\n                NewValue: Trim(DataCardValue5.Text),\n                ChangeRequestID: varRFC,\n                'Field Definition': LookUp(\n                    'CH-Tbl-ClientTableLogicalFieldNames',\n                    Name = \"Correo electronico\" && Table = \"sanic_chtblclientemail\"\n                ),\n                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted\n            }\n        );\n        //Cliente\nPatch(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            Defaults('CH-Tbl-ClientDataChangeRequestLines'),\n            {\n                NewValue: gvarSelectedClient.'CH-Tbl-Client',\n                ChangeRequestID: varRFC,\n                'Field Definition': LookUp(\n                    'CH-Tbl-ClientTableLogicalFieldNames',\n                    Name = \"Cliente\" && Table = \"sanic_chtblclientemail\"\n                ),\n                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted\n            }\n        );\n        //AlwaysNotify\nPatch(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            Defaults('CH-Tbl-ClientDataChangeRequestLines'),\n            {\n                NewValue: Text(DataCardValue8.Selected.Value),\n                ChangeRequestID: varRFC,\n                'Field Definition': LookUp(\n                    'CH-Tbl-ClientTableLogicalFieldNames',\n                    Name = \"Notificar siempre\" && Table = \"sanic_chtblclientemail\"\n                ),\n                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted\n            }\n        );\n    );\n    \n);\nUpdateContext(\n    {\n        varShowScreenSpinner: false,\n        varShowScreenSpinnerLabel: \"\",\n        varShowSidePanel: false\n    }\n);\nUpdateContext(\n    {\n        varShowSidePanel: Blank(),\n        varRelatedClient: Blank(),\n        varTargetRecordID: Blank(),\n        varChangeStatus: Blank(),\n        varReason: Blank(),\n        varTargetTable: Blank(),\n        varTablePluralName: Blank(),\n        varRFCType: Blank(),\n        varTableDisplayName: Blank(),\n        varShowScreenSpinner: false,\n        varDialogEditShow: false,\n        varDialogActivateShow: false\n    }\n);\nResetForm(formSucursales);\nResetForm(formCorreos);\nReset(txtInp);\nIf(\n    varRFC.Type = 'Type (CH-Tbl-ClientDataChangeRequests)'.Update,\n    Set(\n        gvarSelectedChangeRequest,\n        varRFC\n    );\n    Navigate(\n        'screen ChangeRequestDetails',\n        ScreenTransition.Fade,{ FromScreen: App.ActiveScreen }\n    )\n);\n"
+            OnSuccess: "=UpdateContext({varRFC: formRFC_Cliente_1.LastSubmit});\nNotify(\n    \"RFC creado con exito\",\n    NotificationType.Success\n);\nIf(\n    varRFC.Type = 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,\n    Switch(\n        varTableDisplayName,\n        \"Sucursales\",\n//Name\n        Patch(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            Defaults('CH-Tbl-ClientDataChangeRequestLines'),\n            {\n                NewValue: Trim(DataCardValue2.Text),\n                ChangeRequestID: varRFC,\n                'Field Definition': LookUp(\n                    'CH-Tbl-ClientTableLogicalFieldNames',\n                    Name = \"Sucursal\" && Table = \"sanic_chtblclientbranch\"\n                ),\n                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted\n            }\n        );\n        //Cliente\nPatch(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            Defaults('CH-Tbl-ClientDataChangeRequestLines'),\n            {\n                NewValue: gvarSelectedClient.'CH-Tbl-Client',\n                ChangeRequestID: varRFC,\n                'Field Definition': LookUp(\n                    'CH-Tbl-ClientTableLogicalFieldNames',\n                    Name = \"Cliente\" && Table = \"sanic_chtblclientbranch\"\n                ),\n                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted\n            }\n        );\n        ,\n        \"Emails\",\n    //Email\n        Patch(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            Defaults('CH-Tbl-ClientDataChangeRequestLines'),\n            {\n                NewValue: Trim(DataCardValue5.Text),\n                ChangeRequestID: varRFC,\n                'Field Definition': LookUp(\n                    'CH-Tbl-ClientTableLogicalFieldNames',\n                    Name = \"Correo electronico\" && Table = \"sanic_chtblclientemail\"\n                ),\n                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted\n            }\n        );\n        //Cliente\nPatch(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            Defaults('CH-Tbl-ClientDataChangeRequestLines'),\n            {\n                NewValue: gvarSelectedClient.'CH-Tbl-Client',\n                ChangeRequestID: varRFC,\n                'Field Definition': LookUp(\n                    'CH-Tbl-ClientTableLogicalFieldNames',\n                    Name = \"Cliente\" && Table = \"sanic_chtblclientemail\"\n                ),\n                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted\n            }\n        );\n        //AlwaysNotify\nPatch(\n            'CH-Tbl-ClientDataChangeRequestLines',\n            Defaults('CH-Tbl-ClientDataChangeRequestLines'),\n            {\n                NewValue: Text(DataCardValue8.Selected.Value),\n                ChangeRequestID: varRFC,\n                'Field Definition': LookUp(\n                    'CH-Tbl-ClientTableLogicalFieldNames',\n                    Name = \"Notificar siempre\" && Table = \"sanic_chtblclientemail\"\n                ),\n                ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted\n            }\n        );\n        ,\n        \"Cuentas\",\nPatch('CH-Tbl-ClientDataChangeRequestLines',Defaults('CH-Tbl-ClientDataChangeRequestLines'),{NewValue: Trim(DataCardValue2Cta.Text),ChangeRequestID: varRFC,'Field Definition': LookUp('CH-Tbl-ClientTableLogicalFieldNames',Name = \"Numero de cuenta\" && Table = \"sanic_chtblclientaccount\"),ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted});\nPatch('CH-Tbl-ClientDataChangeRequestLines',Defaults('CH-Tbl-ClientDataChangeRequestLines'),{NewValue: Text(DataCardValue8Cta.Selected.Value),ChangeRequestID: varRFC,'Field Definition': LookUp('CH-Tbl-ClientTableLogicalFieldNames',Name = \"Moneda\" && Table = \"sanic_chtblclientaccount\"),ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted});\nPatch('CH-Tbl-ClientDataChangeRequestLines',Defaults('CH-Tbl-ClientDataChangeRequestLines'),{NewValue: gvarSelectedClient.'CH-Tbl-Client',ChangeRequestID: varRFC,'Field Definition': LookUp('CH-Tbl-ClientTableLogicalFieldNames',Name = \"Cliente\" && Table = \"sanic_chtblclientaccount\"),ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted});\n    );\n    \n);\nUpdateContext(\n    {\n        varShowScreenSpinner: false,\n        varShowScreenSpinnerLabel: \"\",\n        varShowSidePanel: false\n    }\n);\nUpdateContext(\n    {\n        varShowSidePanel: Blank(),\n        varRelatedClient: Blank(),\n        varTargetRecordID: Blank(),\n        varChangeStatus: Blank(),\n        varReason: Blank(),\n        varTargetTable: Blank(),\n        varTablePluralName: Blank(),\n        varRFCType: Blank(),\n        varTableDisplayName: Blank(),\n        varShowScreenSpinner: false,\n        varDialogEditShow: false,\n        varDialogActivateShow: false\n    }\n);\nResetForm(formSucursales);\nResetForm(formCorreos);\nReset(txtInp);\nIf(\n    varRFC.Type = 'Type (CH-Tbl-ClientDataChangeRequests)'.Update,\n    Set(\n        gvarSelectedChangeRequest,\n        varRFC\n    );\n    Navigate(\n        'screen ChangeRequestDetails',\n        ScreenTransition.Fade,{ FromScreen: App.ActiveScreen }\n    )\n);\n"
             Visible: =false
             X: =402
             Y: =356
@@ -1660,7 +1660,7 @@ Screens:
                             Properties:
                               AlignInContainer: =AlignInContainer.Stretch
                               Height: =40
-                              Items: =["Sucursales", "Correos autorizados", "Solicitudes de cambio", "Bitacora de cambios"]
+                              Items: =["Sucursales", "Correos autorizados", "Cuentas", "Solicitudes de cambio", "Bitacora de cambios"]
                               LayoutMaxHeight: =
                               LayoutMaxWidth: =
                               Size: ='TabList.Size'.Small
@@ -2004,6 +2004,347 @@ Screens:
                                           LayoutMaxHeight: =
                                           LayoutMaxWidth: =
                                           OnSelect: =UpdateContext({ctxGridEvent1:"LoadNextPage" & Text(Rand())})
+                                          Width: =25
+                        - container Cuentas:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              Visible: =TabList1.Selected.Value = "Cuentas"
+                            Children:
+                              - Container9Cta:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    FillPortions: =0
+                                    Height: =30
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                  Children:
+                                    - Container10Cta:
+                                        Control: GroupContainer@1.5.0
+                                        Variant: ManualLayout
+                                        Properties:
+                                          DropShadow: =DropShadow.None
+                                          FillPortions: =0
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          LayoutMinWidth: =10
+                                          Width: =20
+                                    - CommandBar2Cta:
+                                        Control: CodeComponent
+                                        ComponentName: cat_PowerCAT.CommandBar
+                                        Properties:
+                                          FillPortions: =1
+                                          Height: =30
+                                          Items: |-
+                                            =Table(
+                                                {
+                                                    ItemKey: "new",
+                                                    ItemDisplayName: "New",
+                                                    ItemIconName: "Add",
+                                                    ItemVisible: IsBlank(DVFluentDetailsList1Cta.Selected) && !IsBlank(LookUp(colClientDataPermissions, Name = "sanic_chtblclientaccount"  && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                                                },
+                                                {
+                                                    ItemKey: "edit",
+                                                    ItemDisplayName: "Edit",
+                                                    ItemIconName: "Edit",
+                                                    ItemVisible: !IsBlank(DVFluentDetailsList1Cta.Selected) && !IsBlank(LookUp(colClientDataPermissions, Name = "sanic_chtblclientaccount"  && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                                                },
+                                                {
+                                                    ItemKey: "deactivate",
+                                                    ItemDisplayName: "Deactivate",
+                                                    ItemIconName: "Delete",
+                                                    ItemVisible: !IsBlank(DVFluentDetailsList1Cta.Selected) && DVFluentDetailsList1Cta.Selected.RecordStatus = 'CH-Ch-RecordStatus'.Active && !IsBlank(LookUp(colClientDataPermissions, Name = "sanic_chtblclientaccount"  && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                                                },
+                                                {
+                                                    ItemKey: "activate",
+                                                    ItemDisplayName: "Activate",
+                                                    ItemIconName: "PowerButton",
+                                                    ItemVisible: !IsBlank(DVFluentDetailsList1Cta.Selected) && DVFluentDetailsList1Cta.Selected.RecordStatus = 'CH-Ch-RecordStatus'.Inactive && !IsBlank(LookUp(colClientDataPermissions, Name = "sanic_chtblclientaccount"  && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                                                },
+                                                {
+                                                    ItemKey: "refresh",
+                                                    ItemDisplayName: "Refresh",
+                                                    ItemIconName: "Refresh"
+                                                }
+                                            )
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: |-
+                                            =Switch(
+                                                Self.Selected.ItemKey,
+                                                "refresh",
+                                                Refresh('CH-Tbl-ClientAccounts'),
+                                                "new",
+                                                UpdateContext(
+                                                    {
+                                                        varShowSidePanel: true,
+                                                        varRelatedClient: gvarSelectedClient,
+                                                        varTargetRecordID: Blank(),
+                                                        varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,
+                                                        varReason: "Nueva cuenta registrada",
+                                                        varTargetTable: "sanic_chtblclientaccount",
+                                                        varTablePluralName: "sanic_chtblclientaccounts",
+                                                        varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,
+                                                        varTableDisplayName: "Cuentas"
+                                                    }
+                                                );
+                                                NewForm(formCuentas);
+                                                ,"edit"
+                                                ,
+                                                UpdateContext(
+                                                    {
+                                                        varDialogEditShow: true,
+                                                        varRelatedClient: gvarSelectedClient,
+                                                        varTargetRecordID: DVFluentDetailsList1Cta.Selected.'CH-Tbl-ClientAccount',
+                                                        varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,
+                                                        varReason: Blank(),
+                                                        varTargetTable: "sanic_chtblclientaccount",
+                                                        varTablePluralName: "sanic_chtblclientaccounts",
+                                                        varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Update,
+                                                        varTableDisplayName: "Cuentas"
+                                                    }
+                                                );
+                                                ,"deactivate"
+                                                ,
+                                                UpdateContext(
+                                                    {
+                                                        varDialogDeactivateShow: true,
+                                                        varRelatedClient: gvarSelectedClient,
+                                                        varTargetRecordID: DVFluentDetailsList1Cta.Selected.'CH-Tbl-ClientAccount',
+                                                        varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,
+                                                        varReason: Blank(),
+                                                        varTargetTable: "sanic_chtblclientaccount",
+                                                        varTablePluralName: "sanic_chtblclientaccounts",
+                                                        varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Deactivate,
+                                                        varTableDisplayName: "Cuentas"
+                                                    }
+                                                );
+                                                ,"activate"
+                                                ,
+                                                UpdateContext(
+                                                    {
+                                                        varDialogActivateShow: true,
+                                                        varRelatedClient: gvarSelectedClient,
+                                                        varTargetRecordID: DVFluentDetailsList1Cta.Selected.'CH-Tbl-ClientAccount',
+                                                        varChangeStatus: 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,
+                                                        varReason: Blank(),
+                                                        varTargetTable: "sanic_chtblclientaccount",
+                                                        varTablePluralName: "sanic_chtblclientaccounts",
+                                                        varRFCType: 'Type (CH-Tbl-ClientDataChangeRequests)'.Activate,
+                                                        varTableDisplayName: "Cuentas"
+                                                    }
+                                                );
+                                            )
+                                          Width: =Parent.Width
+                              - DVFluentDetailsList1Cta:
+                                  Control: CodeComponent
+                                  ComponentName: cat_PowerCAT.DVFluentDetailsList
+                                  Properties:
+                                    AlignInContainer: =AlignInContainer.Stretch
+                                    FillPortions: =1
+                                    InputEvent: =ctxGridEvent1Cta
+                                    Items: |-
+                                      =AddColumns(
+                                          Filter('CH-Tbl-ClientAccounts',Client.'CH-Tbl-Client' = gvarSelectedClient.'CH-Tbl-Client'),
+                                          "pendingrfc", If(!IsBlank(LookUp(colPendingRFCs, pendingtargetid = Text('CH-Tbl-ClientAccount'))), "RFC en curso", ""),
+                                          "pendingcolor", "#FFF4CE"
+                                      )
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                    PageSize: =25
+                                    RecordKey: ="sanic_chtblclientaccountid"
+                                    SelectionType: ='PowerCAT.DVFluentDetailsList.SelectionType'.Single
+                                    columns_Items: |-
+                                      =  Table({
+                                              ColName: "sanic_name",
+                                              ColDisplayName: "Numero de cuenta",
+                                              ColWidth: 140,
+                                              ColIsBold:true,
+                                              ColResizable: true,
+                                              ColSortable: true
+                                          },
+                                            {
+                                              ColName: "sanic_recordstatus",
+                                              ColDisplayName: "Status",
+                                              ColWidth: 100,
+                                              ColResizable: true,
+                                              ColSortable: true
+                                          },
+                                            {
+                                              ColName: "pendingrfc",
+                                              ColDisplayName: "Cambios",
+                                              ColWidth: 90,
+                                              ColResizable: true,
+                                              ColCellType: "tag",
+                                              ColTagColorColumn: "pendingcolor",
+                                              ColHideWhenBlank: true
+                                          },
+                                            {
+                                              ColName: "createdby",
+                                              ColDisplayName: "Creado Por",
+                                              ColWidth: 150,
+                                              ColResizable: true,
+                                              ColSortable: true
+                                          },
+                                            {
+                                              ColName: "createdon",
+                                              ColDisplayName: "F.Creacion",
+                                              ColWidth: 100,
+                                              ColResizable: true,
+                                              ColSortable: true
+                                          },
+                                            {
+                                              ColName: "modifiedby",
+                                              ColDisplayName: "Ultimo Editor",
+                                              ColWidth: 150,
+                                              ColResizable: true,
+                                              ColSortable: true
+                                          },
+                                            {
+                                              ColName: "modifiedon",
+                                              ColDisplayName: "F.Modificacion",
+                                              ColWidth: 100,
+                                              ColResizable: true,
+                                              ColSortable: true
+                                          }
+                                        )
+                                  Children:
+                                    - Name3Cta:
+                                        Control: DataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="Name"
+                                          FieldName: ="sanic_name"
+                                          FieldType: ="s"
+                                          Order: =1
+                                    - Created On3Cta:
+                                        Control: DataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="Created On"
+                                          FieldName: ="createdon"
+                                          FieldType: ="d"
+                                          Order: =2
+                                    - Client1Cta:
+                                        Control: DataField@1.5.0
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="Client"
+                                          FieldName: ="sanic_Client"
+                                          FieldType: ="E"
+                                          Order: =3
+                                    - RecordStatus3Cta:
+                                        Control: DataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="RecordStatus"
+                                          FieldName: ="sanic_recordstatus"
+                                          FieldType: ="l"
+                                          Order: =4
+                                    - Modified By3Cta:
+                                        Control: DataField@1.5.0
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="Modified By"
+                                          FieldName: ="modifiedby"
+                                          FieldType: ="E"
+                                          Order: =5
+                                    - Modified On3Cta:
+                                        Control: DataField@1.5.0
+                                        Variant: textualColumn
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="Modified On"
+                                          FieldName: ="modifiedon"
+                                          FieldType: ="d"
+                                          Order: =6
+                                    - Created By3Cta:
+                                        Control: DataField@1.5.0
+                                        IsLocked: true
+                                        Properties:
+                                          FieldDisplayName: ="Created By"
+                                          FieldName: ="createdby"
+                                          FieldType: ="E"
+                                          Order: =7
+                              - container Pagination_5Cta:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    FillPortions: =0
+                                    Height: =40
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =10
+                                    LayoutMaxHeight: =
+                                    LayoutMaxWidth: =
+                                  Children:
+                                    - TextCanvas1_5Cta:
+                                        Control: Text@0.0.51
+                                        Properties:
+                                          Align: ='TextCanvas.Align'.Center
+                                          AlignInContainer: =AlignInContainer.Center
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          Text: |
+                                            ="Total " & DVFluentDetailsList1Cta.TotalRecords & " record(s), " & Text(CountRows(DVFluentDetailsList1Cta.SelectedItems)+0) & " selected"
+                                          VerticalAlign: =VerticalAlign.Middle
+                                          Width: =200
+                                    - Icon1_5Cta:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          AlignInContainer: =AlignInContainer.Center
+                                          Color: =RGBA(0, 0, 0, 1)
+                                          DisplayMode: =If(DVFluentDetailsList1Cta.HasPreviousPage,DisplayMode.Edit,DisplayMode.Disabled)
+                                          Height: =25
+                                          Icon: =Icon.Download
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          LayoutMinHeight: =1
+                                          OnSelect: =UpdateContext({ctxGridEvent1Cta:"LoadFirstPage" & Text(Rand())})
+                                          Rotation: =90
+                                          Width: =25
+                                    - Icon3_10Cta:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          AlignInContainer: =AlignInContainer.Center
+                                          Color: =RGBA(0, 0, 0, 1)
+                                          DisplayMode: =If(DVFluentDetailsList1Cta.HasPreviousPage,DisplayMode.Edit,DisplayMode.Disabled)
+                                          Height: =25
+                                          Icon: =Icon.BackArrow
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: =UpdateContext({ctxGridEvent1Cta:"LoadPreviousPage" & Text(Rand())})
+                                          Width: =25
+                                    - Label1_5Cta:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Center
+                                          Font: =Font.'Segoe UI'
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          Size: =10
+                                          Text: ="Page " & DVFluentDetailsList1Cta.PageNumber
+                                          Width: =80
+                                    - Icon3_11Cta:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          AlignInContainer: =AlignInContainer.Center
+                                          Color: =RGBA(0, 0, 0, 1)
+                                          DisplayMode: =If(DVFluentDetailsList1Cta.HasNextPage,DisplayMode.Edit,DisplayMode.Disabled)
+                                          Height: =25
+                                          Icon: =Icon.NextArrow
+                                          LayoutMaxHeight: =
+                                          LayoutMaxWidth: =
+                                          OnSelect: =UpdateContext({ctxGridEvent1Cta:"LoadNextPage" & Text(Rand())})
                                           Width: =25
                         - container CorreosAutorizados:
                             Control: GroupContainer@1.5.0
@@ -2845,7 +3186,7 @@ Screens:
             DialogWidth: =400
             Fill: =sidePanel_1.OverlayColor
             Height: =App.Height
-            OnButtonSelect: "=Switch(\n    Self.SelectedButton.Label,\n    \"Ok\",\n    If(\n        (formSucursales.Visible && formSucursales.Valid) || (formCorreos.Visible && formCorreos.Valid),\n        Notify(\n            \"Creando RFC\",\n            NotificationType.Information\n        );\n        If(formSucursales.Visible,\n        NewForm(formRFC_Cliente_1);\n        UpdateContext({varShowScreenSpinner: true,varShowScreenSpinnerLabel: \"Guardando...\"});\n        SubmitForm(formRFC_Cliente_1););\n        If(formCorreos.Visible,\n        NewForm(formRFC_Cliente_1);\n        UpdateContext({varShowScreenSpinner: true,varShowScreenSpinnerLabel: \"Guardando...\"});\n        SubmitForm(formRFC_Cliente_1);)\n        \n        ,\n        Notify(\n            \"Campos incompletos\",\n            NotificationType.Error\n        )\n    ),\n    \"Cancelar\",\n    UpdateContext({varShowSidePanel: false})\n)"
+            OnButtonSelect: "=Switch(\n    Self.SelectedButton.Label,\n    \"Ok\",\n    If(\n        (formSucursales.Visible && formSucursales.Valid) || (formCorreos.Visible && formCorreos.Valid) || (formCuentas.Visible && formCuentas.Valid),\n        Notify(\n            \"Creando RFC\",\n            NotificationType.Information\n        );\n        If(formSucursales.Visible,\n        NewForm(formRFC_Cliente_1);\n        UpdateContext({varShowScreenSpinner: true,varShowScreenSpinnerLabel: \"Guardando...\"});\n        SubmitForm(formRFC_Cliente_1););\n        If(formCorreos.Visible,\n        NewForm(formRFC_Cliente_1);\n        UpdateContext({varShowScreenSpinner: true,varShowScreenSpinnerLabel: \"Guardando...\"});\n        SubmitForm(formRFC_Cliente_1););\n        If(formCuentas.Visible,\n        NewForm(formRFC_Cliente_1);\n        UpdateContext({varShowScreenSpinner: true,varShowScreenSpinnerLabel: \"Guardando...\"});\n        SubmitForm(formRFC_Cliente_1);)\n        \n        ,\n        Notify(\n            \"Campos incompletos\",\n            NotificationType.Error\n        )\n    ),\n    \"Cancelar\",\n    UpdateContext({varShowSidePanel: false})\n)"
             OnCloseSelect: |-
               =UpdateContext({varShowSidePanel: false}); formClient.Visible = false;
             OverlayColor: =RGBA(255, 255, 255, 0.4)
@@ -3223,6 +3564,173 @@ Screens:
                         Width: =30
                         Wrap: =false
                         Y: =DataCardKey2.Y
+      - formCuentas:
+          Control: Form@2.4.4
+          Variant: Classic
+          Layout: Vertical
+          Properties:
+            DataSource: ='CH-Tbl-ClientAccounts'
+            Height: =Parent.Height - Self.Y - 80
+            NumberOfColumns: =1
+            OnSuccess: |-
+              =UpdateContext({varShowSidePanel: false})
+            Visible: =varShowSidePanel && varTableDisplayName="Cuentas"
+            Width: =365
+            X: =Parent.Width - 400 - (Self.Width-400)/2
+            Y: =120
+          Children:
+            - CuentaNumero_DataCard:
+                Control: TypedDataCard@1.0.7
+                Variant: ClassicTextualEdit
+                Properties:
+                  DataField: ="sanic_name"
+                  Default: =ThisItem.'Numero de cuenta'
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientBranches'],DataSourceInfo.DisplayName,'Numero de cuenta')
+                  MaxLength: =DataSourceInfo([@'CH-Tbl-ClientBranches'], DataSourceInfo.MaxLength, 'Numero de cuenta')
+                  Required: =true
+                  Update: =DataCardValue2Cta.Text
+                  Width: =365
+                  X: =0
+                  Y: =0
+                Children:
+                  - DataCardKey2Cta:
+                      Control: Label@2.5.1
+                      MetadataKey: FieldName
+                      Properties:
+                        AutoHeight: =true
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =App.Theme.Colors.Darker30
+                        Height: =34
+                        Text: ="Numero de cuenta"
+                        Width: =Parent.Width - 60
+                        Wrap: =false
+                        X: =30
+                        Y: =10
+                  - DataCardValue2Cta:
+                      Control: Classic/TextInput@2.3.2
+                      MetadataKey: FieldValue
+                      Properties:
+                        BorderColor: =If(IsBlank(Parent.Error), Parent.BorderColor, Color.Red)
+                        Default: =Parent.Default
+                        DelayOutput: =true
+                        DisplayMode: =Parent.DisplayMode
+                        MaxLength: =Parent.MaxLength
+                        PaddingLeft: =5
+                        RadiusBottomLeft: =0
+                        RadiusBottomRight: =0
+                        RadiusTopLeft: =0
+                        RadiusTopRight: =0
+                        Tooltip: =Parent.DisplayName
+                        Width: =Parent.Width - 60
+                        X: =30
+                        Y: =DataCardKey2Cta.Y + DataCardKey2Cta.Height + 5
+                  - ErrorMessage2Cta:
+                      Control: Label@2.5.1
+                      MetadataKey: ErrorMessage
+                      Properties:
+                        AutoHeight: =true
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =RGBA(168, 0, 0, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =10
+                        Live: =Live.Assertive
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =14
+                        Text: =Parent.Error
+                        Visible: =Parent.DisplayMode=DisplayMode.Edit
+                        Width: =Parent.Width - 60
+                        X: =30
+                        Y: =DataCardValue2Cta.Y + DataCardValue2Cta.Height
+                  - StarVisible2Cta:
+                      Control: Label@2.5.1
+                      MetadataKey: FieldRequired
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =App.Theme.Colors.Darker30
+                        Height: =DataCardKey2Cta.Height
+                        Text: ="*"
+                        Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
+                        Width: =30
+                        Wrap: =false
+                        Y: =DataCardKey2Cta.Y
+            - Moneda_DataCardCta:
+                Control: TypedDataCard@1.0.7
+                Variant: ClassicComboBoxOptionSetSingleEdit
+                Properties:
+                  DataField: ="sanic_currency"
+                  Default: =ThisItem.Moneda
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-ClientAccounts'],DataSourceInfo.DisplayName,Moneda)
+                  Required: =true
+                  Update: =DataCardValue8Cta.Selected.Value
+                  Width: =365
+                  X: =0
+                  Y: =200
+                Children:
+                  - DataCardKey9Cta:
+                      Control: Label@2.5.1
+                      MetadataKey: FieldName
+                      Properties:
+                        AutoHeight: =true
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =App.Theme.Colors.Darker30
+                        Height: =34
+                        Text: ="Moneda"
+                        Width: =Parent.Width - 60
+                        Wrap: =false
+                        X: =30
+                        Y: =2000
+                  - DataCardValue8Cta:
+                      Control: Classic/ComboBox@2.4.0
+                      MetadataKey: FieldValue
+                      Properties:
+                        BorderColor: =If(IsBlank(Parent.Error), Parent.BorderColor, Color.Red)
+                        DefaultSelectedItems: =[Parent.Default]
+                        DisplayMode: =Parent.DisplayMode
+                        IsSearchable: =false
+                        Items: =Choices('Moneda (CH-Tbl-ClientAccounts)')
+                        PaddingLeft: =If(Self.DisplayMode = DisplayMode.Edit, 5, 0)
+                        SelectMultiple: =false
+                        Tooltip: =Parent.DisplayName
+                        Width: =Parent.Width - 60
+                        X: =30
+                        Y: =DataCardKey9Cta.Y + DataCardKey9Cta.Height + 5
+                  - ErrorMessage8Cta:
+                      Control: Label@2.5.1
+                      MetadataKey: ErrorMessage
+                      Properties:
+                        AutoHeight: =true
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =RGBA(168, 0, 0, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =10
+                        Live: =Live.Assertive
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =14
+                        Text: =Parent.Error
+                        Visible: =Parent.DisplayMode=DisplayMode.Edit
+                        Width: =Parent.Width - 60
+                        X: =30
+                        Y: =DataCardValue8Cta.Y + DataCardValue8Cta.Height
+                  - StarVisible8Cta:
+                      Control: Label@2.5.1
+                      MetadataKey: FieldRequired
+                      Properties:
+                        Align: =Align.Center
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =App.Theme.Colors.Darker30
+                        Height: =DataCardKey9Cta.Height
+                        Text: ="*"
+                        Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
+                        Width: =30
+                        Wrap: =false
+                        Y: =DataCardKey9Cta.Y
       - formCorreos:
           Control: Form@2.4.4
           Variant: Classic
