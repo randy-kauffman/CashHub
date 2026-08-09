@@ -150,6 +150,14 @@ namespace CashHub.Plugins
             public const int TypeApprover = 159460001;
         }
 
+        /// <summary>Catalogo de apps del hub (CH-App-Hub). El hub lanza AppUrl tal cual.</summary>
+        internal static class AppCatalog
+        {
+            public const string LogicalName = "sanic_chtblappcatalog";
+            public const string AppUrl = "sanic_appurl";
+            public const string AadGroupId = "sanic_aadgroupid";
+        }
+
         /// <summary>Team de Dataverse. Los AAD group teams materializan su membresia en teammembership.</summary>
         internal static class Team
         {
