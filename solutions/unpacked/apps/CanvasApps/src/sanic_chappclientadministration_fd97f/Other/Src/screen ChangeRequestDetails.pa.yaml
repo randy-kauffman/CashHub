@@ -640,7 +640,8 @@ Screens:
                             Properties:
                               DataField: ="sanic_applyon"
                               Default: =ThisItem.ApplyOn
-                              DisplayName: =DataSourceInfo([@'CH-Tbl-ClientDataChangeRequests'],DataSourceInfo.DisplayName,ApplyOn)
+                              DisplayName: ="Fecha de aplicacion real"
+                              DisplayMode: =DisplayMode.View
                               Required: =false
                               Update: =If(Not IsBlank(DateValue1.SelectedDate), DateTime(Year(DateValue1.SelectedDate), Month(DateValue1.SelectedDate), Day(DateValue1.SelectedDate), Value(HourValue1.Selected.Value), Value(MinuteValue1.Selected.Value), Second(DateValue1.SelectedDate)))
                               Visible: =If(IsBlank(DateValue1.SelectedDate),false,true)
