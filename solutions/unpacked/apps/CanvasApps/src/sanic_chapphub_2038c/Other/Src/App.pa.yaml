@@ -26,25 +26,35 @@ App:
       );
       Set(gvarAccessError, false);
       Clear(colMyGroupIds);
-      // Una sola llamada a Graph resuelve la membresía (transitiva) contra todos los grupos declarados. Tope de checkMemberGroups: 20 grupos.
-      If(
-          !IsEmpty(colAccess),
+      ClearCollect(colGroupIds, Distinct(colAccess, GroupId));
+      // checkMemberGroups (membresía transitiva) acepta hasta 20 grupos por llamada: se resuelve en lotes de 20.
+      ForAll(
+          Sequence(RoundUp(CountRows(colGroupIds) / 20, 0)) As batch,
           IfError(
-              ClearCollect(
+              Collect(
                   colMyGroupIds,
                   ForAll(
                       Table(
                           Office365Groups.HttpRequest(
                               "https://graph.microsoft.com/v1.0/me/checkMemberGroups",
                               "POST",
-                              "{""groupIds"": [" & Concat(FirstN(Distinct(colAccess, GroupId), 20), """" & Value & """", ",") & "]}"
+                              "{""groupIds"": [" &
+                                  Concat(
+                                      LastN(
+                                          FirstN(colGroupIds, batch.Value * 20),
+                                          Min(20, CountRows(colGroupIds) - (batch.Value - 1) * 20)
+                                      ),
+                                      """" & Value & """",
+                                      ","
+                                  ) &
+                              "]}"
                           ).value
                       ),
                       {GroupId: Text(Value)}
                   )
               ),
               // Si Graph falla no bloqueamos el hub: se muestra todo con aviso; la autorización real la imponen las apps destino
-              Set(gvarAccessError, true); Clear(colMyGroupIds)
+              Set(gvarAccessError, true)
           )
       );
       ClearCollect(
@@ -65,5 +75,19 @@ App:
       If(
           CountRows(colAppData) = 1 && !gvarAccessError,
           Launch(First(colAppData).AppURL, {}, LaunchTarget.Replace)
+      )
+    OnError: |
+      =Trace(
+          "CH-App-Hub: error no controlado",
+          TraceSeverity.Error,
+          {
+              Message: FirstError.Message,
+              Kind: Value(FirstError.Kind),
+              Source: FirstError.Source
+          }
+      );
+      Notify(
+          "Ocurrió un error inesperado en el hub. " & FirstError.Message,
+          NotificationType.Error
       )
     Theme: =PowerAppsTheme
