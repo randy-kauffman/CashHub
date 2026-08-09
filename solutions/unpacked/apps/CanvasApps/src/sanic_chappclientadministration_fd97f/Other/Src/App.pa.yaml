@@ -30,17 +30,61 @@ App:
 
       //ClearCollect(colAADGroups, Office365Groups.ListOwnedGroupsV3().value);
 
-      //Check if the user is in the security groups
+      // Membresia por checkMemberGroups (transitiva, en lotes de 20): reemplaza el ForAll +
+      // ListGroupMembers serial que hacia N llamadas y perdia usuarios mas alla de la pagina 1.
+      // Fail-CLOSED: si Graph falla no se otorga ningun permiso (los botones de crear/aprobar RFC
+      // no aparecen) y se avisa. El gate real es el GuardChangeRequestApprovalPlugin server-side.
       Clear(colClientDataPermissions);
-
-      ForAll('CH-Tbl-ClientDataChangePermissions' As Permission,
-
-      If( !IsBlank(
-                  LookUp(
-                      Office365Groups.ListGroupMembers(Permission.AADGroupID).value,
-                      userPrincipalName = User().Email
+      Clear(colMyGroupIds);
+      Set(gvarPermError, false);
+      ClearCollect(
+          colPermGroupIds,
+          Distinct(
+              Filter('CH-Tbl-ClientDataChangePermissions', !IsBlank(AADGroupID)),
+              Substitute(Trim(AADGroupID), " ", "")
+          )
+      );
+      ForAll(
+          Sequence(RoundUp(CountRows(colPermGroupIds) / 20, 0)) As batch,
+          IfError(
+              Collect(
+                  colMyGroupIds,
+                  ForAll(
+                      Table(
+                          Office365Groups.HttpRequest(
+                              "https://graph.microsoft.com/v1.0/me/checkMemberGroups",
+                              "POST",
+                              "{""groupIds"": [" &
+                                  Concat(
+                                      LastN(
+                                          FirstN(colPermGroupIds, batch.Value * 20),
+                                          Min(20, CountRows(colPermGroupIds) - (batch.Value - 1) * 20)
+                                      ),
+                                      """" & Value & """",
+                                      ","
+                                  ) &
+                              "]}"
+                          ).value
+                      ),
+                      {GroupId: Text(Value)}
                   )
-              ) ,Collect(colClientDataPermissions, Permission))
+              ),
+              Set(gvarPermError, true)
+          )
+      );
+      If(
+          gvarPermError,
+          Notify(
+              "No se pudieron verificar tus permisos (Graph). Recarga la app; si persiste, avisa a soporte.",
+              NotificationType.Warning
+          ),
+          ClearCollect(
+              colClientDataPermissions,
+              Filter(
+                  'CH-Tbl-ClientDataChangePermissions' As Permission,
+                  Substitute(Trim(Permission.AADGroupID), " ", "") in colMyGroupIds.GroupId
+              )
+          )
       );
 
       Set(
