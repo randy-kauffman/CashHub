@@ -248,6 +248,24 @@ namespace CashHub.Plugins
             public const string PreImageName = "PreImage";
         }
 
+        /// <summary>Cheque (CH-Tbl-Checks).</summary>
+        internal static class Check
+        {
+            public const string LogicalName = "sanic_chtblchecks";
+            public const string Id = "sanic_chtblchecksid";
+            public const string CheckStatus = "sanic_checkstatus";
+
+            /// <summary>
+            /// Sellos server-side del handshake de recepcion, estampados por
+            /// CheckStatusStampPlugin en Pre-operation al escribirse el estado.
+            /// </summary>
+            public const string SentToDigitizationOn = "sanic_senttodigitizationon";
+            public const string ReceivedOn = "sanic_receivedon";
+            public const string NotReceivedOn = "sanic_notreceivedon";
+
+            public const string PreImageName = "PreImage";
+        }
+
         /// <summary>Lote de transacciones (CH-Tbl-TransactionBatches).</summary>
         internal static class TransactionBatch
         {

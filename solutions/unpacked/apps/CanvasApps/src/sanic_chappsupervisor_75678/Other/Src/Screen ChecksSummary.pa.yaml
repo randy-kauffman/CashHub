@@ -17,15 +17,15 @@ Screens:
                     DatePickerCanvas1_1.SelectedDate,
                     1,
                     TimeUnit.Days
-                )) || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado
+                )) || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'
             ),
             RecordCanSelect,
             If(
-                CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado,
+                CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
                 true,
                 false
             ),BagID, RelatedReCounterDepositID.BagID.BagID, Cliente, RelatedReCounterDepositID.BagID.ReceptionID.RemitentName
-        ),CheckNumber,'Created By','Created On',CheckAmount,CheckStatus,CheckCurrency,'CH-Tbl-Checks',RelatedReCounterDepositID,Cliente,BagID,RecordCanSelect))
+        ),CheckNumber,'Created By','Created On',CheckAmount,CheckStatus,CheckCurrency,'Enviado el','No recibido el','CH-Tbl-Checks',RelatedReCounterDepositID,Cliente,BagID,RecordCanSelect))
     Children:
       - container ScreenSpinner_3:
           Control: GroupContainer@1.5.0
@@ -129,7 +129,7 @@ Screens:
                                       ),
                                       RecordCanSelect,
                                       If(
-                                          CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado,
+                                          CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
                                           true,
                                           false
                                       ),
@@ -144,6 +144,8 @@ Screens:
                                   CheckAmount,
                                   CheckStatus,
                                   CheckCurrency,
+                                  'Enviado el',
+                                  'No recibido el',
                                   'CH-Tbl-Checks',
                                   RelatedReCounterDepositID,
                                   Cliente,
@@ -184,16 +186,57 @@ Screens:
                               ),
                               RecordCanSelect,
                               If(
-                                  CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado,
+                                  CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
                                   true,
                                   false
                               ),BagID, RelatedReCounterDepositID.BagID.BagID, Cliente, RelatedReCounterDepositID.BagID.ReceptionID.RemitentName
-                          ),CheckNumber,'Created By','Created On',CheckAmount,CheckStatus,CheckCurrency,'CH-Tbl-Checks',RelatedReCounterDepositID,Cliente,BagID,RecordCanSelect));
+                          ),CheckNumber,'Created By','Created On',CheckAmount,CheckStatus,CheckCurrency,'Enviado el','No recibido el','CH-Tbl-Checks',RelatedReCounterDepositID,Cliente,BagID,RecordCanSelect));
 
                           UpdateContext({varScreenSpinnerMessage: ""});
 
                         Text: ="Enviar a digitacion"
                         Width: =160
+                  - btnReenviarDigitacion:
+                      Control: Button@0.0.45
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Center
+                        BasePaletteColor: =RGBA(8, 222, 8, 1)
+                        BorderRadius: =10
+                        DisplayMode: =If(CountRows(Filter(FluentDetailsList1.SelectedItems, sanic_checkstatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'))>0, DisplayMode.Edit,DisplayMode.Disabled)
+                        Height: =32
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        OnSelect: |-
+                          =UpdateContext({varScreenSpinnerMessage: "Reenviando..."});
+                          UpdateContext({varChequesReenviados: CountRows(Filter(FluentDetailsList1.SelectedItems, sanic_checkstatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'))});
+                          ForAll(FluentDetailsList1.SelectedItems As Cheque,
+                          If(Cheque.sanic_checkstatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
+                          Patch('CH-Tbl-Checks'
+                          ,LookUp('CH-Tbl-Checks', sanic_chtblchecksid = Cheque.sanic_chtblchecksid)
+                          ,{CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'}
+                          )
+                          )
+                          );
+                          Refresh('CH-Tbl-Checks');
+                          ClearCollect(colChecksR,ShowColumns(AddColumns(Filter(
+                                  'CH-Tbl-Checks',
+                                  ('Created On' >= DatePickerCanvas1_1.SelectedDate && 'Created On' < DateAdd(
+                                      DatePickerCanvas1_1.SelectedDate,
+                                      1,
+                                      TimeUnit.Days
+                                  )) || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'
+                              ),
+                              RecordCanSelect,
+                              If(
+                                  CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
+                                  true,
+                                  false
+                              ),BagID, RelatedReCounterDepositID.BagID.BagID, Cliente, RelatedReCounterDepositID.BagID.ReceptionID.RemitentName
+                          ),CheckNumber,'Created By','Created On',CheckAmount,CheckStatus,CheckCurrency,'Enviado el','No recibido el','CH-Tbl-Checks',RelatedReCounterDepositID,Cliente,BagID,RecordCanSelect));
+                          UpdateContext({varScreenSpinnerMessage: ""});
+                          Notify("Se reenviaron " & varChequesReenviados & " cheque(s) a digitacion", NotificationType.Success)
+                        Text: ="Reenviar a digitacion"
+                        Width: =170
                   - Icon3_1:
                       Control: Classic/Icon@2.5.0
                       Properties:

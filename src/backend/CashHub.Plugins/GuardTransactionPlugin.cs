@@ -6,7 +6,10 @@ using Microsoft.Xrm.Sdk.Query;
 namespace CashHub.Plugins
 {
     /// <summary>
-    /// Guard del dominio de digitalizacion: lotes de transacciones y transacciones.
+    /// Guard del dominio de digitalizacion: lotes de transacciones, transacciones
+    /// y el handshake de recepcion de cheques (CH-Tbl-Checks, reglas en CheckGuard:
+    /// Recontado -> 'Enviado a digitacion' -> Recibido/'No Recibido', con Recibido
+    /// congelando el registro y Digitado/Rebotado reservados).
     ///
     /// La maquina de estados del lote (Generado -> Ingresado -> Aplicado) vive en
     /// Power Fx, asi que cualquier usuario con el rol puede, por Web API o Excel,
@@ -75,6 +78,8 @@ namespace CashHub.Plugins
                     return EvaluateBatch(context, serviceFactory, tracing, message);
                 case Schema.Transaction.LogicalName:
                     return EvaluateTransaction(context, serviceFactory, tracing, message);
+                case Schema.Check.LogicalName:
+                    return EvaluateCheck(context, serviceFactory, tracing, message);
                 default:
                     tracing.Trace("GuardTransaction: entidad {0} fuera de alcance, se permite.", entity);
                     return TransactionGuardResult.Allow();
@@ -240,6 +245,59 @@ namespace CashHub.Plugins
                 currentBatchStatus: currentStatus,
                 targetBatchStatus: targetStatus,
                 hadBatch: pre.BatchRef != null);
+        }
+
+        // ---- Cheque (handshake de recepcion) ----
+
+        private static TransactionGuardResult EvaluateCheck(
+            IPluginExecutionContext context,
+            IOrganizationServiceFactory serviceFactory,
+            ITracingService tracing,
+            string message)
+        {
+            var target = GetTargetEntity(context);
+
+            if (message == "Create")
+            {
+                var bornStatus = ReadStatus(target, Schema.Check.CheckStatus);
+                tracing.Trace("GuardTransaction: create de cheque status={0}.", Fmt(bornStatus));
+                return CheckGuard.EvaluateCheckCreate(bornStatus);
+            }
+
+            var statusInTarget = target.Contains(Schema.Check.CheckStatus);
+            var newStatus = statusInTarget ? ReadStatus(target, Schema.Check.CheckStatus) : null;
+            var previousStatus = ResolveCheckPreState(context, serviceFactory, tracing, target.Id);
+
+            tracing.Trace("GuardTransaction: cheque {0} prev={1} nuevo={2}.",
+                target.Id, Fmt(previousStatus), statusInTarget ? Fmt(newStatus) : "(sin cambio)");
+
+            return CheckGuard.EvaluateCheckUpdate(previousStatus, statusInTarget, newStatus);
+        }
+
+        /// <summary>
+        /// Estado previo del cheque. Si hay pre-image se confia en ella (un atributo
+        /// ausente en la imagen ES null en la base: los cheques nacen sin estado);
+        /// sin pre-image se lee como sistema.
+        /// </summary>
+        private static int? ResolveCheckPreState(
+            IPluginExecutionContext context,
+            IOrganizationServiceFactory serviceFactory,
+            ITracingService tracing,
+            Guid checkId)
+        {
+            var pre = GetPreImage(context, Schema.Check.PreImageName);
+            if (pre != null)
+            {
+                return ReadStatus(pre, Schema.Check.CheckStatus);
+            }
+
+            tracing.Trace("GuardTransaction: sin pre-image utilizable, se lee el cheque como sistema.");
+            var service = serviceFactory.CreateOrganizationService(null);
+            var current = service.Retrieve(
+                Schema.Check.LogicalName, checkId,
+                new ColumnSet(Schema.Check.CheckStatus));
+
+            return ReadStatus(current, Schema.Check.CheckStatus);
         }
 
         // ---- Resolucion de pre-states (pre-image con fallback de lectura como sistema) ----

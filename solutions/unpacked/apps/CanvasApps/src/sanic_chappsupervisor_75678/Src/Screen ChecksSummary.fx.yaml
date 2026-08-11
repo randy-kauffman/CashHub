@@ -10,15 +10,15 @@
                     DatePickerCanvas1_1.SelectedDate,
                     1,
                     TimeUnit.Days
-                )) || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado
+                )) || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'
             ),
             RecordCanSelect,
             If(
-                CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado,
+                CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
                 true,
                 false
             ),BagID, RelatedReCounterDepositID.BagID.BagID, Cliente, RelatedReCounterDepositID.BagID.ReceptionID.RemitentName
-        ),CheckNumber,'Created By','Created On',CheckAmount,CheckStatus,CheckCurrency,'CH-Tbl-Checks',RelatedReCounterDepositID,Cliente,BagID,RecordCanSelect))
+        ),CheckNumber,'Created By','Created On',CheckAmount,CheckStatus,CheckCurrency,'Enviado el','No recibido el','CH-Tbl-Checks',RelatedReCounterDepositID,Cliente,BagID,RecordCanSelect))
 
     "'container ScreenSpinner_3' As groupContainer.manualLayoutContainer":
         DropShadow: =DropShadow.Light
@@ -168,7 +168,7 @@
                                 ),
                                 RecordCanSelect,
                                 If(
-                                    CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado,
+                                    CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
                                     true,
                                     false
                                 ),
@@ -183,6 +183,8 @@
                             CheckAmount,
                             CheckStatus,
                             CheckCurrency,
+                            'Enviado el',
+                            'No recibido el',
                             'CH-Tbl-Checks',
                             RelatedReCounterDepositID,
                             Cliente,
@@ -230,11 +232,11 @@
                         ),
                         RecordCanSelect,
                         If(
-                            CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado,
+                            CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
                             true,
                             false
                         ),BagID, RelatedReCounterDepositID.BagID.BagID, Cliente, RelatedReCounterDepositID.BagID.ReceptionID.RemitentName
-                    ),CheckNumber,'Created By','Created On',CheckAmount,CheckStatus,CheckCurrency,'CH-Tbl-Checks',RelatedReCounterDepositID,Cliente,BagID,RecordCanSelect));
+                    ),CheckNumber,'Created By','Created On',CheckAmount,CheckStatus,CheckCurrency,'Enviado el','No recibido el','CH-Tbl-Checks',RelatedReCounterDepositID,Cliente,BagID,RecordCanSelect));
                     
                     UpdateContext({varScreenSpinnerMessage: ""});
                     
@@ -243,6 +245,53 @@
                 X: =0
                 Y: =0
                 ZIndex: =9
+
+            btnReenviarDigitacion As Button:
+                AlignInContainer: =AlignInContainer.Center
+                BasePaletteColor: =RGBA(8, 222, 8, 1)
+                BorderColor: =
+                BorderRadius: =10
+                DisplayMode: =If(CountRows(Filter(FluentDetailsList1.SelectedItems, sanic_checkstatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'))>0, DisplayMode.Edit,DisplayMode.Disabled)
+                FontColor: =
+                Height: =32
+                LayoutMaxHeight: =
+                LayoutMaxWidth: =
+                LayoutMinHeight: =32
+                LayoutMinWidth: =96
+                OnSelect: |-
+                    =UpdateContext({varScreenSpinnerMessage: "Reenviando..."});
+                    UpdateContext({varChequesReenviados: CountRows(Filter(FluentDetailsList1.SelectedItems, sanic_checkstatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'))});
+                    ForAll(FluentDetailsList1.SelectedItems As Cheque,
+                    If(Cheque.sanic_checkstatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
+                    Patch('CH-Tbl-Checks'
+                    ,LookUp('CH-Tbl-Checks', sanic_chtblchecksid = Cheque.sanic_chtblchecksid)
+                    ,{CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'}
+                    )
+                    )
+                    );
+                    Refresh('CH-Tbl-Checks');
+                    ClearCollect(colChecksR,ShowColumns(AddColumns(Filter(
+                            'CH-Tbl-Checks',
+                            ('Created On' >= DatePickerCanvas1_1.SelectedDate && 'Created On' < DateAdd(
+                                DatePickerCanvas1_1.SelectedDate,
+                                1,
+                                TimeUnit.Days
+                            )) || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'
+                        ),
+                        RecordCanSelect,
+                        If(
+                            CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
+                            true,
+                            false
+                        ),BagID, RelatedReCounterDepositID.BagID.BagID, Cliente, RelatedReCounterDepositID.BagID.ReceptionID.RemitentName
+                    ),CheckNumber,'Created By','Created On',CheckAmount,CheckStatus,CheckCurrency,'Enviado el','No recibido el','CH-Tbl-Checks',RelatedReCounterDepositID,Cliente,BagID,RecordCanSelect));
+                    UpdateContext({varScreenSpinnerMessage: ""});
+                    Notify("Se reenviaron " & varChequesReenviados & " cheque(s) a digitacion", NotificationType.Success)
+                Text: ="Reenviar a digitacion"
+                Width: =170
+                X: =0
+                Y: =0
+                ZIndex: =10
 
             Icon3_1 As icon.CalendarBlank:
                 AlignInContainer: =AlignInContainer.Center
