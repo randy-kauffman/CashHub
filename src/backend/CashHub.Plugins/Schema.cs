@@ -235,6 +235,9 @@ namespace CashHub.Plugins
             public const string OtherCheckAmount = "sanic_otherlocalcheckamount";
             public const string CreatedOn = "createdon";
 
+            /// <summary>Espejo del estado del lote, mantenido por TransactionBatchStatusMirrorPlugin.</summary>
+            public const string BatchStatusMirror = "sanic_batchstatus";
+
             public const string PreImageName = "PreImage";
         }
 
