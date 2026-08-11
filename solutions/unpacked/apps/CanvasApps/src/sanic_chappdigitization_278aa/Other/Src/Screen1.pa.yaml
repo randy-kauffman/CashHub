@@ -39,8 +39,19 @@ Screens:
                   LayoutMaxHeight: =
                   LayoutMaxWidth: =
                   OnSelect: |-
-                    =NewForm(Form1);
-                    SubmitForm(Form1);
+                    =UpdateContext({varScreenSpinnerLabel: "Creando corte..."});
+                    IfError(
+                        With({cut: 'CH-Flow-CreateCut'.Run()},
+                            If(cut.assignedcount > 0,
+                                Notify("Corte creado: lote " & cut.batchname & " con " & Text(cut.assignedcount) & " transacciones", NotificationType.Success),
+                                Notify("No hay transacciones pendientes para el corte", NotificationType.Warning)
+                            )
+                        ),
+                        Notify("Error al crear el corte: " & FirstError.Message, NotificationType.Error)
+                    );
+                    Refresh('CH-Tbl-Transactions');
+                    Refresh('CH-Tbl-TransactionBatches');
+                    UpdateContext({varScreenSpinnerLabel: ""})
                   Text: ="Realizar corte"
                   Visible: =TabList1.Selected.Value = "Tx sin lote"
                   Width: =183
@@ -55,7 +66,7 @@ Screens:
                   Items: |-
                     =Filter(
                         'CH-Tbl-Transactions',
-                         Not(RelatedDepositRecounting.BACLocalCheckAmount > 0 || RelatedDepositRecounting.OtherLocaCheckAmount > 0) && Not(StartsWith('Transaction Batch'.Name,"TB"))
+                        TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Batch && IsBlank('Transaction Batch') && TransactionStatus = Blank()
                     )
                   LayoutMaxHeight: =
                   LayoutMaxWidth: =
@@ -213,7 +224,7 @@ Screens:
                         Items: |-
                           =Filter(
                               'CH-Tbl-Transactions',
-                               Not(StartsWith('Transaction Batch'.Name,"TB")) && TransactionStatus = Blank()
+                              TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual && IsBlank('Transaction Batch') && TransactionStatus = Blank()
                           )
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
@@ -383,12 +394,7 @@ Screens:
                                     First(
                                         Filter(
                                             'CH-Tbl-Transactions',
-                                            Not(
-                                                StartsWith(
-                                                    'Transaction Batch'.Name,
-                                                    "TB"
-                                                )
-                                            ) && TransactionStatus = Blank()
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual && IsBlank('Transaction Batch') && TransactionStatus = Blank()
                                         )
                                     )
                                 );
@@ -1125,53 +1131,20 @@ Screens:
                                     LayoutMinHeight: =16
                                     LayoutMinWidth: =16
                                     OnSelect: |
-                                      =Clear(colTx);
-                                      ForAll(
-                                          Filter(
-                                              'CH-Tbl-Transactions',
-                                              'Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches
-                                          ) As Tx,
-                                          Collect(
-                                              colTx,
+                                      =UpdateContext({varScreenSpinnerLabel: "Generando archivo...", varFile: Blank()});
+                                      IfError(
+                                          UpdateContext(
                                               {
-                                                  TRNCODE: 8004,
-                                                  CUENTA: Text(Value(Tx.AccountNumber),"000000000"),
-                                                  MONTOTOTAL: Value(Text(
-                                                      Tx.Total,
-                                                      "#,###.00"
-                                                  )),
-                                                  REFERENCIA: Tx.TransactionID,
-                                                  DEPOSITANTE: Coalesce(Tx.TransactionReference,Tx.TransactionID),
-                                                  MONEDA: Switch(Tx.Currency, 'CH-Ch-Currency'.NIO,"COR",'CH-Ch-Currency'.USD, "USD", 'CH-Ch-Currency'.EUR, "EUR"),
-                                                  DEPOSITID: Tx.TransactionID,
-                                                  DISPONIBILIDADINMEDIATA: "0",
-                                                  EFECTIVO: Value(Text(
-                                                      Value(Tx.CashAmount),
-                                                      "#,###.00"
-                                                  )),
-                                                  MANIFIESTO: 1,
-                                                  TIPOID: "0000000000001",
-                                                  NACIONALIDAD: "0000000000558",
-                                                  NUMEROID1: "4411001991",
-                                                  NUMEROID2: "003A"
+                                                  varFile: 'CH-Flow-DownloadData'.Run(
+                                                      Text(varLoteSelected.TransactionBatches),
+                                                      varLoteSelected.Name
+                                                  ).archivosalida
                                               }
-                                          )
+                                          ),
+                                          Notify("Error al generar el archivo del lote: " & FirstError.Message, NotificationType.Error)
                                       );
-
-                                      UpdateContext(
-                                          {
-                                              varFile: 'CH-Flow-DownloadData'.Run(
-                                                  JSON(
-                                                      colTx,
-                                                      JSONFormat.IncludeBinaryData
-                                                  ),
-                                                  varLoteSelected.Name
-                                              ).archivosalida
-                                          }
-                                      );
-
-
-                                      Download(varFile)
+                                      If(!IsBlank(varFile), Download(varFile));
+                                      UpdateContext({varScreenSpinnerLabel: ""})
                                     Text: ="Descargar lote"
                                     Width: =180
                         - Form2_1:
