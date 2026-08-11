@@ -912,7 +912,7 @@ Screens:
                             Properties:
                               AlignInContainer: =AlignInContainer.Stretch
                               Height: =180
-                              Items: =Filter('CH-Tbl-Checks', RelatedReCounterDepositID = varTxSelected.RelatedDepositRecounting)
+                              Items: =Filter('CH-Tbl-Checks',RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting' = varTxSelected.RelatedDepositRecounting.'CH-Tbl-DepositsRecounting')
                               LayoutMinHeight: =16
                               LayoutMinWidth: =16
                             Children:
@@ -1353,7 +1353,7 @@ Screens:
                                     LayoutMinWidth: =16
                                     PaddingLeft: =5
                                     Text: |-
-                                      =Text(Sum(Filter('CH-Tbl-Transactions', 'Transaction Batch' = varLoteSelected, Currency = 'CH-Ch-Currency'.NIO), CashAmount),"C$ #,###.00")
+                                      =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.NIO),CashAmount),"C$ #,###.00")
                                     VerticalAlign: =VerticalAlign.Middle
                                     Weight: ='TextCanvas.Weight'.Semibold
                                     Width: =200
@@ -1374,7 +1374,7 @@ Screens:
                                     LayoutMinWidth: =16
                                     PaddingLeft: =5
                                     Text: |-
-                                      =Text(Sum(Filter('CH-Tbl-Transactions', 'Transaction Batch' = varLoteSelected, Currency = 'CH-Ch-Currency'.USD), CashAmount),"U$ #,###.00")
+                                      =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.USD),CashAmount),"U$ #,###.00")
                                     VerticalAlign: =VerticalAlign.Middle
                                     Weight: ='TextCanvas.Weight'.Semibold
                                     Width: =200
@@ -1395,7 +1395,7 @@ Screens:
                                     LayoutMinWidth: =16
                                     PaddingLeft: =5
                                     Text: |-
-                                      =Text(Sum(Filter('CH-Tbl-Transactions', 'Transaction Batch' = varLoteSelected, Currency = 'CH-Ch-Currency'.EUR), CashAmount),"€ #,###.00")
+                                      =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.EUR),CashAmount),"€ #,###.00")
                                     VerticalAlign: =VerticalAlign.Middle
                                     Weight: ='TextCanvas.Weight'.Semibold
                                     Width: =200
@@ -1405,7 +1405,7 @@ Screens:
                               AlignInContainer: =AlignInContainer.Stretch
                               FillPortions: =1
                               Height: =180
-                              Items: =Filter('CH-Tbl-Transactions', 'Transaction Batch' = varLoteSelected)
+                              Items: =Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches)
                               LayoutMinHeight: =16
                               LayoutMinWidth: =16
                             Children:

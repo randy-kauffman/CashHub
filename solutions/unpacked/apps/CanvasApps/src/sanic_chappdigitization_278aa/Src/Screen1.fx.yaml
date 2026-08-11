@@ -1866,7 +1866,7 @@ Screen1 As screen:
                     DateTimeFormat: ='PowerAppsOneGrid.DateTimeFormat'.ShortDateTime
                     DisplayMode: =DisplayMode.Edit
                     Height: =180
-                    Items: =Filter('CH-Tbl-Checks', RelatedReCounterDepositID = varTxSelected.RelatedDepositRecounting)
+                    Items: =Filter('CH-Tbl-Checks',RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting' = varTxSelected.RelatedDepositRecounting.'CH-Tbl-DepositsRecounting')
                     LayoutMaxHeight: =0
                     LayoutMaxWidth: =0
                     LayoutMinHeight: =16
@@ -2546,7 +2546,7 @@ Screen1 As screen:
                         Size: =14
                         TabIndex: =0
                         Text: |-
-                            =Text(Sum(Filter('CH-Tbl-Transactions', 'Transaction Batch' = varLoteSelected, Currency = 'CH-Ch-Currency'.NIO), CashAmount),"C$ #,###.00")
+                            =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.NIO),CashAmount),"C$ #,###.00")
                         Tooltip: =""
                         VerticalAlign: =VerticalAlign.Middle
                         Visible: =true
@@ -2610,7 +2610,7 @@ Screen1 As screen:
                         Size: =14
                         TabIndex: =0
                         Text: |-
-                            =Text(Sum(Filter('CH-Tbl-Transactions', 'Transaction Batch' = varLoteSelected, Currency = 'CH-Ch-Currency'.USD), CashAmount),"U$ #,###.00")
+                            =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.USD),CashAmount),"U$ #,###.00")
                         Tooltip: =""
                         VerticalAlign: =VerticalAlign.Middle
                         Visible: =true
@@ -2674,7 +2674,7 @@ Screen1 As screen:
                         Size: =14
                         TabIndex: =0
                         Text: |-
-                            =Text(Sum(Filter('CH-Tbl-Transactions', 'Transaction Batch' = varLoteSelected, Currency = 'CH-Ch-Currency'.EUR), CashAmount),"€ #,###.00")
+                            =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.EUR),CashAmount),"€ #,###.00")
                         Tooltip: =""
                         VerticalAlign: =VerticalAlign.Middle
                         Visible: =true
@@ -2719,7 +2719,7 @@ Screen1 As screen:
                     HeaderFontSize: =0
                     HeaderFontWeight: =""
                     Height: =180
-                    Items: =Filter('CH-Tbl-Transactions', 'Transaction Batch' = varLoteSelected)
+                    Items: =Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches)
                     LayoutMaxHeight: =0
                     LayoutMaxWidth: =0
                     LayoutMinHeight: =16
