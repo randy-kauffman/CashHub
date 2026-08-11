@@ -185,6 +185,14 @@ namespace CashHub.Plugins
             public const string Id = "sanic_chtblreceptionsid";
             public const string BatchLookup = "sanic_receptionbatch";
 
+            /// <summary>
+            /// Espejo entero del sanic_receptionstatus del lote, mantenido por
+            /// ReceptionBatchStatusMirrorPlugin. Existe para que las apps filtren
+            /// planillas por estado de lote con delegacion (un Filter sobre columna
+            /// de la entidad relacionada no delega y miente a partir de 500 filas).
+            /// </summary>
+            public const string BatchStatusMirror = "sanic_batchstatus";
+
             public const string PreImageName = "PreImage";
         }
 

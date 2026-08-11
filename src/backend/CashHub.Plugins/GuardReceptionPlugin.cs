@@ -139,6 +139,27 @@ namespace CashHub.Plugins
             }
 
             var update = GetTargetEntity(context);
+
+            // El espejo sanic_batchstatus lo escribe ReceptionBatchStatusMirrorPlugin
+            // (metadata derivada, no datos de negocio): si el request no toca nada mas,
+            // pasa aunque el lote este congelado — es justamente la propagacion del cierre.
+            // La plataforma agrega el primary key al Target de un Update: se ignora.
+            var touchesOnlyMirror = true;
+            foreach (var key in update.Attributes.Keys)
+            {
+                if (key != Schema.Reception.BatchStatusMirror && key != Schema.Reception.Id)
+                {
+                    touchesOnlyMirror = false;
+                    break;
+                }
+            }
+
+            if (touchesOnlyMirror)
+            {
+                tracing.Trace("GuardReception: planilla {0}, escritura solo del espejo de estado, se permite.", update.Id);
+                return ReceptionGuardResult.Allow();
+            }
+
             var currentBatchStatus = ResolveReceptionBatchStatus(context, serviceFactory, tracing, update.Id);
 
             var isReparent = update.Contains(Schema.Reception.BatchLookup);
