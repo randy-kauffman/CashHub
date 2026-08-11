@@ -1,3 +1,5 @@
+using System;
+
 namespace CashHub.Validation.Security
 {
     /// <summary>Resultado de evaluar una operacion del dominio de digitalizacion.</summary>
@@ -68,16 +70,26 @@ namespace CashHub.Validation.Security
         /// -&gt; Aplicado. Todo lo demas se bloquea: saltos, retrocesos, el no-op, cualquier
         /// transicion hacia o desde Aprobado (dead-end prohibido) y cualquier escritura
         /// de estado sobre un lote ya Aplicado (inmutable).
+        ///
+        /// Segregacion de funciones sobre la transicion final: quien subio el lote al
+        /// Core (lo marco Ingresado, estampado en sanic_ingresadopor) NO puede tambien
+        /// marcarlo Aplicado. Generar y subir la misma persona SI puede. Un lote legacy
+        /// sin estampa (<paramref name="ingresadoPor"/> null) no se bloquea: sin dato
+        /// de segregacion la transicion valida pasa.
         /// </summary>
         /// <param name="previousStatus">Estado previo del lote (null si no tiene).</param>
         /// <param name="statusInTarget">true si el request escribe sanic_batchstatus.</param>
         /// <param name="newStatus">Estado destino cuando <paramref name="statusInTarget"/>.</param>
         /// <param name="touchesOnlyTotals">true si el request solo escribe los totales materializados.</param>
+        /// <param name="initiatingUserId">Usuario que inicia el request (context.InitiatingUserId).</param>
+        /// <param name="ingresadoPor">Quien marco el lote Ingresado (sanic_ingresadopor); null en lotes pre-estampas.</param>
         public static TransactionGuardResult EvaluateBatchUpdate(
             int? previousStatus,
             bool statusInTarget,
             int? newStatus,
-            bool touchesOnlyTotals)
+            bool touchesOnlyTotals,
+            Guid initiatingUserId,
+            Guid? ingresadoPor)
         {
             if (touchesOnlyTotals)
             {
@@ -104,6 +116,18 @@ namespace CashHub.Validation.Security
 
             if (isLegal)
             {
+                // Segregacion de funciones, SOLO en Ingresado -> Aplicado: el que
+                // subio el lote no lo confirma. Sin estampa (legacy) no se bloquea.
+                if (previousStatus == BatchIngresado
+                    && newStatus == BatchAplicado
+                    && ingresadoPor.HasValue
+                    && ingresadoPor.Value == initiatingUserId)
+                {
+                    return TransactionGuardResult.Block(
+                        "Segregacion de funciones: quien subio el lote al Core (lo marco " +
+                        "'Ingresado') no puede marcarlo 'Aplicado'; debe confirmarlo otro usuario.");
+                }
+
                 return TransactionGuardResult.Allow();
             }
 

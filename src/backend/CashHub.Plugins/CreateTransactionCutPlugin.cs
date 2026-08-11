@@ -7,7 +7,7 @@ namespace CashHub.Plugins
 {
     /// <summary>
     /// Backing del Custom API sanic_CHCreateTransactionCut: corte atomico de
-    /// transacciones Batch a un lote nuevo.
+    /// transacciones Batch a un lote nuevo, POR CAJERO.
     ///
     /// Reemplaza el UpdateIf client-side de CH-App-Digitization (cap 2000 filas, no
     /// atomico, y sin excluir transacciones ya Aplicadas: doble aplicacion). El corte
@@ -16,6 +16,11 @@ namespace CashHub.Plugins
     /// estado null), asigna en lotes de 500 todas las transacciones elegibles creadas
     /// hasta el instante del corte, y si no habia ninguna borra el lote para no dejar
     /// lotes vacios (regla de negocio W6).
+    ///
+    /// El corte es por cajero: CajeroId (systemuserid) es REQUERIDO y solo entran
+    /// transacciones creadas por ese cajero (createdby). El lote queda estampado con
+    /// sanic_cajero = CajeroId y sanic_generadopor = quien disparo el corte
+    /// (InitiatingUserId), base de la trazabilidad y la segregacion de funciones.
     /// </summary>
     public sealed class CreateTransactionCutPlugin : IPlugin
     {
@@ -38,19 +43,38 @@ namespace CashHub.Plugins
 
             try
             {
-                var cutTime = DateTime.UtcNow;
-                tracing.Trace("CreateTransactionCut: corte al instante {0:o}.", cutTime);
+                // 0. CajeroId REQUERIDO: el corte es por cajero, no global.
+                if (!(context.InputParameters.TryGetValue(Schema.CutApi.InCajeroId, out var rawCajero)
+                      && rawCajero is Guid cajeroId
+                      && cajeroId != Guid.Empty))
+                {
+                    throw new InvalidPluginExecutionException(
+                        "El corte requiere el cajero: el parametro 'CajeroId' (systemuserid) es " +
+                        "obligatorio, de tipo Guid y no puede ser vacio.");
+                }
 
-                // 1. Lote nuevo con estado Generado explicito.
+                var cutTime = DateTime.UtcNow;
+                tracing.Trace("CreateTransactionCut: corte del cajero {0} al instante {1:o}, generado por {2}.",
+                    cajeroId, cutTime, context.InitiatingUserId);
+
+                // 1. Lote nuevo con estado Generado explicito, estampado con el cajero
+                //    del corte y con quien lo genero (InitiatingUserId, no el system
+                //    user con el que corre el plugin).
                 var batchId = service.Create(new Entity(Schema.TransactionBatch.LogicalName)
                 {
-                    [Schema.TransactionBatch.BatchStatus] = new OptionSetValue(TransactionRouting.BatchGenerado)
+                    [Schema.TransactionBatch.BatchStatus] = new OptionSetValue(TransactionRouting.BatchGenerado),
+                    [Schema.TransactionBatch.Cajero] =
+                        new EntityReference(Schema.SystemUser.LogicalName, cajeroId),
+                    [Schema.TransactionBatch.GeneradoPor] =
+                        new EntityReference(Schema.SystemUser.LogicalName, context.InitiatingUserId)
                 });
-                tracing.Trace("CreateTransactionCut: lote {0} creado en estado Generado.", batchId);
+                tracing.Trace("CreateTransactionCut: lote {0} creado en estado Generado (cajero={1}, generadopor={2}).",
+                    batchId, cajeroId, context.InitiatingUserId);
 
                 // 2. Elegibles segun el dominio (TransactionRouting.IsEligibleForCut),
-                //    delegado al servidor: Batch, sin lote, pendientes (una Aplicada
-                //    NUNCA entra) y creadas hasta el instante del corte.
+                //    delegado al servidor: Batch, DEL CAJERO (createdby), sin lote,
+                //    pendientes (una Aplicada NUNCA entra) y creadas hasta el instante
+                //    del corte.
                 var query = new QueryExpression(Schema.Transaction.LogicalName)
                 {
                     ColumnSet = new ColumnSet(false),
@@ -61,6 +85,7 @@ namespace CashHub.Plugins
                 query.Criteria.AddCondition(
                     Schema.Transaction.ProcessingType, ConditionOperator.Equal, TransactionRouting.ProcessingBatch);
                 query.Criteria.AddCondition(Schema.Transaction.CreatedOn, ConditionOperator.LessEqual, cutTime);
+                query.Criteria.AddCondition(Schema.Transaction.CreatedBy, ConditionOperator.Equal, cajeroId);
 
                 // 3. Asignacion paginada de a 500. Cada pagina procesada sale del filtro
                 //    (el lookup deja de ser Null), asi que siempre se relee la pagina 1:
@@ -101,7 +126,8 @@ namespace CashHub.Plugins
                 if (assigned == 0)
                 {
                     service.Delete(Schema.TransactionBatch.LogicalName, batchId);
-                    tracing.Trace("CreateTransactionCut: sin transacciones elegibles; lote {0} eliminado.", batchId);
+                    tracing.Trace("CreateTransactionCut: sin transacciones elegibles del cajero {0}; lote {1} eliminado.",
+                        cajeroId, batchId);
 
                     context.OutputParameters[Schema.CutApi.OutBatchId] = Guid.Empty;
                     context.OutputParameters[Schema.CutApi.OutBatchName] = string.Empty;
@@ -124,8 +150,8 @@ namespace CashHub.Plugins
                 context.OutputParameters[Schema.CutApi.OutBatchId] = batchId;
                 context.OutputParameters[Schema.CutApi.OutBatchName] = batchName;
                 context.OutputParameters[Schema.CutApi.OutAssignedCount] = assigned;
-                tracing.Trace("CreateTransactionCut: corte completo — lote {0} '{1}' con {2} transacciones.",
-                    batchId, batchName, assigned);
+                tracing.Trace("CreateTransactionCut: corte completo — lote {0} '{1}' con {2} transacciones del cajero {3}.",
+                    batchId, batchName, assigned, cajeroId);
             }
             catch (InvalidPluginExecutionException)
             {

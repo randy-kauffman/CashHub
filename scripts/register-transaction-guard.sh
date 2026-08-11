@@ -5,7 +5,12 @@
 #   2. plugintype      CashHub.Plugins.GuardTransactionPlugin
 #   3. pasos SINCRONOS Pre-validation (stage 10) sobre:
 #        sanic_chtbltransactions   Create / Update(+PreImage lote+status, filtrado en lote+status)
-#        sanic_transactionbatches  Create / Update(+PreImage estado, filtrado en estado) / Delete
+#        sanic_transactionbatches  Create / Update(+PreImage estado+ingresadopor, filtrado en estado) / Delete
+#
+# La pre-image del Update del lote trae ademas sanic_ingresadopor: es el insumo
+# de la regla de segregacion de funciones (quien marco Ingresado no puede marcar
+# Aplicado). El guard corre Pre-validation (10), ANTES del stamp (Pre-op 20), asi
+# que la imagen refleja la transicion ANTERIOR — exactamente lo que la regla pide.
 #
 # Los pasos son sincronos a proposito: un control de seguridad debe abortar la
 # operacion antes de que nada la tome. Las reglas viven en TransactionGuard
@@ -104,8 +109,9 @@ STEPS = [
      'Aplicada es terminal; (des)asignacion de lote solo dentro del ciclo Generado/Ingresado.'),
     ('sanic_transactionbatches', 'Create', None, None,
      'Un lote solo puede nacer Generado explicito.'),
-    ('sanic_transactionbatches', 'Update', 'sanic_batchstatus', 'sanic_batchstatus',
-     'Transiciones solo hacia adelante Generado -> Ingresado -> Aplicado; Aplicado inmutable.'),
+    ('sanic_transactionbatches', 'Update', 'sanic_batchstatus', 'sanic_batchstatus,sanic_ingresadopor',
+     'Transiciones solo hacia adelante Generado -> Ingresado -> Aplicado; Aplicado inmutable; '
+     'quien marco Ingresado no marca Aplicado (segregacion de funciones).'),
     ('sanic_transactionbatches', 'Delete', None, None,
      'Solo se elimina un lote Generado y sin transacciones (rollback del corte vacio).'),
 ]

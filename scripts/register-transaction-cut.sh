@@ -3,12 +3,14 @@
 # Registra el corte de transacciones a lote (idempotente):
 #   1. pluginassembly  CashHub.Plugins (re-sube el DLL con el tipo nuevo dentro)
 #   2. plugintype      CashHub.Plugins.CreateTransactionCutPlugin
-#   3. customapi       sanic_CHCreateTransactionCut (global, POST, sin parametros
-#                      de entrada; respuestas BatchId/BatchName/AssignedCount)
+#   3. customapi       sanic_CHCreateTransactionCut (global, POST; parametro de
+#                      entrada CajeroId Guid REQUERIDO; respuestas
+#                      BatchId/BatchName/AssignedCount)
 #
 # Reemplaza el UpdateIf client-side de CH-App-Digitization (cap 2000, no atomico,
-# sin excluir Aplicadas). El corte corre server-side: crea el lote en Generado
-# explicito, asigna las transacciones elegibles en lotes de 500 y no deja lotes
+# sin excluir Aplicadas). El corte corre server-side y POR CAJERO: crea el lote en
+# Generado explicito estampado con sanic_cajero/sanic_generadopor, asigna las
+# transacciones elegibles del cajero (createdby) en lotes de 500 y no deja lotes
 # vacios (regla W6).
 #
 # Requiere pp_secrets.env y el assembly compilado en Release.
@@ -83,8 +85,9 @@ type_id = upsert('plugintypes', "typename eq 'CashHub.Plugins.CreateTransactionC
     'pluginassemblyid@odata.bind': f"/pluginassemblies({asm_id})",
 }, 'plugintype CreateTransactionCutPlugin', 'plugintypeid')
 
-# 3. customapi + respuestas (sin parametros de entrada: el corte es "todo lo
-#    elegible hasta ahora"). Tipos segun la tabla de customapiresponseproperties:
+# 3. customapi + parametro de entrada + respuestas. El corte es por cajero:
+#    CajeroId (Guid, REQUERIDO) es el systemuserid cuyas transacciones toma el
+#    corte. Tipos segun la tabla de customapi(request|response)properties:
 #    Guid=12, String=10, Integer=7 (mismo codigo que usa FailedFindings en
 #    register-validation-plugin.sh; 6 es Float, no Integer).
 api_id = upsert('customapis', "uniquename eq 'sanic_CHCreateTransactionCut'", {
@@ -96,6 +99,15 @@ api_id = upsert('customapis', "uniquename eq 'sanic_CHCreateTransactionCut'", {
     'allowedcustomprocessingsteptype': 0,
     'PluginTypeId@odata.bind': f"/plugintypes({type_id})",
 }, 'customapi sanic_CHCreateTransactionCut', 'customapiid')
+
+# Parametro de entrada CajeroId (upsert idempotente, como las respuestas).
+upsert('customapirequestparameters',
+    f"_customapiid_value eq {api_id} and uniquename eq 'CajeroId'", {
+    'uniquename': 'CajeroId', 'name': 'CajeroId', 'displayname': 'CajeroId',
+    'description': 'systemuserid del cajero cuyas transacciones toma el corte (requerido).',
+    'type': 12, 'isoptional': False,
+    'CustomAPIId@odata.bind': f"/customapis({api_id})",
+}, 'parametro CajeroId', 'customapirequestparameterid')
 
 for uname, ptype in [('BatchId', 12), ('BatchName', 10), ('AssignedCount', 7)]:
     upsert('customapiresponseproperties',

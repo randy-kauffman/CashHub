@@ -134,17 +134,28 @@ namespace CashHub.Plugins
             if (touchesOnlyTotals)
             {
                 tracing.Trace("GuardTransaction: lote {0}, escritura solo de totales, se permite.", update.Id);
-                return TransactionGuard.EvaluateBatchUpdate(null, false, null, touchesOnlyTotals: true);
+                return TransactionGuard.EvaluateBatchUpdate(
+                    null, false, null, touchesOnlyTotals: true,
+                    initiatingUserId: context.InitiatingUserId, ingresadoPor: null);
             }
 
             var statusInTarget = update.Contains(Schema.TransactionBatch.BatchStatus);
             var newStatus = statusInTarget ? ReadStatus(update, Schema.TransactionBatch.BatchStatus) : null;
-            var previousStatus = ResolveBatchPreState(context, serviceFactory, update.Id);
 
-            tracing.Trace("GuardTransaction: lote {0} prev={1} nuevo={2}.",
-                update.Id, Fmt(previousStatus), statusInTarget ? Fmt(newStatus) : "(sin cambio)");
+            // Este guard corre Pre-validation (10), ANTES del stamp (Pre-op 20): la
+            // pre-image trae el sanic_ingresadopor de la transicion ANTERIOR, que es
+            // exactamente el insumo de la regla de segregacion (quien marco Ingresado
+            // no puede marcar Aplicado).
+            var pre = ResolveBatchPreState(context, serviceFactory, update.Id);
 
-            return TransactionGuard.EvaluateBatchUpdate(previousStatus, statusInTarget, newStatus, touchesOnlyTotals: false);
+            tracing.Trace("GuardTransaction: lote {0} prev={1} nuevo={2} ingresadopor={3} actor={4}.",
+                update.Id, Fmt(pre.Status), statusInTarget ? Fmt(newStatus) : "(sin cambio)",
+                pre.IngresadoPor.HasValue ? pre.IngresadoPor.Value.ToString() : "null",
+                context.InitiatingUserId);
+
+            return TransactionGuard.EvaluateBatchUpdate(
+                pre.Status, statusInTarget, newStatus, touchesOnlyTotals: false,
+                initiatingUserId: context.InitiatingUserId, ingresadoPor: pre.IngresadoPor);
         }
 
         // ---- Transaccion ----
@@ -302,7 +313,13 @@ namespace CashHub.Plugins
 
         // ---- Resolucion de pre-states (pre-image con fallback de lectura como sistema) ----
 
-        private static int? ResolveBatchPreState(
+        /// <summary>
+        /// Estado previo y sanic_ingresadopor del lote. Si la pre-image trae el estado
+        /// se confia en ella (un atributo ausente en la imagen ES null en la base: los
+        /// lotes pre-estampas no tienen ingresadopor); sin pre-image utilizable se lee
+        /// como sistema.
+        /// </summary>
+        private static BatchPreState ResolveBatchPreState(
             IPluginExecutionContext context,
             IOrganizationServiceFactory serviceFactory,
             Guid batchId)
@@ -310,10 +327,19 @@ namespace CashHub.Plugins
             var pre = GetPreImage(context, Schema.TransactionBatch.PreImageName);
             if (pre != null && pre.Contains(Schema.TransactionBatch.BatchStatus))
             {
-                return ReadStatus(pre, Schema.TransactionBatch.BatchStatus);
+                return new BatchPreState(
+                    ReadStatus(pre, Schema.TransactionBatch.BatchStatus),
+                    pre.GetAttributeValue<EntityReference>(Schema.TransactionBatch.IngresadoPor)?.Id);
             }
 
-            return RetrieveBatchStatus(serviceFactory, batchId);
+            var service = serviceFactory.CreateOrganizationService(null);
+            var batch = service.Retrieve(
+                Schema.TransactionBatch.LogicalName, batchId,
+                new ColumnSet(Schema.TransactionBatch.BatchStatus, Schema.TransactionBatch.IngresadoPor));
+
+            return new BatchPreState(
+                ReadStatus(batch, Schema.TransactionBatch.BatchStatus),
+                batch.GetAttributeValue<EntityReference>(Schema.TransactionBatch.IngresadoPor)?.Id);
         }
 
         /// <summary>
@@ -405,6 +431,18 @@ namespace CashHub.Plugins
         }
 
         private static string Fmt(int? value) => value.HasValue ? value.Value.ToString() : "null";
+
+        private struct BatchPreState
+        {
+            public BatchPreState(int? status, Guid? ingresadoPor)
+            {
+                Status = status;
+                IngresadoPor = ingresadoPor;
+            }
+
+            public int? Status { get; }
+            public Guid? IngresadoPor { get; }
+        }
 
         private struct TransactionPreState
         {

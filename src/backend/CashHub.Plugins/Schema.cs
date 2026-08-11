@@ -234,6 +234,7 @@ namespace CashHub.Plugins
             public const string BacCheckAmount = "sanic_baclocalcheckamount";
             public const string OtherCheckAmount = "sanic_otherlocalcheckamount";
             public const string CreatedOn = "createdon";
+            public const string CreatedBy = "createdby";
             public const string CashAmount = "sanic_cashamount";
             public const string Currency = "sanic_currency";
 
@@ -284,6 +285,24 @@ namespace CashHub.Plugins
             public const string TotalUsd = "sanic_totalusd";
             public const string TotalEur = "sanic_totaleur";
 
+            /// <summary>
+            /// Cajero dueño de las transacciones del corte (lookup a systemuser),
+            /// estampado por CreateTransactionCutPlugin junto con GeneradoPor.
+            /// </summary>
+            public const string Cajero = "sanic_cajero";
+            public const string GeneradoPor = "sanic_generadopor";
+
+            /// <summary>
+            /// Sellos server-side de las transiciones del lote (quien y cuando),
+            /// estampados por BatchTransitionStampPlugin en Pre-operation. La estampa
+            /// IngresadoPor es ademas el insumo de la regla de segregacion de funciones
+            /// (quien marca Aplicado no puede ser quien marco Ingresado).
+            /// </summary>
+            public const string IngresadoPor = "sanic_ingresadopor";
+            public const string IngresadoOn = "sanic_ingresadoon";
+            public const string AplicadoPor = "sanic_aplicadopor";
+            public const string AplicadoOn = "sanic_aplicadoon";
+
             public const string PreImageName = "PreImage";
         }
 
@@ -305,6 +324,10 @@ namespace CashHub.Plugins
         internal static class CutApi
         {
             public const string MessageName = "sanic_CHCreateTransactionCut";
+
+            /// <summary>systemuserid del cajero cuyas transacciones toma el corte (REQUERIDO).</summary>
+            public const string InCajeroId = "CajeroId";
+
             public const string OutBatchId = "BatchId";
             public const string OutBatchName = "BatchName";
             public const string OutAssignedCount = "AssignedCount";

@@ -2,7 +2,7 @@
   "properties": {
     "connectionReferences": {
       "shared_commondataserviceforapps_1": {
-        "runtimeSource": "embedded",
+        "runtimeSource": "invoker",
         "connection": {
           "connectionReferenceLogicalName": "sanic_CHCRDataverse"
         },
@@ -34,8 +34,18 @@
           "inputs": {
             "schema": {
               "type": "object",
-              "properties": {},
-              "required": []
+              "properties": {
+                "text": {
+                  "title": "CajeroId",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "systemuserid del cajero del corte",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": [
+                "text"
+              ]
             }
           }
         }
@@ -49,7 +59,8 @@
           "type": "OpenApiConnection",
           "inputs": {
             "parameters": {
-              "actionName": "sanic_CHCreateTransactionCut"
+              "actionName": "sanic_CHCreateTransactionCut",
+              "item/CajeroId": "@triggerBody()['text']"
             },
             "host": {
               "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",

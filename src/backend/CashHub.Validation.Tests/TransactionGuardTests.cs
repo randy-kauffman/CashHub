@@ -1,3 +1,4 @@
+using System;
 using CashHub.Validation.Security;
 using Xunit;
 using static CashHub.Validation.Security.TransactionGuard;
@@ -14,6 +15,27 @@ namespace CashHub.Validation.Tests
     /// </summary>
     public class TransactionGuardTests
     {
+        // Actores de los tests de segregacion de funciones del lote.
+        private static readonly Guid Digitador = new Guid("00000000-0000-0000-0000-000000000001");
+        private static readonly Guid OtroUsuario = new Guid("00000000-0000-0000-0000-000000000002");
+
+        /// <summary>
+        /// Atajo del update de lote con defaults: actor Digitador y sin dato de
+        /// quien lo ingreso (lote legacy, pre-estampas).
+        /// </summary>
+        private static TransactionGuardResult EvalBatch(
+            int? previousStatus = null,
+            bool statusInTarget = false,
+            int? newStatus = null,
+            bool touchesOnlyTotals = false,
+            Guid? initiatingUserId = null,
+            Guid? ingresadoPor = null)
+        {
+            return EvaluateBatchUpdate(
+                previousStatus, statusInTarget, newStatus, touchesOnlyTotals,
+                initiatingUserId ?? Digitador, ingresadoPor);
+        }
+
         /// <summary>Atajo con defaults para no repetir 9 primitivas en cada caso.</summary>
         private static TransactionGuardResult EvalTx(
             bool touchesOnlyMirror = false,
@@ -67,7 +89,7 @@ namespace CashHub.Validation.Tests
         [InlineData(BatchIngresado, BatchAplicado)]
         public void BatchUpdate_TransicionHaciaAdelante_IsAllowed(int previous, int next)
         {
-            Assert.True(EvaluateBatchUpdate(previous, true, next, touchesOnlyTotals: false).IsAllowed);
+            Assert.True(EvalBatch(previous, true, next).IsAllowed);
         }
 
         [Theory]
@@ -80,7 +102,7 @@ namespace CashHub.Validation.Tests
         [InlineData(BatchGenerado, BatchGenerado)]   // ni siquiera el no-op: solo hacia adelante
         public void BatchUpdate_TransicionIlegal_IsBlocked(int previous, int next)
         {
-            Assert.False(EvaluateBatchUpdate(previous, true, next, touchesOnlyTotals: false).IsAllowed);
+            Assert.False(EvalBatch(previous, true, next).IsAllowed);
         }
 
         [Theory]
@@ -89,7 +111,7 @@ namespace CashHub.Validation.Tests
         [InlineData(BatchAplicado)] // un Aplicado es inmutable, ni el no-op pasa
         public void BatchUpdate_EstadoSobreLoteAplicado_IsBlocked(int next)
         {
-            var result = EvaluateBatchUpdate(BatchAplicado, true, next, touchesOnlyTotals: false);
+            var result = EvalBatch(BatchAplicado, true, next);
             Assert.False(result.IsAllowed);
             Assert.Contains("Aplicado", result.Reason);
         }
@@ -99,7 +121,7 @@ namespace CashHub.Validation.Tests
         {
             // Un lote sin estado esta fuera de la maquina; no hay transicion legal
             // desde la nada (el Create ya exige Generado explicito).
-            Assert.False(EvaluateBatchUpdate(null, true, BatchIngresado, touchesOnlyTotals: false).IsAllowed);
+            Assert.False(EvalBatch(null, true, BatchIngresado).IsAllowed);
         }
 
         [Theory]
@@ -109,14 +131,52 @@ namespace CashHub.Validation.Tests
         public void BatchUpdate_SoloTotales_IsAllowed(int previous)
         {
             // Escrituras del recompute de totales materializados (infraestructura).
-            Assert.True(EvaluateBatchUpdate(previous, false, null, touchesOnlyTotals: true).IsAllowed);
+            Assert.True(EvalBatch(previous, false, null, touchesOnlyTotals: true).IsAllowed);
         }
 
         [Fact]
         public void BatchUpdate_SinCambioDeEstado_IsAllowed()
         {
             // Campos comunes (comentarios) sin tocar el estado: no es asunto del guard.
-            Assert.True(EvaluateBatchUpdate(BatchIngresado, false, null, touchesOnlyTotals: false).IsAllowed);
+            Assert.True(EvalBatch(BatchIngresado, false, null).IsAllowed);
+        }
+
+        // ---- Lote: segregacion de funciones (Ingresado -> Aplicado) ----
+
+        [Fact]
+        public void BatchUpdate_AplicadoPorQuienLoIngreso_IsBlocked()
+        {
+            // Quien subio el lote al Core (lo marco Ingresado) no puede tambien
+            // confirmarlo Aplicado: cuatro ojos sobre la transicion final.
+            var result = EvalBatch(BatchIngresado, true, BatchAplicado,
+                initiatingUserId: Digitador, ingresadoPor: Digitador);
+            Assert.False(result.IsAllowed);
+            Assert.Contains("Segregacion", result.Reason);
+        }
+
+        [Fact]
+        public void BatchUpdate_AplicadoPorOtroUsuario_IsAllowed()
+        {
+            Assert.True(EvalBatch(BatchIngresado, true, BatchAplicado,
+                initiatingUserId: OtroUsuario, ingresadoPor: Digitador).IsAllowed);
+        }
+
+        [Fact]
+        public void BatchUpdate_AplicadoSinIngresadoPor_Legacy_IsAllowed()
+        {
+            // Lote pre-estampas (sin sanic_ingresadopor): sin dato de segregacion
+            // no se bloquea una transicion valida.
+            Assert.True(EvalBatch(BatchIngresado, true, BatchAplicado,
+                initiatingUserId: Digitador, ingresadoPor: null).IsAllowed);
+        }
+
+        [Fact]
+        public void BatchUpdate_IngresadoPorElMismoActor_NoAplicaSegregacion_IsAllowed()
+        {
+            // La regla es SOLO de Ingresado -> Aplicado: generar y subir el lote
+            // la misma persona SI puede.
+            Assert.True(EvalBatch(BatchGenerado, true, BatchIngresado,
+                initiatingUserId: Digitador, ingresadoPor: Digitador).IsAllowed);
         }
 
         // ---- Lote: borrado solo del rollback del corte vacio ----
