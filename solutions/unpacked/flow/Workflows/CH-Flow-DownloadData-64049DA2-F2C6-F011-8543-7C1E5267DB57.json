@@ -101,26 +101,29 @@
           "runAfter": {
             "Listar_transacciones_del_lote": [
               "Succeeded"
+            ],
+            "Identidad": [
+              "Succeeded"
             ]
           },
           "type": "Select",
           "inputs": {
             "from": "@outputs('Listar_transacciones_del_lote')?['body/value']",
             "select": {
-              "TRNCODE": 8004,
+              "TRNCODE": "@outputs('Identidad')?['TRNCODE']",
               "CUENTA": "@{formatNumber(coalesce(item()?['sanic_accountnumber'],0),'000000000')}",
               "MONTOTOTAL": "@{float(formatNumber(coalesce(item()?['sanic_total'],0),'0.00'))}",
               "REFERENCIA": "@{item()?['sanic_transactionid']}",
               "DEPOSITANTE": "@{coalesce(item()?['sanic_transactionreference'], item()?['sanic_transactionid'])}",
               "MONEDA": "@{if(equals(item()?['sanic_currency'],159460000),'COR',if(equals(item()?['sanic_currency'],159460001),'USD',if(equals(item()?['sanic_currency'],159460002),'EUR','')))}",
               "DEPOSITID": "@{item()?['sanic_transactionid']}",
-              "DISPONIBILIDADINMEDIATA": "0",
+              "DISPONIBILIDADINMEDIATA": "@{outputs('Identidad')?['DISPONIBILIDADINMEDIATA']}",
               "EFECTIVO": "@{float(formatNumber(coalesce(item()?['sanic_cashamount'],0),'0.00'))}",
-              "MANIFIESTO": 1,
-              "TIPOID": "0000000000001",
-              "NACIONALIDAD": "0000000000558",
-              "NUMEROID1": "4411001991",
-              "NUMEROID2": "003A"
+              "MANIFIESTO": "@outputs('Identidad')?['MANIFIESTO']",
+              "TIPOID": "@{outputs('Identidad')?['TIPOID']}",
+              "NACIONALIDAD": "@{outputs('Identidad')?['NACIONALIDAD']}",
+              "NUMEROID1": "@{outputs('Identidad')?['NUMEROID1']}",
+              "NUMEROID2": "@{outputs('Identidad')?['NUMEROID2']}"
             }
           }
         },
@@ -218,6 +221,37 @@
               "archivosalida": "@{\r\nconcat(\r\n  outputs('Create_share_link')?['body/WebUrl'],\r\n  if(\r\n    equals(indexOf(outputs('Create_share_link')?['body/WebUrl'],'?'), -1),\r\n    '?download=1',\r\n    '&download=1'\r\n  )\r\n)\r\n}"
             }
           }
+        },
+        "Obtener_identidad": {
+          "runAfter": {},
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblparameters",
+              "$select": "sanic_value",
+              "$filter": "sanic_name eq 'Export.Core.Identidad'",
+              "$top": 1
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps_1"
+            },
+            "retryPolicy": {
+              "type": "exponential",
+              "count": 4,
+              "interval": "PT10S"
+            }
+          }
+        },
+        "Identidad": {
+          "runAfter": {
+            "Obtener_identidad": [
+              "Succeeded"
+            ]
+          },
+          "type": "Compose",
+          "inputs": "@json(first(outputs('Obtener_identidad')?['body/value'])?['sanic_value'])"
         }
       },
       "outputs": {}
