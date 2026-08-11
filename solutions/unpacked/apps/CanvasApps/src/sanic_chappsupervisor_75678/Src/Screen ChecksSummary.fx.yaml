@@ -215,7 +215,7 @@
                     ForAll(FluentDetailsList1.SelectedItems As Cheque,
                     
                     Patch('CH-Tbl-Checks'
-                    ,LookUp('CH-Tbl-Checks', sanic_chtblchecksid = Cheque.sanic_chtblchecksid)
+                    ,LookUp('CH-Tbl-Checks', 'CH-Tbl-Checks' = Cheque.sanic_chtblchecksid)
                     ,{CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'}
                     )
                     );
@@ -264,7 +264,7 @@
                     ForAll(FluentDetailsList1.SelectedItems As Cheque,
                     If(Cheque.sanic_checkstatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
                     Patch('CH-Tbl-Checks'
-                    ,LookUp('CH-Tbl-Checks', sanic_chtblchecksid = Cheque.sanic_chtblchecksid)
+                    ,LookUp('CH-Tbl-Checks', 'CH-Tbl-Checks' = Cheque.sanic_chtblchecksid)
                     ,{CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'}
                     )
                     )
@@ -816,6 +816,129 @@
                             =Text(Sum(ThisItem.Bags,sanic_totaleur),"#,###.00")
                         Width: =140
                         ZIndex: =45
+
+            FluentDetailsList1 As DVFluentDetailsList.pcfdataset:
+                AlignInContainer: =AlignInContainer.Stretch
+                columns_Items: |-
+                    =Table(
+                        {ColName: "sanic_checknumber", ColDisplayName: "Cheque", ColWidth: 110},
+                        {ColName: "sanic_checkamount", ColDisplayName: "Monto", ColWidth: 90},
+                        {ColName: "sanic_checkcurrency", ColDisplayName: "Moneda", ColWidth: 80},
+                        {ColName: "sanic_checkstatus", ColDisplayName: "Estado", ColWidth: 170},
+                        {ColName: "Cliente", ColDisplayName: "Cliente", ColWidth: 150},
+                        {ColName: "BagID", ColDisplayName: "Tula", ColWidth: 100},
+                        {ColName: "createdby", ColDisplayName: "Creado Por", ColWidth: 130},
+                        {ColName: "createdon", ColDisplayName: "Fecha de creacion", ColWidth: 130}
+                    )
+                DisplayMode: =DisplayMode.Edit
+                FillPortions: =1
+                Height: =200
+                Items: =colChecksR
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinHeight: =16
+                LayoutMinWidth: =16
+                SelectionType: ='PowerCAT.DVFluentDetailsList.SelectionType'.Multiple
+                Width: =200
+                X: =0
+                Y: =0
+                ZIndex: =5
+
+                "BagID1 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="BagID"
+                    FieldName: ="BagID"
+                    FieldType: ="s"
+                    FieldVariantName: ="textualColumn"
+                    Order: =1
+                    ZIndex: =1
+
+                "Cliente1 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="Cliente"
+                    FieldName: ="Cliente"
+                    FieldType: ="s"
+                    FieldVariantName: ="textualColumn"
+                    Order: =2
+                    ZIndex: =2
+
+                "createdby3 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="createdby"
+                    FieldName: ="createdby"
+                    FieldType: ="E"
+                    FieldVariantName: ="textualColumn"
+                    Order: =3
+                    ZIndex: =3
+
+                "createdon2 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="createdon"
+                    FieldName: ="createdon"
+                    FieldType: ="d"
+                    FieldVariantName: ="textualColumn"
+                    Order: =4
+                    ZIndex: =4
+
+                "sanic_checkamount1 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="sanic_checkamount"
+                    FieldName: ="sanic_checkamount"
+                    FieldType: ="n"
+                    FieldVariantName: ="textualColumn"
+                    Order: =5
+                    ZIndex: =5
+
+                "sanic_checkcurrency1 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="sanic_checkcurrency"
+                    FieldName: ="sanic_checkcurrency"
+                    FieldType: ="l"
+                    FieldVariantName: ="textualColumn"
+                    Order: =6
+                    ZIndex: =6
+
+                "sanic_checknumber1 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="sanic_checknumber"
+                    FieldName: ="sanic_checknumber"
+                    FieldType: ="s"
+                    FieldVariantName: ="textualColumn"
+                    Order: =7
+                    ZIndex: =7
+
+                "sanic_checkstatus1 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="sanic_checkstatus"
+                    FieldName: ="sanic_checkstatus"
+                    FieldType: ="l"
+                    FieldVariantName: ="textualColumn"
+                    Order: =8
+                    ZIndex: =8
+
+                "sanic_chtblchecksid1 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="sanic_chtblchecksid"
+                    FieldName: ="sanic_chtblchecksid"
+                    FieldType: ="g"
+                    FieldVariantName: ="textualColumn"
+                    Order: =9
+                    ZIndex: =9
+
+                "sanic_senttodigitizationon1 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="sanic_senttodigitizationon"
+                    FieldName: ="sanic_senttodigitizationon"
+                    FieldType: ="d"
+                    FieldVariantName: ="textualColumn"
+                    Order: =10
+                    ZIndex: =10
+
+                "sanic_RelatedReCounterDepositID1 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="sanic_RelatedReCounterDepositID"
+                    FieldName: ="sanic_RelatedReCounterDepositID"
+                    FieldType: ="E"
+                    FieldVariantName: ="textualColumn"
+                    Order: =11
+                    ZIndex: =11
+
+                "sanic_notreceivedon1 As 'cat_PowerCAT.DVFluentDetailsListTemplate_dataField'.textualColumn":
+                    FieldDisplayName: ="sanic_notreceivedon"
+                    FieldName: ="sanic_notreceivedon"
+                    FieldType: ="d"
+                    FieldVariantName: ="textualColumn"
+                    Order: =12
+                    ZIndex: =12
 
     ExpandMenu_5 As ExpandMenu:
         ChildTabPriority: =true

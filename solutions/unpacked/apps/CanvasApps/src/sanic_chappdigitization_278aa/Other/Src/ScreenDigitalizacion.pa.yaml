@@ -7,7 +7,7 @@
 # For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
 # ************************************************************************************************
 Screens:
-  Screen1:
+  ScreenDigitalizacion:
     Children:
       - Container1:
           Control: GroupContainer@1.5.0
@@ -26,50 +26,72 @@ Screens:
             - TabList1:
                 Control: TabList@2.2.31
                 Properties:
+                  AccessibleLabel: |-
+                    ="Secciones: transacciones sin lote, manuales, lotes y cheques"
                   AlignInContainer: =AlignInContainer.Stretch
-                  Items: =["Tx sin lote", "Tx Manuales", "Lotes"]
+                  Items: =["Tx sin lote","Tx Manuales","Lotes","Cheques"]
                   LayoutMaxHeight: =
                   LayoutMaxWidth: =
                   X: =80
                   Y: =80
-            - ButtonCanvas1:
-                Control: Button@0.0.45
+            - Container5:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
                 Properties:
-                  AlignInContainer: =AlignInContainer.Start
-                  LayoutMaxHeight: =
-                  LayoutMaxWidth: =
-                  OnSelect: |-
-                    =UpdateContext({varScreenSpinnerLabel: "Creando corte..."});
-                    IfError(
-                        With({cut: 'CH-Flow-CreateCut'.Run()},
-                            If(cut.assignedcount > 0,
-                                Notify("Corte creado: lote " & cut.batchname & " con " & Text(cut.assignedcount) & " transacciones", NotificationType.Success),
-                                Notify("No hay transacciones pendientes para el corte", NotificationType.Warning)
-                            )
-                        ),
-                        Notify("Error al crear el corte: " & FirstError.Message, NotificationType.Error)
-                    );
-                    Refresh('CH-Tbl-Transactions');
-                    Refresh('CH-Tbl-TransactionBatches');
-                    UpdateContext({varScreenSpinnerLabel: ""})
-                  Text: ="Realizar corte"
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =50
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =10
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =8
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =8
                   Visible: =TabList1.Selected.Value = "Tx sin lote"
-                  Width: =183
-                  X: =636
-                  Y: =60
+                Children:
+                  - cmbCajero:
+                      Control: ModernCombobox@1.1.1
+                      Properties:
+                        InputTextPlaceholder: ="Seleccionar el cajero"
+                        ItemDisplayText: =ThisItem.'Full Name'
+                        Items: =Users
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        SelectMultiple: =false
+                  - ButtonCanvas1:
+                      Control: Button@0.0.45
+                      Properties:
+                        AccessibleLabel: ="Genera un lote con todas las transacciones pendientes del cajero seleccionado"
+                        AlignInContainer: =AlignInContainer.Start
+                        DisplayMode: =If(IsBlank(cmbCajero.Selected), DisplayMode.Disabled, DisplayMode.Edit)
+                        LayoutMaxHeight: =
+                        LayoutMaxWidth: =
+                        OnSelect: |-
+                          =UpdateContext({varConfirmarCorte: true})
+                        Text: ="Realizar corte"
+                        Visible: =TabList1.Selected.Value = "Tx sin lote"
+                        Width: =183
+                        X: =636
+                        Y: =60
             - tbl TxSinLote:
                 Control: Table@1.0.278
                 Properties:
+                  AccessibleLabel: ="Transacciones de efectivo pendientes"
                   EnableRangeSelection: ='PowerAppsOneGrid.EnableRangeSelection'.Disable
                   FillPortions: =1
                   Height: =564
                   Items: |-
-                    =Filter(
-                        'CH-Tbl-Transactions',
-                        TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Batch && BatchStatus = Blank() && TransactionStatus = Blank()
+                    =If(
+                        IsBlank(cmbCajero.Selected),
+                        Filter('CH-Tbl-Transactions', TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Batch && BatchStatus = Blank() && TransactionStatus = Blank()),
+                        Filter('CH-Tbl-Transactions', TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Batch && BatchStatus = Blank() && TransactionStatus = Blank() && 'Created By'.User = cmbCajero.Selected.User)
                     )
                   LayoutMaxHeight: =
                   LayoutMaxWidth: =
+                  NoDataText: ="Sin transacciones de efectivo pendientes"
                   Visible: =TabList1.Selected.Value = "Tx sin lote"
                   Width: =Parent.Width
                   X: =53
@@ -200,6 +222,32 @@ Screens:
                         FieldName: ="sanic_baclocalcheckamount"
                         FieldType: ="n"
                         Order: =14
+            - containr FiltroCajero TxManuales:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =50
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =10
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =8
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =8
+                  Visible: =TabList1.Selected.Value = "Tx Manuales"
+                Children:
+                  - cmbCajeroManuales:
+                      Control: ModernCombobox@1.1.1
+                      Properties:
+                        ItemDisplayText: =ThisItem.'Full Name'
+                        Items: =Users
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        SelectMultiple: =false
             - container TxManuales:
                 Control: GroupContainer@1.5.0
                 Variant: AutoLayout
@@ -218,29 +266,32 @@ Screens:
                   - tbl TxManuales:
                       Control: Table@1.0.278
                       Properties:
+                        AccessibleLabel: ="Transacciones manuales pendientes"
                         AlignInContainer: =AlignInContainer.Stretch
                         EnableRangeSelection: ='PowerAppsOneGrid.EnableRangeSelection'.Disable
                         Height: =564
                         Items: |-
-                          =Filter(
-                              'CH-Tbl-Transactions',
-                              TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual && BatchStatus = Blank() && TransactionStatus = Blank()
+                          =If(
+                              IsBlank(cmbCajeroManuales.Selected),
+                              Filter('CH-Tbl-Transactions', TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual && BatchStatus = Blank() && TransactionStatus = Blank()),
+                              Filter('CH-Tbl-Transactions', TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual && BatchStatus = Blank() && TransactionStatus = Blank() && 'Created By'.User = cmbCajeroManuales.Selected.User)
                           )
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
+                        NoDataText: ="Sin transacciones manuales pendientes"
                         OnSelect: =Set(varTxSelected,Self.Selected)
                         Visible: =TabList1.Selected.Value = "Tx Manuales"
                         Width: =300
                         X: =53
                         Y: =204
                       Children:
-                        - TransactionType1_1:
+                        - Currency1_1:
                             Control: TableDataField@1.5.0
                             Variant: textualColumn
                             IsLocked: true
                             Properties:
-                              FieldDisplayName: ="TransactionType"
-                              FieldName: ="sanic_transactiontype"
+                              FieldDisplayName: ="Currency"
+                              FieldName: ="sanic_currency"
                               FieldType: ="l"
                               Order: =2
                         - Total1_1:
@@ -252,13 +303,13 @@ Screens:
                               FieldName: ="sanic_total"
                               FieldType: ="n"
                               Order: =4
-                        - Currency1_1:
+                        - TransactionType1_1:
                             Control: TableDataField@1.5.0
                             Variant: textualColumn
                             IsLocked: true
                             Properties:
-                              FieldDisplayName: ="Currency"
-                              FieldName: ="sanic_currency"
+                              FieldDisplayName: ="TransactionType"
+                              FieldName: ="sanic_transactiontype"
                               FieldType: ="l"
                               Order: =5
                         - TransactionID1_1:
@@ -402,7 +453,6 @@ Screens:
                               - AccountNumber_DataCard1:
                                   Control: TypedDataCard@1.0.7
                                   Variant: NumberEdit
-                                  IsLocked: true
                                   Properties:
                                     DataField: ="sanic_accountnumber"
                                     Default: =ThisItem.AccountNumber
@@ -417,7 +467,7 @@ Screens:
                                         Control: Text@0.0.51
                                         Properties:
                                           Height: =22
-                                          Text: =Parent.DisplayName
+                                          Text: ="Numero de cuenta"
                                           Weight: ='TextCanvas.Weight'.Semibold
                                           Width: =(Parent.Width - 48) * 0.4
                                           Wrap: =false
@@ -471,7 +521,7 @@ Screens:
                                         Control: Text@0.0.51
                                         Properties:
                                           Height: =22
-                                          Text: =Parent.DisplayName
+                                          Text: ="Estatus de transaccion"
                                           Weight: ='TextCanvas.Weight'.Semibold
                                           Width: =(Parent.Width - 48) * 0.4
                                           Wrap: =false
@@ -510,7 +560,6 @@ Screens:
                               - Currency_DataCard1:
                                   Control: TypedDataCard@1.0.7
                                   Variant: ComboBoxOptionSetSingleEdit
-                                  IsLocked: true
                                   Properties:
                                     DataField: ="sanic_currency"
                                     Default: =ThisItem.Currency
@@ -525,7 +574,7 @@ Screens:
                                         Control: Text@0.0.51
                                         Properties:
                                           Height: =22
-                                          Text: =Parent.DisplayName
+                                          Text: ="Moneda"
                                           Weight: ='TextCanvas.Weight'.Semibold
                                           Width: =(Parent.Width - 48) * 0.4
                                           Wrap: =false
@@ -564,7 +613,6 @@ Screens:
                               - CashAmount_DataCard1:
                                   Control: TypedDataCard@1.0.7
                                   Variant: NumberEdit
-                                  IsLocked: true
                                   Properties:
                                     DataField: ="sanic_cashamount"
                                     Default: =ThisItem.CashAmount
@@ -579,7 +627,7 @@ Screens:
                                         Control: Text@0.0.51
                                         Properties:
                                           Height: =22
-                                          Text: =Parent.DisplayName
+                                          Text: ="Monto"
                                           Weight: ='TextCanvas.Weight'.Semibold
                                           Width: =(Parent.Width - 48) * 0.4
                                           Wrap: =false
@@ -618,65 +666,9 @@ Screens:
                                           Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
                                           Width: =30
                                           Y: =DataCardKey19.Y
-                              - OtherLocalCheckAmount_DataCard1:
-                                  Control: TypedDataCard@1.0.7
-                                  Variant: NumberEdit
-                                  IsLocked: true
-                                  Properties:
-                                    DataField: ="sanic_otherlocalcheckamount"
-                                    Default: =ThisItem.OtherLocalCheckAmount
-                                    DisplayName: =DataSourceInfo([@'CH-Tbl-Transactions'],DataSourceInfo.DisplayName,OtherLocalCheckAmount)
-                                    Height: =40
-                                    Required: =false
-                                    Update: =Value(DataCardValue19.Value)
-                                    X: =0
-                                    Y: =4
-                                  Children:
-                                    - DataCardKey20:
-                                        Control: Text@0.0.51
-                                        Properties:
-                                          Height: =22
-                                          Text: =Parent.DisplayName
-                                          Weight: ='TextCanvas.Weight'.Semibold
-                                          Width: =(Parent.Width - 48) * 0.4
-                                          Wrap: =false
-                                          X: =24
-                                          Y: =4 + (DataCardValue19.Height / 2) - (Self.Height / 2)
-                                    - DataCardValue19:
-                                        Control: NumberInput@2.9.12
-                                        Properties:
-                                          AccessibleLabel: =Parent.DisplayName
-                                          DisplayMode: =DisplayMode.View
-                                          Max: =Blank()
-                                          Min: =Blank()
-                                          PaddingLeft: =10
-                                          ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                                          Value: =Parent.Default
-                                          Width: =(Parent.Width - 48) * 0.4
-                                          X: =DataCardKey20.X + DataCardKey20.Width
-                                          Y: =10
-                                    - ErrorMessage17:
-                                        Control: Text@0.0.51
-                                        Properties:
-                                          Height: =30
-                                          Text: =Parent.Error
-                                          Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                                          Width: =Parent.Width - 48
-                                          X: =24
-                                          Y: =DataCardValue19.Y + DataCardValue19.Height
-                                    - StarVisible17:
-                                        Control: Text@0.0.51
-                                        Properties:
-                                          Align: ='TextCanvas.Align'.Center
-                                          Height: =30
-                                          Text: ="*"
-                                          Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                                          Width: =30
-                                          Y: =DataCardKey20.Y
                               - BACLocalCheckAmount_DataCard1:
                                   Control: TypedDataCard@1.0.7
                                   Variant: NumberEdit
-                                  IsLocked: true
                                   Properties:
                                     DataField: ="sanic_baclocalcheckamount"
                                     Default: =ThisItem.BACLocalCheckAmount
@@ -685,13 +677,13 @@ Screens:
                                     Required: =false
                                     Update: =Value(DataCardValue21.Value)
                                     X: =0
-                                    Y: =5
+                                    Y: =4
                                   Children:
                                     - DataCardKey22:
                                         Control: Text@0.0.51
                                         Properties:
                                           Height: =22
-                                          Text: =Parent.DisplayName
+                                          Text: ="Monto cheques BAC"
                                           Weight: ='TextCanvas.Weight'.Semibold
                                           Width: =(Parent.Width - 48) * 0.4
                                           Wrap: =false
@@ -728,10 +720,63 @@ Screens:
                                           Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
                                           Width: =30
                                           Y: =DataCardKey22.Y
+                              - OtherLocalCheckAmount_DataCard1:
+                                  Control: TypedDataCard@1.0.7
+                                  Variant: NumberEdit
+                                  Properties:
+                                    DataField: ="sanic_otherlocalcheckamount"
+                                    Default: =ThisItem.OtherLocalCheckAmount
+                                    DisplayName: =DataSourceInfo([@'CH-Tbl-Transactions'],DataSourceInfo.DisplayName,OtherLocalCheckAmount)
+                                    Height: =40
+                                    Required: =false
+                                    Update: =Value(DataCardValue19.Value)
+                                    X: =0
+                                    Y: =5
+                                  Children:
+                                    - DataCardKey20:
+                                        Control: Text@0.0.51
+                                        Properties:
+                                          Height: =22
+                                          Text: ="Monto cheques Otros"
+                                          Weight: ='TextCanvas.Weight'.Semibold
+                                          Width: =(Parent.Width - 48) * 0.4
+                                          Wrap: =false
+                                          X: =24
+                                          Y: =4 + (DataCardValue19.Height / 2) - (Self.Height / 2)
+                                    - DataCardValue19:
+                                        Control: NumberInput@2.9.12
+                                        Properties:
+                                          AccessibleLabel: =Parent.DisplayName
+                                          DisplayMode: =DisplayMode.View
+                                          Max: =Blank()
+                                          Min: =Blank()
+                                          PaddingLeft: =10
+                                          ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
+                                          Value: =Parent.Default
+                                          Width: =(Parent.Width - 48) * 0.4
+                                          X: =DataCardKey20.X + DataCardKey20.Width
+                                          Y: =10
+                                    - ErrorMessage17:
+                                        Control: Text@0.0.51
+                                        Properties:
+                                          Height: =30
+                                          Text: =Parent.Error
+                                          Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
+                                          Width: =Parent.Width - 48
+                                          X: =24
+                                          Y: =DataCardValue19.Y + DataCardValue19.Height
+                                    - StarVisible17:
+                                        Control: Text@0.0.51
+                                        Properties:
+                                          Align: ='TextCanvas.Align'.Center
+                                          Height: =30
+                                          Text: ="*"
+                                          Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
+                                          Width: =30
+                                          Y: =DataCardKey20.Y
                               - Total_DataCard1:
                                   Control: TypedDataCard@1.0.7
                                   Variant: TextualView
-                                  IsLocked: true
                                   Properties:
                                     DataField: ="sanic_total"
                                     Default: =ThisItem.Total
@@ -780,7 +825,7 @@ Screens:
                                         Control: Text@0.0.51
                                         Properties:
                                           Height: =22
-                                          Text: =Parent.DisplayName
+                                          Text: ="ID Transaccion"
                                           Weight: ='TextCanvas.Weight'.Semibold
                                           Width: =(Parent.Width - 48) * 0.4
                                           Wrap: =false
@@ -801,7 +846,6 @@ Screens:
                               - TransactionReference_DataCard1:
                                   Control: TypedDataCard@1.0.7
                                   Variant: TextualEdit
-                                  IsLocked: true
                                   Properties:
                                     DataField: ="sanic_transactionreference"
                                     Default: =ThisItem.TransactionReference
@@ -817,7 +861,7 @@ Screens:
                                         Control: Text@0.0.51
                                         Properties:
                                           Height: =22
-                                          Text: =Parent.DisplayName
+                                          Text: ="Referencia de transaccion"
                                           Weight: ='TextCanvas.Weight'.Semibold
                                           Width: =(Parent.Width - 48) * 0.4
                                           Wrap: =false
@@ -907,14 +951,16 @@ Screens:
                                           Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
                                           Width: =30
                                           Y: =DataCardKey14.Y
-                        - Table1:
+                        - tblChequesDeTx:
                             Control: Table@1.0.278
                             Properties:
+                              AccessibleLabel: ="Cheques de la transacción"
                               AlignInContainer: =AlignInContainer.Stretch
                               Height: =180
                               Items: =Filter('CH-Tbl-Checks',RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting' = varTxSelected.RelatedDepositRecounting.'CH-Tbl-DepositsRecounting')
                               LayoutMinHeight: =16
                               LayoutMinWidth: =16
+                              NoDataText: ="La transacción no tiene cheques"
                             Children:
                               - CheckNumber1:
                                   Control: TableDataField@1.5.0
@@ -961,6 +1007,32 @@ Screens:
                                     FieldName: ="sanic_checkstatus"
                                     FieldType: ="l"
                                     Order: =5
+            - containr FiltroCajero Lotes:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =50
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =10
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =8
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =8
+                  Visible: =TabList1.Selected.Value = "Lotes"
+                Children:
+                  - cmbCajeroLotes:
+                      Control: ModernCombobox@1.1.1
+                      Properties:
+                        ItemDisplayText: =ThisItem.'Full Name'
+                        Items: =Users
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        SelectMultiple: =false
             - container Lotes:
                 Control: GroupContainer@1.5.0
                 Variant: AutoLayout
@@ -979,12 +1051,14 @@ Screens:
                   - tblLotes:
                       Control: Table@1.0.278
                       Properties:
+                        AccessibleLabel: ="Lotes de transacciones"
                         AlignInContainer: =AlignInContainer.Stretch
                         EnableRangeSelection: ='PowerAppsOneGrid.EnableRangeSelection'.Disable
                         Height: =564
-                        Items: =SortByColumns('CH-Tbl-TransactionBatches',"createdon",SortOrder.Descending)
+                        Items: =If(IsBlank(cmbCajeroLotes.Selected), SortByColumns('CH-Tbl-TransactionBatches',"createdon",SortOrder.Descending), SortByColumns(Filter('CH-Tbl-TransactionBatches', Cajero.User = cmbCajeroLotes.Selected.User),"createdon",SortOrder.Descending))
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
+                        NoDataText: ="Sin lotes generados"
                         OnSelect: =Set(varLoteSelected,Self.Selected)
                         Visible: =TabList1.Selected.Value = "Lotes"
                         Width: =300
@@ -1009,6 +1083,15 @@ Screens:
                               FieldName: ="sanic_batchstatus"
                               FieldType: ="l"
                               Order: =2
+                        - sanic_Cajero1:
+                            Control: TableDataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="sanic_Cajero"
+                              FieldName: ="sanic_Cajero"
+                              FieldType: ="E"
+                              Order: =3
                         - Created On1:
                             Control: TableDataField@1.5.0
                             Variant: textualColumn
@@ -1017,7 +1100,7 @@ Screens:
                               FieldDisplayName: ="Created On"
                               FieldName: ="createdon"
                               FieldType: ="d"
-                              Order: =3
+                              Order: =4
                         - Status4:
                             Control: TableDataField@1.5.0
                             Variant: textualColumn
@@ -1026,7 +1109,7 @@ Screens:
                               FieldDisplayName: ="Status"
                               FieldName: ="statecode"
                               FieldType: ="l"
-                              Order: =4
+                              Order: =5
                         - Status Reason4:
                             Control: TableDataField@1.5.0
                             Variant: textualColumn
@@ -1035,7 +1118,7 @@ Screens:
                               FieldDisplayName: ="Status Reason"
                               FieldName: ="statuscode"
                               FieldType: ="l"
-                              Order: =5
+                              Order: =6
                         - Comentarios1:
                             Control: TableDataField@1.5.0
                             Variant: textualColumn
@@ -1044,7 +1127,7 @@ Screens:
                               FieldDisplayName: ="Comentarios"
                               FieldName: ="sanic_comentarios"
                               FieldType: ="s"
-                              Order: =6
+                              Order: =7
                         - Modified On1:
                             Control: TableDataField@1.5.0
                             Variant: textualColumn
@@ -1053,7 +1136,7 @@ Screens:
                               FieldDisplayName: ="Modified On"
                               FieldName: ="modifiedon"
                               FieldType: ="d"
-                              Order: =7
+                              Order: =8
                         - Import Sequence Number1:
                             Control: TableDataField@1.5.0
                             Variant: textualColumn
@@ -1062,7 +1145,7 @@ Screens:
                               FieldDisplayName: ="Import Sequence Number"
                               FieldName: ="importsequencenumber"
                               FieldType: ="n"
-                              Order: =8
+                              Order: =9
                         - Record Created On2:
                             Control: TableDataField@1.5.0
                             Variant: textualColumn
@@ -1071,7 +1154,7 @@ Screens:
                               FieldDisplayName: ="Record Created On"
                               FieldName: ="overriddencreatedon"
                               FieldType: ="d"
-                              Order: =9
+                              Order: =10
                   - Container3_1:
                       Control: GroupContainer@1.5.0
                       Variant: AutoLayout
@@ -1128,6 +1211,7 @@ Screens:
                               - ButtonCanvas2_2:
                                   Control: Button@0.0.45
                                   Properties:
+                                    AccessibleLabel: ="Descarga el archivo CSV del lote para el Core bancario"
                                     LayoutMinHeight: =16
                                     LayoutMinWidth: =16
                                     OnSelect: |
@@ -1147,17 +1231,37 @@ Screens:
                                       UpdateContext({varScreenSpinnerLabel: ""})
                                     Text: ="Descargar lote"
                                     Width: =180
+                              - btnSacarDelLote:
+                                  Control: Button@0.0.45
+                                  Properties:
+                                    AccessibleLabel: ="Devuelve la transacción al circuito manual (rechazo del Core)"
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    OnSelect: |-
+                                      =UpdateContext({varScreenSpinnerLabel: "Sacando del lote..."});
+                                      IfError(
+                                          Patch('CH-Tbl-Transactions', varTxLoteSelected, {'Transaction Batch': Blank()}),
+                                          Notify("No se pudo sacar del lote: " & FirstError.Message, NotificationType.Error),
+                                          Notify("Transacción enviada al circuito manual", NotificationType.Success)
+                                      );
+                                      Set(varTxLoteSelected, Blank());
+                                      Concurrent(Refresh('CH-Tbl-Transactions'), Refresh('CH-Tbl-TransactionBatches'));
+                                      Set(varLoteSelected, LookUp('CH-Tbl-TransactionBatches', TransactionBatches = varLoteSelected.TransactionBatches));
+                                      UpdateContext({varScreenSpinnerLabel: ""})
+                                    Text: ="Sacar del lote"
+                                    Visible: =!IsBlank(varTxLoteSelected) && (varLoteSelected.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado || varLoteSelected.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado)
+                                    Width: =180
                         - Form2_1:
                             Control: Form@2.4.4
                             Layout: Vertical
                             Properties:
                               DataSource: ='CH-Tbl-TransactionBatches'
                               FillPortions: =0
-                              Height: =160
+                              Height: =220
                               Item: =varLoteSelected
                               LayoutMinHeight: =16
                               LayoutMinWidth: =16
-                              NumberOfColumns: =2
+                              OnFailure: =Notify(Self.Error,NotificationType.Error)
                               OnSuccess: |
                                 =Set(varLoteSelected,Blank());
                                 Refresh('CH-Tbl-TransactionBatches');
@@ -1166,13 +1270,12 @@ Screens:
                               - Name_DataCard3:
                                   Control: TypedDataCard@1.0.7
                                   Variant: TextualView
-                                  IsLocked: true
                                   Properties:
                                     DataField: ="sanic_name"
                                     Default: =ThisItem.Name
-                                    DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'sanic_name')
+                                    DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,Name)
                                     Required: =false
-                                    Width: =492
+                                    Width: =328
                                     WidthFit: =true
                                     X: =0
                                     Y: =0
@@ -1182,7 +1285,7 @@ Screens:
                                         MetadataKey: FieldName
                                         Properties:
                                           Height: =22
-                                          Text: =Parent.DisplayName
+                                          Text: ="No. Lote"
                                           Weight: ='TextCanvas.Weight'.Semibold
                                           Width: =Parent.Width - 48
                                           Wrap: =false
@@ -1207,10 +1310,11 @@ Screens:
                                   Properties:
                                     DataField: ="sanic_batchstatus"
                                     Default: =ThisItem.BatchStatus
-                                    DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'sanic_batchstatus')
+                                    DisplayMode: =DisplayMode.View
+                                    DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,BatchStatus)
                                     Required: =false
                                     Update: =varNewStatus
-                                    Width: =492
+                                    Width: =328
                                     WidthFit: =true
                                     X: =1
                                     Y: =0
@@ -1220,7 +1324,7 @@ Screens:
                                         MetadataKey: FieldName
                                         Properties:
                                           Height: =22
-                                          Text: =Parent.DisplayName
+                                          Text: ="Estatus del lote"
                                           Weight: ='TextCanvas.Weight'.Semibold
                                           Width: =Parent.Width - 48
                                           Wrap: =false
@@ -1259,22 +1363,140 @@ Screens:
                                           Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
                                           Width: =30
                                           Y: =DataCardKey26.Y
-                              - Comentarios_DataCard2:
+                              - Created On_DataCard1:
                                   Control: TypedDataCard@1.0.7
-                                  Variant: TextualEdit
+                                  Variant: TextualView
                                   Properties:
-                                    DataField: ="sanic_comentarios"
-                                    Default: =ThisItem.Comentarios
-                                    DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'sanic_comentarios')
-                                    MaxLength: =DataSourceInfo([@'CH-Tbl-TransactionBatches'], DataSourceInfo.MaxLength, 'sanic_comentarios')
+                                    DataField: ="createdon"
+                                    Default: =ThisItem.'Created On'
+                                    DisplayMode: =DisplayMode.Disabled
+                                    DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'createdon')
                                     Required: =false
-                                    Update: =DataCardValue28.Value
-                                    Width: =492
+                                    Width: =328
+                                    WidthFit: =true
+                                    X: =2
+                                    Y: =0
+                                  Children:
+                                    - DataCardKey5:
+                                        Control: Text@0.0.51
+                                        MetadataKey: FieldName
+                                        Properties:
+                                          Height: =22
+                                          Text: ="Fecha de creacion"
+                                          Weight: ='TextCanvas.Weight'.Semibold
+                                          Width: =Parent.Width - 48
+                                          Wrap: =false
+                                          X: =24
+                                          Y: =10
+                                    - DataCardValue3:
+                                        Control: TextInput@0.0.54
+                                        MetadataKey: FieldValue
+                                        Properties:
+                                          AccessibleLabel: =Parent.DisplayName
+                                          DisplayMode: =DisplayMode.View
+                                          Mode: ="'TextInputCanvas.Mode'.TextInputModeSingleLine"
+                                          Required: =Parent.Required
+                                          ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
+                                          Value: =Parent.Default
+                                          Width: =Parent.Width - 48
+                                          X: =24
+                                          Y: =DataCardKey5.Y + DataCardKey5.Height + 4
+                              - Created By_DataCard1:
+                                  Control: TypedDataCard@1.0.7
+                                  Variant: ComboBoxView
+                                  Properties:
+                                    DataField: ="createdby"
+                                    Default: =ThisItem.'Created By'
+                                    DisplayMode: =DisplayMode.Disabled
+                                    DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'createdby')
+                                    Required: =false
+                                    Width: =328
                                     WidthFit: =true
                                     X: =0
                                     Y: =1
                                   Children:
-                                    - DataCardKey29:
+                                    - DataCardKey6:
+                                        Control: Text@0.0.51
+                                        MetadataKey: FieldName
+                                        Properties:
+                                          Height: =22
+                                          Text: ="Creado por"
+                                          Weight: ='TextCanvas.Weight'.Semibold
+                                          Width: =Parent.Width - 48
+                                          Wrap: =false
+                                          X: =24
+                                          Y: =10
+                                    - DataCardValue4:
+                                        Control: ComboBox@0.0.51
+                                        MetadataKey: FieldValue
+                                        Properties:
+                                          DefaultSelectedItems: =[Parent.Default]
+                                          DisplayMode: =DisplayMode.View
+                                          Items: =Choices([@'CH-Tbl-TransactionBatches'].'createdby')
+                                          ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
+                                          Width: =Parent.Width - 48
+                                          X: =24
+                                          Y: =DataCardKey6.Y + DataCardKey6.Height + 4
+                                        Children:
+                                          - Full Name3:
+                                              Control: ComboBoxDataField@1.5.0
+                                              Variant: textualColumn
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Full Name"
+                                                FieldName: ="fullname"
+                                                FieldType: ="s"
+                                                Order: =1
+                                          - Business Unit3:
+                                              Control: ComboBoxDataField@1.5.0
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Business Unit"
+                                                FieldName: ="businessunitid"
+                                                FieldType: ="E"
+                                                Order: =2
+                                          - Title3:
+                                              Control: ComboBoxDataField@1.5.0
+                                              Variant: textualColumn
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Title"
+                                                FieldName: ="title"
+                                                FieldType: ="s"
+                                                Order: =3
+                                          - Position3:
+                                              Control: ComboBoxDataField@1.5.0
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Position"
+                                                FieldName: ="positionid"
+                                                FieldType: ="E"
+                                                Order: =4
+                                          - Main Phone3:
+                                              Control: ComboBoxDataField@1.5.0
+                                              Variant: textualColumn
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Main Phone"
+                                                FieldName: ="address1_telephone1"
+                                                FieldType: ="s"
+                                                Order: =5
+                              - Ingresado por_DataCard1:
+                                  Control: TypedDataCard@1.0.7
+                                  Variant: ComboBoxEdit
+                                  Properties:
+                                    DataField: ="sanic_IngresadoPor"
+                                    Default: =ThisItem.'Ingresado por'
+                                    DisplayMode: =DisplayMode.Disabled
+                                    DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'sanic_IngresadoPor')
+                                    Required: =false
+                                    Update: =DataCardValue2.Selected
+                                    Width: =328
+                                    WidthFit: =true
+                                    X: =1
+                                    Y: =1
+                                  Children:
+                                    - DataCardKey4:
                                         Control: Text@0.0.51
                                         MetadataKey: FieldName
                                         Properties:
@@ -1285,20 +1507,64 @@ Screens:
                                           Wrap: =false
                                           X: =24
                                           Y: =10
-                                    - DataCardValue28:
-                                        Control: TextInput@0.0.54
+                                    - DataCardValue2:
+                                        Control: ComboBox@0.0.51
                                         MetadataKey: FieldValue
                                         Properties:
                                           AccessibleLabel: =Parent.DisplayName
+                                          DefaultSelectedItems: =[Parent.Default]
                                           DisplayMode: =Parent.DisplayMode
-                                          Mode: ="'TextInputCanvas.Mode'.TextInputModeSingleLine"
+                                          Items: =Choices([@'CH-Tbl-TransactionBatches'].'sanic_IngresadoPor')
                                           Required: =Parent.Required
                                           ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                                          Value: =Parent.Default
                                           Width: =Parent.Width - 48
                                           X: =24
-                                          Y: =DataCardKey29.Y + DataCardKey29.Height + 4
-                                    - ErrorMessage23:
+                                          Y: =DataCardKey4.Y + DataCardKey4.Height + 4
+                                        Children:
+                                          - Full Name2:
+                                              Control: ComboBoxDataField@1.5.0
+                                              Variant: textualColumn
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Full Name"
+                                                FieldName: ="fullname"
+                                                FieldType: ="s"
+                                                Order: =1
+                                          - Business Unit2:
+                                              Control: ComboBoxDataField@1.5.0
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Business Unit"
+                                                FieldName: ="businessunitid"
+                                                FieldType: ="E"
+                                                Order: =2
+                                          - Title2:
+                                              Control: ComboBoxDataField@1.5.0
+                                              Variant: textualColumn
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Title"
+                                                FieldName: ="title"
+                                                FieldType: ="s"
+                                                Order: =3
+                                          - Position2:
+                                              Control: ComboBoxDataField@1.5.0
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Position"
+                                                FieldName: ="positionid"
+                                                FieldType: ="E"
+                                                Order: =4
+                                          - Main Phone2:
+                                              Control: ComboBoxDataField@1.5.0
+                                              Variant: textualColumn
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Main Phone"
+                                                FieldName: ="address1_telephone1"
+                                                FieldType: ="s"
+                                                Order: =5
+                                    - ErrorMessage4:
                                         Control: Text@0.0.51
                                         MetadataKey: ErrorMessage
                                         Properties:
@@ -1307,17 +1573,308 @@ Screens:
                                           Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
                                           Width: =Parent.Width - 48
                                           X: =24
-                                          Y: =DataCardValue28.Y + DataCardValue28.Height
-                                    - StarVisible23:
+                                          Y: =DataCardValue2.Y + DataCardValue2.Height
+                                    - StarVisible4:
                                         Control: Text@0.0.51
                                         MetadataKey: FieldRequired
                                         Properties:
                                           Align: ='TextCanvas.Align'.Center
-                                          Height: =30
+                                          Height: =20
                                           Text: ="*"
                                           Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
                                           Width: =30
-                                          Y: =DataCardKey29.Y
+                                          Y: =DataCardKey4.Y
+                              - Ingresado el_DataCard1:
+                                  Control: TypedDataCard@1.0.7
+                                  Variant: DateTimeEdit
+                                  Properties:
+                                    DataField: ="sanic_ingresadoon"
+                                    Default: =ThisItem.'Ingresado el'
+                                    DisplayMode: =DisplayMode.Disabled
+                                    DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'sanic_ingresadoon')
+                                    Required: =false
+                                    Update: =If(Not IsBlank(DateValue2.SelectedDate), DateTime(Year(DateValue2.SelectedDate), Month(DateValue2.SelectedDate), Day(DateValue2.SelectedDate), Value(HourValue2.Selected.Value), Value(MinuteValue2.Selected.Value), Second(DateValue2.SelectedDate)))
+                                    Width: =328
+                                    WidthFit: =true
+                                    X: =2
+                                    Y: =1
+                                  Children:
+                                    - DataCardKey3:
+                                        Control: Text@0.0.51
+                                        MetadataKey: FieldName
+                                        Properties:
+                                          Height: =22
+                                          Text: =Parent.DisplayName
+                                          Weight: ='TextCanvas.Weight'.Semibold
+                                          Width: =Parent.Width - 48
+                                          Wrap: =false
+                                          X: =24
+                                          Y: =10
+                                    - DateValue2:
+                                        Control: DatePicker@0.0.46
+                                        MetadataKey: DateFieldValue
+                                        Properties:
+                                          AccessibleLabel: =Parent.DisplayName
+                                          DisplayMode: =Parent.DisplayMode
+                                          SelectedDate: =Parent.Default
+                                          ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
+                                          Width: =(Parent.Width - 48) / 2
+                                          X: =24
+                                          Y: =DataCardKey3.Y + DataCardKey3.Height + 4
+                                    - HourValue2:
+                                        Control: DropDown@0.0.45
+                                        MetadataKey: HourFieldValue
+                                        Properties:
+                                          AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
+                                          DefaultSelectedItems: =[Text(Hour(Parent.Default),"00")]
+                                          DisplayMode: =Parent.DisplayMode
+                                          Height: =28
+                                          Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23"]
+                                          Required: =Parent.Required
+                                          ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
+                                          Width: =DateValue2.Width / 2 - 10
+                                          X: =DateValue2.X + DateValue2.Width + 10
+                                          Y: =DateValue2.Y + 1
+                                    - Separator2:
+                                        Control: Text@0.0.51
+                                        MetadataKey: HourMinuteSeparator
+                                        Properties:
+                                          Align: ='TextCanvas.Align'.Center
+                                          Height: =HourValue2.Height
+                                          Text: =":"
+                                          Width: =10
+                                          X: =HourValue2.X + HourValue2.Width
+                                          Y: =HourValue2.Y
+                                    - MinuteValue2:
+                                        Control: DropDown@0.0.45
+                                        MetadataKey: MinuteFieldValue
+                                        Properties:
+                                          AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
+                                          DefaultSelectedItems: =[Text(Minute(Parent.Default),"00")]
+                                          DisplayMode: =Parent.DisplayMode
+                                          Height: =28
+                                          Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59"]
+                                          ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
+                                          Width: =HourValue2.Width
+                                          X: =HourValue2.X + HourValue2.Width + Separator2.Width
+                                          Y: =HourValue2.Y + 1
+                                    - ErrorMessage3:
+                                        Control: Text@0.0.51
+                                        MetadataKey: ErrorMessage
+                                        Properties:
+                                          Height: =30
+                                          Text: =Parent.Error
+                                          Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
+                                          Width: =Parent.Width - 48
+                                          X: =24
+                                          Y: =DateValue2.Y + DateValue2.Height
+                                    - StarVisible3:
+                                        Control: Text@0.0.51
+                                        MetadataKey: FieldRequired
+                                        Properties:
+                                          Align: ='TextCanvas.Align'.Center
+                                          Height: =20
+                                          Text: ="*"
+                                          Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
+                                          Width: =30
+                                          Y: =DataCardKey3.Y
+                              - Aplicado por_DataCard1:
+                                  Control: TypedDataCard@1.0.7
+                                  Variant: ComboBoxEdit
+                                  Properties:
+                                    DataField: ="sanic_AplicadoPor"
+                                    Default: =ThisItem.'Aplicado por'
+                                    DisplayMode: =DisplayMode.Disabled
+                                    DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'sanic_AplicadoPor')
+                                    Required: =false
+                                    Update: =DataCardValue1.Selected
+                                    Width: =328
+                                    WidthFit: =true
+                                    X: =0
+                                    Y: =2
+                                  Children:
+                                    - DataCardKey1:
+                                        Control: Text@0.0.51
+                                        MetadataKey: FieldName
+                                        Properties:
+                                          Height: =22
+                                          Text: =Parent.DisplayName
+                                          Weight: ='TextCanvas.Weight'.Semibold
+                                          Width: =Parent.Width - 48
+                                          Wrap: =false
+                                          X: =24
+                                          Y: =10
+                                    - DataCardValue1:
+                                        Control: ComboBox@0.0.51
+                                        MetadataKey: FieldValue
+                                        Properties:
+                                          AccessibleLabel: =Parent.DisplayName
+                                          DefaultSelectedItems: =[Parent.Default]
+                                          DisplayMode: =Parent.DisplayMode
+                                          Items: =Choices([@'CH-Tbl-TransactionBatches'].'sanic_AplicadoPor')
+                                          Required: =Parent.Required
+                                          ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
+                                          Width: =Parent.Width - 48
+                                          X: =24
+                                          Y: =DataCardKey1.Y + DataCardKey1.Height + 4
+                                        Children:
+                                          - Full Name1:
+                                              Control: ComboBoxDataField@1.5.0
+                                              Variant: textualColumn
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Full Name"
+                                                FieldName: ="fullname"
+                                                FieldType: ="s"
+                                                Order: =1
+                                          - Business Unit1:
+                                              Control: ComboBoxDataField@1.5.0
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Business Unit"
+                                                FieldName: ="businessunitid"
+                                                FieldType: ="E"
+                                                Order: =2
+                                          - Title1:
+                                              Control: ComboBoxDataField@1.5.0
+                                              Variant: textualColumn
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Title"
+                                                FieldName: ="title"
+                                                FieldType: ="s"
+                                                Order: =3
+                                          - Position1:
+                                              Control: ComboBoxDataField@1.5.0
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Position"
+                                                FieldName: ="positionid"
+                                                FieldType: ="E"
+                                                Order: =4
+                                          - Main Phone1:
+                                              Control: ComboBoxDataField@1.5.0
+                                              Variant: textualColumn
+                                              IsLocked: true
+                                              Properties:
+                                                FieldDisplayName: ="Main Phone"
+                                                FieldName: ="address1_telephone1"
+                                                FieldType: ="s"
+                                                Order: =5
+                                    - ErrorMessage1:
+                                        Control: Text@0.0.51
+                                        MetadataKey: ErrorMessage
+                                        Properties:
+                                          Height: =30
+                                          Text: =Parent.Error
+                                          Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
+                                          Width: =Parent.Width - 48
+                                          X: =24
+                                          Y: =DataCardValue1.Y + DataCardValue1.Height
+                                    - StarVisible1:
+                                        Control: Text@0.0.51
+                                        MetadataKey: FieldRequired
+                                        Properties:
+                                          Align: ='TextCanvas.Align'.Center
+                                          Height: =20
+                                          Text: ="*"
+                                          Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
+                                          Width: =30
+                                          Y: =DataCardKey1.Y
+                              - Aplicado el_DataCard1:
+                                  Control: TypedDataCard@1.0.7
+                                  Variant: DateTimeEdit
+                                  Properties:
+                                    DataField: ="sanic_aplicadoon"
+                                    Default: =ThisItem.'Aplicado el'
+                                    DisplayMode: =DisplayMode.Disabled
+                                    DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'sanic_aplicadoon')
+                                    Required: =false
+                                    Update: =If(Not IsBlank(DateValue1.SelectedDate), DateTime(Year(DateValue1.SelectedDate), Month(DateValue1.SelectedDate), Day(DateValue1.SelectedDate), Value(HourValue1.Selected.Value), Value(MinuteValue1.Selected.Value), Second(DateValue1.SelectedDate)))
+                                    Width: =328
+                                    WidthFit: =true
+                                    X: =1
+                                    Y: =2
+                                  Children:
+                                    - DataCardKey2:
+                                        Control: Text@0.0.51
+                                        MetadataKey: FieldName
+                                        Properties:
+                                          Height: =22
+                                          Text: =Parent.DisplayName
+                                          Weight: ='TextCanvas.Weight'.Semibold
+                                          Width: =Parent.Width - 48
+                                          Wrap: =false
+                                          X: =24
+                                          Y: =10
+                                    - DateValue1:
+                                        Control: DatePicker@0.0.46
+                                        MetadataKey: DateFieldValue
+                                        Properties:
+                                          AccessibleLabel: =Parent.DisplayName
+                                          DisplayMode: =Parent.DisplayMode
+                                          SelectedDate: =Parent.Default
+                                          ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
+                                          Width: =(Parent.Width - 48) / 2
+                                          X: =24
+                                          Y: =DataCardKey2.Y + DataCardKey2.Height + 4
+                                    - HourValue1:
+                                        Control: DropDown@0.0.45
+                                        MetadataKey: HourFieldValue
+                                        Properties:
+                                          AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
+                                          DefaultSelectedItems: =[Text(Hour(Parent.Default),"00")]
+                                          DisplayMode: =Parent.DisplayMode
+                                          Height: =28
+                                          Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23"]
+                                          Required: =Parent.Required
+                                          ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
+                                          Width: =DateValue1.Width / 2 - 10
+                                          X: =DateValue1.X + DateValue1.Width + 10
+                                          Y: =DateValue1.Y + 1
+                                    - Separator1:
+                                        Control: Text@0.0.51
+                                        MetadataKey: HourMinuteSeparator
+                                        Properties:
+                                          Align: ='TextCanvas.Align'.Center
+                                          Height: =HourValue1.Height
+                                          Text: =":"
+                                          Width: =10
+                                          X: =HourValue1.X + HourValue1.Width
+                                          Y: =HourValue1.Y
+                                    - MinuteValue1:
+                                        Control: DropDown@0.0.45
+                                        MetadataKey: MinuteFieldValue
+                                        Properties:
+                                          AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
+                                          DefaultSelectedItems: =[Text(Minute(Parent.Default),"00")]
+                                          DisplayMode: =Parent.DisplayMode
+                                          Height: =28
+                                          Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59"]
+                                          ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
+                                          Width: =HourValue1.Width
+                                          X: =HourValue1.X + HourValue1.Width + Separator1.Width
+                                          Y: =HourValue1.Y + 1
+                                    - ErrorMessage2:
+                                        Control: Text@0.0.51
+                                        MetadataKey: ErrorMessage
+                                        Properties:
+                                          Height: =30
+                                          Text: =Parent.Error
+                                          Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
+                                          Width: =Parent.Width - 48
+                                          X: =24
+                                          Y: =DateValue1.Y + DateValue1.Height
+                                    - StarVisible2:
+                                        Control: Text@0.0.51
+                                        MetadataKey: FieldRequired
+                                        Properties:
+                                          Align: ='TextCanvas.Align'.Center
+                                          Height: =20
+                                          Text: ="*"
+                                          Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
+                                          Width: =30
+                                          Y: =DataCardKey2.Y
                         - Container4_2:
                             Control: GroupContainer@1.5.0
                             Variant: AutoLayout
@@ -1344,7 +1901,7 @@ Screens:
                                     LayoutMinWidth: =16
                                     Text: ="Total NIO"
                                     VerticalAlign: =VerticalAlign.Middle
-                              - TextCanvas1_1:
+                              - lblTotalNIO:
                                   Control: Text@0.0.51
                                   Properties:
                                     Align: ='TextCanvas.Align'.Start
@@ -1365,7 +1922,7 @@ Screens:
                                     LayoutMinWidth: =16
                                     Text: ="Total USD"
                                     VerticalAlign: =VerticalAlign.Middle
-                              - TextCanvas1_3:
+                              - lblTotalUSD:
                                   Control: Text@0.0.51
                                   Properties:
                                     Align: ='TextCanvas.Align'.Start
@@ -1386,7 +1943,7 @@ Screens:
                                     LayoutMinWidth: =16
                                     Text: ="Total EUR"
                                     VerticalAlign: =VerticalAlign.Middle
-                              - TextCanvas1_5:
+                              - lblTotalEUR:
                                   Control: Text@0.0.51
                                   Properties:
                                     Align: ='TextCanvas.Align'.Start
@@ -1399,15 +1956,18 @@ Screens:
                                     VerticalAlign: =VerticalAlign.Middle
                                     Weight: ='TextCanvas.Weight'.Semibold
                                     Width: =200
-                        - Table1_1:
+                        - tblTxDelLote:
                             Control: Table@1.0.278
                             Properties:
+                              AccessibleLabel: ="Transacciones del lote"
                               AlignInContainer: =AlignInContainer.Stretch
                               FillPortions: =1
                               Height: =180
                               Items: =Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches)
                               LayoutMinHeight: =16
                               LayoutMinWidth: =16
+                              NoDataText: ="El lote no tiene transacciones"
+                              OnSelect: =Set(varTxLoteSelected, Self.Selected)
                             Children:
                               - AccountNumber3:
                                   Control: TableDataField@1.5.0
@@ -1463,563 +2023,193 @@ Screens:
                                     FieldName: ="sanic_transactionid"
                                     FieldType: ="s"
                                     Order: =8
-      - Form1:
-          Control: Form@2.4.4
-          Layout: Vertical
+            - container TxManuales_1:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =10
+                  LayoutMinHeight: =16
+                  LayoutMinWidth: =16
+                  PaddingBottom: =8
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  PaddingTop: =8
+                  Visible: =TabList1.Selected.Value = "Cheques"
+                Children:
+                  - Container3_2:
+                      Control: GroupContainer@1.5.0
+                      Variant: AutoLayout
+                      Properties:
+                        DropShadow: =DropShadow.None
+                        LayoutAlignItems: =LayoutAlignItems.Center
+                        LayoutDirection: =LayoutDirection.Vertical
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        PaddingBottom: =8
+                        PaddingLeft: =8
+                        PaddingRight: =8
+                        PaddingTop: =8
+                      Children:
+                        - Container2:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              FillPortions: =0
+                              Height: =60
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =20
+                              LayoutJustifyContent: =LayoutJustifyContent.End
+                              LayoutMinHeight: =16
+                              LayoutMinWidth: =16
+                              PaddingBottom: =8
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              PaddingTop: =8
+                            Children:
+                              - btnRecibido:
+                                  Control: ModernButton@1.0.0
+                                  Properties:
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    OnSelect: |-
+                                      =IfError(
+                                          Patch('CH-Tbl-Checks', varChequeSelected, {CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.Recibido}),
+                                          Notify("No se pudo actualizar el cheque: " & FirstError.Message, NotificationType.Error),
+                                          Notify("Cheque " & varChequeSelected.CheckNumber & " actualizado", NotificationType.Success)
+                                      );
+                                      Set(varChequeSelected, Blank());
+                                      Refresh('CH-Tbl-Checks')
+                                    Text: ="Marcar Recibido"
+                                    Visible: =!IsBlank(varChequeSelected)
+                                    Width: =140
+                              - btnNoRecibido:
+                                  Control: ModernButton@1.0.0
+                                  Properties:
+                                    LayoutMinHeight: =16
+                                    LayoutMinWidth: =16
+                                    OnSelect: |-
+                                      =IfError(
+                                          Patch('CH-Tbl-Checks', varChequeSelected, {CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'}),
+                                          Notify("No se pudo actualizar el cheque: " & FirstError.Message, NotificationType.Error),
+                                          Notify("Cheque " & varChequeSelected.CheckNumber & " actualizado", NotificationType.Success)
+                                      );
+                                      Set(varChequeSelected, Blank());
+                                      Refresh('CH-Tbl-Checks')
+                                    Text: ="Marcar No Recibido"
+                                    Visible: =!IsBlank(varChequeSelected)
+                                    Width: =180
+                        - tblCheques:
+                            Control: Table@1.0.278
+                            Properties:
+                              AccessibleLabel: ="Cheques pendientes de recepción"
+                              AlignInContainer: =AlignInContainer.Stretch
+                              EnableRangeSelection: ='PowerAppsOneGrid.EnableRangeSelection'.Disable
+                              FillPortions: =1
+                              Height: =564
+                              Items: =Filter('CH-Tbl-Checks', CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion')
+                              LayoutMaxHeight: =
+                              LayoutMaxWidth: =
+                              NoDataText: ="Sin cheques pendientes de recepción"
+                              OnSelect: =Set(varChequeSelected, Self.Selected)
+                              Visible: =TabList1.Selected.Value = "Cheques"
+                              Width: =300
+                              X: =53
+                              Y: =204
+                            Children:
+                              - Name2:
+                                  Control: TableDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Name"
+                                    FieldName: ="sanic_name"
+                                    FieldType: ="s"
+                                    Order: =1
+                              - CheckNumber2:
+                                  Control: TableDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="CheckNumber"
+                                    FieldName: ="sanic_checknumber"
+                                    FieldType: ="s"
+                                    Order: =2
+                              - CheckAmount2:
+                                  Control: TableDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="CheckAmount"
+                                    FieldName: ="sanic_checkamount"
+                                    FieldType: ="n"
+                                    Order: =3
+                              - CheckCurrency2:
+                                  Control: TableDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="CheckCurrency"
+                                    FieldName: ="sanic_checkcurrency"
+                                    FieldType: ="l"
+                                    Order: =4
+                              - Enviado el1:
+                                  Control: TableDataField@1.5.0
+                                  Variant: textualColumn
+                                  IsLocked: true
+                                  Properties:
+                                    FieldDisplayName: ="Enviado el"
+                                    FieldName: ="sanic_senttodigitizationon"
+                                    FieldType: ="d"
+                                    Order: =5
+      - cntConfirmarCorte:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
           Properties:
-            DataSource: ='CH-Tbl-TransactionBatches'
-            OnSuccess: |-
-              =UpdateContext({varNow: Now(), varScreenSpinnerLabel: "Creando corte..."});
-              UpdateContext({varTransactionBatch: Form1.LastSubmit});
-              UpdateIf(
-                  'CH-Tbl-Transactions',
-                  'Created On' <= varNow && Not(StartsWith('Transaction Batch'.Name,"TB")) && Not(RelatedDepositRecounting.BACLocalCheckAmount > 0 || RelatedDepositRecounting.OtherLocaCheckAmount > 0),
-                  {'Transaction Batch': varTransactionBatch}
-              );
-              Refresh('CH-Tbl-Transactions');
-              Refresh('CH-Tbl-TransactionBatches');
-              UpdateContext({varScreenSpinnerLabel:""});
-            Visible: =false
+            Fill: =RGBA(0, 0, 0, 0.7)
+            Visible: =varConfirmarCorte
             X: =40
             Y: =40
           Children:
-            - Name_DataCard1:
-                Control: TypedDataCard@1.0.7
-                Variant: TextualView
-                IsLocked: true
+            - btnCorteCancelar:
+                Control: ModernButton@1.0.0
                 Properties:
-                  DataField: ="sanic_name"
-                  Default: =ThisItem.Name
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'sanic_name')
-                  Required: =false
-                  Width: =266
-                  X: =0
-                  Y: =0
-                Children:
-                  - DataCardKey1:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldName
-                      Properties:
-                        Height: =22
-                        Text: =Parent.DisplayName
-                        Weight: ='TextCanvas.Weight'.Semibold
-                        Width: =Parent.Width - 48
-                        Wrap: =false
-                        X: =24
-                        Y: =10
-                  - DataCardValue1:
-                      Control: TextInput@0.0.54
-                      MetadataKey: FieldValue
-                      Properties:
-                        AccessibleLabel: =Parent.DisplayName
-                        DisplayMode: =DisplayMode.View
-                        Mode: ="'TextInputCanvas.Mode'.TextInputModeSingleLine"
-                        Required: =Parent.Required
-                        ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                        Value: =Parent.Default
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardKey1.Y + DataCardKey1.Height + 4
-            - BatchStatus_DataCard1:
-                Control: TypedDataCard@1.0.7
-                Variant: ComboBoxOptionSetSingleEdit
-                IsLocked: true
+                  OnSelect: |-
+                    =UpdateContext({varConfirmarCorte: false})
+                  Text: ="Cancelar"
+                  X: =80
+                  Y: =80
+            - btnCorteConfirmar:
+                Control: ModernButton@1.0.0
                 Properties:
-                  DataField: ="sanic_batchstatus"
-                  Default: =ThisItem.BatchStatus
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'sanic_batchstatus')
-                  Required: =false
-                  Update: =DataCardValue2.Selected.Value
-                  Width: =266
-                  X: =1
-                  Y: =0
-                Children:
-                  - DataCardKey2:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldName
-                      Properties:
-                        Height: =22
-                        Text: =Parent.DisplayName
-                        Weight: ='TextCanvas.Weight'.Semibold
-                        Width: =Parent.Width - 48
-                        Wrap: =false
-                        X: =24
-                        Y: =10
-                  - DataCardValue2:
-                      Control: ComboBox@0.0.51
-                      MetadataKey: FieldValue
-                      Properties:
-                        AccessibleLabel: =Parent.DisplayName
-                        DefaultSelectedItems: =[Parent.Default]
-                        DisplayMode: =Parent.DisplayMode
-                        Items: =Choices('BatchStatus (CH-Tbl-TransactionBatches)')
-                        Required: =Parent.Required
-                        ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardKey2.Y + DataCardKey2.Height + 4
-                  - ErrorMessage1:
-                      Control: Text@0.0.51
-                      MetadataKey: ErrorMessage
-                      Properties:
-                        Height: =30
-                        Text: =Parent.Error
-                        Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardValue2.Y + DataCardValue2.Height
-                  - StarVisible1:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldRequired
-                      Properties:
-                        Align: ='TextCanvas.Align'.Center
-                        Height: =20
-                        Text: ="*"
-                        Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =30
-                        Y: =DataCardKey2.Y
-            - Status_DataCard1:
-                Control: TypedDataCard@1.0.7
-                Variant: ComboBoxOptionSetSingleEdit
-                IsLocked: true
+                  OnSelect: |-
+                    =UpdateContext({varScreenSpinnerLabel: "Creando corte..."});
+                    IfError(
+                        With({cut: 'CH-Flow-CreateCut'.Run(Text(cmbCajero.Selected.User))},
+                            If(cut.assignedcount > 0,
+                                Notify("Corte creado: lote " & cut.batchname & " con " & Text(cut.assignedcount) & " transacciones", NotificationType.Success),
+                                Notify("No hay transacciones pendientes para el corte", NotificationType.Warning)
+                            )
+                        ),
+                        Notify("Error al crear el corte: " & FirstError.Message, NotificationType.Error)
+                    );
+                    Concurrent(Refresh('CH-Tbl-Transactions'), Refresh('CH-Tbl-TransactionBatches'));
+                    UpdateContext({varScreenSpinnerLabel: ""})
+                  Text: ="Sí, generar corte"
+                  X: =60
+                  Y: =60
+            - Label1:
+                Control: Label@2.5.1
                 Properties:
-                  DataField: ="statecode"
-                  Default: =ThisItem.Status
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'statecode')
-                  Required: =false
-                  Update: =DataCardValue3.Selected.Value
-                  Width: =266
-                  X: =2
-                  Y: =0
-                Children:
-                  - DataCardKey3:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldName
-                      Properties:
-                        Height: =22
-                        Text: =Parent.DisplayName
-                        Weight: ='TextCanvas.Weight'.Semibold
-                        Width: =Parent.Width - 48
-                        Wrap: =false
-                        X: =24
-                        Y: =10
-                  - DataCardValue3:
-                      Control: ComboBox@0.0.51
-                      MetadataKey: FieldValue
-                      Properties:
-                        AccessibleLabel: =Parent.DisplayName
-                        DefaultSelectedItems: =[Parent.Default]
-                        DisplayMode: =Parent.DisplayMode
-                        Items: =Choices('Status (CH-Tbl-TransactionBatches)')
-                        Required: =Parent.Required
-                        ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardKey3.Y + DataCardKey3.Height + 4
-                  - ErrorMessage2:
-                      Control: Text@0.0.51
-                      MetadataKey: ErrorMessage
-                      Properties:
-                        Height: =30
-                        Text: =Parent.Error
-                        Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardValue3.Y + DataCardValue3.Height
-                  - StarVisible2:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldRequired
-                      Properties:
-                        Align: ='TextCanvas.Align'.Center
-                        Height: =20
-                        Text: ="*"
-                        Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =30
-                        Y: =DataCardKey3.Y
-            - Status Reason_DataCard1:
-                Control: TypedDataCard@1.0.7
-                Variant: ComboBoxOptionSetSingleEdit
-                IsLocked: true
-                Properties:
-                  DataField: ="statuscode"
-                  Default: =ThisItem.'Status Reason'
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'statuscode')
-                  Required: =false
-                  Update: =DataCardValue4.Selected.Value
-                  Width: =266
-                  X: =0
-                  Y: =1
-                Children:
-                  - DataCardKey4:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldName
-                      Properties:
-                        Height: =22
-                        Text: =Parent.DisplayName
-                        Weight: ='TextCanvas.Weight'.Semibold
-                        Width: =Parent.Width - 48
-                        Wrap: =false
-                        X: =24
-                        Y: =10
-                  - DataCardValue4:
-                      Control: ComboBox@0.0.51
-                      MetadataKey: FieldValue
-                      Properties:
-                        AccessibleLabel: =Parent.DisplayName
-                        DefaultSelectedItems: =[Parent.Default]
-                        DisplayMode: =Parent.DisplayMode
-                        Items: =Choices('Status Reason (CH-Tbl-TransactionBatches)')
-                        Required: =Parent.Required
-                        ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardKey4.Y + DataCardKey4.Height + 4
-                  - ErrorMessage3:
-                      Control: Text@0.0.51
-                      MetadataKey: ErrorMessage
-                      Properties:
-                        Height: =30
-                        Text: =Parent.Error
-                        Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardValue4.Y + DataCardValue4.Height
-                  - StarVisible3:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldRequired
-                      Properties:
-                        Align: ='TextCanvas.Align'.Center
-                        Height: =20
-                        Text: ="*"
-                        Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =30
-                        Y: =DataCardKey4.Y
-            - Comentarios_DataCard1:
-                Control: TypedDataCard@1.0.7
-                Variant: TextualEdit
-                IsLocked: true
-                Properties:
-                  DataField: ="sanic_comentarios"
-                  Default: =ThisItem.Comentarios
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'sanic_comentarios')
-                  MaxLength: =DataSourceInfo([@'CH-Tbl-TransactionBatches'], DataSourceInfo.MaxLength, 'sanic_comentarios')
-                  Required: =false
-                  Update: =DataCardValue5.Value
-                  Width: =266
-                  X: =1
-                  Y: =1
-                Children:
-                  - DataCardKey5:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldName
-                      Properties:
-                        Height: =22
-                        Text: =Parent.DisplayName
-                        Weight: ='TextCanvas.Weight'.Semibold
-                        Width: =Parent.Width - 48
-                        Wrap: =false
-                        X: =24
-                        Y: =10
-                  - DataCardValue5:
-                      Control: TextInput@0.0.54
-                      MetadataKey: FieldValue
-                      Properties:
-                        AccessibleLabel: =Parent.DisplayName
-                        DisplayMode: =Parent.DisplayMode
-                        Mode: ="'TextInputCanvas.Mode'.TextInputModeSingleLine"
-                        Required: =Parent.Required
-                        ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                        Value: =Parent.Default
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardKey5.Y + DataCardKey5.Height + 4
-                  - ErrorMessage4:
-                      Control: Text@0.0.51
-                      MetadataKey: ErrorMessage
-                      Properties:
-                        Height: =30
-                        Text: =Parent.Error
-                        Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardValue5.Y + DataCardValue5.Height
-                  - StarVisible4:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldRequired
-                      Properties:
-                        Align: ='TextCanvas.Align'.Center
-                        Height: =30
-                        Text: ="*"
-                        Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =30
-                        Y: =DataCardKey5.Y
-            - Import Sequence Number_DataCard1:
-                Control: TypedDataCard@1.0.7
-                Variant: NumberEdit
-                IsLocked: true
-                Properties:
-                  DataField: ="importsequencenumber"
-                  Default: =ThisItem.'Import Sequence Number'
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'importsequencenumber')
-                  Required: =false
-                  Update: =Value(DataCardValue6.Value)
-                  Width: =266
-                  X: =2
-                  Y: =1
-                Children:
-                  - DataCardKey6:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldName
-                      Properties:
-                        Height: =22
-                        Text: =Parent.DisplayName
-                        Weight: ='TextCanvas.Weight'.Semibold
-                        Width: =Parent.Width - 48
-                        Wrap: =false
-                        X: =24
-                        Y: =10
-                  - DataCardValue6:
-                      Control: NumberInput@2.9.12
-                      MetadataKey: FieldValue
-                      Properties:
-                        AccessibleLabel: =Parent.DisplayName
-                        DisplayMode: =Parent.DisplayMode
-                        Max: =Blank()
-                        Min: =Blank()
-                        ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                        Value: =Parent.Default
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardKey6.Y + DataCardKey6.Height + 4
-                  - ErrorMessage5:
-                      Control: Text@0.0.51
-                      MetadataKey: ErrorMessage
-                      Properties:
-                        Height: =30
-                        Text: =Parent.Error
-                        Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardValue6.Y + DataCardValue6.Height
-                  - StarVisible5:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldRequired
-                      Properties:
-                        Align: ='TextCanvas.Align'.Center
-                        Height: =30
-                        Text: ="*"
-                        Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =30
-                        Y: =DataCardKey6.Y
-            - Record Created On_DataCard1:
-                Control: TypedDataCard@1.0.7
-                Variant: DateTimeEdit
-                IsLocked: true
-                Properties:
-                  DataField: ="overriddencreatedon"
-                  Default: =ThisItem.'Record Created On'
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'overriddencreatedon')
-                  Required: =false
-                  Update: =If(Not IsBlank(DateValue1.SelectedDate), DateTime(Year(DateValue1.SelectedDate), Month(DateValue1.SelectedDate), Day(DateValue1.SelectedDate), Value(HourValue1.Selected.Value), Value(MinuteValue1.Selected.Value), Second(DateValue1.SelectedDate)))
-                  Width: =266
-                  X: =0
-                  Y: =2
-                Children:
-                  - DataCardKey7:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldName
-                      Properties:
-                        Height: =22
-                        Text: =Parent.DisplayName
-                        Weight: ='TextCanvas.Weight'.Semibold
-                        Width: =Parent.Width - 48
-                        Wrap: =false
-                        X: =24
-                        Y: =10
-                  - DateValue1:
-                      Control: DatePicker@0.0.46
-                      MetadataKey: DateFieldValue
-                      Properties:
-                        AccessibleLabel: =Parent.DisplayName
-                        DisplayMode: =Parent.DisplayMode
-                        SelectedDate: =Parent.Default
-                        ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                        Width: =(Parent.Width - 48) / 2
-                        X: =24
-                        Y: =DataCardKey7.Y + DataCardKey7.Height + 4
-                  - HourValue1:
-                      Control: DropDown@0.0.45
-                      MetadataKey: HourFieldValue
-                      Properties:
-                        AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
-                        DefaultSelectedItems: =[Text(Hour(Parent.Default),"00")]
-                        DisplayMode: =Parent.DisplayMode
-                        Height: =28
-                        Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23"]
-                        Required: =Parent.Required
-                        ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                        Width: =DateValue1.Width / 2 - 10
-                        X: =DateValue1.X + DateValue1.Width + 10
-                        Y: =DateValue1.Y + 1
-                  - Separator1:
-                      Control: Text@0.0.51
-                      MetadataKey: HourMinuteSeparator
-                      Properties:
-                        Align: ='TextCanvas.Align'.Center
-                        Height: =HourValue1.Height
-                        Text: =":"
-                        Width: =10
-                        X: =HourValue1.X + HourValue1.Width
-                        Y: =HourValue1.Y
-                  - MinuteValue1:
-                      Control: DropDown@0.0.45
-                      MetadataKey: MinuteFieldValue
-                      Properties:
-                        AccessibleLabel: =If(Parent.Required, Substitute("{0}. Required.", "{0}", Parent.DisplayName), Parent.DisplayName)
-                        DefaultSelectedItems: =[Text(Minute(Parent.Default),"00")]
-                        DisplayMode: =Parent.DisplayMode
-                        Height: =28
-                        Items: =["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59"]
-                        ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                        Width: =HourValue1.Width
-                        X: =HourValue1.X + HourValue1.Width + Separator1.Width
-                        Y: =HourValue1.Y + 1
-                  - ErrorMessage6:
-                      Control: Text@0.0.51
-                      MetadataKey: ErrorMessage
-                      Properties:
-                        Height: =30
-                        Text: =Parent.Error
-                        Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DateValue1.Y + DateValue1.Height
-                  - StarVisible6:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldRequired
-                      Properties:
-                        Align: ='TextCanvas.Align'.Center
-                        Height: =20
-                        Text: ="*"
-                        Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =30
-                        Y: =DataCardKey7.Y
-            - Time Zone Rule Version Number_DataCard1:
-                Control: TypedDataCard@1.0.7
-                Variant: NumberEdit
-                IsLocked: true
-                Properties:
-                  DataField: ="timezoneruleversionnumber"
-                  Default: =ThisItem.'Time Zone Rule Version Number'
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'timezoneruleversionnumber')
-                  Required: =false
-                  Update: =Value(DataCardValue7.Value)
-                  Width: =266
-                  X: =1
-                  Y: =2
-                Children:
-                  - DataCardKey8:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldName
-                      Properties:
-                        Height: =22
-                        Text: =Parent.DisplayName
-                        Weight: ='TextCanvas.Weight'.Semibold
-                        Width: =Parent.Width - 48
-                        Wrap: =false
-                        X: =24
-                        Y: =10
-                  - DataCardValue7:
-                      Control: NumberInput@2.9.12
-                      MetadataKey: FieldValue
-                      Properties:
-                        AccessibleLabel: =Parent.DisplayName
-                        DisplayMode: =Parent.DisplayMode
-                        Max: =Blank()
-                        Min: =Blank()
-                        ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                        Value: =Parent.Default
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardKey8.Y + DataCardKey8.Height + 4
-                  - ErrorMessage7:
-                      Control: Text@0.0.51
-                      MetadataKey: ErrorMessage
-                      Properties:
-                        Height: =30
-                        Text: =Parent.Error
-                        Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardValue7.Y + DataCardValue7.Height
-                  - StarVisible7:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldRequired
-                      Properties:
-                        Align: ='TextCanvas.Align'.Center
-                        Height: =30
-                        Text: ="*"
-                        Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =30
-                        Y: =DataCardKey8.Y
-            - UTC Conversion Time Zone Code_DataCard1:
-                Control: TypedDataCard@1.0.7
-                Variant: NumberEdit
-                IsLocked: true
-                Properties:
-                  DataField: ="utcconversiontimezonecode"
-                  Default: =ThisItem.'UTC Conversion Time Zone Code'
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-TransactionBatches'],DataSourceInfo.DisplayName,'utcconversiontimezonecode')
-                  Required: =false
-                  Update: =Value(DataCardValue8.Value)
-                  Width: =266
-                  X: =2
-                  Y: =2
-                Children:
-                  - DataCardKey9:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldName
-                      Properties:
-                        Height: =22
-                        Text: =Parent.DisplayName
-                        Weight: ='TextCanvas.Weight'.Semibold
-                        Width: =Parent.Width - 48
-                        Wrap: =false
-                        X: =24
-                        Y: =10
-                  - DataCardValue8:
-                      Control: NumberInput@2.9.12
-                      MetadataKey: FieldValue
-                      Properties:
-                        AccessibleLabel: =Parent.DisplayName
-                        DisplayMode: =Parent.DisplayMode
-                        Max: =Blank()
-                        Min: =Blank()
-                        ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
-                        Value: =Parent.Default
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardKey9.Y + DataCardKey9.Height + 4
-                  - ErrorMessage8:
-                      Control: Text@0.0.51
-                      MetadataKey: ErrorMessage
-                      Properties:
-                        Height: =30
-                        Text: =Parent.Error
-                        Visible: =And(!IsBlank(Parent.Error), Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =Parent.Width - 48
-                        X: =24
-                        Y: =DataCardValue8.Y + DataCardValue8.Height
-                  - StarVisible8:
-                      Control: Text@0.0.51
-                      MetadataKey: FieldRequired
-                      Properties:
-                        Align: ='TextCanvas.Align'.Center
-                        Height: =30
-                        Text: ="*"
-                        Visible: =And(Parent.Required, Parent.DisplayMode=DisplayMode.Edit)
-                        Width: =30
-                        Y: =DataCardKey9.Y
+                  AutoHeight: =true
+                  Color: =RGBA(255, 255, 255, 1)
+                  Text: ="¿Generar corte de " & CountRows(Filter('CH-Tbl-Transactions', TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Batch && BatchStatus = Blank() && TransactionStatus = Blank() && 'Created By'.User = cmbCajero.Selected.User)) & " transacciones de " & cmbCajero.Selected.'Full Name' & "?"
+                  Width: =378
+                  X: =40
+                  Y: =40
       - container ScreenSpinner:
           Control: GroupContainer@1.5.0
           Variant: ManualLayout
@@ -2033,6 +2223,7 @@ Screens:
             - Spinner1:
                 Control: Spinner@1.4.6
                 Properties:
+                  AccessibleLabel: ="Procesando"
                   FontColor: =RGBA(255, 255, 255, 1)
                   Height: =Parent.Height
                   Label: =varScreenSpinnerLabel

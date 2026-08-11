@@ -169,7 +169,7 @@ Screens:
                           ForAll(FluentDetailsList1.SelectedItems As Cheque,
 
                           Patch('CH-Tbl-Checks'
-                          ,LookUp('CH-Tbl-Checks', sanic_chtblchecksid = Cheque.sanic_chtblchecksid)
+                          ,LookUp('CH-Tbl-Checks', 'CH-Tbl-Checks' = Cheque.sanic_chtblchecksid)
                           ,{CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'}
                           )
                           );
@@ -203,7 +203,6 @@ Screens:
                         BasePaletteColor: =RGBA(8, 222, 8, 1)
                         BorderRadius: =10
                         DisplayMode: =If(CountRows(Filter(FluentDetailsList1.SelectedItems, sanic_checkstatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'))>0, DisplayMode.Edit,DisplayMode.Disabled)
-                        Height: =32
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
                         OnSelect: |-
@@ -212,7 +211,7 @@ Screens:
                           ForAll(FluentDetailsList1.SelectedItems As Cheque,
                           If(Cheque.sanic_checkstatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
                           Patch('CH-Tbl-Checks'
-                          ,LookUp('CH-Tbl-Checks', sanic_chtblchecksid = Cheque.sanic_chtblchecksid)
+                          ,LookUp('CH-Tbl-Checks', 'CH-Tbl-Checks' = Cheque.sanic_chtblchecksid)
                           ,{CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'}
                           )
                           )
@@ -623,6 +622,136 @@ Screens:
                                     LayoutMaxWidth: =
                                     Text: =Text(Sum(ThisItem.Bags,sanic_totaleur),"#,###.00")
                                     Width: =140
+                  - FluentDetailsList1:
+                      Control: CodeComponent
+                      ComponentName: cat_PowerCAT.DVFluentDetailsList
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Stretch
+                        FillPortions: =1
+                        Items: =colChecksR
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =16
+                        SelectionType: ='PowerCAT.DVFluentDetailsList.SelectionType'.Multiple
+                        columns_Items: |-
+                          =Table(
+                              {ColName: "sanic_checknumber", ColDisplayName: "Cheque", ColWidth: 110},
+                              {ColName: "sanic_checkamount", ColDisplayName: "Monto", ColWidth: 90},
+                              {ColName: "sanic_checkcurrency", ColDisplayName: "Moneda", ColWidth: 80},
+                              {ColName: "sanic_checkstatus", ColDisplayName: "Estado", ColWidth: 170},
+                              {ColName: "Cliente", ColDisplayName: "Cliente", ColWidth: 150},
+                              {ColName: "BagID", ColDisplayName: "Tula", ColWidth: 100},
+                              {ColName: "createdby", ColDisplayName: "Creado Por", ColWidth: 130},
+                              {ColName: "createdon", ColDisplayName: "Fecha de creacion", ColWidth: 130}
+                          )
+                      Children:
+                        - BagID1:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="BagID"
+                              FieldName: ="BagID"
+                              FieldType: ="s"
+                              Order: =1
+                        - Cliente1:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="Cliente"
+                              FieldName: ="Cliente"
+                              FieldType: ="s"
+                              Order: =2
+                        - createdby3:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="createdby"
+                              FieldName: ="createdby"
+                              FieldType: ="E"
+                              Order: =3
+                        - createdon2:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="createdon"
+                              FieldName: ="createdon"
+                              FieldType: ="d"
+                              Order: =4
+                        - sanic_checkamount1:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="sanic_checkamount"
+                              FieldName: ="sanic_checkamount"
+                              FieldType: ="n"
+                              Order: =5
+                        - sanic_checkcurrency1:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="sanic_checkcurrency"
+                              FieldName: ="sanic_checkcurrency"
+                              FieldType: ="l"
+                              Order: =6
+                        - sanic_checknumber1:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="sanic_checknumber"
+                              FieldName: ="sanic_checknumber"
+                              FieldType: ="s"
+                              Order: =7
+                        - sanic_checkstatus1:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="sanic_checkstatus"
+                              FieldName: ="sanic_checkstatus"
+                              FieldType: ="l"
+                              Order: =8
+                        - sanic_chtblchecksid1:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="sanic_chtblchecksid"
+                              FieldName: ="sanic_chtblchecksid"
+                              FieldType: ="g"
+                              Order: =9
+                        - sanic_senttodigitizationon1:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="sanic_senttodigitizationon"
+                              FieldName: ="sanic_senttodigitizationon"
+                              FieldType: ="d"
+                              Order: =10
+                        - sanic_RelatedReCounterDepositID1:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="sanic_RelatedReCounterDepositID"
+                              FieldName: ="sanic_RelatedReCounterDepositID"
+                              FieldType: ="E"
+                              Order: =11
+                        - sanic_notreceivedon1:
+                            Control: DataField@1.5.0
+                            Variant: textualColumn
+                            IsLocked: true
+                            Properties:
+                              FieldDisplayName: ="sanic_notreceivedon"
+                              FieldName: ="sanic_notreceivedon"
+                              FieldType: ="d"
+                              Order: =12
       - ExpandMenu_5:
           Control: CanvasComponent
           ComponentName: ExpandMenu
