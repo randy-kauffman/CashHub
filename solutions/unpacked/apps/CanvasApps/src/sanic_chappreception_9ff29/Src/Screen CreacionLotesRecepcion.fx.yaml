@@ -10,17 +10,16 @@
         DataSource: ='CH-Tbl-Receptions'
         Height: =2
         Item: =Planilla
-        OnFailure: =
+        OnFailure: |-
+            =UpdateContext({varSubmitTimerStart: false, varSpinnerMessage: "", varShowProgress: false});
+            Notify(
+                "Error al guardar la planilla " & LookUp(colPlanillas, ID = varCurrentRow, Planilla) &
+                ". Corregí y volvé a Guardar: las planillas ya guardadas no se duplican.",
+                NotificationType.Error
+            )
         OnSuccess: |-
             =UpdateContext({varRowIndex: varCurrentRow});
             Patch('CH-Tbl-Receptions', 'form Receptions'.LastSubmit, {ReceptionBatch: varSelectedReceptionBacth});
-            Collect(
-                colPlanillasGuardadas,
-                Filter(
-                    colPlanillas,
-                    ID = varRowIndex
-                )
-            );
             ForAll(
                 Filter(
                     colTulas,
@@ -35,7 +34,14 @@
                         Name: Tula.Numero
                     }
                 )
-            )
+            );
+            Collect(
+                colPlanillasGuardadas,
+                Filter(
+                    colPlanillas,
+                    ID = varRowIndex
+                )
+            );
         UseFluentV9Cards: =true
         Visible: =false
         Width: =0
@@ -225,7 +231,7 @@
             DataField: ="sanic_BranchName"
             Default: =ThisItem.BranchName
             DisplayMode: =Parent.DisplayMode
-            DisplayName: =DataSourceInfo([@'CH-Tbl-Receptions'],DataSourceInfo.DisplayName,'sanic_BranchName')
+            DisplayName: =DataSourceInfo([@'CH-Tbl-Receptions'],DataSourceInfo.DisplayName,BranchName)
             Fill: =RGBA(0, 0, 0, 0)
             Height: =70
             Required: =false
@@ -254,7 +260,7 @@
                 DefaultSelectedItems: =[ LookUp(colPlanillas, ID=varCurrentRow).Sucursal ]
                 DisplayMode: =Parent.DisplayMode
                 Height: =32
-                Items: =Choices([@'CH-Tbl-Receptions'].'sanic_BranchName')
+                Items: =Choices([@'CH-Tbl-Receptions'].BranchName)
                 Required: =Parent.Required
                 ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
                 Width: =Parent.Width - 48
@@ -960,6 +966,7 @@
                 );
                 );
                 UpdateContext({varSoloGuardar: Blank()});
+                UpdateContext({varShowProgress: false});
                 UpdateContext({varSpinnerMessage: ""});
             
                 NewForm(Form1);
@@ -1110,23 +1117,7 @@
                 LayoutMinHeight: =32
                 LayoutMinWidth: =96
                 OnSelect: |-
-                    =/*ForAll(
-                        'gal Planillas'.AllItems As Gal,
-                        UpdateIf(
-                            colPlanillas,
-                            Value(Gal.'lbl IDRegistro'.Text) = ID,
-                            {
-                                Empresa: Gal.'cmb Empresa'.Selected.Value
-                                ,Planilla: Gal.'txtinp Planilla'.Value
-                                ,ChequeNIO: Gal.'numinp ChequeNIO'.Value
-                                ,ChequeUSD: Gal.'numinp ChequeUSD'.Value
-                                ,EfectivoNIO: Gal.'numinp EfectivoNIO'.Value
-                                ,EfectivoUSD: Gal.'numinp EfectivoUSD'.Value
-                            }
-                        )
-                    );*/
-                    
-                    Collect(
+                    =Collect(
                         colPlanillas,
                         {
                             ID: Max(
@@ -2815,6 +2806,7 @@
                         FocusedBorderColor: =RGBA(15, 108, 189, 1)
                         FocusedBorderThickness: =1
                         Font: =Font.Lato
+                        Format: =TextFormat.Number
                         Height: =34
                         HintText: =""
                         HoverBorderColor: =App.Theme.Colors.Darker40
@@ -3581,7 +3573,7 @@
                             
                             RemoveIf(colTulas,ID = varThisRowID && RelatedRowID=varSelectedPlanilla.ID);
                             
-                            UpdateIf(colTulas, ID > varThisRowID, {ID: ID-1});
+                            UpdateIf(colTulas, ID > varThisRowID && RelatedRowID=varSelectedPlanilla.ID, {ID: ID-1});
                             
                             )
                         PaddingBottom: =5

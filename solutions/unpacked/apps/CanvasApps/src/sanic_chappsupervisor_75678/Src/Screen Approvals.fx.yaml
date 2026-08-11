@@ -1052,8 +1052,18 @@
                                         )
                                     ),
                                     "Agregar tula",
-                                    //Do nothing
-                                    Blank(),
+                                    //Denegar el alta: borrar la tula pendiente que Reception creo al pedir el cambio
+                                    With(
+                                        {BagGUID: GUID(ParseJSON(Table1.Selected.RequestResources).BagGUID)
+                                        },
+                                        Remove(
+                                            'CH-Tbl-Bags',
+                                            LookUp(
+                                                'CH-Tbl-Bags',
+                                                'CH-Tbl-Bags' = BagGUID
+                                            )
+                                        )
+                                    ),
                                     "Eliminar tula",
                                     //Do nothing
                                      With(
@@ -1198,22 +1208,18 @@
                                         UpdateContext({varExecuteApproveAction: true});
                                     ),
                                     "Agregar tula",
-                                    //Do nothing
+                                    //Aprobar el alta: materializar la tula pendiente que Reception ya creo (por BagGUID)
                                     With(
                                         {
+                                            BagGUID: GUID(ParseJSON(Table1.Selected.RequestResources).BagGUID),
                                             NewBagID: Text(ParseJSON(Table1.Selected.RequestResources).BagID),
-                                            ReceiptGUID: GUID(ParseJSON(Table1.Selected.RequestResources).ReceiptGUID),
-                                            Receipt: LookUp(
-                                                'CH-Tbl-Receptions',
-                                                'CH-Tbl-Receptions' = GUID(ParseJSON(Table1.Selected.RequestResources).ReceiptGUID)
-                                            ),
                                             ReceptionBatchGUID: GUID(ParseJSON(Table1.Selected.RequestResources).ReceptionBatchGUID)
                                         },
                                         If(
                                             !IsBlank(
                                                 LookUp(
                                                     'CH-Tbl-Bags',
-                                                    ReceptionID.ReceptionBatch.'CH-Tbl-ReceptionBatch' = ReceptionBatchGUID && BagID = NewBagID
+                                                    ReceptionID.ReceptionBatch.'CH-Tbl-ReceptionBatch' = ReceptionBatchGUID && BagID = NewBagID && 'CH-Tbl-Bags' <> BagGUID
                                                 )
                                             ),
                                             Notify(
@@ -1222,14 +1228,11 @@
                                             ),
                                             Patch(
                                                 'CH-Tbl-Bags',
-                                                Defaults('CH-Tbl-Bags'),
+                                                LookUp(
+                                                    'CH-Tbl-Bags',
+                                                    'CH-Tbl-Bags' = BagGUID
+                                                ),
                                                 {
-                                                    Name: NewBagID,
-                                                    BagID: NewBagID,
-                                                    ReceptionID: LookUp(
-                                                        'CH-Tbl-Receptions',
-                                                        'CH-Tbl-Receptions' = ReceiptGUID
-                                                    ),
                                                     BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'
                                                 }
                                             );

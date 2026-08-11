@@ -151,7 +151,7 @@
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
                         LayoutMinWidth: =200
-                        OnChange: =Refresh('CH-Tbl-Receptions')
+                        OnChange: =
                         Underlined: =true
                         Width: =200
                         X: =0
@@ -264,7 +264,7 @@
                                     ItemKey: "MoverABoveda",
                                     ItemDisplayName: "Mover a boveda",
                                     ItemIconName: "Send",
-                                    ItemEnabled: Dropdown1.Selected.Value = 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido
+                                    ItemEnabled: Dropdown1.Selected.Value = 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido && !IsBlank(FluentDetailsList2.Selected)
                                 }
                                 ,{
                                     ItemKey: "Editar",
@@ -292,87 +292,92 @@
                                 ,
                                 "MoverABoveda",
                                 UpdateContext({varSpinnerMessage: "Actualizando estatus..."});
-                                If(
-                                    TabList1.Selected.Value = "Planilla",
-                                    ClearCollect(
-                                        colPlanillasABoveda,
-                                        Filter(
-                                            'CH-Tbl-Receptions',
-                                            ReceptionBatch.'CH-Tbl-ReceptionBatch' = FluentDetailsList2.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
-                                        )
-                                    );
-                                    Clear(colTulasABoveda);
-                                    ForAll(
-                                        colPlanillasABoveda As Planilla,
-                                        Collect(
-                                            colTulasABoveda,
+                                IfError(
+                                    If(
+                                        TabList1.Selected.Value = "Planilla",
+                                        ClearCollect(
+                                            colPlanillasABoveda,
                                             Filter(
-                                                'CH-Tbl-Bags',
-                                                ReceptionID.'CH-Tbl-Receptions' = Planilla.'CH-Tbl-Receptions'
+                                                'CH-Tbl-Receptions',
+                                                ReceptionBatch.'CH-Tbl-ReceptionBatch' = FluentDetailsList2.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
                                             )
-                                        )
-                                    );
-                                    ForAll(
-                                        colTulasABoveda As Tula,
-                                        If(Tula.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en exclusa', 
-                                        Patch(
-                                            'CH-Tbl-Bags',
-                                            Tula,
-                                            {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'}
-                                        ));
-                                    );
-                                    Clear(colTulasABoveda);
-                                    Clear(colPlanillasABoveda);
-                                    Patch(
-                                        'CH-Tbl-ReceptionBatches',
-                                        FluentDetailsList2.Selected.ReceptionBatch,
-                                        {ReceptionStatus: 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda'}
-                                    );
-                                );
-                                If(
-                                    TabList1.Selected.Value = "Lote",
-                                    ClearCollect(
-                                        colPlanillasABoveda,
-                                        Filter(
-                                            'CH-Tbl-Receptions',
-                                            ReceptionBatch.'CH-Tbl-ReceptionBatch' = 'detailList Lote'.Selected.'CH-Tbl-ReceptionBatch'
-                                        )
-                                    );
-                                    Clear(colTulasABoveda);
-                                    ForAll(
-                                        colPlanillasABoveda As Planilla,
-                                        Collect(
-                                            colTulasABoveda,
-                                            Filter(
-                                                'CH-Tbl-Bags',
-                                                ReceptionID.'CH-Tbl-Receptions' = Planilla.'CH-Tbl-Receptions'
+                                        );
+                                        Clear(colTulasABoveda);
+                                        ForAll(
+                                            colPlanillasABoveda As Planilla,
+                                            Collect(
+                                                colTulasABoveda,
+                                                Filter(
+                                                    'CH-Tbl-Bags',
+                                                    ReceptionID.'CH-Tbl-Receptions' = Planilla.'CH-Tbl-Receptions'
+                                                )
                                             )
-                                        )
-                                    );
-                                    ForAll(
-                                        colTulasABoveda As Tula,
-                                        If(Tula.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en exclusa', 
+                                        );
+                                        ForAll(
+                                            colTulasABoveda As Tula,
+                                            If(Tula.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa', 
+                                            Patch(
+                                                'CH-Tbl-Bags',
+                                                Tula,
+                                                {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'}
+                                            ));
+                                        );
+                                        Clear(colTulasABoveda);
+                                        Clear(colPlanillasABoveda);
                                         Patch(
-                                            'CH-Tbl-Bags',
-                                            Tula,
-                                            {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'}
-                                        ));
-                                    );
-                                    Clear(colTulasABoveda);
-                                    Clear(colPlanillasABoveda);
-                                    Patch(
-                                        'CH-Tbl-ReceptionBatches',
-                                        LookUp(
                                             'CH-Tbl-ReceptionBatches',
-                                            'CH-Tbl-ReceptionBatch' = 'detailList Lote'.Selected.'CH-Tbl-ReceptionBatch'
-                                        ),
-                                        {ReceptionStatus: 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda'}
+                                            FluentDetailsList2.Selected.ReceptionBatch,
+                                            {ReceptionStatus: 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda'}
+                                        );
                                     );
+                                    If(
+                                        TabList1.Selected.Value = "Lote",
+                                        ClearCollect(
+                                            colPlanillasABoveda,
+                                            Filter(
+                                                'CH-Tbl-Receptions',
+                                                ReceptionBatch.'CH-Tbl-ReceptionBatch' = 'detailList Lote'.Selected.'CH-Tbl-ReceptionBatch'
+                                            )
+                                        );
+                                        Clear(colTulasABoveda);
+                                        ForAll(
+                                            colPlanillasABoveda As Planilla,
+                                            Collect(
+                                                colTulasABoveda,
+                                                Filter(
+                                                    'CH-Tbl-Bags',
+                                                    ReceptionID.'CH-Tbl-Receptions' = Planilla.'CH-Tbl-Receptions'
+                                                )
+                                            )
+                                        );
+                                        ForAll(
+                                            colTulasABoveda As Tula,
+                                            If(Tula.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa', 
+                                            Patch(
+                                                'CH-Tbl-Bags',
+                                                Tula,
+                                                {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'}
+                                            ));
+                                        );
+                                        Clear(colTulasABoveda);
+                                        Clear(colPlanillasABoveda);
+                                        Patch(
+                                            'CH-Tbl-ReceptionBatches',
+                                            LookUp(
+                                                'CH-Tbl-ReceptionBatches',
+                                                'CH-Tbl-ReceptionBatch' = 'detailList Lote'.Selected.'CH-Tbl-ReceptionBatch'
+                                            ),
+                                            {ReceptionStatus: 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda'}
+                                        );
+                                    );
+                                    Refresh('CH-Tbl-Bags');
+                                    Refresh('CH-Tbl-ReceptionBatches');
+                                    Refresh('CH-Tbl-Receptions');
+                                    UpdateContext({varSpinnerMessage: ""});
+                                    ,
+                                    Notify("Error al mover a bóveda: " & FirstError.Message, NotificationType.Error)
                                 );
-                                Refresh('CH-Tbl-Bags');
-                                Refresh('CH-Tbl-ReceptionBatches');
-                                Refresh('CH-Tbl-Receptions');
-                                UpdateContext({varSpinnerMessage: ""});
+                                UpdateContext({varSpinnerMessage: ""})
                                 ,
                                 "Editar",
                                 Blank();
@@ -661,9 +666,16 @@
                             TabList1.Selected.Value = "Planilla",
                             Filter(
                                 Filter(
-                                    'CH-Tbl-Receptions',
-                                    ReceptionBatch.ReceptionStatus = Dropdown1.Selected.Value
-                                ),
+                            'CH-Tbl-Receptions',
+                            BatchStatus = Switch(
+                                Dropdown1.Selected.Value,
+                                'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', 159460000,
+                                'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      159460001,
+                                'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       159460002,
+                                'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   159460003,
+                                -1
+                            )
+                        ),
                                 (IsBlank(SearchBox1.SearchText) || 
                                 StartsWith(
                                     ReceptionBatch.Name,
@@ -854,19 +866,19 @@
                                         ItemKey: "Eliminar",
                                         ItemDisplayName: "Eliminar",
                                         ItemIconName: "Delete",
-                                        ItemEnabled: !IsBlank(FluentDetailsList3.Selected) && (FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en exclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda') 
+                                        ItemEnabled: !IsBlank(FluentDetailsList3.Selected) && (FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda') 
                                     },
                                     {
                                         ItemKey: "Remapear",
                                         ItemDisplayName: "Remapear",
                                         ItemIconName: "Link",
-                                        ItemEnabled: !IsBlank(FluentDetailsList3.Selected) && (FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en exclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda')
+                                        ItemEnabled: !IsBlank(FluentDetailsList3.Selected) && (FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda')
                                     },
                                     {
                                         ItemKey: "Editar",
                                         ItemDisplayName: "Editar",
                                         ItemIconName: "Edit",
-                                        ItemEnabled: !IsBlank(FluentDetailsList3.Selected) && (FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en exclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda')
+                                        ItemEnabled: !IsBlank(FluentDetailsList3.Selected) && (FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda')
                                     }
                                 )
                         LayoutMaxHeight: =
@@ -880,7 +892,7 @@
                                 UpdateContext({varShowNewTula: true}),
                                 "Eliminar",
                                 If(
-                                    FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en exclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                                    FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
                                     UpdateContext({varShowDeleteTula: true});
                                     ,
                                     Notify("La tula no puede ser eliminada")
@@ -890,14 +902,14 @@
                                 ,
                                 "Remapear",
                                 If(
-                                    FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en exclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                                    FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
                                     UpdateContext({varShowRemapTula: true});
                                     ,
                                     Notify("La tula no puede ser remapeada")
                                 ),
                                 "Editar",
                                 If(
-                                    FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en exclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                                    FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa' || FluentDetailsList3.Selected.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
                                     UpdateContext({varShowEditTula: true});
                                     ,
                                     Notify("La tula no puede ser editada")
@@ -962,7 +974,7 @@
                     LayoutMinWidth: =200
                     OnChange: =false
                     OnSelect: =false
-                    PageSize: =10000
+                    PageSize: =100
                     RaiseOnRowSelectionChangeEvent: =false
                     SelectionAlwaysVisible: =false
                     SelectionType: ="1"
@@ -12628,66 +12640,84 @@
                                         BagStatus: If(
                                             FluentDetailsList2.Selected.ReceptionBatch.ReceptionStatus = 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',
                                             'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
-                                            'BagStatus (CH-Tbl-Bags)'.'Recibida en exclusa'
+                                            'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'
                                         ),
                                         Name: Trim(TextInputCanvas1.Value)
                                     }
                                 );
                                 Reset(TextInputCanvas1);
                                 UpdateContext({varShowNewTula: false}),
-                                Patch(
+                                With(
+                                    {
+                                        nuevaTula: Patch(
+                                            'CH-Tbl-Bags',
+                                            Defaults('CH-Tbl-Bags'),
+                                            {
+                                                Name: TextInputCanvas1.Value,
+                                                BagID: TextInputCanvas1.Value,
+                                                ReceptionID: FluentDetailsList2.Selected,
+                                                BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa'
+                                            }
+                                        )
+                                    },
+                                    Patch(
                                     'CH-Tbl-ApprovalRequests',
                                     Defaults('CH-Tbl-ApprovalRequests'),
-                                    {
-                                        RequestType: "Agregar tula",
-                                        RequestDetails: Concatenate(
-                                            "<p>",
-                                            "Lote de recepcion ",
-                                            FluentDetailsList2.Selected.ReceptionBatch.Name,
-                                            "<br>",
-                                            "Agregar tula ",
-                                            Trim(TextInputCanvas1.Value),
-                                            " a la planilla ",
-                                            FluentDetailsList2.Selected.ReceiptID,
-                                            "</p>"
-                                        ),
-                                        RequestResources: "{" & Concatenate(
-                                            """",
-                                            "ReceiptGUID",
-                                            """",
-                                            ":",
-                                            """",
-                                            FluentDetailsList2.Selected.'CH-Tbl-Receptions',
-                                            """"
-                                        ) & Concatenate(
-                                            ",",
-                                            """",
-                                            "BagID",
-                                            """",
-                                            ":",
-                                            """",
-                                            Trim(TextInputCanvas1.Value),
-                                            """"
-                                        ) & Concatenate(
-                                            ",",
-                                            """",
-                                            "ReceptionBatchGUID",
-                                            """",
-                                            ":",
-                                            """",
-                                            FluentDetailsList2.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch',
-                                            """"
-                                        ) & "}"
-                                    }
+                                        {
+                                            RequestType: "Agregar tula",
+                                            RequestDetails: Concatenate(
+                                                "<p>",
+                                                "Lote de recepcion ",
+                                                FluentDetailsList2.Selected.ReceptionBatch.Name,
+                                                "<br>",
+                                                "Agregar tula ",
+                                                Trim(TextInputCanvas1.Value),
+                                                " a la planilla ",
+                                                FluentDetailsList2.Selected.ReceiptID,
+                                                "</p>"
+                                            ),
+                                            RequestResources: "{" & Concatenate(
+                                                """",
+                                                "ReceiptGUID",
+                                                """",
+                                                ":",
+                                                """",
+                                                FluentDetailsList2.Selected.'CH-Tbl-Receptions',
+                                                """"
+                                            ) & Concatenate(
+                                                ",",
+                                                """",
+                                                "BagID",
+                                                """",
+                                                ":",
+                                                """",
+                                                Trim(TextInputCanvas1.Value),
+                                                """"
+                                            ) & Concatenate(
+                                                ",",
+                                                """",
+                                                "BagGUID",
+                                                """",
+                                                ":",
+                                                """",
+                                                nuevaTula.'CH-Tbl-Bags',
+                                                """"
+                                            ) & Concatenate(
+                                                ",",
+                                                """",
+                                                "ReceptionBatchGUID",
+                                                """",
+                                                ":",
+                                                """",
+                                                FluentDetailsList2.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch',
+                                                """"
+                                            ) & "}"
+                                        }
+                                    );
                                 );
                                 Notify(
                                     "Se creo una gestion de aprobacion para agregar la tula a la planilla",
                                     NotificationType.Information
-                                );
-                                Patch(
-                                    'CH-Tbl-Bags',
-                                    FluentDetailsList3.Selected,
-                                    {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - exclusa'}
                                 );
                             );
                             Reset(TextInputCanvas1);
@@ -12751,12 +12781,10 @@
                     Self.SelectedButton.Label = "Confirmar",
                     If(
                         FluentDetailsList2.Selected.ReceptionBatch.ReceptionStatus = 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso' || FluentDetailsList2.Selected.ReceptionBatch.ReceptionStatus = 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,
-                        Patch(
+                        Remove(
                             'CH-Tbl-Bags',
-                            FluentDetailsList3.Selected,
-                            {ReceptionID: ComboboxCanvas2.Selected}
-                        );
-                        ,
+                            FluentDetailsList3.Selected
+                        ),
                         Patch(
                             'CH-Tbl-ApprovalRequests',
                             Defaults('CH-Tbl-ApprovalRequests'),
@@ -12800,7 +12828,7 @@
                         Patch(
                             'CH-Tbl-Bags',
                             FluentDetailsList3.Selected,
-                            {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - exclusa'}
+                            {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa'}
                         );
                     );
                     UpdateContext({varShowDeleteTula: false});
@@ -12812,7 +12840,7 @@
                     UpdateContext({varShowDeleteTula: false})
                 );
             OnCloseSelect: |-
-                =UpdateContext({varShowNewTula: false})
+                =UpdateContext({varShowDeleteTula: false})
             SubTitle: ="La tula "&FluentDetailsList3.Selected.BagID & " sera marcada para eliminacion, una solicitud de eliminacion sera creada al confirmar."
             Title: ="Confirmacion de eliminacion de tula"
             Width: =Parent.Width
@@ -12885,7 +12913,7 @@
                         Patch(
                             'CH-Tbl-Bags',
                             FluentDetailsList3.Selected,
-                            {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - exclusa'}
+                            {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa'}
                         );
                 
                         
@@ -13156,7 +13184,7 @@
                                         BagStatus: If(
                                             FluentDetailsList2.Selected.ReceptionBatch.ReceptionStatus = 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',
                                             'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
-                                            'BagStatus (CH-Tbl-Bags)'.'Recibida en exclusa'
+                                            'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'
                                         ),
                                         Name: Trim(TextInputCanvas1_2.Value)
                                     }
@@ -13226,7 +13254,7 @@
                                 Patch(
                                     'CH-Tbl-Bags',
                                     FluentDetailsList3.Selected,
-                                    {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - exclusa'}
+                                    {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa'}
                                 );
                             );
                             Reset(TextInputCanvas1_2);
@@ -13240,7 +13268,7 @@
                     UpdateContext({varShowEditTula: false})
                 );
             OnCloseSelect: |-
-                =UpdateContext({varShowNewTula: false})
+                =UpdateContext({varShowEditTula: false})
             SubTitle: |-
                 ="Planilla seleccionada: "&FluentDetailsList2.Selected.ReceiptID& ", lote en estatus: "&FluentDetailsList2.Selected.ReceptionBatch.ReceptionStatus& ", numero de tula actual: "&FluentDetailsList3.Selected.BagID
             Title: ="Editar numero de tula"

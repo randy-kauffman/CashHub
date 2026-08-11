@@ -20,17 +20,16 @@ Screens:
             DataSource: ='CH-Tbl-Receptions'
             Height: =2
             Item: =Planilla
-            OnFailure: =
+            OnFailure: |-
+              =UpdateContext({varSubmitTimerStart: false, varSpinnerMessage: "", varShowProgress: false});
+              Notify(
+                  "Error al guardar la planilla " & LookUp(colPlanillas, ID = varCurrentRow, Planilla) &
+                  ". Corregí y volvé a Guardar: las planillas ya guardadas no se duplican.",
+                  NotificationType.Error
+              )
             OnSuccess: |-
               =UpdateContext({varRowIndex: varCurrentRow});
               Patch('CH-Tbl-Receptions', 'form Receptions'.LastSubmit, {ReceptionBatch: varSelectedReceptionBacth});
-              Collect(
-                  colPlanillasGuardadas,
-                  Filter(
-                      colPlanillas,
-                      ID = varRowIndex
-                  )
-              );
               ForAll(
                   Filter(
                       colTulas,
@@ -45,7 +44,14 @@ Screens:
                           Name: Tula.Numero
                       }
                   )
-              )
+              );
+              Collect(
+                  colPlanillasGuardadas,
+                  Filter(
+                      colPlanillas,
+                      ID = varRowIndex
+                  )
+              );
             Visible: =false
             Width: =0
             X: =1344
@@ -209,7 +215,7 @@ Screens:
                 Properties:
                   DataField: ="sanic_BranchName"
                   Default: =ThisItem.BranchName
-                  DisplayName: =DataSourceInfo([@'CH-Tbl-Receptions'],DataSourceInfo.DisplayName,'sanic_BranchName')
+                  DisplayName: =DataSourceInfo([@'CH-Tbl-Receptions'],DataSourceInfo.DisplayName,BranchName)
                   Required: =false
                   Update: =LookUp(colPlanillas, ID=varCurrentRow).Sucursal
                   X: =0
@@ -233,7 +239,7 @@ Screens:
                         AccessibleLabel: =Parent.DisplayName
                         DefaultSelectedItems: =[ LookUp(colPlanillas, ID=varCurrentRow).Sucursal ]
                         DisplayMode: =Parent.DisplayMode
-                        Items: =Choices([@'CH-Tbl-Receptions'].'sanic_BranchName')
+                        Items: =Choices([@'CH-Tbl-Receptions'].BranchName)
                         Required: =Parent.Required
                         ValidationState: =If(IsBlank(Parent.Error), "None", "Error")
                         Width: =Parent.Width - 48
@@ -724,7 +730,7 @@ Screens:
             Height: =0
             OnSelect: |-
               =UpdateContext({varSpinnerMessage: "", varSubmitTimerStart:false})
-            OnTimerEnd: "=If(\n    CountRows(colPlanillasGuardadas) >= CountRows(colPlanillas),\n    UpdateContext({varSubmitTimerStart: false});\n    If(varSoloGuardar=false || IsBlank(varSoloGuardar),\n        Patch(\n        'CH-Tbl-ReceptionBatches',\n        varSelectedReceptionBacth,\n        {ReceptionStatus: 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido}\n    );\n    Set(\n        varSelectedReceptionBacth,\n        Blank()\n    )\n    );\n    Clear(colTulas);\n    Clear(colPlanillas);\n    Clear(colPlanillasGuardadas);\n    If(varSoloGuardar,\n    ForAll(\n    Filter(\n        'CH-Tbl-Receptions',\n        ReceptionBatch.'CH-Tbl-ReceptionBatch' = varSelectedReceptionBacth.'CH-Tbl-ReceptionBatch'\n    ) As Planilla,\n    Collect(colPlanillas, {\n        ID: Max(\n            colPlanillas,\n            ID\n        ) + 1,\n        Empresa: Planilla.RemitentName,\n        Cliente: Planilla.RemitentClient,\n        Sucursal: Planilla.BranchName,\n        Planilla: Planilla.Name,\n        ChequeNIO: Planilla.NIOCheck,\n        ChequeUSD: Planilla.USDCheck,\n        EfectivoNIO: Planilla.NIOCash,\n        EfectivoUSD: Planilla.USDCash,\n        GUID: GUID(Planilla.'CH-Tbl-Receptions')\n        ,Pagina: Trunc( (Max(\n            colPlanillas,\n            ID\n        ) + 1)/9,0)\n        ,CantTulas: CountRows(Filter('CH-Tbl-Bags', ReceptionID.'CH-Tbl-Receptions' = Planilla.'CH-Tbl-Receptions'))\n    });\n\n    ForAll( Filter(\n                'CH-Tbl-Bags',\n                ReceptionID.'CH-Tbl-Receptions' = Planilla.'CH-Tbl-Receptions'\n            ) As Tula\n            ,\n    Collect(\n        colTulas,\n        \n        {\n            ID: Max(\n            Filter(colTulas, RelatedRowID = Max(colPlanillas,ID)),ID) + 1\n            ,RelatedRowID: Max(colPlanillas,ID)\n            ,Numero: Tula.BagID\n            ,GUID: GUID(Tula.'CH-Tbl-Bags')\n        }\n        )\n        )\n    );\n    );\n    UpdateContext({varSoloGuardar: Blank()});\n    UpdateContext({varSpinnerMessage: \"\"});\n\n    NewForm(Form1);\n);\n"
+            OnTimerEnd: "=If(\n    CountRows(colPlanillasGuardadas) >= CountRows(colPlanillas),\n    UpdateContext({varSubmitTimerStart: false});\n    If(varSoloGuardar=false || IsBlank(varSoloGuardar),\n        Patch(\n        'CH-Tbl-ReceptionBatches',\n        varSelectedReceptionBacth,\n        {ReceptionStatus: 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido}\n    );\n    Set(\n        varSelectedReceptionBacth,\n        Blank()\n    )\n    );\n    Clear(colTulas);\n    Clear(colPlanillas);\n    Clear(colPlanillasGuardadas);\n    If(varSoloGuardar,\n    ForAll(\n    Filter(\n        'CH-Tbl-Receptions',\n        ReceptionBatch.'CH-Tbl-ReceptionBatch' = varSelectedReceptionBacth.'CH-Tbl-ReceptionBatch'\n    ) As Planilla,\n    Collect(colPlanillas, {\n        ID: Max(\n            colPlanillas,\n            ID\n        ) + 1,\n        Empresa: Planilla.RemitentName,\n        Cliente: Planilla.RemitentClient,\n        Sucursal: Planilla.BranchName,\n        Planilla: Planilla.Name,\n        ChequeNIO: Planilla.NIOCheck,\n        ChequeUSD: Planilla.USDCheck,\n        EfectivoNIO: Planilla.NIOCash,\n        EfectivoUSD: Planilla.USDCash,\n        GUID: GUID(Planilla.'CH-Tbl-Receptions')\n        ,Pagina: Trunc( (Max(\n            colPlanillas,\n            ID\n        ) + 1)/9,0)\n        ,CantTulas: CountRows(Filter('CH-Tbl-Bags', ReceptionID.'CH-Tbl-Receptions' = Planilla.'CH-Tbl-Receptions'))\n    });\n\n    ForAll( Filter(\n                'CH-Tbl-Bags',\n                ReceptionID.'CH-Tbl-Receptions' = Planilla.'CH-Tbl-Receptions'\n            ) As Tula\n            ,\n    Collect(\n        colTulas,\n        \n        {\n            ID: Max(\n            Filter(colTulas, RelatedRowID = Max(colPlanillas,ID)),ID) + 1\n            ,RelatedRowID: Max(colPlanillas,ID)\n            ,Numero: Tula.BagID\n            ,GUID: GUID(Tula.'CH-Tbl-Bags')\n        }\n        )\n        )\n    );\n    );\n    UpdateContext({varSoloGuardar: Blank()});\n    UpdateContext({varShowProgress: false});\n    UpdateContext({varSpinnerMessage: \"\"});\n\n    NewForm(Form1);\n);\n"
             OnTimerStart: "=UpdateContext(\n    {\n        varFirstRow: First(\n            SortByColumns(\n                Filter(\n                    colPlanillas,\n                    !(ID in ShowColumns(\n                        colPlanillasGuardadas,\n                        ID\n                    ))\n                ),\n                \"ID\",\n                SortOrder.Ascending\n            )\n        ).ID\n    }\n);\nIf(\n    varCurrentRow <> varFirstRow && !IsBlank(varFirstRow),\n    UpdateContext({varCurrentRow: varFirstRow});\n    ResetForm('form Receptions');\n    If(\n        IsBlank(\n            LookUp(\n                colPlanillas,\n                ID = varCurrentRow\n            ).GUID\n        ),\n        UpdateContext({Planilla: Defaults('CH-Tbl-Receptions')});\n        NewForm('form Receptions'),\n        UpdateContext(\n            {\n                Planilla: LookUp(\n                    'CH-Tbl-Receptions',\n                    'CH-Tbl-Receptions' = LookUp(\n                        colPlanillas,\n                        ID = varCurrentRow\n                    ).GUID\n                )\n            }\n        );\n        EditForm('form Receptions')\n    );\n    SubmitForm('form Receptions');\n    \n)"
             Repeat: =true
             Start: =varSubmitTimerStart
@@ -792,23 +798,7 @@ Screens:
                         LayoutMaxHeight: =
                         LayoutMaxWidth: =
                         OnSelect: |-
-                          =/*ForAll(
-                              'gal Planillas'.AllItems As Gal,
-                              UpdateIf(
-                                  colPlanillas,
-                                  Value(Gal.'lbl IDRegistro'.Text) = ID,
-                                  {
-                                      Empresa: Gal.'cmb Empresa'.Selected.Value
-                                      ,Planilla: Gal.'txtinp Planilla'.Value
-                                      ,ChequeNIO: Gal.'numinp ChequeNIO'.Value
-                                      ,ChequeUSD: Gal.'numinp ChequeUSD'.Value
-                                      ,EfectivoNIO: Gal.'numinp EfectivoNIO'.Value
-                                      ,EfectivoUSD: Gal.'numinp EfectivoUSD'.Value
-                                  }
-                              )
-                          );*/
-
-                          Collect(
+                          =Collect(
                               colPlanillas,
                               {
                                   ID: Max(
@@ -1506,6 +1496,7 @@ Screens:
                                     FocusedBorderColor: =RGBA(15, 108, 189, 1)
                                     FocusedBorderThickness: =1
                                     Font: =Font.Lato
+                                    Format: =TextFormat.Number
                                     Height: =34
                                     RadiusBottomLeft: =2
                                     RadiusBottomRight: =2
@@ -2127,7 +2118,7 @@ Screens:
 
                                       RemoveIf(colTulas,ID = varThisRowID && RelatedRowID=varSelectedPlanilla.ID);
 
-                                      UpdateIf(colTulas, ID > varThisRowID, {ID: ID-1});
+                                      UpdateIf(colTulas, ID > varThisRowID && RelatedRowID=varSelectedPlanilla.ID, {ID: ID-1});
 
                                       )
                                     PaddingBottom: =5

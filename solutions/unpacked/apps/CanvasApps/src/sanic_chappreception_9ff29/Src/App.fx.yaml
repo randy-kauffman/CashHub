@@ -1,5 +1,7 @@
 App As appinfo:
     BackEnabled: =true
+    OnError: |-
+        =Notify("Error: " & FirstError.Message, NotificationType.Error)
     OnStart: |
         =Collect(
             colPlanillas,
