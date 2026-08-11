@@ -1,5 +1,8 @@
 App As appinfo:
     BackEnabled: =true
+    OnError: |-
+        =Trace("CH-App-Digitization error no controlado: " & FirstError.Message, TraceSeverity.Error);
+        Notify("Ocurrió un error inesperado: " & FirstError.Message, NotificationType.Error)
     Theme: =PowerAppsTheme
 
     Host As hostControl.DefaultHostControlVariant:
