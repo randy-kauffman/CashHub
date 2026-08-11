@@ -59,8 +59,11 @@ namespace CashHub.Plugins
 
                 // 1. Lote nuevo con estado Generado explicito, estampado con el cajero
                 //    del corte y con quien lo genero (InitiatingUserId, no el system
-                //    user con el que corre el plugin).
-                var batchId = service.Create(new Entity(Schema.TransactionBatch.LogicalName)
+                //    user con el que corre el plugin). El Create corre COMO EL OPERADOR
+                //    para que createdby tambien refleje a la persona real; el resto de
+                //    las escrituras del corte sigue como sistema.
+                var operatorService = serviceFactory.CreateOrganizationService(context.InitiatingUserId);
+                var batchId = operatorService.Create(new Entity(Schema.TransactionBatch.LogicalName)
                 {
                     [Schema.TransactionBatch.BatchStatus] = new OptionSetValue(TransactionRouting.BatchGenerado),
                     [Schema.TransactionBatch.Cajero] =
