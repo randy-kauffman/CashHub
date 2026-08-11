@@ -168,6 +168,51 @@ namespace CashHub.Plugins
             public const string AadGroupId = "sanic_aadgroupid";
         }
 
+        /// <summary>Lote de recepcion (CH-Tbl-ReceptionBatches).</summary>
+        internal static class ReceptionBatch
+        {
+            public const string LogicalName = "sanic_chtblreceptionbatch";
+            public const string Id = "sanic_chtblreceptionbatchid";
+            public const string ReceptionStatus = "sanic_receptionstatus";
+
+            public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Planilla de recepcion (CH-Tbl-Receptions).</summary>
+        internal static class Reception
+        {
+            public const string LogicalName = "sanic_chtblreceptions";
+            public const string Id = "sanic_chtblreceptionsid";
+            public const string BatchLookup = "sanic_receptionbatch";
+
+            public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Tula (CH-Tbl-Bags).</summary>
+        internal static class Bag
+        {
+            public const string LogicalName = "sanic_chtblbags";
+            public const string Id = "sanic_chtblbagsid";
+            public const string BagStatus = "sanic_bagstatus";
+            public const string BagId = "sanic_bagid";
+            public const string Name = "sanic_name";
+            public const string ReceptionLookup = "sanic_receptionid";
+
+            public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Solicitud de aprobacion de esclusa/recuento (CH-Tbl-ApprovalRequests).</summary>
+        internal static class ApprovalRequest
+        {
+            public const string LogicalName = "sanic_chtblapprovalrequest";
+            public const string Id = "sanic_chtblapprovalrequestid";
+            public const string ApprovalStatus = "sanic_approvalstatus";
+            public const string RequestType = "sanic_requesttype";
+            public const string CreatedBy = "createdby";
+
+            public const string PreImageName = "PreImage";
+        }
+
         /// <summary>Team de Dataverse. Los AAD group teams materializan su membresia en teammembership.</summary>
         internal static class Team
         {
