@@ -221,6 +221,56 @@ namespace CashHub.Plugins
             public const string PreImageName = "PreImage";
         }
 
+        /// <summary>Transaccion (CH-Tbl-Transactions).</summary>
+        internal static class Transaction
+        {
+            public const string LogicalName = "sanic_chtbltransactions";
+            public const string Id = "sanic_chtbltransactionsid";
+            public const string TransactionBatch = "sanic_transactionbatch";
+            public const string RelatedDepositRecounting = "sanic_relateddepositrecounting";
+            public const string AccountNumber = "sanic_accountnumber";
+            public const string TransactionStatus = "sanic_transactionstatus";
+            public const string ProcessingType = "sanic_transactionprocessingtype";
+            public const string BacCheckAmount = "sanic_baclocalcheckamount";
+            public const string OtherCheckAmount = "sanic_otherlocalcheckamount";
+            public const string CreatedOn = "createdon";
+
+            public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Lote de transacciones (CH-Tbl-TransactionBatches).</summary>
+        internal static class TransactionBatch
+        {
+            public const string LogicalName = "sanic_transactionbatches";
+            public const string Id = "sanic_transactionbatchesid";
+            public const string Name = "sanic_name";
+            public const string BatchStatus = "sanic_batchstatus";
+            public const string Comentarios = "sanic_comentarios";
+        }
+
+        /// <summary>Deposito de recuento (CH-Tbl-DepositsRecounting).</summary>
+        internal static class DepositRecounting
+        {
+            public const string LogicalName = "sanic_chtbldepositsrecounting";
+            public const string Id = "sanic_chtbldepositsrecountingid";
+            public const string BacCheckAmount = "sanic_baclocalcheckamount";
+
+            /// <summary>
+            /// OJO: el logical name real tiene un typo de origen ("loca" sin la 'l'
+            /// de "local"). NO corregirlo: asi esta publicado en el ambiente.
+            /// </summary>
+            public const string OtherCheckAmount = "sanic_otherlocacheckamount";
+        }
+
+        /// <summary>Custom API de corte de transacciones a lote (CH-App-Digitization).</summary>
+        internal static class CutApi
+        {
+            public const string MessageName = "sanic_CHCreateTransactionCut";
+            public const string OutBatchId = "BatchId";
+            public const string OutBatchName = "BatchName";
+            public const string OutAssignedCount = "AssignedCount";
+        }
+
         /// <summary>Team de Dataverse. Los AAD group teams materializan su membresia en teammembership.</summary>
         internal static class Team
         {
