@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Registra el recompute de totales materializados del lote (idempotente):
+#   1. pluginassembly  CashHub.Plugins (re-sube el DLL con el tipo nuevo dentro)
+#   2. plugintype      CashHub.Plugins.TransactionBatchTotalsPlugin
+#   3. paso SINCRONO Post-operation (40) Update de sanic_chtbltransactions
+#      filtrado en sanic_transactionbatch, rank 20 (despues del mirror), con
+#      pre-image "PreImage" (sanic_transactionbatch).
+#
+# El plugin recomputa sanic_totalnio/usd/eur del lote viejo y el nuevo via
+# BatchTotalsCalculator (una query FetchXML aggregate por lote). A depth > 1 se
+# corta: las asignaciones masivas del corte ya recomputan una sola vez en
+# CreateTransactionCutPlugin. Las escrituras de totales pasan el guard de
+# transacciones por la regla touchesOnlyTotals.
+#
+# Requiere pp_secrets.env y el assembly compilado en Release.
+# Uso: ./scripts/register-transaction-totals.sh
+# =============================================================================
+set -euo pipefail
+source "${ENV_FILE:-pp_secrets.env}"
+DATAVERSE_URL="${DATAVERSE_URL%$'\r'}"; DATAVERSE_URL="${DATAVERSE_URL%/}"
+PP_TENANT_ID="${PP_TENANT_ID%$'\r'}"; PP_CLIENT_ID="${PP_CLIENT_ID%$'\r'}"; PP_CLIENT_SECRET="${PP_CLIENT_SECRET%$'\r'}"
+
+ASSEMBLY="src/backend/CashHub.Plugins/bin/Release/net462/CashHub.Plugins.dll"
+[ -f "$ASSEMBLY" ] || { echo "Falta $ASSEMBLY — compilar primero (dotnet build -c Release)"; exit 1; }
+
+TOKEN=$(curl -sf -X POST "https://login.microsoftonline.com/${PP_TENANT_ID}/oauth2/v2.0/token" \
+  -d "grant_type=client_credentials&client_id=${PP_CLIENT_ID}&client_secret=${PP_CLIENT_SECRET}&scope=${DATAVERSE_URL}/.default" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+export TOKEN DATAVERSE_URL ASSEMBLY
+
+python3 - <<'PYEOF'
+import base64, json, os, subprocess, urllib.parse
+
+API = os.environ['DATAVERSE_URL'] + '/api/data/v9.2'
+H = ['-H', f"Authorization: Bearer {os.environ['TOKEN']}", '-H', 'Content-Type: application/json',
+     '-H', 'Prefer: return=representation']
+
+def req(method, path, body=None):
+    cmd = ['curl', '-s', *H, '-X', method, API + path]
+    tmp = None
+    if body is not None:
+        import tempfile
+        tmp = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False, encoding='utf-8')
+        json.dump(body, tmp); tmp.close()
+        cmd += ['--data-binary', '@' + tmp.name]
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True).stdout
+    finally:
+        if tmp:
+            os.unlink(tmp.name)
+    d = json.loads(out) if out.strip() else {}
+    if 'error' in d:
+        raise RuntimeError(f"{method} {path}: {d['error'].get('message','')[:300]}")
+    return d
+
+def find(path):
+    return req('GET', path).get('value', [])
+
+def one(entityset, filter_expr, select):
+    rows = find(f"/{entityset}?$select={select}&$filter={urllib.parse.quote(filter_expr)}")
+    if not rows:
+        raise RuntimeError(f"No se encontro {entityset} con filtro: {filter_expr}")
+    return rows[0][select]
+
+def upsert(entityset, filter_expr, body, label, select_id):
+    rows = find(f"/{entityset}?$select={select_id}&$filter={urllib.parse.quote(filter_expr)}")
+    if rows:
+        req('PATCH', f"/{entityset}({rows[0][select_id]})", body)
+        print(f"  actualizado: {label}")
+        return rows[0][select_id]
+    created = req('POST', f"/{entityset}", body)
+    print(f"  creado: {label}")
+    return created[select_id]
+
+content = base64.b64encode(open(os.environ['ASSEMBLY'], 'rb').read()).decode()
+
+asm_id = upsert('pluginassemblies', "name eq 'CashHub.Plugins'", {
+    'name': 'CashHub.Plugins', 'content': content,
+    'isolationmode': 2, 'sourcetype': 0,
+}, 'pluginassembly CashHub.Plugins', 'pluginassemblyid')
+
+type_id = upsert('plugintypes', "typename eq 'CashHub.Plugins.TransactionBatchTotalsPlugin'", {
+    'typename': 'CashHub.Plugins.TransactionBatchTotalsPlugin',
+    'friendlyname': 'CashHub Transaction Batch Totals',
+    'name': 'CashHub.Plugins.TransactionBatchTotalsPlugin',
+    'pluginassemblyid@odata.bind': f"/pluginassemblies({asm_id})",
+}, 'plugintype TransactionBatchTotalsPlugin', 'plugintypeid')
+
+update_id = one('sdkmessages', "name eq 'Update'", 'sdkmessageid')
+flt = one('sdkmessagefilters',
+    f"primaryobjecttypecode eq 'sanic_chtbltransactions' and _sdkmessageid_value eq {update_id}",
+    'sdkmessagefilterid')
+
+name = 'CashHub.BatchTotals: Update de sanic_chtbltransactions'
+step_id = upsert('sdkmessageprocessingsteps', f"name eq '{name}'", {
+    'name': name,
+    'description': 'Recomputa los totales materializados del lote viejo y el nuevo al (des)asignar.',
+    'plugintypeid@odata.bind': f"/plugintypes({type_id})",
+    'sdkmessageid@odata.bind': f"/sdkmessages({update_id})",
+    'sdkmessagefilterid@odata.bind': f"/sdkmessagefilters({flt})",
+    'filteringattributes': 'sanic_transactionbatch',
+    'stage': 40, 'mode': 0, 'rank': 20, 'supporteddeployment': 0,
+    'asyncautodelete': False, 'invocationsource': 0,
+}, name, 'sdkmessageprocessingstepid')
+
+upsert('sdkmessageprocessingstepimages',
+    f"_sdkmessageprocessingstepid_value eq {step_id} and entityalias eq 'PreImage'", {
+    'name': 'PreImage', 'entityalias': 'PreImage',
+    'imagetype': 0, 'messagepropertyname': 'Target',
+    'attributes': 'sanic_transactionbatch',
+    'sdkmessageprocessingstepid@odata.bind': f"/sdkmessageprocessingsteps({step_id})",
+}, f"pre-image de {name}", 'sdkmessageprocessingstepimageid')
+
+print("Registro del recompute de totales completo.")
+PYEOF

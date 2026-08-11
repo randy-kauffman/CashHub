@@ -58,6 +58,16 @@ namespace CashHub.Validation.Security
         }
 
         /// <summary>
+        /// Tipo de proceso al desasignar una transaccion de su lote (regla F3): un
+        /// rechazo del Core la devuelve al circuito Manual — nunca vuelve sola a un
+        /// corte Batch automatico, porque el motivo del rechazo exige gestion humana.
+        /// </summary>
+        public static int ResolveOnUnassign()
+        {
+            return ProcessingManual;
+        }
+
+        /// <summary>
         /// true si la transaccion entra en un corte: proceso Batch, sin lote asignado
         /// y todavia pendiente. Una transaccion Aplicada NUNCA entra a un corte (el
         /// fix del bug de doble aplicacion del UpdateIf client-side).

@@ -234,6 +234,13 @@ namespace CashHub.Plugins
             public const string BacCheckAmount = "sanic_baclocalcheckamount";
             public const string OtherCheckAmount = "sanic_otherlocalcheckamount";
             public const string CreatedOn = "createdon";
+            public const string CashAmount = "sanic_cashamount";
+            public const string Currency = "sanic_currency";
+
+            // Option set global sanic_chchcurrency (verificado contra OptionSets/sanic_chchcurrency.xml).
+            public const int CurrencyNio = 159460000;
+            public const int CurrencyUsd = 159460001;
+            public const int CurrencyEur = 159460002;
 
             /// <summary>Espejo del estado del lote, mantenido por TransactionBatchStatusMirrorPlugin.</summary>
             public const string BatchStatusMirror = "sanic_batchstatus";
@@ -249,6 +256,17 @@ namespace CashHub.Plugins
             public const string Name = "sanic_name";
             public const string BatchStatus = "sanic_batchstatus";
             public const string Comentarios = "sanic_comentarios";
+
+            /// <summary>
+            /// Totales materializados por moneda (decimal 2), recomputados por
+            /// BatchTotalsCalculator desde las transacciones del lote. Existen para
+            /// que las apps muestren totales sin sumar client-side (cap de filas).
+            /// </summary>
+            public const string TotalNio = "sanic_totalnio";
+            public const string TotalUsd = "sanic_totalusd";
+            public const string TotalEur = "sanic_totaleur";
+
+            public const string PreImageName = "PreImage";
         }
 
         /// <summary>Deposito de recuento (CH-Tbl-DepositsRecounting).</summary>

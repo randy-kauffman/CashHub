@@ -109,7 +109,13 @@ namespace CashHub.Plugins
                     return;
                 }
 
-                // 5. El nombre (autonumber TB-{SEQNUM:4}) lo asigna Dataverse: se relee.
+                // 5. Totales materializados del lote: UNA query aggregate al final del
+                //    corte (TransactionBatchTotalsPlugin se corta a depth > 1 para no
+                //    recomputar por cada transaccion asignada). La escritura pasa el
+                //    guard por la regla touchesOnlyTotals.
+                BatchTotalsCalculator.Recompute(service, tracing, batchId);
+
+                // 6. El nombre (autonumber TB-{SEQNUM:4}) lo asigna Dataverse: se relee.
                 var batch = service.Retrieve(
                     Schema.TransactionBatch.LogicalName, batchId,
                     new ColumnSet(Schema.TransactionBatch.Name));

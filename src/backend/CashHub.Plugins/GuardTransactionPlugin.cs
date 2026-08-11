@@ -1,0 +1,363 @@
+using System;
+using CashHub.Validation.Security;
+using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
+
+namespace CashHub.Plugins
+{
+    /// <summary>
+    /// Guard del dominio de digitalizacion: lotes de transacciones y transacciones.
+    ///
+    /// La maquina de estados del lote (Generado -> Ingresado -> Aplicado) vive en
+    /// Power Fx, asi que cualquier usuario con el rol puede, por Web API o Excel,
+    /// retroceder un lote Aplicado, mandarlo al dead-end Aprobado, meter o sacar
+    /// transacciones de un lote cerrado o re-aplicar una transaccion Aplicada. Un
+    /// unico plugin type registrado en pasos sincronos Pre-validation de
+    /// Create/Update de ambas tablas y Delete del lote despacha por entidad y
+    /// mensaje; las reglas viven en el dominio puro (TransactionGuard) y aca solo
+    /// se juntan los insumos (pre-images con fallback de lectura como sistema) y se
+    /// propaga el bloqueo. Las lecturas como sistema son chequeos de seguridad de
+    /// solo lectura, independientes de los privilegios del actor.
+    ///
+    /// NOTA: el CutPlugin corre como sistema a depth 1 y sus escrituras disparan
+    /// este guard a depth 2; sus operaciones CUMPLEN las reglas (asigna
+    /// transacciones pendientes a un lote Generado), asi que NO hay excepcion por
+    /// depth — el guard vale para todos, plugins incluidos.
+    /// </summary>
+    public sealed class GuardTransactionPlugin : IPlugin
+    {
+        public void Execute(IServiceProvider serviceProvider)
+        {
+            var context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+            var serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
+            var tracing = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
+
+            var entity = context.PrimaryEntityName;
+            var message = context.MessageName;
+            tracing.Trace("GuardTransaction: {0} de {1}, actor={2}, depth={3}.",
+                message, entity, context.InitiatingUserId, context.Depth);
+
+            TransactionGuardResult result;
+            try
+            {
+                result = Evaluate(context, serviceFactory, tracing, entity, message);
+            }
+            catch (InvalidPluginExecutionException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("GuardTransaction: error inesperado evaluando {0} de {1}: {2}", message, entity, ex);
+                throw new InvalidPluginExecutionException(
+                    $"GuardTransaction no pudo evaluar {message} de {entity}: {ex.Message}", ex);
+            }
+
+            if (!result.IsAllowed)
+            {
+                tracing.Trace("GuardTransaction: BLOQUEADO — {0}", result.Reason);
+                throw new InvalidPluginExecutionException(result.Reason);
+            }
+
+            tracing.Trace("GuardTransaction: operacion permitida.");
+        }
+
+        private static TransactionGuardResult Evaluate(
+            IPluginExecutionContext context,
+            IOrganizationServiceFactory serviceFactory,
+            ITracingService tracing,
+            string entity,
+            string message)
+        {
+            switch (entity)
+            {
+                case Schema.TransactionBatch.LogicalName:
+                    return EvaluateBatch(context, serviceFactory, tracing, message);
+                case Schema.Transaction.LogicalName:
+                    return EvaluateTransaction(context, serviceFactory, tracing, message);
+                default:
+                    tracing.Trace("GuardTransaction: entidad {0} fuera de alcance, se permite.", entity);
+                    return TransactionGuardResult.Allow();
+            }
+        }
+
+        // ---- Lote ----
+
+        private static TransactionGuardResult EvaluateBatch(
+            IPluginExecutionContext context,
+            IOrganizationServiceFactory serviceFactory,
+            ITracingService tracing,
+            string message)
+        {
+            if (message == "Create")
+            {
+                var target = GetTargetEntity(context);
+                return TransactionGuard.EvaluateBatchCreate(
+                    ReadStatus(target, Schema.TransactionBatch.BatchStatus));
+            }
+
+            if (message == "Delete")
+            {
+                var batchId = GetTargetReference(context).Id;
+                var status = RetrieveBatchStatus(serviceFactory, batchId);
+                var hasTransactions = BatchHasTransactions(serviceFactory, batchId);
+
+                tracing.Trace("GuardTransaction: delete de lote {0} estado={1} conTransacciones={2}.",
+                    batchId, Fmt(status), hasTransactions);
+
+                return TransactionGuard.EvaluateBatchDelete(status, hasTransactions);
+            }
+
+            var update = GetTargetEntity(context);
+
+            // Escrituras del recompute de totales materializados (BatchTotalsCalculator):
+            // infraestructura, no negocio. La plataforma agrega el primary key al
+            // Target de un Update: se ignora.
+            var touchesOnlyTotals = true;
+            foreach (var key in update.Attributes.Keys)
+            {
+                if (key != Schema.TransactionBatch.TotalNio
+                    && key != Schema.TransactionBatch.TotalUsd
+                    && key != Schema.TransactionBatch.TotalEur
+                    && key != Schema.TransactionBatch.Id)
+                {
+                    touchesOnlyTotals = false;
+                    break;
+                }
+            }
+
+            if (touchesOnlyTotals)
+            {
+                tracing.Trace("GuardTransaction: lote {0}, escritura solo de totales, se permite.", update.Id);
+                return TransactionGuard.EvaluateBatchUpdate(null, false, null, touchesOnlyTotals: true);
+            }
+
+            var statusInTarget = update.Contains(Schema.TransactionBatch.BatchStatus);
+            var newStatus = statusInTarget ? ReadStatus(update, Schema.TransactionBatch.BatchStatus) : null;
+            var previousStatus = ResolveBatchPreState(context, serviceFactory, update.Id);
+
+            tracing.Trace("GuardTransaction: lote {0} prev={1} nuevo={2}.",
+                update.Id, Fmt(previousStatus), statusInTarget ? Fmt(newStatus) : "(sin cambio)");
+
+            return TransactionGuard.EvaluateBatchUpdate(previousStatus, statusInTarget, newStatus, touchesOnlyTotals: false);
+        }
+
+        // ---- Transaccion ----
+
+        private static TransactionGuardResult EvaluateTransaction(
+            IPluginExecutionContext context,
+            IOrganizationServiceFactory serviceFactory,
+            ITracingService tracing,
+            string message)
+        {
+            var target = GetTargetEntity(context);
+
+            if (message == "Create")
+            {
+                // Con lote preseteado la asignacion se valida igual que en Update:
+                // lote destino Generado y sin nacer ya Aplicada.
+                var batchInTarget = target.Contains(Schema.Transaction.TransactionBatch);
+                var batchRef = batchInTarget
+                    ? target.GetAttributeValue<EntityReference>(Schema.Transaction.TransactionBatch)
+                    : null;
+                var bornStatus = ReadStatus(target, Schema.Transaction.TransactionStatus);
+                var targetBatchStatus = batchRef == null
+                    ? null
+                    : RetrieveBatchStatus(serviceFactory, batchRef.Id);
+
+                tracing.Trace("GuardTransaction: create de transaccion lote={0} estado-lote={1} status={2}.",
+                    batchRef != null ? batchRef.Id.ToString() : "null", Fmt(targetBatchStatus), Fmt(bornStatus));
+
+                return TransactionGuard.EvaluateTransactionUpdate(
+                    touchesOnlyMirror: false,
+                    statusInTarget: target.Contains(Schema.Transaction.TransactionStatus),
+                    newStatus: bornStatus,
+                    previousStatus: null,
+                    batchInTarget: batchInTarget,
+                    newBatchIsNull: batchRef == null,
+                    currentBatchStatus: null,
+                    targetBatchStatus: targetBatchStatus,
+                    hadBatch: false);
+            }
+
+            // El espejo sanic_batchstatus lo escriben el mirror plugin y su cascada
+            // (metadata derivada, no datos de negocio): si el request no toca nada
+            // mas, pasa sin resolver lotes. El primary key del Target se ignora.
+            var touchesOnlyMirror = true;
+            foreach (var key in target.Attributes.Keys)
+            {
+                if (key != Schema.Transaction.BatchStatusMirror && key != Schema.Transaction.Id)
+                {
+                    touchesOnlyMirror = false;
+                    break;
+                }
+            }
+
+            if (touchesOnlyMirror)
+            {
+                tracing.Trace("GuardTransaction: transaccion {0}, escritura solo del espejo de estado, se permite.", target.Id);
+                return TransactionGuard.EvaluateTransactionUpdate(
+                    true, false, null, null, false, false, null, null, false);
+            }
+
+            var pre = ResolveTransactionPreState(context, serviceFactory, tracing, target.Id);
+
+            var statusInTarget = target.Contains(Schema.Transaction.TransactionStatus);
+            var newStatus = statusInTarget ? ReadStatus(target, Schema.Transaction.TransactionStatus) : null;
+
+            var batchInTargetUpd = target.Contains(Schema.Transaction.TransactionBatch);
+            var newBatchRef = batchInTargetUpd
+                ? target.GetAttributeValue<EntityReference>(Schema.Transaction.TransactionBatch)
+                : null;
+            var newBatchIsNull = batchInTargetUpd && newBatchRef == null;
+
+            // Los estados de lote se leen como sistema SOLO cuando la regla los necesita.
+            int? targetStatus = null;
+            if (batchInTargetUpd && newBatchRef != null)
+            {
+                targetStatus = RetrieveBatchStatus(serviceFactory, newBatchRef.Id);
+            }
+
+            int? currentStatus = null;
+            if (newBatchIsNull && pre.BatchRef != null)
+            {
+                currentStatus = RetrieveBatchStatus(serviceFactory, pre.BatchRef.Id);
+            }
+
+            tracing.Trace(
+                "GuardTransaction: transaccion {0} status-prev={1} status-nuevo={2} lote-previo={3} lote-actual-estado={4} lote-destino-estado={5}.",
+                target.Id, Fmt(pre.Status), statusInTarget ? Fmt(newStatus) : "(sin cambio)",
+                pre.BatchRef != null ? pre.BatchRef.Id.ToString() : "null",
+                Fmt(currentStatus), Fmt(targetStatus));
+
+            return TransactionGuard.EvaluateTransactionUpdate(
+                touchesOnlyMirror: false,
+                statusInTarget: statusInTarget,
+                newStatus: newStatus,
+                previousStatus: pre.Status,
+                batchInTarget: batchInTargetUpd,
+                newBatchIsNull: newBatchIsNull,
+                currentBatchStatus: currentStatus,
+                targetBatchStatus: targetStatus,
+                hadBatch: pre.BatchRef != null);
+        }
+
+        // ---- Resolucion de pre-states (pre-image con fallback de lectura como sistema) ----
+
+        private static int? ResolveBatchPreState(
+            IPluginExecutionContext context,
+            IOrganizationServiceFactory serviceFactory,
+            Guid batchId)
+        {
+            var pre = GetPreImage(context, Schema.TransactionBatch.PreImageName);
+            if (pre != null && pre.Contains(Schema.TransactionBatch.BatchStatus))
+            {
+                return ReadStatus(pre, Schema.TransactionBatch.BatchStatus);
+            }
+
+            return RetrieveBatchStatus(serviceFactory, batchId);
+        }
+
+        /// <summary>
+        /// Estado y lote previos de la transaccion. Si hay pre-image se confia en ella
+        /// (un atributo ausente en la imagen ES null en la base); sin pre-image se lee
+        /// como sistema.
+        /// </summary>
+        private static TransactionPreState ResolveTransactionPreState(
+            IPluginExecutionContext context,
+            IOrganizationServiceFactory serviceFactory,
+            ITracingService tracing,
+            Guid transactionId)
+        {
+            var pre = GetPreImage(context, Schema.Transaction.PreImageName);
+            if (pre != null)
+            {
+                return new TransactionPreState(
+                    ReadStatus(pre, Schema.Transaction.TransactionStatus),
+                    pre.GetAttributeValue<EntityReference>(Schema.Transaction.TransactionBatch));
+            }
+
+            tracing.Trace("GuardTransaction: sin pre-image utilizable, se lee la transaccion como sistema.");
+            var service = serviceFactory.CreateOrganizationService(null);
+            var current = service.Retrieve(
+                Schema.Transaction.LogicalName, transactionId,
+                new ColumnSet(Schema.Transaction.TransactionStatus, Schema.Transaction.TransactionBatch));
+
+            return new TransactionPreState(
+                ReadStatus(current, Schema.Transaction.TransactionStatus),
+                current.GetAttributeValue<EntityReference>(Schema.Transaction.TransactionBatch));
+        }
+
+        private static int? RetrieveBatchStatus(IOrganizationServiceFactory serviceFactory, Guid batchId)
+        {
+            var service = serviceFactory.CreateOrganizationService(null);
+            var batch = service.Retrieve(
+                Schema.TransactionBatch.LogicalName, batchId,
+                new ColumnSet(Schema.TransactionBatch.BatchStatus));
+            return ReadStatus(batch, Schema.TransactionBatch.BatchStatus);
+        }
+
+        /// <summary>true si el lote tiene al menos una transaccion (query top-1 sin columnas).</summary>
+        private static bool BatchHasTransactions(IOrganizationServiceFactory serviceFactory, Guid batchId)
+        {
+            var service = serviceFactory.CreateOrganizationService(null);
+            var query = new QueryExpression(Schema.Transaction.LogicalName)
+            {
+                ColumnSet = new ColumnSet(false),
+                TopCount = 1
+            };
+            query.Criteria.AddCondition(
+                Schema.Transaction.TransactionBatch, ConditionOperator.Equal, batchId);
+
+            return service.RetrieveMultiple(query).Entities.Count > 0;
+        }
+
+        // ---- Helpers ----
+
+        private static Entity GetTargetEntity(IPluginExecutionContext context)
+        {
+            if (!(context.InputParameters.TryGetValue("Target", out var raw) && raw is Entity target))
+            {
+                throw new InvalidPluginExecutionException(
+                    $"GuardTransaction: {context.MessageName} de {context.PrimaryEntityName} sin Target de tipo Entity.");
+            }
+
+            return target;
+        }
+
+        private static EntityReference GetTargetReference(IPluginExecutionContext context)
+        {
+            if (!(context.InputParameters.TryGetValue("Target", out var raw) && raw is EntityReference reference))
+            {
+                throw new InvalidPluginExecutionException(
+                    $"GuardTransaction: {context.MessageName} de {context.PrimaryEntityName} sin Target de tipo EntityReference.");
+            }
+
+            return reference;
+        }
+
+        private static Entity GetPreImage(IPluginExecutionContext context, string name)
+        {
+            return context.PreEntityImages.TryGetValue(name, out var image) ? image : null;
+        }
+
+        private static int? ReadStatus(Entity entity, string attribute)
+        {
+            return entity.GetAttributeValue<OptionSetValue>(attribute)?.Value;
+        }
+
+        private static string Fmt(int? value) => value.HasValue ? value.Value.ToString() : "null";
+
+        private struct TransactionPreState
+        {
+            public TransactionPreState(int? status, EntityReference batchRef)
+            {
+                Status = status;
+                BatchRef = batchRef;
+            }
+
+            public int? Status { get; }
+            public EntityReference BatchRef { get; }
+        }
+    }
+}

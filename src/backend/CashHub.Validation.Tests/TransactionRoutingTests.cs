@@ -103,5 +103,16 @@ namespace CashHub.Validation.Tests
             // Transaccion legada sin tipo resuelto: no se asume Batch.
             Assert.False(IsEligibleForCut(null, hasBatch: false, transactionStatus: null));
         }
+
+        // ---- ResolveOnUnassign: regla F3, rechazo del Core -> circuito manual ----
+
+        [Fact]
+        public void Unassign_RechazoDelCore_VuelveAlCircuitoManual()
+        {
+            // Regla F3: cuando el Core rechaza una transaccion de un lote, la
+            // desasignacion la manda al circuito Manual — nunca vuelve sola a un
+            // corte Batch automatico.
+            Assert.Equal(ProcessingManual, ResolveOnUnassign());
+        }
     }
 }

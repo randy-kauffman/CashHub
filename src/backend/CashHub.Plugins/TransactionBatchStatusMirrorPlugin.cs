@@ -1,4 +1,5 @@
 using System;
+using CashHub.Validation.Security;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 
@@ -125,7 +126,14 @@ namespace CashHub.Plugins
             if (batchRef == null)
             {
                 target[Schema.Transaction.BatchStatusMirror] = null;
-                tracing.Trace("TransactionMirror: transaccion desasignada de lote, espejo en blanco.");
+
+                // Regla F3: un rechazo del Core desasigna la transaccion del lote y la
+                // devuelve al circuito Manual — nunca vuelve sola a un corte Batch
+                // automatico (TransactionRouting.ResolveOnUnassign).
+                target[Schema.Transaction.ProcessingType] =
+                    new OptionSetValue(TransactionRouting.ResolveOnUnassign());
+
+                tracing.Trace("TransactionMirror: transaccion desasignada de lote, espejo en blanco y proceso Manual (F3).");
                 return;
             }
 
