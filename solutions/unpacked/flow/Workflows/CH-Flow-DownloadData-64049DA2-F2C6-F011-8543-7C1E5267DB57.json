@@ -9,6 +9,15 @@
         "api": {
           "name": "shared_onedriveforbusiness"
         }
+      },
+      "shared_commondataserviceforapps_1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
       }
     },
     "definition": {
@@ -36,7 +45,7 @@
               "type": "object",
               "properties": {
                 "text": {
-                  "title": "Input",
+                  "title": "LoteId",
                   "type": "string",
                   "x-ms-dynamically-added": true,
                   "description": "Please enter your input",
@@ -59,13 +68,76 @@
         }
       },
       "actions": {
-        "Compose": {
+        "Listar_transacciones_del_lote": {
           "runAfter": {},
           "metadata": {
-            "operationMetadataId": "dca72b4b-c879-4eb3-b471-13f78dccc052"
+            "operationMetadataId": "4c1a9d0e-77b2-4d5a-9f3c-2b8e6a1d5c40"
           },
-          "type": "Compose",
-          "inputs": "@triggerBody()['text']"
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtbltransactionses",
+              "$select": "sanic_accountnumber,sanic_total,sanic_transactionid,sanic_transactionreference,sanic_currency,sanic_cashamount",
+              "$filter": "_sanic_transactionbatch_value eq @{triggerBody()['text']}"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps_1"
+            },
+            "retryPolicy": {
+              "type": "exponential",
+              "count": 4,
+              "interval": "PT10S"
+            }
+          },
+          "runtimeConfiguration": {
+            "paginationPolicy": {
+              "minimumItemCount": 100000
+            }
+          }
+        },
+        "Select": {
+          "runAfter": {
+            "Listar_transacciones_del_lote": [
+              "Succeeded"
+            ]
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Listar_transacciones_del_lote')?['body/value']",
+            "select": {
+              "TRNCODE": 8004,
+              "CUENTA": "@{formatNumber(coalesce(item()?['sanic_accountnumber'],0),'000000000')}",
+              "MONTOTOTAL": "@{float(formatNumber(coalesce(item()?['sanic_total'],0),'0.00'))}",
+              "REFERENCIA": "@{item()?['sanic_transactionid']}",
+              "DEPOSITANTE": "@{coalesce(item()?['sanic_transactionreference'], item()?['sanic_transactionid'])}",
+              "MONEDA": "@{if(equals(item()?['sanic_currency'],159460000),'COR',if(equals(item()?['sanic_currency'],159460001),'USD',if(equals(item()?['sanic_currency'],159460002),'EUR','')))}",
+              "DEPOSITID": "@{item()?['sanic_transactionid']}",
+              "DISPONIBILIDADINMEDIATA": "0",
+              "EFECTIVO": "@{float(formatNumber(coalesce(item()?['sanic_cashamount'],0),'0.00'))}",
+              "MANIFIESTO": 1,
+              "TIPOID": "0000000000001",
+              "NACIONALIDAD": "0000000000558",
+              "NUMEROID1": "4411001991",
+              "NUMEROID2": "003A"
+            }
+          }
+        },
+        "Create_CSV_table": {
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1762de77-ac8c-4002-8f68-a24ac4eacefb"
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select')",
+            "format": "CSV"
+          }
         },
         "Create_file": {
           "runAfter": {
@@ -80,7 +152,7 @@
           "inputs": {
             "parameters": {
               "folderPath": "/tesoreria/",
-              "name": "@{triggerBody()['text_1']}_@{convertFromUtc(utcNow(),'Central America Standard Time','yyyy-MM-dd hh:mm')}.csv",
+              "name": "@{triggerBody()['text_1']}_@{convertFromUtc(utcNow(),'Central America Standard Time','yyyy-MM-dd_HHmm')}.csv",
               "body": "@body('Create_CSV_table')"
             },
             "host": {
@@ -108,7 +180,7 @@
           "inputs": {
             "parameters": {
               "id": "@outputs('Create_file')?['body/Id']",
-              "type": "Edit",
+              "type": "View",
               "scope": "Organization"
             },
             "host": {
@@ -144,48 +216,6 @@
             "statusCode": 200,
             "body": {
               "archivosalida": "@{\r\nconcat(\r\n  outputs('Create_share_link')?['body/WebUrl'],\r\n  if(\r\n    equals(indexOf(outputs('Create_share_link')?['body/WebUrl'],'?'), -1),\r\n    '?download=1',\r\n    '&download=1'\r\n  )\r\n)\r\n}"
-            }
-          }
-        },
-        "Create_CSV_table": {
-          "runAfter": {
-            "Select": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "1762de77-ac8c-4002-8f68-a24ac4eacefb"
-          },
-          "type": "Table",
-          "inputs": {
-            "from": "@body('Select')",
-            "format": "CSV"
-          }
-        },
-        "Select": {
-          "runAfter": {
-            "Compose": [
-              "Succeeded"
-            ]
-          },
-          "type": "Select",
-          "inputs": {
-            "from": "@JSON(outputs('Compose'))",
-            "select": {
-              "TRNCODE": "@item()?['TRNCODE']",
-              "CUENTA": "@item()?['CUENTA']",
-              "MONTOTOTAL": "@item()?['MONTOTOTAL']",
-              "REFERENCIA": "@item()?['REFERENCIA']",
-              "DEPOSITANTE": "@item()?['DEPOSITANTE']",
-              "MONEDA": "@item()?['MONEDA']",
-              "DEPOSITID": "@item()?['DEPOSITID']",
-              "DISPONIBILIDADINMEDIATA": "@item()?['DISPONIBILIDADINMEDIATA']",
-              "EFECTIVO": "@item()?['EFECTIVO']",
-              "MANIFIESTO": "@item()?['MANIFIESTO']",
-              "TIPOID": "@item()?['TIPOID']",
-              "NACIONALIDAD": "@item()?['NACIONALIDAD']",
-              "NUMEROID1": "@item()?['NUMEROID1']",
-              "NUMEROID2": "@item()?['NUMEROID2']"
             }
           }
         }
