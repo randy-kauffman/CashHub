@@ -1353,7 +1353,7 @@ Screens:
                                     LayoutMinWidth: =16
                                     PaddingLeft: =5
                                     Text: |-
-                                      =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.NIO),CashAmount),"C$ #,###.00")
+                                      =Text(Coalesce(varLoteSelected.TotalNIO, 0), "C$ #,###.00")
                                     VerticalAlign: =VerticalAlign.Middle
                                     Weight: ='TextCanvas.Weight'.Semibold
                                     Width: =200
@@ -1374,7 +1374,7 @@ Screens:
                                     LayoutMinWidth: =16
                                     PaddingLeft: =5
                                     Text: |-
-                                      =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.USD),CashAmount),"U$ #,###.00")
+                                      =Text(Coalesce(varLoteSelected.TotalUSD, 0), "U$ #,###.00")
                                     VerticalAlign: =VerticalAlign.Middle
                                     Weight: ='TextCanvas.Weight'.Semibold
                                     Width: =200
@@ -1395,7 +1395,7 @@ Screens:
                                     LayoutMinWidth: =16
                                     PaddingLeft: =5
                                     Text: |-
-                                      =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.EUR),CashAmount),"€ #,###.00")
+                                      =Text(Coalesce(varLoteSelected.TotalEUR, 0), "€ #,###.00")
                                     VerticalAlign: =VerticalAlign.Middle
                                     Weight: ='TextCanvas.Weight'.Semibold
                                     Width: =200

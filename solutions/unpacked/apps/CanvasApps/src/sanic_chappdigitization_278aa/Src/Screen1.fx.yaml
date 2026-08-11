@@ -2546,7 +2546,7 @@ Screen1 As screen:
                         Size: =14
                         TabIndex: =0
                         Text: |-
-                            =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.NIO),CashAmount),"C$ #,###.00")
+                            =Text(Coalesce(varLoteSelected.TotalNIO, 0), "C$ #,###.00")
                         Tooltip: =""
                         VerticalAlign: =VerticalAlign.Middle
                         Visible: =true
@@ -2610,7 +2610,7 @@ Screen1 As screen:
                         Size: =14
                         TabIndex: =0
                         Text: |-
-                            =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.USD),CashAmount),"U$ #,###.00")
+                            =Text(Coalesce(varLoteSelected.TotalUSD, 0), "U$ #,###.00")
                         Tooltip: =""
                         VerticalAlign: =VerticalAlign.Middle
                         Visible: =true
@@ -2674,7 +2674,7 @@ Screen1 As screen:
                         Size: =14
                         TabIndex: =0
                         Text: |-
-                            =Text(Sum(Filter('CH-Tbl-Transactions','Transaction Batch'.TransactionBatches = varLoteSelected.TransactionBatches, Currency = 'CH-Ch-Currency'.EUR),CashAmount),"€ #,###.00")
+                            =Text(Coalesce(varLoteSelected.TotalEUR, 0), "€ #,###.00")
                         Tooltip: =""
                         VerticalAlign: =VerticalAlign.Middle
                         Visible: =true
