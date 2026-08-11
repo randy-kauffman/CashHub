@@ -74,6 +74,16 @@ namespace CashHub.Plugins
                 tracing.Trace("CreateTransactionCut: lote {0} creado en estado Generado (cajero={1}, generadopor={2}).",
                     batchId, cajeroId, context.InitiatingUserId);
 
+                // 1b. La PROPIEDAD del lote es del cajero: la visibilidad futura por
+                //     profundidad User (cajeros ven solo lo suyo) filtra por owner.
+                //     La reasignacion corre como sistema — el operador no tiene (ni
+                //     necesita) privilegio Assign sobre lotes.
+                service.Update(new Entity(Schema.TransactionBatch.LogicalName, batchId)
+                {
+                    ["ownerid"] = new EntityReference(Schema.SystemUser.LogicalName, cajeroId)
+                });
+                tracing.Trace("CreateTransactionCut: lote {0} asignado en propiedad al cajero {1}.", batchId, cajeroId);
+
                 // 2. Elegibles segun el dominio (TransactionRouting.IsEligibleForCut),
                 //    delegado al servidor: Batch, DEL CAJERO (createdby), sin lote,
                 //    pendientes (una Aplicada NUNCA entra) y creadas hasta el instante
