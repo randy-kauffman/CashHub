@@ -22,6 +22,14 @@ namespace CashHub.Plugins
             public const string Client = "sanic_client";
             public const string SourceEntity = "sanic_sourceentity";
             public const string SourceRecordId = "sanic_sourcerecordid";
+
+            /// <summary>
+            /// Vinculo real al correo (B1). SourceRecordId se conserva por la tabla
+            /// generica, pero un GUID en texto no delega: el tracker resuelve
+            /// tracking → declaracion con este lookup (mismo racional que
+            /// Run.ReceivedEmailLookup, documentado en Schema.cs).
+            /// </summary>
+            public const string ReceivedEmail = "sanic_receivedemail";
         }
 
         private static class Bag
@@ -49,6 +57,10 @@ namespace CashHub.Plugins
             public const string Total = "sanic_total";
             public const string Reference = "sanic_depositreference";
             public const string DeclaredBag = "sanic_declaredbag";
+
+            /// <summary>Denormalizacion a la declaracion raiz (B7): la pantalla Correo del
+            /// tracker llena sus grillas con UNA query delegable por tabla.</summary>
+            public const string Declaration = "sanic_declaration";
         }
 
         private static class Check
@@ -60,6 +72,9 @@ namespace CashHub.Plugins
             public const string Currency = "sanic_checkcurrency";
             public const string Type = "sanic_checktype";
             public const string DeclaredDeposit = "sanic_declareddepositid";
+
+            /// <summary>Denormalizacion a la declaracion raiz (B7).</summary>
+            public const string Declaration = "sanic_declaration";
         }
 
         private static readonly Dictionary<string, int> CurrencyMap =
@@ -95,13 +110,14 @@ namespace CashHub.Plugins
                 [Decl.Name] = $"Declaracion {DateTime.UtcNow:yyyy-MM-dd HH:mm} correo {emailId:D}",
                 [Decl.Client] = new EntityReference("sanic_chtblclient", clientId),
                 [Decl.SourceEntity] = Schema.ReceivedEmail.LogicalName,
-                [Decl.SourceRecordId] = emailId.ToString("D")
+                [Decl.SourceRecordId] = emailId.ToString("D"),
+                [Decl.ReceivedEmail] = new EntityReference(Schema.ReceivedEmail.LogicalName, emailId)
             });
             _tracing.Trace("Materializer: Declaration creada {0}", declarationId);
 
             var bagIds = CreateBags(declarationId, deposits);
-            var depositIds = CreateDeposits(emailId, deposits, bagIds);
-            CreateChecks(emailId, checks, depositIds);
+            var depositIds = CreateDeposits(emailId, declarationId, deposits, bagIds);
+            CreateChecks(emailId, declarationId, checks, depositIds);
 
             _tracing.Trace("Materializer: completo — {0} bolsas, {1} depositos, {2} cheques.",
                 bagIds.Count, depositIds.Count, checks.Rows.Count);
@@ -137,8 +153,8 @@ namespace CashHub.Plugins
             return bagIds;
         }
 
-        private Dictionary<string, Guid> CreateDeposits(Guid emailId, TableModel deposits,
-            Dictionary<string, Guid> bagIds)
+        private Dictionary<string, Guid> CreateDeposits(Guid emailId, Guid declarationId,
+            TableModel deposits, Dictionary<string, Guid> bagIds)
         {
             var depositIds = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
             foreach (var row in deposits.Rows)
@@ -166,7 +182,8 @@ namespace CashHub.Plugins
                     [Deposit.Total] = ReadDecimal(row, Deposits.Total),
                     [Deposit.Reference] = row[Deposits.Reference]?.Raw,
                     [Deposit.DeclaredBag] = new EntityReference(Bag.Entity,
-                        bagIds[row[Deposits.BagNo]!.Raw!.Trim()])
+                        bagIds[row[Deposits.BagNo]!.Raw!.Trim()]),
+                    [Deposit.Declaration] = new EntityReference(Decl.Entity, declarationId)
                 };
                 var id = _service.Create(deposit);
                 depositIds[depositNo] = id;
@@ -176,7 +193,8 @@ namespace CashHub.Plugins
             return depositIds;
         }
 
-        private void CreateChecks(Guid emailId, TableModel checks, Dictionary<string, Guid> depositIds)
+        private void CreateChecks(Guid emailId, Guid declarationId, TableModel checks,
+            Dictionary<string, Guid> depositIds)
         {
             foreach (var row in checks.Rows)
             {
@@ -200,7 +218,8 @@ namespace CashHub.Plugins
                     [Check.Amount] = ReadDecimal(row, Checks.Amount),
                     [Check.Currency] = MapCurrency(emailId, row[Checks.Currency]!.Raw!, row.RowNumber),
                     [Check.Type] = new OptionSetValue(type),
-                    [Check.DeclaredDeposit] = new EntityReference(Deposit.Entity, depositId)
+                    [Check.DeclaredDeposit] = new EntityReference(Deposit.Entity, depositId),
+                    [Check.Declaration] = new EntityReference(Decl.Entity, declarationId)
                 });
                 _tracing.Trace("Materializer: DeclaredCheck {0} (deposito {1}) -> {2}",
                     row[Checks.CheckNo]!.Raw, depositNo, id);

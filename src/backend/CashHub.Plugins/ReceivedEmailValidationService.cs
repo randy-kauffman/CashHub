@@ -257,14 +257,21 @@ namespace CashHub.Plugins
             {
                 if (execution.Outcome == RuleOutcome.Skipped)
                 {
-                    continue; // las omitidas por dependencia no ensucian el reporte
+                    // B2: las omitidas por dependencia SI se persisten (Omitida):
+                    // el tracker muestra el cuadro completo de las 28 reglas y por
+                    // que cada una no corrio (la madre que fallo va en la nota).
+                    CreateResult(runId, ruleIdsByKey, execution, Schema.Result.OutcomeOmitida,
+                        name: $"{execution.Definition.Key} Omitida",
+                        detail: execution.EngineNote,
+                        sheet: null, cell: null, row: null);
+                    continue;
                 }
 
                 if (execution.Outcome == RuleOutcome.Fail)
                 {
                     foreach (var finding in execution.Findings)
                     {
-                        CreateResult(runId, ruleIdsByKey, execution, fail: true,
+                        CreateResult(runId, ruleIdsByKey, execution, Schema.Result.OutcomeFail,
                             name: $"{execution.Definition.Key} FAIL",
                             detail: finding.RenderedMessage,
                             sheet: finding.Sheet, cell: finding.CellRef, row: finding.RowNumber);
@@ -272,8 +279,10 @@ namespace CashHub.Plugins
                 }
                 else
                 {
-                    var fail = execution.Outcome != RuleOutcome.Pass;
-                    CreateResult(runId, ruleIdsByKey, execution, fail,
+                    var outcome = execution.Outcome == RuleOutcome.Pass
+                        ? Schema.Result.OutcomePass
+                        : Schema.Result.OutcomeFail;
+                    CreateResult(runId, ruleIdsByKey, execution, outcome,
                         name: $"{execution.Definition.Key} {execution.Outcome}",
                         detail: execution.EngineNote,
                         sheet: null, cell: null, row: null);
@@ -284,14 +293,14 @@ namespace CashHub.Plugins
         }
 
         private void CreateResult(Guid runId, Dictionary<string, Guid> ruleIdsByKey,
-            RuleExecution execution, bool fail, string name, string detail,
+            RuleExecution execution, int outcome, string name, string detail,
             string sheet, string cell, int? row)
         {
             var entity = new Entity(Schema.Result.LogicalName)
             {
                 [Schema.Result.Name] = name,
                 [Schema.Result.RunLookup] = new EntityReference(Schema.Run.LogicalName, runId),
-                [Schema.Result.Outcome] = new OptionSetValue(fail ? Schema.Result.OutcomeFail : Schema.Result.OutcomePass),
+                [Schema.Result.Outcome] = new OptionSetValue(outcome),
                 [Schema.Result.DurationMs] = (int)execution.DurationMs,
                 [Schema.Result.SourceType] = new OptionSetValue(Schema.Run.SourceSharedMailbox)
             };

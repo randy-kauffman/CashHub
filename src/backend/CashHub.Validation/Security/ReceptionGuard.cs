@@ -79,8 +79,19 @@ namespace CashHub.Validation.Security
         /// <param name="previousStatus">Estado previo (null si el registro legado no tiene).</param>
         /// <param name="statusInTarget">true si el request escribe sanic_receptionstatus.</param>
         /// <param name="newStatus">Estado destino cuando <paramref name="statusInTarget"/>.</param>
-        public static ReceptionGuardResult EvaluateBatchUpdate(int? previousStatus, bool statusInTarget, int? newStatus)
+        public static ReceptionGuardResult EvaluateBatchUpdate(
+            int? previousStatus, bool statusInTarget, int? newStatus,
+            bool touchesOnlyTotals = false)
         {
+            if (touchesOnlyTotals)
+            {
+                // Escritura SOLO de los totales declarados materializados
+                // (ReceptionBatchTotalsPlugin/backfill): metadata derivada, no una
+                // edicion de negocio — pasa aun con el lote en boveda. Mismo
+                // racional que touchesOnlyTotals del lote TB.
+                return ReceptionGuardResult.Allow();
+            }
+
             if (previousStatus == null)
             {
                 return ReceptionGuardResult.Allow();

@@ -275,6 +275,25 @@ namespace CashHub.Plugins
                 return CheckGuard.EvaluateCheckCreate(bornStatus);
             }
 
+            // Escritura SOLO del espejo sanic_bag (CheckMirrorStampPlugin/backfill):
+            // infraestructura, no negocio. La plataforma agrega el primary key al
+            // Target de un Update: se ignora.
+            var touchesOnlyMirror = true;
+            foreach (var key in target.Attributes.Keys)
+            {
+                if (key != Schema.Check.BagLookup && key != Schema.Check.Id)
+                {
+                    touchesOnlyMirror = false;
+                    break;
+                }
+            }
+
+            if (touchesOnlyMirror)
+            {
+                tracing.Trace("GuardTransaction: cheque {0}, escritura solo del espejo, se permite.", target.Id);
+                return CheckGuard.EvaluateCheckUpdate(null, false, null, touchesOnlyMirror: true);
+            }
+
             var statusInTarget = target.Contains(Schema.Check.CheckStatus);
             var newStatus = statusInTarget ? ReadStatus(target, Schema.Check.CheckStatus) : null;
             var previousStatus = ResolveCheckPreState(context, serviceFactory, tracing, target.Id);

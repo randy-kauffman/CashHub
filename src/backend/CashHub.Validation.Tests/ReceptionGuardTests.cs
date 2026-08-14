@@ -72,6 +72,16 @@ namespace CashHub.Validation.Tests
         }
 
         [Fact]
+        public void BatchUpdate_SoloTotalesDeclarados_IsAllowedInclusoEnBoveda()
+        {
+            // Los DecNIO*/DecUSD* son metadata derivada (ReceptionBatchTotalsPlugin
+            // y backfill): mismo racional que touchesOnlyTotals del lote TB. El
+            // congelamiento de boveda es para manos humanas, no para el espejo.
+            var result = EvaluateBatchUpdate(BatchEnBoveda, false, null, touchesOnlyTotals: true);
+            Assert.True(result.IsAllowed);
+        }
+
+        [Fact]
         public void BatchUpdate_CamposDeUnLoteAbierto_IsAllowed()
         {
             Assert.True(EvaluateBatchUpdate(BatchEnProgreso, false, null).IsAllowed);

@@ -58,11 +58,22 @@ namespace CashHub.Validation.Security
         /// <param name="previousStatus">Estado previo del cheque (null si no tiene).</param>
         /// <param name="statusInTarget">true si el request escribe sanic_checkstatus.</param>
         /// <param name="newStatus">Estado destino cuando <paramref name="statusInTarget"/>.</param>
+        /// <param name="touchesOnlyMirror">
+        /// true si el request escribe SOLO el espejo sanic_bag (CheckMirrorStampPlugin
+        /// o backfill). Es metadata derivada, no una edicion de negocio: pasa aun con
+        /// el cheque congelado — mismo racional que touchesOnlyTotals del lote TB.
+        /// </param>
         public static TransactionGuardResult EvaluateCheckUpdate(
             int? previousStatus,
             bool statusInTarget,
-            int? newStatus)
+            int? newStatus,
+            bool touchesOnlyMirror = false)
         {
+            if (touchesOnlyMirror)
+            {
+                return TransactionGuardResult.Allow();
+            }
+
             if (previousStatus == Recibido)
             {
                 return TransactionGuardResult.Block(

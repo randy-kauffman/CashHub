@@ -100,6 +100,32 @@ namespace CashHub.Plugins
             }
 
             var update = GetTargetEntity(context);
+
+            // Escritura SOLO de totales declarados materializados
+            // (ReceptionBatchTotalsPlugin/backfill): infraestructura, no negocio.
+            // La plataforma agrega el primary key al Target de un Update: se ignora.
+            var touchesOnlyTotals = true;
+            foreach (var key in update.Attributes.Keys)
+            {
+                if (key != Schema.ReceptionBatch.DecNioCash
+                    && key != Schema.ReceptionBatch.DecNioCheck
+                    && key != Schema.ReceptionBatch.DecNioTotal
+                    && key != Schema.ReceptionBatch.DecUsdCash
+                    && key != Schema.ReceptionBatch.DecUsdCheck
+                    && key != Schema.ReceptionBatch.DecUsdTotal
+                    && key != Schema.ReceptionBatch.Id)
+                {
+                    touchesOnlyTotals = false;
+                    break;
+                }
+            }
+
+            if (touchesOnlyTotals)
+            {
+                tracing.Trace("GuardReception: lote {0}, escritura solo de totales declarados, se permite.", update.Id);
+                return ReceptionGuard.EvaluateBatchUpdate(null, false, null, touchesOnlyTotals: true);
+            }
+
             var statusInTarget = update.Contains(Schema.ReceptionBatch.ReceptionStatus);
             var newStatus = statusInTarget ? ReadStatus(update, Schema.ReceptionBatch.ReceptionStatus) : null;
             var previousStatus = ResolveBatchPreState(context, serviceFactory, tracing, update.Id);

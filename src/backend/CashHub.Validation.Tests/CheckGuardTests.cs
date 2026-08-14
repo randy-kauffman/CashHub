@@ -154,5 +154,24 @@ namespace CashHub.Validation.Tests
             // (salvo el congelamiento de Recibido, cubierto arriba).
             Assert.True(EvaluateCheckUpdate(previous, statusInTarget: false, newStatus: null).IsAllowed);
         }
+
+        // ---- Update: escritura SOLO del espejo (sanic_bag, infraestructura) ----
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData(Recontado)]
+        [InlineData(EnviadoADigitacion)]
+        [InlineData(Recibido)]  // el espejo pasa AUN con el cheque congelado
+        [InlineData(Digitado)]
+        [InlineData(Rebotado)]
+        public void CheckUpdate_SoloEspejo_IsAllowedInclusoCongelado(int? previous)
+        {
+            // Mismo racional que touchesOnlyTotals del lote TB: el espejo
+            // sanic_bag es metadata derivada (CheckMirrorStampPlugin/backfill),
+            // no una edicion de negocio — el congelamiento no aplica.
+            var result = EvaluateCheckUpdate(previous, statusInTarget: false,
+                newStatus: null, touchesOnlyMirror: true);
+            Assert.True(result.IsAllowed);
+        }
     }
 }

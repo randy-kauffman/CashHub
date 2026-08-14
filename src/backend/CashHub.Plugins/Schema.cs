@@ -108,6 +108,13 @@ namespace CashHub.Plugins
 
             public const int OutcomePass = 159460000;
             public const int OutcomeFail = 159460001;
+
+            /// <summary>
+            /// Regla omitida por dependencia (la madre fallo). Antes los Skipped no
+            /// se persistian y el tracker no podia mostrar el cuadro completo de las
+            /// 28 reglas; el valor se agrego al option set junto con este codigo.
+            /// </summary>
+            public const int OutcomeOmitida = 159460002;
         }
 
         internal static class ClientEmail
@@ -175,6 +182,19 @@ namespace CashHub.Plugins
             public const string Id = "sanic_chtblreceptionbatchid";
             public const string ReceptionStatus = "sanic_receptionstatus";
 
+            /// <summary>
+            /// Totales DECLARADOS del lote, materializados por
+            /// ReceptionBatchTotalsPlugin sumando las planillas (aggregate
+            /// server-side). Existen para que el tracker muestre montos del lote
+            /// sin sumar client-side (cap de filas). "No editar a mano."
+            /// </summary>
+            public const string DecNioCash = "sanic_decniocash";
+            public const string DecNioCheck = "sanic_decniocheck";
+            public const string DecNioTotal = "sanic_decniototal";
+            public const string DecUsdCash = "sanic_decusdcash";
+            public const string DecUsdCheck = "sanic_decusdcheck";
+            public const string DecUsdTotal = "sanic_decusdtotal";
+
             public const string PreImageName = "PreImage";
         }
 
@@ -193,6 +213,12 @@ namespace CashHub.Plugins
             /// </summary>
             public const string BatchStatusMirror = "sanic_batchstatus";
 
+            /// <summary>Montos declarados de la planilla (vienen del papel).</summary>
+            public const string NioCash = "sanic_niocash";
+            public const string NioCheck = "sanic_niocheck";
+            public const string UsdCash = "sanic_usdcash";
+            public const string UsdCheck = "sanic_usdcheck";
+
             public const string PreImageName = "PreImage";
         }
 
@@ -205,6 +231,22 @@ namespace CashHub.Plugins
             public const string BagId = "sanic_bagid";
             public const string Name = "sanic_name";
             public const string ReceptionLookup = "sanic_receptionid";
+            public const string DeclaredBagLookup = "sanic_bagdeclarationid";
+
+            /// <summary>Totales recontados (los estampa la app Recounting).</summary>
+            public const string TotalNio = "sanic_totalnio";
+            public const string TotalUsd = "sanic_totalusd";
+            public const string TotalEur = "sanic_totaleur";
+
+            /// <summary>
+            /// Conciliacion materializada por BagReconciliationMirrorPlugin: copia de
+            /// los totales del DeclaredBag + bit de diferencia delegable para la
+            /// grilla del tracker. "No editar a mano."
+            /// </summary>
+            public const string DeclTotalNio = "sanic_decltotalnio";
+            public const string DeclTotalUsd = "sanic_decltotalusd";
+            public const string DeclTotalEur = "sanic_decltotaleur";
+            public const string HasDifference = "sanic_hasdifference";
 
             public const string PreImageName = "PreImage";
         }
@@ -264,7 +306,42 @@ namespace CashHub.Plugins
             public const string ReceivedOn = "sanic_receivedon";
             public const string NotReceivedOn = "sanic_notreceivedon";
 
+            public const string RelatedDepositLookup = "sanic_relatedrecounterdepositid";
+            public const string RelatedDeclaredCheck = "sanic_relateddeclaredcheck";
+
+            /// <summary>
+            /// Tula del cheque, derivada del deposito de recuento por
+            /// CheckMirrorStampPlugin. Existe para que el tracker traiga los cheques
+            /// de una tula en UNA query delegable. "No editar a mano."
+            /// </summary>
+            public const string BagLookup = "sanic_bag";
+
             public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Bolsa declarada (CH-Tbl-DeclaredBags).</summary>
+        internal static class DeclaredBag
+        {
+            public const string LogicalName = "sanic_chtbldeclaredbags";
+            public const string Id = "sanic_chtbldeclaredbagsid";
+            public const string TotalNio = "sanic_totalnio";
+            public const string TotalUsd = "sanic_totalusd";
+            public const string TotalEur = "sanic_totaleur";
+        }
+
+        /// <summary>Cheque declarado (CH-Tbl-DeclaredChecks).</summary>
+        internal static class DeclaredCheck
+        {
+            public const string LogicalName = "sanic_chtbldeclaredchecks";
+            public const string Id = "sanic_chtbldeclaredchecksid";
+
+            /// <summary>
+            /// Espejo del cheque fisico que lo referencia (la relacion real vive en
+            /// sanic_chtblchecks.sanic_relateddeclaredcheck), estampado por
+            /// CheckMirrorStampPlugin para que el tracker navegue del declarado a su
+            /// recuento. "No editar a mano."
+            /// </summary>
+            public const string MatchedCheck = "sanic_matchedcheck";
         }
 
         /// <summary>Lote de transacciones (CH-Tbl-TransactionBatches).</summary>
