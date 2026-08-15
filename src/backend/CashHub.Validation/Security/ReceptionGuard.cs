@@ -2,6 +2,71 @@ using System;
 
 namespace CashHub.Validation.Security
 {
+    /// <summary>
+    /// Pertenencia de la sesion de recuento referenciada por una solicitud
+    /// "Crear sesion de recuento" respecto de quien la esta creando.
+    /// La resuelve el plugin leyendo la sesion COMO SISTEMA (no por texto del JSON).
+    /// </summary>
+    public enum RecountingSessionOwnership
+    {
+        /// <summary>No hace falta resolverla: la solicitud no invoca la excepcion.</summary>
+        NotApplicable = 0,
+
+        /// <summary>La sesion existe y su cajero (sanic_cashier) ES el solicitante.</summary>
+        OwnedByRequester = 1,
+
+        /// <summary>La sesion existe y su cajero es OTRO usuario.</summary>
+        OwnedByOtherUser = 2,
+
+        /// <summary>
+        /// No se pudo resolver: JSON ilegible, sin RecountingSessionGUID, GUID invalido,
+        /// sesion inexistente o sesion sin cajero.
+        /// </summary>
+        Unresolved = 3
+    }
+
+    /// <summary>Que hacer con un Create de solicitud de aprobacion.</summary>
+    public enum ApprovalCreateDecision
+    {
+        /// <summary>Se crea tal cual viene.</summary>
+        Allow = 0,
+
+        /// <summary>
+        /// Se crea, pero PENDIENTE: el plugin borra la decision del Target.
+        /// No se bloquea porque la solicitud en si es legitima; lo ilegitimo es que nazca resuelta.
+        /// </summary>
+        DegradeToPending = 1,
+
+        /// <summary>Se rechaza la creacion.</summary>
+        Block = 2
+    }
+
+    /// <summary>Resultado de evaluar el Create de una solicitud de aprobacion.</summary>
+    public sealed class ApprovalCreateEvaluation
+    {
+        private ApprovalCreateEvaluation(ApprovalCreateDecision decision, string? reason)
+        {
+            Decision = decision;
+            Reason = reason;
+        }
+
+        public ApprovalCreateDecision Decision { get; }
+
+        /// <summary>Motivo (para el usuario si bloquea, para la traza si degrada). null cuando permite.</summary>
+        public string? Reason { get; }
+
+        public bool IsAllowed => Decision != ApprovalCreateDecision.Block;
+
+        public static ApprovalCreateEvaluation Allow() =>
+            new ApprovalCreateEvaluation(ApprovalCreateDecision.Allow, null);
+
+        public static ApprovalCreateEvaluation DegradeToPending(string reason) =>
+            new ApprovalCreateEvaluation(ApprovalCreateDecision.DegradeToPending, reason);
+
+        public static ApprovalCreateEvaluation Block(string reason) =>
+            new ApprovalCreateEvaluation(ApprovalCreateDecision.Block, reason);
+    }
+
     /// <summary>Resultado de evaluar una operacion del dominio de recepcion.</summary>
     public sealed class ReceptionGuardResult
     {
@@ -292,40 +357,107 @@ namespace CashHub.Validation.Security
 
         /// <summary>
         /// Una solicitud nace pendiente (sanic_approvalstatus en blanco). La unica excepcion
-        /// es <see cref="ApprovalTypeSesionRecuento"/>, que puede nacer aprobada (mesa propia).
+        /// es <see cref="ApprovalTypeSesionRecuento"/>, y HOY ESTA ACOTADA (H-08):
+        /// no alcanza con que el texto libre del tipo coincida — la sesion de recuento
+        /// referenciada en RequestResources tiene que existir y ser DEL SOLICITANTE,
+        /// resuelto server-side leyendo la sesion como sistema.
+        ///
+        /// Cuando la excepcion no aplica pero la solicitud es legitima (sesion de otro,
+        /// JSON ilegible, sesion inexistente) NO se bloquea la creacion: se DEGRADA a
+        /// pendiente y la firma un supervisor. Bloquear ahi seria dejar al cajero sin
+        /// poder pedir su sesion por un JSON mal armado; degradar mantiene el cuatro ojos.
         /// </summary>
-        public static ReceptionGuardResult EvaluateApprovalCreate(int? bornStatus, string? requestType)
+        /// <param name="bornStatus">sanic_approvalstatus que trae el Create (null = pendiente).</param>
+        /// <param name="requestType">sanic_requesttype (texto libre; comparacion ORDINAL exacta).</param>
+        /// <param name="sessionOwnership">
+        /// Pertenencia de la sesion referenciada, resuelta por el plugin como sistema.
+        /// Sin dato confiable se pasa <see cref="RecountingSessionOwnership.Unresolved"/>.
+        /// </param>
+        public static ApprovalCreateEvaluation EvaluateApprovalCreate(
+            int? bornStatus,
+            string? requestType,
+            RecountingSessionOwnership sessionOwnership)
         {
             if (bornStatus == null)
             {
-                return ReceptionGuardResult.Allow();
+                return ApprovalCreateEvaluation.Allow();
             }
 
-            if (string.Equals(requestType, ApprovalTypeSesionRecuento, StringComparison.OrdinalIgnoreCase))
+            // Ordinal exacto: el tipo es texto libre y antes se comparaba ignorando
+            // mayusculas — una variante de tipeo alcanzaba para pedir la excepcion.
+            if (!string.Equals(requestType, ApprovalTypeSesionRecuento, StringComparison.Ordinal))
             {
-                return ReceptionGuardResult.Allow();
+                return ApprovalCreateEvaluation.Block(
+                    "Una solicitud de aprobacion no puede crearse ya resuelta; " +
+                    "nace pendiente y la resuelve un supervisor.");
             }
 
-            return ReceptionGuardResult.Block(
-                "Una solicitud de aprobacion no puede crearse ya resuelta; " +
-                "nace pendiente y la resuelve un supervisor.");
+            if (bornStatus != ApprovalAprobado)
+            {
+                // El atajo de negocio autoriza a nacer APROBADA (mesa propia), nada mas.
+                return ApprovalCreateEvaluation.Block(
+                    "Una solicitud de sesion de recuento solo puede nacer aprobada por el atajo " +
+                    "de mesa propia; cualquier otra resolucion la firma un supervisor.");
+            }
+
+            switch (sessionOwnership)
+            {
+                case RecountingSessionOwnership.OwnedByRequester:
+                    return ApprovalCreateEvaluation.Allow();
+
+                case RecountingSessionOwnership.OwnedByOtherUser:
+                    return ApprovalCreateEvaluation.DegradeToPending(
+                        "La sesion de recuento referenciada es de otro cajero: la solicitud nace " +
+                        "PENDIENTE y la debe resolver un supervisor.");
+
+                default:
+                    return ApprovalCreateEvaluation.DegradeToPending(
+                        "No se pudo verificar que la sesion de recuento referenciada sea del " +
+                        "solicitante: la solicitud nace PENDIENTE y la debe resolver un supervisor.");
+            }
         }
 
         /// <summary>
-        /// Separacion de funciones de la decision: la solicitud debe estar pendiente y
-        /// quien decide no puede ser quien la creo. Quien puede decidir lo determina el
-        /// modelo de acceso (solo el rol de supervisor tiene Write sobre la tabla).
+        /// Separacion de funciones de la decision: la solicitud debe estar pendiente,
+        /// quien decide no puede ser quien la creo Y ademas tiene que pertenecer al grupo
+        /// AAD de supervisores aprobadores (H-01). El modelo de acceso solo no alcanza:
+        /// hoy ningun team asigna el rol de supervisor, asi que la autoridad de aprobacion
+        /// se verifica por membresia de grupo, no por rol.
         /// </summary>
         /// <param name="previousStatus">Estado previo (null = pendiente).</param>
         /// <param name="decisionInTarget">true si el request escribe sanic_approvalstatus.</param>
         /// <param name="creatorId">createdby de la solicitud.</param>
         /// <param name="initiatingUserId">Usuario real que dispara la operacion.</param>
+        /// <param name="isAuthorizedApprover">
+        /// true si el actor pertenece al grupo AAD aprobador. Lo resuelve el plugin
+        /// (parametro CH-Tbl-Parameter + AAD group team) y es FAIL-CLOSED: sin dato
+        /// confiable el plugin ni siquiera llega aca. Sin valor por defecto a proposito:
+        /// un llamador nuevo tiene que decidir explicitamente que pasa.
+        /// </param>
+        /// <param name="touchesOnlyMirror">
+        /// true si el Update escribe SOLO el espejo derivado sanic_bagnumber (B-6): el
+        /// plugin lo estampa/backfillea desde el JSON de RequestResources. Es metadata,
+        /// no una decision de negocio, asi que pasa aunque la solicitud este congelada —
+        /// mismo racional que <c>touchesOnlyTotals</c> del lote. El backfill de B-6 cae
+        /// sobre el grueso del historico (solicitudes ya resueltas) y sin esto chocaria
+        /// en masa contra el congelamiento. GUARDA: nunca junto con una decision, para
+        /// que no se cuele un cambio de estado escondido detras del espejo.
+        /// </param>
         public static ReceptionGuardResult EvaluateApprovalUpdate(
             int? previousStatus,
             bool decisionInTarget,
             Guid creatorId,
-            Guid initiatingUserId)
+            Guid initiatingUserId,
+            bool isAuthorizedApprover,
+            bool touchesOnlyMirror = false)
         {
+            if (touchesOnlyMirror && !decisionInTarget)
+            {
+                // Escritura pura del espejo derivado: se permite incluso sobre una
+                // solicitud resuelta (habilita el backfill de B-6 sin abrir la puerta).
+                return ReceptionGuardResult.Allow();
+            }
+
             if (previousStatus != null)
             {
                 return ReceptionGuardResult.Block(
@@ -347,6 +479,12 @@ namespace CashHub.Validation.Security
             {
                 return ReceptionGuardResult.Block(
                     "Quien crea una solicitud no puede resolverla (separacion de funciones).");
+            }
+
+            if (!isAuthorizedApprover)
+            {
+                return ReceptionGuardResult.Block(
+                    "No pertenece al grupo aprobador de supervisores; no puede resolver esta solicitud.");
             }
 
             return ReceptionGuardResult.Allow();

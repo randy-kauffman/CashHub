@@ -13,6 +13,39 @@
 # operacion antes de que nada la tome. Las reglas viven en ReceptionGuard
 # (CashHub.Validation/Security) con tests en CashHub.Validation.Tests.
 #
+# -----------------------------------------------------------------------------
+# PARAMETRO OBLIGATORIO (sembrar ANTES de correr esto)
+# -----------------------------------------------------------------------------
+# El guard exige, para RESOLVER una solicitud (H-01), que el actor pertenezca al
+# grupo AAD aprobador. El id del grupo se lee de la tabla de parametros
+# CH-Tbl-Parameter (sanic_chtblparameter) — NO de environment variables:
+#
+#   sanic_name        Security.ApproverGroup.Supervisor
+#   sanic_value       17b5e5c7-e7a0-4b61-98cd-ceff67211797
+#                     (object id del grupo AAD del team
+#                      "CashHub - Banca de Empresas -Approver"; formato GUID,
+#                      se toleran llaves/espacios/mayusculas)
+#   sanic_category    159460000  (Security)
+#   sanic_datatype    159460003  (Guid)
+#   sanic_isactive    true       (una fila inactiva cuenta como ausente)
+#
+# ES FAIL-CLOSED: sin esa fila NADIE puede aprobar ni rechazar. Por eso este
+# script VERIFICA el parametro antes de tocar nada y aborta si falta.
+# Para registrar igual (entorno donde el parametro se siembra despues):
+#   SKIP_PARAM_CHECK=1 ./scripts/register-reception-guard.sh
+#
+# La membresia se resuelve con el mismo patron que GuardChangeRequestApprovalPlugin:
+# AAD group team (team.azureactivedirectoryobjectid = el GUID de arriba) +
+# relacion teammembership. Es pertenencia al GRUPO, no al rol: hoy ningun team
+# asigna CH-SR-CountingSupervisor.
+#
+# NOTA DE STAGE: el paso de Create de sanic_chtblapprovalrequest ademas MODIFICA
+# el Target — una solicitud "Crear sesion de recuento" que no pueda probar que la
+# sesion es del propio solicitante se DEGRADA a pendiente (se le quita
+# sanic_approvalstatus/sanic_solvedby/sanic_resolutiondatetime) en vez de
+# bloquearse. Las modificaciones del Target en Pre-validation se persisten; se
+# mantiene el stage 10 para que el veto siga siendo previo a la transaccion.
+#
 # Requiere pp_secrets.env y el assembly compilado en Release.
 # Uso: ./scripts/register-reception-guard.sh
 # =============================================================================
@@ -28,13 +61,16 @@ TOKEN=$(curl -sf -X POST "https://login.microsoftonline.com/${PP_TENANT_ID}/oaut
   -d "grant_type=client_credentials&client_id=${PP_CLIENT_ID}&client_secret=${PP_CLIENT_SECRET}&scope=${DATAVERSE_URL}/.default" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 export TOKEN DATAVERSE_URL ASSEMBLY
+export SKIP_PARAM_CHECK="${SKIP_PARAM_CHECK:-0}"
 
 python3 - <<'PYEOF'
-import base64, json, os, subprocess, urllib.parse
+import base64, json, os, subprocess, urllib.parse, uuid
 
 API = os.environ['DATAVERSE_URL'] + '/api/data/v9.2'
 H = ['-H', f"Authorization: Bearer {os.environ['TOKEN']}", '-H', 'Content-Type: application/json',
      '-H', 'Prefer: return=representation']
+
+APPROVER_PARAM_KEY = 'Security.ApproverGroup.Supervisor'
 
 def req(method, path, body=None):
     cmd = ['curl', '-s', *H, '-X', method, API + path]
@@ -72,6 +108,43 @@ def upsert(entityset, filter_expr, body, label, select_id):
     created = req('POST', f"/{entityset}", body)
     print(f"  creado: {label}")
     return created[select_id]
+
+# 0. El guard es FAIL-CLOSED sobre el grupo aprobador: si el parametro no esta
+#    sembrado, registrar los pasos deja a TODOS sin poder aprobar. Se verifica
+#    antes de tocar el entorno, no despues del primer reclamo.
+def check_approver_parameter():
+    if os.environ.get('SKIP_PARAM_CHECK') == '1':
+        print("  [!] SKIP_PARAM_CHECK=1 — no se verifica el grupo aprobador (sembralo antes de operar).")
+        return
+
+    flt = urllib.parse.quote(f"sanic_name eq '{APPROVER_PARAM_KEY}'")
+    rows = find(f"/sanic_chtblparameters?$select=sanic_value,sanic_isactive&$filter={flt}")
+
+    problem = None
+    if not rows:
+        problem = "la fila no existe"
+    elif rows[0].get('sanic_isactive') is False:
+        problem = "la fila esta INACTIVA (sanic_isactive = false)"
+    else:
+        raw = (rows[0].get('sanic_value') or '').strip().strip('{}')
+        try:
+            if uuid.UUID(raw).int == 0:
+                problem = "el valor es el GUID cero"
+        except ValueError:
+            problem = f"el valor no es un GUID ('{raw[:40]}')"
+
+    if problem:
+        raise SystemExit(
+            f"\nABORTA: el parametro '{APPROVER_PARAM_KEY}' de CH-Tbl-Parameter no sirve — {problem}.\n"
+            "El guard es fail-closed: sin ese parametro NADIE puede aprobar ni rechazar solicitudes.\n"
+            "Sembralo primero (sanic_name / sanic_value / sanic_isactive=true):\n"
+            f"  {APPROVER_PARAM_KEY} = 17b5e5c7-e7a0-4b61-98cd-ceff67211797\n"
+            "  (object id AAD del team 'CashHub - Banca de Empresas -Approver')\n"
+            "Para registrar igual: SKIP_PARAM_CHECK=1 ./scripts/register-reception-guard.sh\n")
+
+    print(f"  [=] parametro {APPROVER_PARAM_KEY} verificado.")
+
+check_approver_parameter()
 
 content = base64.b64encode(open(os.environ['ASSEMBLY'], 'rb').read()).decode()
 
@@ -113,9 +186,11 @@ STEPS = [
     ('sanic_chtblbags', 'Delete', None, 'sanic_bagstatus,sanic_receptionid',
      'Borrado de tulas solo con lote abierto o tula pendiente de supervisor.'),
     ('sanic_chtblapprovalrequest', 'Create', None, None,
-     'Una solicitud no puede nacer resuelta (salvo sesion de recuento de mesa propia).'),
+     'Una solicitud no puede nacer resuelta; la sesion de recuento de mesa propia se '
+     'verifica server-side (sesion del solicitante) o se degrada a pendiente.'),
     ('sanic_chtblapprovalrequest', 'Update', None, 'sanic_approvalstatus,createdby',
-     'Separacion creador/resolutor y congelamiento post-decision.'),
+     'Congelamiento post-decision, separacion creador/resolutor y pertenencia al grupo '
+     'aprobador (CH-Tbl-Parameter Security.ApproverGroup.Supervisor).'),
 ]
 
 for entity, message, filtering, image_attrs, description in STEPS:

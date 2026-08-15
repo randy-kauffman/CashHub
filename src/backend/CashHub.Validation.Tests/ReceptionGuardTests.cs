@@ -249,19 +249,80 @@ namespace CashHub.Validation.Tests
         }
 
         // ---- Solicitudes (ApprovalRequests): separacion de funciones ----
+        //
+        // Dos controles distintos conviven aca:
+        //  - Create: una solicitud nace PENDIENTE, salvo el atajo de sesion de recuento
+        //    de MESA PROPIA, ahora verificado server-side (H-08).
+        //  - Update: la firma exige pendiente + creador != actor + pertenencia al grupo
+        //    AAD aprobador (H-01).
+
+        private const bool EsAprobador = true;
+        private const bool NoEsAprobador = false;
 
         [Fact]
         public void ApprovalCreate_Pendiente_IsAllowed()
         {
-            Assert.True(EvaluateApprovalCreate(null, "Eliminar tula").IsAllowed);
+            var result = EvaluateApprovalCreate(null, "Eliminar tula", RecountingSessionOwnership.NotApplicable);
+            Assert.Equal(ApprovalCreateDecision.Allow, result.Decision);
         }
 
         [Fact]
-        public void ApprovalCreate_SesionDeRecuentoMesaPropia_NaceAprobada_IsAllowed()
+        public void ApprovalCreate_SesionDeRecuentoDeMesaPropia_NaceAprobada()
         {
-            // Atajo de negocio deliberado de la app de recuento ("FIX DEFINITIVO"):
-            // la sesion de mesa propia nace aprobada.
-            Assert.True(EvaluateApprovalCreate(ApprovalAprobado, "Crear sesion de recuento").IsAllowed);
+            // Atajo de negocio deliberado de la app de recuento ("FIX DEFINITIVO"),
+            // pero SOLO cuando el server confirmo que la sesion es del solicitante.
+            var result = EvaluateApprovalCreate(
+                ApprovalAprobado, ApprovalTypeSesionRecuento, RecountingSessionOwnership.OwnedByRequester);
+
+            Assert.Equal(ApprovalCreateDecision.Allow, result.Decision);
+        }
+
+        [Fact]
+        public void ApprovalCreate_SesionDeRecuentoDeOtroCajero_NacePendiente()
+        {
+            // El agujero H-08: el cajero apuntaba a una sesion ajena y se la auto-aprobaba.
+            // No se bloquea la creacion — se degrada y la firma un supervisor.
+            var result = EvaluateApprovalCreate(
+                ApprovalAprobado, ApprovalTypeSesionRecuento, RecountingSessionOwnership.OwnedByOtherUser);
+
+            Assert.Equal(ApprovalCreateDecision.DegradeToPending, result.Decision);
+            Assert.Contains("otro cajero", result.Reason);
+        }
+
+        [Fact]
+        public void ApprovalCreate_SesionDeRecuentoNoVerificable_NacePendiente()
+        {
+            // JSON roto, sin RecountingSessionGUID, sesion inexistente o sin cajero:
+            // sin certeza no hay atajo. Degradar, nunca conceder.
+            var result = EvaluateApprovalCreate(
+                ApprovalAprobado, ApprovalTypeSesionRecuento, RecountingSessionOwnership.Unresolved);
+
+            Assert.Equal(ApprovalCreateDecision.DegradeToPending, result.Decision);
+            Assert.Contains("no se pudo verificar", result.Reason, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void ApprovalCreate_SesionDeRecuentoNacidaRechazada_IsBlocked()
+        {
+            // El atajo autoriza a nacer APROBADA (mesa propia). Nacer rechazada no es el atajo.
+            var result = EvaluateApprovalCreate(
+                ApprovalRechazado, ApprovalTypeSesionRecuento, RecountingSessionOwnership.OwnedByRequester);
+
+            Assert.Equal(ApprovalCreateDecision.Block, result.Decision);
+        }
+
+        [Theory]
+        [InlineData("crear sesion de recuento")]  // minusculas
+        [InlineData("Crear Sesion De Recuento")]
+        [InlineData(" Crear sesion de recuento")] // con espacio adelante
+        public void ApprovalCreate_TipoQueSoloSePareceAlDeSesion_IsBlocked(string requestType)
+        {
+            // La excepcion se pedia con un string de texto libre comparado sin distinguir
+            // mayusculas: cualquier variante alcanzaba. Ahora el match es ordinal exacto.
+            var result = EvaluateApprovalCreate(
+                ApprovalAprobado, requestType, RecountingSessionOwnership.OwnedByRequester);
+
+            Assert.Equal(ApprovalCreateDecision.Block, result.Decision);
         }
 
         [Theory]
@@ -270,22 +331,38 @@ namespace CashHub.Validation.Tests
         [InlineData(ApprovalAprobado, null)]
         public void ApprovalCreate_NacidaResuelta_IsBlocked(int bornStatus, string? requestType)
         {
-            Assert.False(EvaluateApprovalCreate(bornStatus, requestType).IsAllowed);
+            var result = EvaluateApprovalCreate(bornStatus, requestType, RecountingSessionOwnership.NotApplicable);
+
+            Assert.Equal(ApprovalCreateDecision.Block, result.Decision);
+            Assert.False(result.IsAllowed);
         }
 
         [Fact]
-        public void ApprovalUpdate_DecisionPorOtroUsuario_IsAllowed()
+        public void ApprovalUpdate_DecisionPorMiembroDelGrupoAprobador_IsAllowed()
         {
-            // Quien puede escribir la tabla lo determina el rol (solo supervisores tienen Write).
-            var result = EvaluateApprovalUpdate(null, true, Creator, Supervisor);
+            var result = EvaluateApprovalUpdate(null, true, Creator, Supervisor, EsAprobador);
             Assert.True(result.IsAllowed);
         }
 
         [Fact]
-        public void ApprovalUpdate_AutoAprobacion_IsBlocked()
+        public void ApprovalUpdate_DecisionPorQuienNoEsDelGrupoAprobador_IsBlocked()
+        {
+            // H-01: hasta ahora bastaba con tener Write sobre la tabla y no ser el creador.
+            // Como NINGUN team asigna el rol de supervisor, la autoridad se verifica por
+            // pertenencia al grupo AAD, no por rol.
+            var result = EvaluateApprovalUpdate(null, true, Creator, Supervisor, NoEsAprobador);
+
+            Assert.False(result.IsAllowed);
+            Assert.Contains("grupo", result.Reason);
+        }
+
+        [Fact]
+        public void ApprovalUpdate_AutoAprobacion_IsBlocked_AunqueSeaDelGrupo()
         {
             // El ataque central: el mismo que pidio el cambio se lo aprueba por Web API.
-            var result = EvaluateApprovalUpdate(null, true, Creator, Creator);
+            // Ser aprobador no compra el derecho a firmarse a uno mismo.
+            var result = EvaluateApprovalUpdate(null, true, Creator, Creator, EsAprobador);
+
             Assert.False(result.IsAllowed);
             Assert.Contains("separacion de funciones", result.Reason);
         }
@@ -293,7 +370,7 @@ namespace CashHub.Validation.Tests
         [Fact]
         public void ApprovalUpdate_SinCreadorIdentificable_IsBlocked()
         {
-            var result = EvaluateApprovalUpdate(null, true, Guid.Empty, Supervisor);
+            var result = EvaluateApprovalUpdate(null, true, Guid.Empty, Supervisor, EsAprobador);
             Assert.False(result.IsAllowed);
         }
 
@@ -302,15 +379,61 @@ namespace CashHub.Validation.Tests
         [InlineData(ApprovalRechazado)]
         public void ApprovalUpdate_SolicitudYaResuelta_IsBlocked(int previousStatus)
         {
-            // Una solicitud resuelta queda congelada: no se re-decide ni se edita.
-            var result = EvaluateApprovalUpdate(previousStatus, true, Creator, Supervisor);
+            // Una solicitud resuelta queda congelada: no se re-decide ni se edita,
+            // ni siquiera por un miembro del grupo aprobador.
+            var result = EvaluateApprovalUpdate(previousStatus, true, Creator, Supervisor, EsAprobador);
+
             Assert.False(result.IsAllowed);
+            Assert.Contains("congelada", result.Reason);
         }
 
         [Fact]
         public void ApprovalUpdate_EditarDetallesMientrasPendiente_IsAllowed()
         {
-            Assert.True(EvaluateApprovalUpdate(null, false, Creator, Creator).IsAllowed);
+            // Sin decision en el request no hay nada que autorizar: el creador puede
+            // corregir su propia solicitud pendiente sin pertenecer a ningun grupo.
+            Assert.True(EvaluateApprovalUpdate(null, false, Creator, Creator, NoEsAprobador).IsAllowed);
+        }
+
+        // ---- Espejo B-6 (sanic_bagnumber): el backfill no muere contra el congelamiento ----
+
+        [Fact]
+        public void ApprovalUpdate_SolicitudResuelta_EscrituraSoloDelEspejo_IsAllowed()
+        {
+            // El backfill de sanic_bagnumber (B-6) cae sobre el grueso del historico, que
+            // esta RESUELTO. Es metadata derivada: pasa aunque este congelada. Sin esto el
+            // backfill chocaria en masa contra "ya fue resuelta y quedo congelada".
+            var result = EvaluateApprovalUpdate(
+                ApprovalAprobado, decisionInTarget: false, Creator, Supervisor, NoEsAprobador,
+                touchesOnlyMirror: true);
+
+            Assert.True(result.IsAllowed);
+        }
+
+        [Fact]
+        public void ApprovalUpdate_SolicitudResuelta_EspejoConCambioDeEstadoEscondido_IsBlocked()
+        {
+            // La guarda del bypass: aunque venga marcado como escritura de espejo, si el
+            // request ADEMAS toca el estado (decisionInTarget) NO se cuela — la solicitud
+            // resuelta sigue congelada. (En el plugin, tocar approvalstatus ya apaga
+            // touchesOnlyMirror; esto lo blinda tambien a nivel dominio.)
+            var result = EvaluateApprovalUpdate(
+                ApprovalAprobado, decisionInTarget: true, Creator, Supervisor, EsAprobador,
+                touchesOnlyMirror: true);
+
+            Assert.False(result.IsAllowed);
+            Assert.Contains("congelada", result.Reason);
+        }
+
+        [Fact]
+        public void ApprovalUpdate_SolicitudPendiente_EscrituraSoloDelEspejo_IsAllowed()
+        {
+            // El estampado del espejo sobre una solicitud aun pendiente tampoco es negocio.
+            var result = EvaluateApprovalUpdate(
+                null, decisionInTarget: false, Creator, Supervisor, NoEsAprobador,
+                touchesOnlyMirror: true);
+
+            Assert.True(result.IsAllowed);
         }
     }
 }
