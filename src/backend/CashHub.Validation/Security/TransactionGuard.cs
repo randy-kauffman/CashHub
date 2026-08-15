@@ -162,6 +162,9 @@ namespace CashHub.Validation.Security
         /// <summary>
         /// Update de transaccion. Reglas:
         /// - El espejo sanic_batchstatus (mirror/cascada) pasa siempre: es infraestructura.
+        /// - DINERO CONGELADO (H-04): montos y cuenta no se editan una vez que la
+        ///   transaccion esta Aplicada o que su lote ya entro al Core (Ingresado o
+        ///   Aplicado). Las correcciones se hacen con asientos nuevos.
         /// - Aplicada es TERMINAL: su estado no se toca mas. Marcar Aplicada (null ->
         ///   Aplicada) es solo del circuito manual: sin lote y sin asignar uno en el
         ///   mismo request (las transacciones de lote no llevan status propio).
@@ -176,9 +179,17 @@ namespace CashHub.Validation.Security
         /// <param name="previousStatus">Estado previo de la transaccion (null = pendiente).</param>
         /// <param name="batchInTarget">true si el request escribe sanic_transactionbatch.</param>
         /// <param name="newBatchIsNull">true si el lookup de lote se escribe en null (desasignacion).</param>
-        /// <param name="currentBatchStatus">Estado del lote actual, si la transaccion tenia lote.</param>
+        /// <param name="currentBatchStatus">
+        /// Estado del lote actual de la transaccion. El plugin lo resuelve cuando alguna
+        /// regla lo necesita: la desasignacion y la de dinero congelado (H-04).
+        /// </param>
         /// <param name="targetBatchStatus">Estado del lote destino, si el request asigna uno.</param>
         /// <param name="hadBatch">true si la transaccion ya tenia lote asignado.</param>
+        /// <param name="touchesAmounts">
+        /// true si el request escribe alguna columna de dinero: sanic_cashamount,
+        /// sanic_baclocalcheckamount, sanic_otherlocalcheckamount, sanic_accountnumber
+        /// o sanic_total.
+        /// </param>
         public static TransactionGuardResult EvaluateTransactionUpdate(
             bool touchesOnlyMirror,
             bool statusInTarget,
@@ -188,12 +199,35 @@ namespace CashHub.Validation.Security
             bool newBatchIsNull,
             int? currentBatchStatus,
             int? targetBatchStatus,
-            bool hadBatch)
+            bool hadBatch,
+            bool touchesAmounts = false)
         {
             if (touchesOnlyMirror)
             {
                 // Escrituras del mirror plugin / cascada de estado: metadata derivada.
                 return TransactionGuardResult.Allow();
+            }
+
+            if (touchesAmounts)
+            {
+                // H-04: el step de Update filtraba por lote+estado, asi que un request
+                // que SOLO cambiaba montos ni despertaba al guard — se podia reescribir
+                // el importe de una transaccion ya cargada al Core. Lo que se mando al
+                // Core y lo que queda en Dataverse tienen que seguir diciendo lo mismo.
+                if (previousStatus == StatusAplicada)
+                {
+                    return TransactionGuardResult.Block(
+                        "La transaccion ya esta Aplicada: sus montos y su cuenta quedan congelados. " +
+                        "Una correccion contable se hace con un asiento nuevo, nunca reescribiendo " +
+                        "lo ya aplicado.");
+                }
+
+                if (currentBatchStatus == BatchIngresado || currentBatchStatus == BatchAplicado)
+                {
+                    return TransactionGuardResult.Block(
+                        "El lote de la transaccion ya fue cargado al Core: sus montos y su cuenta no " +
+                        "admiten cambios. Si el Core la rechazo, sacala del lote antes de corregirla.");
+                }
             }
 
             var assignsBatch = batchInTarget && !newBatchIsNull;

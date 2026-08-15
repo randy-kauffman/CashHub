@@ -46,13 +46,15 @@ namespace CashHub.Validation.Tests
             bool newBatchIsNull = false,
             int? currentBatchStatus = null,
             int? targetBatchStatus = null,
-            bool hadBatch = false)
+            bool hadBatch = false,
+            bool touchesAmounts = false)
         {
             return EvaluateTransactionUpdate(
                 touchesOnlyMirror,
                 statusInTarget, newStatus, previousStatus,
                 batchInTarget, newBatchIsNull,
-                currentBatchStatus, targetBatchStatus, hadBatch);
+                currentBatchStatus, targetBatchStatus, hadBatch,
+                touchesAmounts);
         }
 
         // ---- Lote (TransactionBatch): nace Generado EXPLICITO ----
@@ -338,6 +340,74 @@ namespace CashHub.Validation.Tests
         {
             // Escribir lote=null sobre una transaccion que no tenia lote: no-op.
             Assert.True(EvalTx(batchInTarget: true, newBatchIsNull: true, hadBatch: false).IsAllowed);
+        }
+
+        // ---- Transaccion: DINERO CONGELADO (H-04) ----
+
+        [Fact]
+        public void TxUpdate_EditarMontoDeUnaAplicada_IsBlocked()
+        {
+            // El agujero H-04: el step filtraba por lote+estado, asi que un request
+            // que SOLO reescribia el importe de una transaccion ya aplicada en el
+            // Core ni siquiera despertaba al guard.
+            var result = EvalTx(previousStatus: StatusAplicada, touchesAmounts: true);
+
+            Assert.False(result.IsAllowed);
+            Assert.Contains("congelados", result.Reason);
+        }
+
+        [Theory]
+        [InlineData(BatchIngresado)]
+        [InlineData(BatchAplicado)]
+        public void TxUpdate_EditarMontoConElLoteEnElCore_IsBlocked(int currentBatchStatus)
+        {
+            // Lo que se mando al Core y lo que queda en Dataverse tienen que seguir
+            // diciendo lo mismo.
+            var result = EvalTx(
+                hadBatch: true, currentBatchStatus: currentBatchStatus, touchesAmounts: true);
+
+            Assert.False(result.IsAllowed);
+            Assert.Contains("Core", result.Reason);
+        }
+
+        [Fact]
+        public void TxUpdate_EditarMontoEnLoteGenerado_IsAllowed()
+        {
+            // Antes del envio al Core la correccion es legitima: el lote todavia se
+            // esta armando.
+            Assert.True(EvalTx(
+                hadBatch: true, currentBatchStatus: BatchGenerado, touchesAmounts: true).IsAllowed);
+        }
+
+        [Fact]
+        public void TxUpdate_EditarMontoDeUnaPendienteSinLote_IsAllowed()
+        {
+            Assert.True(EvalTx(touchesAmounts: true).IsAllowed);
+        }
+
+        [Fact]
+        public void TxUpdate_EspejoDeEstadoSobreUnaAplicada_SiguePasando()
+        {
+            // La cascada del mirror plugin escribe sanic_batchstatus fila a fila,
+            // tambien sobre transacciones ya aplicadas: es metadata derivada y la
+            // regla de dinero NO la alcanza (sale antes).
+            Assert.True(EvalTx(
+                touchesOnlyMirror: true,
+                previousStatus: StatusAplicada,
+                hadBatch: true,
+                currentBatchStatus: BatchAplicado).IsAllowed);
+        }
+
+        [Fact]
+        public void TxUpdate_CampoComunSobreUnaAplicada_NoEsAsuntoDeLaReglaDeDinero()
+        {
+            // Sin filteringattributes el guard ve TODOS los updates; una referencia o
+            // un comentario sobre una transaccion aplicada no es dinero.
+            Assert.True(EvalTx(
+                previousStatus: StatusAplicada,
+                hadBatch: true,
+                currentBatchStatus: BatchAplicado,
+                touchesAmounts: false).IsAllowed);
         }
 
         // ---- Transaccion: lo demas no es asunto del guard ----

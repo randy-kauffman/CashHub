@@ -7,6 +7,31 @@
 #    (Decisión de negocio 2026-08-04: el correo AUTORIZA, el contenido ATRIBUYE.)
 # 2. sanic_chtblclientaccount: sanic_name único — un número de cuenta existe
 #    una sola vez en el banco.
+# 4. sanic_chtbltransactions: par (sanic_relateddepositrecounting,
+#    sanic_transactiontype) — un depósito recontado genera COMO MÁXIMO UN asiento
+#    de cada tipo. En particular los `Deposito` legítimos por depósito recontado
+#    son EXACTAMENTE 1 (lo crea CH-App-Recounting cuando la tula cierra sin
+#    diferencia, o el supervisor al aprobar la tula con diferencia — nunca los
+#    dos), y lo mismo vale para Sobrante, Faltante y 'Sin declaracion'. La key lo
+#    GARANTIZA a nivel de índice: el chequeo previo del plugin
+#    (GuardSupervisorAccountingPlugin) da el mensaje de negocio, pero entre dos
+#    supervisores simultáneos hay una ventana entre el SELECT y el INSERT que solo
+#    un índice único cierra.
+#
+#    OJO — atributo de lookup en la key: va el LOGICAL NAME pelado
+#    (`sanic_relateddepositrecounting`), NO la forma `_..._value`. `_x_value` es la
+#    convención del Web API para LEER/referenciar, no para declarar metadata.
+#    Precedente verificado en este mismo repo: la key sanic_KeyCorreoPorCliente se
+#    creó con `sanic_client` (lookup) y volvió del export como
+#    <AttributeName>sanic_client</AttributeName>.
+#
+#    OJO — asientos SIN ancla: el par Faltante+Deposito de un depósito declarado
+#    que nadie recontó nace con `sanic_relateddepositrecounting` VACÍO (guía 03 §11
+#    9.b y la app vieja). Si el índice único de la plataforma trata NULL = NULL,
+#    la key entra en estado Failed por datos preexistentes. En ese caso NO se
+#    fuerza: la salida es B-5.1 (agregar el lookup `sanic_relateddeclareddeposit` a
+#    sanic_chtbltransactions y anclar también esos asientos). Verificar el estado
+#    con EntityKeys?$select=EntityKeyIndexStatus después de correr el script.
 #
 # Se crean por API y no en el Entity.xml para no adivinar el formato de
 # serialización de EntityKeys; el próximo export de la solución las trae al
@@ -50,6 +75,11 @@ KEYS = [
     #    campo es String(300) = 600 bytes, holgado bajo el limite de 1700 del indice.
     ("sanic_chtblreceivedemails", "sanic_KeyInternetMessageId", "Correo entrante unico",
      ["sanic_receivedemailinternetmessageid"]),
+    # 4. Un solo asiento por (deposito recontado, tipo). Cierra la ventana de carrera
+    #    que el chequeo de duplicados del plugin no puede cerrar solo.
+    ("sanic_chtbltransactions", "sanic_KeyAsientoPorRecuento",
+     "Asiento unico por recuento y tipo",
+     ["sanic_relateddepositrecounting", "sanic_transactiontype"]),
 ]
 for entity, schema, display, attrs in KEYS:
     existing = req('GET', f"/EntityDefinitions(LogicalName='{entity}')/Keys?$select=SchemaName").get('value', [])

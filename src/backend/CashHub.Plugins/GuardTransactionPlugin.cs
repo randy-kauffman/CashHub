@@ -216,7 +216,27 @@ namespace CashHub.Plugins
                     true, false, null, null, false, false, null, null, false);
             }
 
+            // H-04: el request toca dinero (montos, cuenta o el total). Se evalua ANTES
+            // de resolver nada mas porque decide si hace falta el estado del lote actual.
+            var touchesAmounts = false;
+            foreach (var money in Schema.Transaction.MoneyAttributes)
+            {
+                if (target.Contains(money))
+                {
+                    touchesAmounts = true;
+                    break;
+                }
+            }
+
             var pre = ResolveTransactionPreState(context, serviceFactory, tracing, target.Id);
+
+            if (touchesAmounts)
+            {
+                // Evidencia del intento en la traza (solo administradores la ven): que
+                // columna de dinero se toca y que decia antes. La pre-image incluye las
+                // columnas de dinero justamente para esto.
+                TraceMoneyDelta(context, tracing, target);
+            }
 
             var statusInTarget = target.Contains(Schema.Transaction.TransactionStatus);
             var newStatus = statusInTarget ? ReadStatus(target, Schema.Transaction.TransactionStatus) : null;
@@ -234,17 +254,19 @@ namespace CashHub.Plugins
                 targetStatus = RetrieveBatchStatus(serviceFactory, newBatchRef.Id);
             }
 
+            // El estado del lote actual lo piden dos reglas: la desasignacion y la de
+            // dinero congelado (H-04). Una sola lectura, solo cuando alguna lo necesita.
             int? currentStatus = null;
-            if (newBatchIsNull && pre.BatchRef != null)
+            if ((newBatchIsNull || touchesAmounts) && pre.BatchRef != null)
             {
                 currentStatus = RetrieveBatchStatus(serviceFactory, pre.BatchRef.Id);
             }
 
             tracing.Trace(
-                "GuardTransaction: transaccion {0} status-prev={1} status-nuevo={2} lote-previo={3} lote-actual-estado={4} lote-destino-estado={5}.",
+                "GuardTransaction: transaccion {0} status-prev={1} status-nuevo={2} lote-previo={3} lote-actual-estado={4} lote-destino-estado={5} toca-dinero={6}.",
                 target.Id, Fmt(pre.Status), statusInTarget ? Fmt(newStatus) : "(sin cambio)",
                 pre.BatchRef != null ? pre.BatchRef.Id.ToString() : "null",
-                Fmt(currentStatus), Fmt(targetStatus));
+                Fmt(currentStatus), Fmt(targetStatus), touchesAmounts);
 
             return TransactionGuard.EvaluateTransactionUpdate(
                 touchesOnlyMirror: false,
@@ -255,7 +277,8 @@ namespace CashHub.Plugins
                 newBatchIsNull: newBatchIsNull,
                 currentBatchStatus: currentStatus,
                 targetBatchStatus: targetStatus,
-                hadBatch: pre.BatchRef != null);
+                hadBatch: pre.BatchRef != null,
+                touchesAmounts: touchesAmounts);
         }
 
         // ---- Cheque (handshake de recepcion) ----
@@ -275,13 +298,19 @@ namespace CashHub.Plugins
                 return CheckGuard.EvaluateCheckCreate(bornStatus);
             }
 
-            // Escritura SOLO del espejo sanic_bag (CheckMirrorStampPlugin/backfill):
-            // infraestructura, no negocio. La plataforma agrega el primary key al
-            // Target de un Update: se ignora.
+            // Escritura SOLO de columnas espejo del cheque — sanic_bag (B6) y
+            // sanic_recountingsession (B-9) — puestas por CheckMirrorStampPlugin, por
+            // su cascada desde la tula o por el backfill: infraestructura, no negocio.
+            // Este paso NO tiene filteringattributes a proposito (Recibido congela el
+            // registro entero), asi que ve TODAS las escrituras: sin este bypass, la
+            // cascada de sesion y el backfill de B-9 se estrellan contra cada cheque
+            // ya Recibido. La plataforma agrega el primary key al Target: se ignora.
             var touchesOnlyMirror = true;
             foreach (var key in target.Attributes.Keys)
             {
-                if (key != Schema.Check.BagLookup && key != Schema.Check.Id)
+                if (key != Schema.Check.BagLookup
+                    && key != Schema.Check.SessionLookup
+                    && key != Schema.Check.Id)
                 {
                     touchesOnlyMirror = false;
                     break;
@@ -290,7 +319,9 @@ namespace CashHub.Plugins
 
             if (touchesOnlyMirror)
             {
-                tracing.Trace("GuardTransaction: cheque {0}, escritura solo del espejo, se permite.", target.Id);
+                tracing.Trace(
+                    "GuardTransaction: cheque {0}, escritura solo de espejos ({1}), se permite.",
+                    target.Id, string.Join(",", target.Attributes.Keys));
                 return CheckGuard.EvaluateCheckUpdate(null, false, null, touchesOnlyMirror: true);
             }
 
@@ -437,6 +468,31 @@ namespace CashHub.Plugins
             }
 
             return reference;
+        }
+
+        /// <summary>
+        /// Deja en la traza que columna de dinero toca el request y que valor tenia en la
+        /// pre-image. No va al mensaje de error: la traza la leen administradores, el
+        /// mensaje lo lee cualquiera.
+        /// </summary>
+        private static void TraceMoneyDelta(
+            IPluginExecutionContext context, ITracingService tracing, Entity target)
+        {
+            var pre = GetPreImage(context, Schema.Transaction.PreImageName);
+
+            foreach (var money in Schema.Transaction.MoneyAttributes)
+            {
+                if (!target.Contains(money))
+                {
+                    continue;
+                }
+
+                var previous = pre != null && pre.Contains(money) ? pre[money] : null;
+                tracing.Trace("GuardTransaction: dinero — {0} previo={1} nuevo={2}.",
+                    money,
+                    previous == null ? "(sin dato)" : previous.ToString(),
+                    target[money] == null ? "null" : target[money].ToString());
+            }
         }
 
         private static Entity GetPreImage(IPluginExecutionContext context, string name)

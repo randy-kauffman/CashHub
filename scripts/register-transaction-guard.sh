@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Registra el guard del dominio de digitalizacion (idempotente):
-#   1. pluginassembly  CashHub.Plugins (re-sube el DLL con el tipo nuevo dentro)
-#   2. plugintype      CashHub.Plugins.GuardTransactionPlugin
+# Registra los guards del dominio de digitalizacion y de la contabilidad de
+# aprobaciones (idempotente):
+#   1. pluginassembly  CashHub.Plugins (re-sube el DLL con los tipos nuevos dentro)
+#   2. plugintypes     CashHub.Plugins.GuardTransactionPlugin          (maquina de estados)
+#                      CashHub.Plugins.GuardSupervisorAccountingPlugin (contabilidad, B-5)
 #   3. pasos SINCRONOS Pre-validation (stage 10) sobre:
-#        sanic_chtbltransactions   Create / Update(+PreImage lote+status, filtrado en lote+status)
+#        sanic_chtbltransactions   Create rank 1 (maquina de estados)
+#        sanic_chtbltransactions   Create rank 2 (contabilidad de asientos)
+#        sanic_chtbltransactions   Update(+PreImage lote+status+dinero, SIN filtrado)
 #        sanic_transactionbatches  Create / Update(+PreImage estado+ingresadopor, filtrado en estado) / Delete
 #
 # La pre-image del Update del lote trae ademas sanic_ingresadopor: es el insumo
@@ -13,14 +17,26 @@
 # que la imagen refleja la transicion ANTERIOR — exactamente lo que la regla pide.
 #
 # Los pasos son sincronos a proposito: un control de seguridad debe abortar la
-# operacion antes de que nada la tome. Las reglas viven en TransactionGuard
-# (CashHub.Validation/Security) con tests en CashHub.Validation.Tests.
+# operacion antes de que nada la tome. Las reglas viven en el dominio puro
+# (TransactionGuard / AccountingGuard en CashHub.Validation/Security) con tests
+# en CashHub.Validation.Tests.
 #
-# OJO — bypass del espejo: el paso de Update de transacciones NO filtra por
-# sanic_batchstatus, asi que la cascada del mirror plugin ni siquiera dispara el
-# guard; la regla touchesOnlyMirror cubre el resto. Idem los totales del lote:
-# el Update del lote filtra solo sanic_batchstatus y la regla touchesOnlyTotals
-# cubre las escrituras de BatchTotalsCalculator.
+# H-04 — POR QUE EL UPDATE DE TRANSACCIONES YA NO FILTRA: filtraba por
+# sanic_transactionbatch,sanic_transactionstatus, asi que un request que SOLO
+# reescribia montos (o la cuenta) de una transaccion ya aplicada en el Core ni
+# siquiera despertaba al guard. Sin filtro, TODO update la despierta y las reglas
+# de salida temprana ordenan el trafico: touchesOnlyMirror deja pasar la cascada
+# del espejo sanic_batchstatus sin resolver lotes, y touchesAmounts congela
+# montos/cuenta cuando la transaccion esta Aplicada o su lote ya entro al Core.
+# En el lote la historia sigue igual: el Update filtra sanic_batchstatus y la
+# regla touchesOnlyTotals cubre las escrituras de BatchTotalsCalculator.
+#
+# B-5 — dos plugin types sobre el MISMO Create: la maquina de estados (rank 1) no
+# consulta depositos y la contabilidad (rank 2) no consulta lotes. Separados, cada
+# uno falla con su mensaje de negocio y se prueba solo. El paso de contabilidad
+# necesita ademas la alternate key sanic_KeyAsientoPorRecuento
+# (scripts/create-alternate-keys.sh) para cerrar la carrera entre dos supervisores
+# simultaneos, que ninguna consulta previa al Create puede cerrar sola.
 #
 # Requiere pp_secrets.env y el assembly compilado en Release.
 # Uso: ./scripts/register-transaction-guard.sh
@@ -90,47 +106,68 @@ asm_id = upsert('pluginassemblies', "name eq 'CashHub.Plugins'", {
     'isolationmode': 2, 'sourcetype': 0,
 }, 'pluginassembly CashHub.Plugins', 'pluginassemblyid')
 
-# 2. plugintype
-type_id = upsert('plugintypes', "typename eq 'CashHub.Plugins.GuardTransactionPlugin'", {
-    'typename': 'CashHub.Plugins.GuardTransactionPlugin',
-    'friendlyname': 'CashHub Guard Transaction',
-    'name': 'CashHub.Plugins.GuardTransactionPlugin',
-    'pluginassemblyid@odata.bind': f"/pluginassemblies({asm_id})",
-}, 'plugintype GuardTransactionPlugin', 'plugintypeid')
+# 2. plugintypes (dos: maquina de estados y contabilidad de asientos)
+TYPES = [
+    ('CashHub.Plugins.GuardTransactionPlugin', 'CashHub Guard Transaction', 'GuardTransaction'),
+    ('CashHub.Plugins.GuardSupervisorAccountingPlugin', 'CashHub Guard Supervisor Accounting',
+     'GuardSupervisorAccounting'),
+]
+type_ids = {}
+for typename, friendly, short in TYPES:
+    type_ids[short] = upsert('plugintypes', f"typename eq '{typename}'", {
+        'typename': typename,
+        'friendlyname': friendly,
+        'name': typename,
+        'pluginassemblyid@odata.bind': f"/pluginassemblies({asm_id})",
+    }, f'plugintype {typename.rsplit(".", 1)[-1]}', 'plugintypeid')
 
 msg = {m: one('sdkmessages', f"name eq '{m}'", 'sdkmessageid') for m in ('Create', 'Update', 'Delete')}
 
-# (entidad, mensaje, filteringattributes, preimage_attrs, descripcion)
+# (plugin, entidad, mensaje, rank, filteringattributes, preimage_attrs, descripcion)
+#
+# filteringattributes None = el paso corre en TODO update de la entidad. Es
+# deliberado en sanic_chtbltransactions (H-04): con filtro, un update que solo
+# tocaba montos no despertaba al guard. El costo lo absorben las salidas
+# tempranas del dominio (touchesOnlyMirror sale sin una sola consulta).
 STEPS = [
-    ('sanic_chtbltransactions', 'Create', None, None,
+    ('GuardTransaction', 'sanic_chtbltransactions', 'Create', 1, None, None,
      'Una transaccion con lote preseteado solo entra a un lote Generado y sin nacer Aplicada.'),
-    ('sanic_chtbltransactions', 'Update', 'sanic_transactionbatch,sanic_transactionstatus',
-     'sanic_transactionbatch,sanic_transactionstatus',
-     'Aplicada es terminal; (des)asignacion de lote solo dentro del ciclo Generado/Ingresado.'),
-    ('sanic_transactionbatches', 'Create', None, None,
+    ('GuardSupervisorAccounting', 'sanic_chtbltransactions', 'Create', 2, None, None,
+     'Contabilidad del circuito de aprobacion (B-5 / H-02): Sobrante, Faltante y '
+     "'Sin declaracion' se recalculan server-side por componente contra el deposito "
+     'recontado y su declarado; un solo asiento por (recuento, tipo).'),
+    ('GuardTransaction', 'sanic_chtbltransactions', 'Update', 1, None,
+     'sanic_transactionbatch,sanic_transactionstatus,sanic_cashamount,'
+     'sanic_baclocalcheckamount,sanic_otherlocalcheckamount,sanic_accountnumber',
+     'Aplicada es terminal; (des)asignacion de lote solo dentro del ciclo Generado/Ingresado; '
+     'montos y cuenta congelados con la transaccion Aplicada o su lote ya cargado al Core (H-04).'),
+    ('GuardTransaction', 'sanic_transactionbatches', 'Create', 1, None, None,
      'Un lote solo puede nacer Generado explicito.'),
-    ('sanic_transactionbatches', 'Update', 'sanic_batchstatus', 'sanic_batchstatus,sanic_ingresadopor',
+    ('GuardTransaction', 'sanic_transactionbatches', 'Update', 1, 'sanic_batchstatus',
+     'sanic_batchstatus,sanic_ingresadopor',
      'Transiciones solo hacia adelante Generado -> Ingresado -> Aplicado; Aplicado inmutable; '
      'quien marco Ingresado no marca Aplicado (segregacion de funciones).'),
-    ('sanic_transactionbatches', 'Delete', None, None,
+    ('GuardTransaction', 'sanic_transactionbatches', 'Delete', 1, None, None,
      'Solo se elimina un lote Generado y sin transacciones (rollback del corte vacio).'),
 ]
 
-for entity, message, filtering, image_attrs, description in STEPS:
+for plugin, entity, message, rank, filtering, image_attrs, description in STEPS:
     flt = one('sdkmessagefilters',
         f"primaryobjecttypecode eq '{entity}' and _sdkmessageid_value eq {msg[message]}", 'sdkmessagefilterid')
-    name = f"CashHub.GuardTransaction: {message} de {entity}"
+    name = f"CashHub.{plugin}: {message} de {entity}"
     body = {
         'name': name,
         'description': description,
-        'plugintypeid@odata.bind': f"/plugintypes({type_id})",
+        'plugintypeid@odata.bind': f"/plugintypes({type_ids[plugin]})",
         'sdkmessageid@odata.bind': f"/sdkmessages({msg[message]})",
         'sdkmessagefilterid@odata.bind': f"/sdkmessagefilters({flt})",
-        'stage': 10, 'mode': 0, 'rank': 1, 'supporteddeployment': 0,
+        'stage': 10, 'mode': 0, 'rank': rank, 'supporteddeployment': 0,
         'asyncautodelete': False, 'invocationsource': 0,
     }
-    if filtering:
-        body['filteringattributes'] = filtering
+    # SIEMPRE presente, incluso en None: el PATCH tiene que BORRAR el filtro que el
+    # paso de Update de transacciones ya tenia registrado (H-04). Omitir la clave
+    # dejaria el filtro viejo intacto y el guard seguiria ciego a los montos.
+    body['filteringattributes'] = filtering
     step_id = upsert('sdkmessageprocessingsteps', f"name eq '{name}'", body, name,
                      'sdkmessageprocessingstepid')
     if image_attrs:

@@ -233,6 +233,13 @@ namespace CashHub.Plugins
             public const string ReceptionLookup = "sanic_receptionid";
             public const string DeclaredBagLookup = "sanic_bagdeclarationid";
 
+            /// <summary>
+            /// Sesion de recuento a la que pertenece la tula. Columna de NEGOCIO (la
+            /// escribe la app Recounting), no un espejo: es el ORIGEN del espejo B-9
+            /// sanic_recountingsession del cheque.
+            /// </summary>
+            public const string RecountingSessionLookup = "sanic_recountingsession";
+
             /// <summary>Totales recontados (los estampa la app Recounting).</summary>
             public const string TotalNio = "sanic_totalnio";
             public const string TotalUsd = "sanic_totalusd";
@@ -279,6 +286,29 @@ namespace CashHub.Plugins
             public const string CreatedBy = "createdby";
             public const string CashAmount = "sanic_cashamount";
             public const string Currency = "sanic_currency";
+            public const string TransactionType = "sanic_transactiontype";
+            public const string TransactionNumber = "sanic_transactionnumber";
+
+            /// <summary>
+            /// Total CALCULADO (SourceType 3): ValidForCreateApi/UpdateApi = 0, la
+            /// plataforma no lo deja escribir. Esta en la lista de columnas de dinero
+            /// del guard igual, por si alguna vez se convierte en editable.
+            /// </summary>
+            public const string Total = "sanic_total";
+
+            /// <summary>
+            /// Columnas de DINERO de la transaccion. Ninguna se toca una vez que la
+            /// transaccion esta Aplicada o su lote entro al Core (H-04).
+            /// OJO: sanic_accountnumber tiene IsSecured=1 (field security).
+            /// </summary>
+            public static readonly string[] MoneyAttributes =
+            {
+                CashAmount,
+                BacCheckAmount,
+                OtherCheckAmount,
+                AccountNumber,
+                Total,
+            };
 
             // Option set global sanic_chchcurrency (verificado contra OptionSets/sanic_chchcurrency.xml).
             public const int CurrencyNio = 159460000;
@@ -316,7 +346,31 @@ namespace CashHub.Plugins
             /// </summary>
             public const string BagLookup = "sanic_bag";
 
+            /// <summary>
+            /// B-9 — sesion de recuento del cheque, derivada de
+            /// sanic_bag.sanic_recountingsession por CheckMirrorStampPlugin (columna
+            /// creada por create-supervisor-mirror-columns.sh). Existe para que los
+            /// conteos de cheques de scrResumen sean CountRows DELEGADOS: la cadena
+            /// Cheque -> Tula -> Sesion es dot-walk de dos saltos, NO delega, y
+            /// materializar filas en coleccion topa en el limite del cliente
+            /// (500/2000) sin error. "No editar a mano."
+            /// </summary>
+            public const string SessionLookup = "sanic_recountingsession";
+
+            /// <summary>
+            /// PreImage del paso de CASCADA (Update Post-op de la TULA) con
+            /// sanic_recountingsession: sin ella no se sabe si la sesion CAMBIO y la
+            /// cascada reescribiria N cheques por un update sin cambio real.
+            /// </summary>
+            public const string SessionCascadePreImageName = "PreImage";
+
             public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Sesion de recuento (CH-Tbl-RecountingSessions).</summary>
+        internal static class RecountingSession
+        {
+            public const string LogicalName = "sanic_chtblrecountingsession";
         }
 
         /// <summary>Bolsa declarada (CH-Tbl-DeclaredBags).</summary>
@@ -395,6 +449,36 @@ namespace CashHub.Plugins
             /// de "local"). NO corregirlo: asi esta publicado en el ambiente.
             /// </summary>
             public const string OtherCheckAmount = "sanic_otherlocacheckamount";
+
+            public const string CashAmount = "sanic_cashamount";
+            public const string Currency = "sanic_currency";
+            public const string AccountNumber = "sanic_accountnumber";
+            public const string TransactionNumber = "sanic_transactionnumber";
+
+            /// <summary>
+            /// Lado recontado -> declarado de la relacion. El lado espejo vive en
+            /// DeclaredDeposit.RelatedRecountedDeposit y las apps usan LOS DOS: el
+            /// guard resuelve por este y, si viene vacio, por el otro.
+            /// </summary>
+            public const string RelatedDeclaredDeposit = "sanic_relateddeclareddeposit";
+        }
+
+        /// <summary>Deposito declarado por el cliente (CH-Tbl-DeclaredDeposits).</summary>
+        internal static class DeclaredDeposit
+        {
+            public const string LogicalName = "sanic_chtbldeclareddeposits";
+            public const string Id = "sanic_chtbldeclareddepositsid";
+            public const string CashAmount = "sanic_cashamount";
+            public const string BacCheckAmount = "sanic_baclocalcheckamount";
+
+            /// <summary>Aca SI lleva la 'l' — a diferencia de DepositsRecounting.</summary>
+            public const string OtherCheckAmount = "sanic_otherlocalcheckamount";
+
+            public const string Currency = "sanic_currency";
+            public const string TransactionNumber = "sanic_transactionno";
+
+            /// <summary>Lado declarado -> recontado de la relacion (vacio = nadie lo reconto).</summary>
+            public const string RelatedRecountedDeposit = "sanic_relatedrecounteddeposit";
         }
 
         /// <summary>Custom API de corte de transacciones a lote (CH-App-Digitization).</summary>
