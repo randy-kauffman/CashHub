@@ -6,14 +6,17 @@ using Xunit;
 namespace CashHub.Validation.Tests
 {
     /// <summary>
-    /// Espejos de cheques del tracker: B6 (tula estampada en el cheque fisico) y
-    /// B3 (MatchedCheck en el cheque declarado cuando el fisico lo referencia).
+    /// Espejos de cheques del tracker: B6 (tula estampada en el cheque fisico),
+    /// B3 (MatchedCheck en el cheque declarado cuando el fisico lo referencia) y
+    /// B-9 (sesion de recuento del cheque, con su cascada desde la tula).
     /// </summary>
     public class CheckMirrorsTests
     {
         private static readonly Guid Cheque = Guid.NewGuid();
         private static readonly Guid DeclaradoViejo = Guid.NewGuid();
         private static readonly Guid DeclaradoNuevo = Guid.NewGuid();
+        private static readonly Guid SesionVieja = Guid.NewGuid();
+        private static readonly Guid SesionNueva = Guid.NewGuid();
 
         // ---------- B6: re-estampa de la tula ----------
 
@@ -110,6 +113,62 @@ namespace CashHub.Validation.Tests
                 targetDeclared: DeclaradoViejo, preDeclared: DeclaradoViejo);
 
             Assert.Empty(updates);
+        }
+
+        // ---------- B-9: cascada de la sesion desde la TULA hacia sus cheques ----------
+
+        [Fact]
+        public void CascadaSesion_LaTulaSeReAsigna_PropagaLaSesionNueva()
+        {
+            var plan = CheckMirrors.ResolveSessionCascade(
+                sessionTouched: true, newSessionId: SesionNueva, previousSessionId: SesionVieja);
+
+            Assert.True(plan.Propagate);
+            Assert.Equal(SesionNueva, plan.SessionId);
+        }
+
+        [Fact]
+        public void CascadaSesion_TulaSinSesionPorPrimeraVez_PropagaLaSesion()
+        {
+            var plan = CheckMirrors.ResolveSessionCascade(
+                sessionTouched: true, newSessionId: SesionNueva, previousSessionId: null);
+
+            Assert.True(plan.Propagate);
+            Assert.Equal(SesionNueva, plan.SessionId);
+        }
+
+        [Fact]
+        public void CascadaSesion_TulaDesvinculadaDeLaSesion_PropagaLaLimpieza()
+        {
+            // Dejar el espejo viejo seria peor que no tenerlo: los CountRows por sesion
+            // de scrResumen contarian cheques que ya no pertenecen a esa sesion.
+            var plan = CheckMirrors.ResolveSessionCascade(
+                sessionTouched: true, newSessionId: null, previousSessionId: SesionVieja);
+
+            Assert.True(plan.Propagate);
+            Assert.Null(plan.SessionId);
+        }
+
+        [Fact]
+        public void CascadaSesion_SinCambioReal_NoTocaNingunCheque()
+        {
+            // Dataverse dispara un paso filtrado aunque se reescriba el MISMO valor.
+            // Sin esta guarda, guardar la tula sin cambiarla reescribe N cheques.
+            var plan = CheckMirrors.ResolveSessionCascade(
+                sessionTouched: true, newSessionId: SesionVieja, previousSessionId: SesionVieja);
+
+            Assert.False(plan.Propagate);
+        }
+
+        [Fact]
+        public void CascadaSesion_ColumnaNoTocada_NoPropagaAunqueDifiera()
+        {
+            // Si la columna no vino en el Target, no cambio: el valor efectivo es el de
+            // la PreImage. Propagar aca seria inventar un cambio que no ocurrio.
+            var plan = CheckMirrors.ResolveSessionCascade(
+                sessionTouched: false, newSessionId: null, previousSessionId: SesionVieja);
+
+            Assert.False(plan.Propagate);
         }
     }
 }

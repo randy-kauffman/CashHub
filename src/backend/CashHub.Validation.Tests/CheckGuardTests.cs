@@ -155,7 +155,7 @@ namespace CashHub.Validation.Tests
             Assert.True(EvaluateCheckUpdate(previous, statusInTarget: false, newStatus: null).IsAllowed);
         }
 
-        // ---- Update: escritura SOLO del espejo (sanic_bag, infraestructura) ----
+        // ---- Update: escritura SOLO de espejos (sanic_bag + sanic_recountingsession) ----
 
         [Theory]
         [InlineData(null)]
@@ -166,12 +166,37 @@ namespace CashHub.Validation.Tests
         [InlineData(Rebotado)]
         public void CheckUpdate_SoloEspejo_IsAllowedInclusoCongelado(int? previous)
         {
-            // Mismo racional que touchesOnlyTotals del lote TB: el espejo
-            // sanic_bag es metadata derivada (CheckMirrorStampPlugin/backfill),
-            // no una edicion de negocio — el congelamiento no aplica.
+            // Mismo racional que touchesOnlyTotals del lote TB: los espejos sanic_bag
+            // (B6) y sanic_recountingsession (B-9) son metadata derivada
+            // (CheckMirrorStampPlugin, su cascada desde la tula o el backfill), no una
+            // edicion de negocio — el congelamiento no aplica.
             var result = EvaluateCheckUpdate(previous, statusInTarget: false,
                 newStatus: null, touchesOnlyMirror: true);
             Assert.True(result.IsAllowed);
+        }
+
+        [Fact]
+        public void CheckUpdate_EspejoMasEstado_NoEsEspejo_IsBlockedSiEstaCongelado()
+        {
+            // "Solo espejo" NUNCA puede significar "espejo + estado": si el request
+            // tambien escribe sanic_checkstatus, esto es negocio y el congelamiento de
+            // Recibido manda, aunque el llamador arme mal el set de columnas.
+            var result = EvaluateCheckUpdate(Recibido, statusInTarget: true,
+                newStatus: EnviadoADigitacion, touchesOnlyMirror: true);
+
+            Assert.False(result.IsAllowed);
+            Assert.Contains("congela", result.Reason);
+        }
+
+        [Fact]
+        public void CheckUpdate_EspejoMasEstado_TransicionIlegal_IsBlocked()
+        {
+            // Ni siquiera sobre un cheque no congelado el flag de espejo puede
+            // habilitar una transicion que el handshake no admite.
+            var result = EvaluateCheckUpdate(Recontado, statusInTarget: true,
+                newStatus: Recibido, touchesOnlyMirror: true);
+
+            Assert.False(result.IsAllowed);
         }
     }
 }

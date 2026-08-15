@@ -59,9 +59,16 @@ namespace CashHub.Validation.Security
         /// <param name="statusInTarget">true si el request escribe sanic_checkstatus.</param>
         /// <param name="newStatus">Estado destino cuando <paramref name="statusInTarget"/>.</param>
         /// <param name="touchesOnlyMirror">
-        /// true si el request escribe SOLO el espejo sanic_bag (CheckMirrorStampPlugin
-        /// o backfill). Es metadata derivada, no una edicion de negocio: pasa aun con
-        /// el cheque congelado — mismo racional que touchesOnlyTotals del lote TB.
+        /// true si el request escribe SOLO columnas espejo del cheque — sanic_bag (B6)
+        /// y sanic_recountingsession (B-9) — puestas por CheckMirrorStampPlugin, su
+        /// cascada desde la tula o el backfill. Es metadata derivada, no una edicion
+        /// de negocio: pasa aun con el cheque congelado — mismo racional que
+        /// touchesOnlyTotals del lote TB.
+        ///
+        /// Sin este bypass la cascada de sesion y el backfill de B-9 CHOCAN contra el
+        /// congelamiento: el paso de Update del guard NO tiene filteringattributes a
+        /// proposito (Recibido congela el registro entero), asi que ve absolutamente
+        /// todas las escrituras, incluidas las del espejo.
         /// </param>
         public static TransactionGuardResult EvaluateCheckUpdate(
             int? previousStatus,
@@ -69,7 +76,11 @@ namespace CashHub.Validation.Security
             int? newStatus,
             bool touchesOnlyMirror = false)
         {
-            if (touchesOnlyMirror)
+            // El && !statusInTarget es la parte que importa: "solo espejo" nunca puede
+            // significar "espejo + estado". Si algun dia el llamador se equivoca al
+            // armar el set de columnas, el handshake sigue siendo el que manda —
+            // mismo blindaje que touchesOnlyMirror en ReceptionGuard.
+            if (touchesOnlyMirror && !statusInTarget)
             {
                 return TransactionGuardResult.Allow();
             }

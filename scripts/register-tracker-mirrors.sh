@@ -9,8 +9,13 @@
 #      BagReconciliationMirrorPlugin (B5) — Pre-op (20) en sanic_chtblbags:
 #        Create; Update (filtrado en sanic_bagdeclarationid + totales + estado,
 #        PreImage de esas columnas).
-#      CheckMirrorStampPlugin (B3+B6) — Pre-op (20) en sanic_chtblchecks:
+#      CheckMirrorStampPlugin (B3+B6+B-9) — Pre-op (20) en sanic_chtblchecks:
 #        Create; Update (filtrado en deposito + declarado, PreImage declarado).
+#        B-9 (espejo sanic_recountingsession) viaja en ESTOS MISMOS pasos: sale de la
+#        misma cadena deposito -> tula -> sesion, asi que el filtro en
+#        sanic_relatedrecounterdepositid ya es su disparador exacto. La CASCADA de
+#        B-9 (Update de sanic_chtblbags filtrado en sanic_recountingsession) se
+#        registra en scripts/register-supervisor-mirrors.sh, no aca.
 #
 # Requiere pp_secrets.env y el assembly compilado en Release.
 # Uso: ./scripts/register-tracker-mirrors.sh
@@ -103,11 +108,13 @@ PLUGINS = [
     ]),
     ('CashHub.Plugins.CheckMirrorStampPlugin', 'CashHub Check Mirror Stamp', [
         ('sanic_chtblchecks', 'Create', 20, None, None,
-         'Estampa la tula (B6) y el MatchedCheck del declarado (B3) al crear el cheque.'),
+         'Estampa la tula (B6), la sesion de recuento (B-9) y el MatchedCheck del '
+         'declarado (B3) al crear el cheque.'),
         ('sanic_chtblchecks', 'Update', 20,
          'sanic_relatedrecounterdepositid,sanic_relateddeclaredcheck',
          'sanic_relateddeclaredcheck',
-         'Re-estampa tula y MatchedCheck al cambiar deposito o cheque declarado.'),
+         'Re-estampa tula, sesion de recuento y MatchedCheck al cambiar deposito o '
+         'cheque declarado.'),
     ]),
 ]
 
