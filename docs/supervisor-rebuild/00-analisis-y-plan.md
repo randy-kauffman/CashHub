@@ -86,13 +86,13 @@ no en las guías de pantalla. Orden por impacto:
    `CH-SR-Counter.xml:89`, **`CH-SR-CountingSupervisor.xml:56`** (¡el de esta app!),
    `CH-SR-OpsAdmin`, `CH-SR-AnalyticsRead`, `CH-SR-ClientAdminContributor`,
    `CH-SR-ClientAdminApprover`. Dejarlo solo en un rol de soporte explícito.
-5. Auditoría por columna (verificado — hoy está al revés): HABILITAR
-   `IsAuditEnabled=1` en `sanic_CHTblTransactions.sanic_BACLocalCheckAmount` y
-   `.sanic_Total` (hoy NO auditadas — y es la tabla que B-5 blinda) y en
-   `sanic_CHTblApprovalRequest.sanic_SolvedBy` (hoy NO auditada — es el dato central
-   del cuatro ojos). **No existe `TotalAmount`** en las tablas de esta app: en
-   Transactions/DepositsRecounting la columna es `sanic_Total`. Confirmar además
-   `organization.isauditenabled` en el entorno (con org-level OFF no se graba nada).
+5. Auditoría por columna — **DESPLEGADO** (import CashHubCore 1.14.0.0, verificado
+   por GET): `sanic_CHTblTransactions.sanic_BACLocalCheckAmount` ✅ y
+   `sanic_CHTblApprovalRequest.sanic_SolvedBy` ✅ auditando.
+   **`sanic_Total` NO se puede auditar**: es columna CALCULADA y Dataverse descarta
+   el flag en silencio (limitación de plataforma, no un fallo de import). Cobertura
+   equivalente: los 3 componentes que la alimentan (Cash/BAC/Other) sí auditan y el
+   total es derivable. `organization.isauditenabled` = true (retención 30 días).
 6. Diff de roles ENTORNO vs repo: la app patchea `DeclaredBags` y
    `RecountingSessionDetails` sin que ningún rol del repo lo autorice → hay roles
    asignados fuera de control de fuentes.
