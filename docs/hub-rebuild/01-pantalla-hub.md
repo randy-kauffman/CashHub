@@ -114,7 +114,7 @@ lee un datasource directamente.
 | `ThemeAccent`, `ThemeAccentDark`, `ThemeAccentSoft`, `ThemeBg`, `ThemeSurface`, `ThemeSurface2`, `ThemeInk`, `ThemeInk2`, `ThemeInk3`, `ThemeLine`, `ThemeLineSoft`, `ThemeOk`, `ThemeOkSoft`, `ThemeInfo`, `ThemeInfoSoft` | Color | `OnStart` (bloque 1, antes de tocar red) | todos los controles |
 | `gvarEntorno` | Texto | `OnStart` (bloque 1) | `pilHubEntorno` |
 | `colCatalog` | Colección | `OnStart` (bloque 2) | denominador de la píldora "X de **Y**" |
-| `colAccess`, `colGroupIds`, `colMyGroupIds` | Colecciones | `OnStart` (bloques 3–4) | nadie en pantalla (insumo del filtro) |
+| `colAccess`, `colGroupIds`, `colMyGroupIds`, `colGraphError` | Colecciones | `OnStart` (bloques 3–4) | nadie en pantalla (insumo del filtro; `colGraphError` acumula lotes de Graph caídos porque `Set` no es legal dentro de `ForAll`) |
 | `gvarAccessError` | Booleano | `OnStart` (bloques 3–4) | banner fail-open, visibilidad de la píldora |
 | `colAppData` | Colección | `OnStart` (bloque 5) | `galHubApps.Items`, numerador de la píldora, estado vacío |
 | `gvarLoaded` | Booleano | `OnStart` (bloques 1 y 6) | skeleton vs. contenido real |
@@ -349,6 +349,7 @@ ClearCollect(colGroupIds, Distinct(colAccess, GroupId));
 
 // ===== 4. Membresía transitiva. checkMemberGroups acepta hasta 20 grupos
 //         por llamada: se resuelve en lotes de 20. =====
+Clear(colGraphError);
 ForAll(
     Sequence(RoundUp(CountRows(colGroupIds) / 20, 0)) As batch,
     IfError(
@@ -374,11 +375,14 @@ ForAll(
                 {GroupId: Text(Value)}
             )
         ),
-        // Si Graph falla no bloqueamos el hub: se muestra todo con aviso;
-        // la autorización real la imponen las apps destino
-        Set(gvarAccessError, true)
+        // Set() NO se puede invocar dentro de ForAll: el error del lote se
+        // acumula en una colección y se traduce a la bandera al salir
+        Collect(colGraphError, {Batch: batch.Value})
     )
 );
+// Si Graph falló en cualquier lote no bloqueamos el hub: fail-open con aviso;
+// la autorización real la imponen las apps destino
+Set(gvarAccessError, !IsEmpty(colGraphError));
 
 // ===== 5. Join en memoria: catálogo × accesos × mis grupos =====
 ClearCollect(
@@ -406,7 +410,7 @@ If(
 )
 ```
 
-**Los tres cambios respecto de lo publicado**, y por qué:
+**Los cuatro cambios respecto de lo publicado**, y por qué:
 
 1. **Bloque 1 completo**: tokens de paleta + `gvarEntorno`. Va PRIMERO, antes de
    cualquier llamada a red, para que aunque Dataverse o Graph se caigan la
@@ -416,8 +420,27 @@ If(
    *falsy*, pero si alguna vez se re-ejecuta `OnStart` el skeleton no volvería a
    aparecer y el usuario vería la lista vieja durante la revalidación. Un
    `Set(…, false)` cuesta cero y cierra el agujero.
-3. Nada más. **El resto no se toca**: es la versión que arregló el bug del filtro
+3. **El fallback del `IfError` del bloque 4 ya no usa `Set`**: `Set()` **no se
+   puede invocar dentro de `ForAll`** (App Checker: *"This function cannot be
+   invoked within ForAll"*). La 1.27 embarcó ese bug LATENTE porque se empaquetó
+   por CLI y `pac canvas pack` no valida fórmulas — Studio lo cazó recién al
+   abrir la app. El patrón correcto: acumular el error del lote en una colección
+   (`Collect` sí es legal dentro de `ForAll`) y traducirlo a la bandera
+   `gvarAccessError` con un único `Set` fuera del bucle. La semántica fail-open
+   es idéntica: cualquier lote caído enciende la bandera.
+4. Nada más. **El resto no se toca**: es la versión que arregló el bug del filtro
    muerto, y es óptima (§7).
+
+> 🧨 **Si el bloque 3 marca `'App Catalog' isn't recognized`** (y en cascada
+> *"GUID values can only be compared to other GUID values"* en el bloque 5): la
+> fórmula está bien — lo que está incompleto es el **datasource**. El de
+> `CH-Tbl-AppCatalogAccesses` de la 1.26 se generó por script desde el Web API
+> (`generate-canvas-datasource.py`) y ese blob no trae la metadata de la
+> relación del lookup, así que Studio no puede expandir `row.'App Catalog'`.
+> Remedio en Studio: panel **Datos** → quitar `CH-Tbl-AppCatalogAccesses` →
+> volver a agregarla desde el conector de Dataverse (Studio regenera la metadata
+> completa, lookup incluido). Si tras el refresh IntelliSense ofrece otro nombre
+> para la columna, el suyo manda.
 
 > 🧨 **Gotcha que hay que respetar si algún día se edita este `OnStart`**:
 > `ClearCollect(col, If(cond, Filter(...)))` **sin rama else** revienta con
