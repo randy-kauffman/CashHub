@@ -38,15 +38,22 @@ violación es un bug de la guía, no una licencia creativa:
    | Texto HTML clásico | Clásico → **Texto HTML** (`HTML text`) |
    | Galería vertical en blanco | Diseño → **Galería vertical en blanco** (`Blank vertical gallery`) |
 
-   > 🧨 **El Rectángulo clásico NO tiene `Radius`.** Verificado contra
-   > `References\Themes.json` del `.msapp` publicado: `defaultRectangleStyle` no
-   > expone `RadiusTopLeft/TopRight/BottomLeft/BottomRight` (ni
-   > `HoverBorderColor`). La **Etiqueta** y el **Botón** clásicos SÍ los tienen.
-   > Por eso en esta guía el rectángulo se usa **solo** para barras y líneas de
-   > esquina viva, y **toda superficie con esquinas redondeadas** (tiles,
-   > píldoras, cards) es una **Etiqueta clásica con `Text: ""`** o un **Botón
-   > clásico** cuando además necesita estados de hover. Si una tabla te pide
-   > `Radius` sobre un rectángulo, es un bug de la guía.
+   > 🧨 **Ni el Rectángulo NI la Etiqueta clásica tienen `Radius` — solo el
+   > Botón (y la Imagen).** Verificado contra los templates reales del `.msapp`
+   > (`pkgs/label_2.5.1.xml`: cero ocurrencias de Radius; `button_2.2.0.xml`:
+   > `RadiusTopLeft/TopRight/BottomLeft/BottomRight` + `autoBorderRadius`) y
+   > contra los 10 `.msapp` publicados del repo: 438 etiquetas clásicas, ninguna
+   > con Radius. Ojo con el método: `References\Themes.json` NO sirve para esto
+   > (el theme solo lista las propiedades que pisa — una versión previa de esta
+   > guía dedujo de ahí que la Etiqueta tenía Radius, y era falso). Por eso en
+   > esta guía el rectángulo se usa **solo** para barras y líneas de esquina
+   > viva, y **toda superficie con esquinas redondeadas** (tiles, píldoras,
+   > cards) es un **Botón clásico con `Text: ""`**: `DisplayMode.View` si es
+   > decorativa, `DisplayMode.Edit` + `OnSelect: Select(Parent)` si vive dentro
+   > del template de la galería y debe delegar el clic (View NO dispara
+   > OnSelect), y siempre `HoverFill`/`PressedFill` iguales al `Fill` para que
+   > no parpadee. Si una tabla te pide `Radius` sobre un rectángulo o una
+   > etiqueta, es un bug de la guía.
 
 4. **Propiedades**: cada tabla lista SOLO las propiedades que cambian del
    default. Los defaults tipográficos y de caja están en §2.5, y **mandan**: si
@@ -211,7 +218,7 @@ De **`CH-Tbl-AppCatalogAccesses`**:
 | Prefijo | Tipo de control | Ejemplo |
 |---|---|---|
 | `scr` | Pantalla | `scrHub` |
-| `shp` | **Superficie**: barra o línea (Rectángulo clásico) **y también** tile / card / píldora contenedora construidos con Botón clásico en `DisplayMode.View`, o con Etiqueta clásica y `Text: ""` — porque el rectángulo no tiene `Radius` (§0.3). **La variante Etiqueta NO va en `DisplayMode.View`**: le mataría el `OnSelect: Select(Parent)` (el clic sobre el tile del glifo dejaría de abrir la app, prueba de §9.2). La tabla de cada control manda (§0.4) | `shpHubHeader` (rectángulo), `shpHubMarca` (botón), `shpHubVacio` (etiqueta) |
+| `shp` | **Superficie**: barra o línea (Rectángulo clásico) **y también** tile / card / píldora contenedora construidos con **Botón clásico y `Text: ""`** — porque ni el rectángulo ni la etiqueta tienen `Radius` (§0.3). Decorativa → `DisplayMode.View`; dentro del template de la galería con clic delegado → `DisplayMode.Edit` + `OnSelect: Select(Parent)` (View NO dispara OnSelect). La tabla de cada control manda (§0.4) | `shpHubHeader` (rectángulo), `shpHubMarca` (botón), `shpHubVacio` (botón en View) |
 | `lbl` | Etiqueta clásica | `lblHubFecha` |
 | `btn` | Botón clásico con acción | `btnHubTarjeta` |
 | `pil` | Píldora (botón clásico de solo lectura) | `pilHubEntorno` |
@@ -660,11 +667,14 @@ para nombre + correo):
 
 | Control | Tipo | Propiedad | Valor |
 |---|---|---|---|
-| `shpHubUserChip` | **Etiqueta clásica** *(no rectángulo: necesita `Radius`, §0.3)* | Text | `""` |
+| `shpHubUserChip` | **Botón clásico** *(única superficie con `Radius`, §0.3)* | Text | `""` |
+| | | DisplayMode | `DisplayMode.View` |
 | | | Width / Height | `If(Parent.Width < 900, 40, 232)` / `40` |
 | | | X | `Parent.Width - Self.Width - 22` |
 | | | Y | `(shpHubHeader.Height - Self.Height) / 2` |
-| | | Fill / BorderColor / BorderThickness | `ThemeSurface2` / `ThemeLineSoft` / `1` |
+| | | Fill / HoverFill / PressedFill | `ThemeSurface2` (las tres — que no parpadee) |
+| | | BorderColor / HoverBorderColor / PressedBorderColor | `ThemeLineSoft` (las tres) |
+| | | BorderThickness | `1` |
 | | | Radius (las 4) | `20` |
 | `shpHubAvatar` | Botón clásico | X / W / H | `shpHubUserChip.X + 5` / `30` / `30` |
 | | | Y | `shpHubUserChip.Y + 5` |
@@ -789,12 +799,13 @@ lateral de 46 del §4.0. No es un número elegido a ojo.
 | | | Y / H | `htmHubSaludo.Y + htmHubSaludo.Height + 2` / `22` |
 | | | Text | fórmula §4.3.2 |
 | | | Size / Color | `10.13` / `ThemeInk2` |
-| `shpHubPildoraAccesos` | **Etiqueta clásica** *(no rectángulo: necesita `Radius`, §0.3)* | Text | `""` |
+| `shpHubPildoraAccesos` | **Botón clásico** *(única superficie con `Radius`, §0.3)* | Text | `""` |
+| | | DisplayMode | `DisplayMode.View` |
 | | | X | `galHubApps.X` |
 | | | Y | `lblHubFecha.Y + lblHubFecha.Height + 14` |
 | | | Width | `Min(galHubApps.Width - 18, Len(lblHubAccesos.Text) * 6.4 + 46)` |
 | | | Height / Radius (las 4) | `26` / `13` |
-| | | Fill | `If(CountRows(colAppData) = CountRows(colCatalog), ThemeOkSoft, ThemeInfoSoft)` |
+| | | Fill / HoverFill / PressedFill | `If(CountRows(colAppData) = CountRows(colCatalog), ThemeOkSoft, ThemeInfoSoft)` (las tres) |
 | | | Visible | `gvarLoaded && !gvarAccessError && CountRows(colAppData) > 0` |
 | `icoHubAccesos` | Icono clásico (**Marca de verificación**) | X / Y / W / H | `shpHubPildoraAccesos.X + 12` / `shpHubPildoraAccesos.Y + 6` / `14` / `14` |
 | | | Icon | `Icon.Check` |
@@ -933,32 +944,40 @@ fantasmas y en monitor 4.
 
 Dentro del template (recordá la regla 0.7: `X`/`Y` relativos al template).
 
-**Los cinco son Etiquetas clásicas con `Text: ""`**, no rectángulos: todas llevan
-`Radius`, y el Rectángulo clásico no lo tiene (§0.3). El `Text` vacío + los
-`Padding` en `0` de §2.5 las convierten en superficies puras.
+**Los cinco son Botones clásicos con `Text: ""` en `DisplayMode.View`** — son la
+única superficie con `Radius` (§0.3). El `Text` vacío + los `Padding` en `0` de
+§2.5 los convierten en superficies puras; `HoverFill`/`PressedFill` = su `Fill`
+para que el skeleton no reaccione al mouse. Ningún control del skeleton lleva
+`OnSelect`.
 
 | Control | Tipo | Propiedad | Valor |
 |---|---|---|---|
-| `shpHubSkTarjeta` | Etiqueta clásica | Text | `""` |
+| `shpHubSkTarjeta` | Botón clásico | Text / DisplayMode | `""` / `DisplayMode.View` |
 | | | X / Y | `0` / `0` |
 | | | W / H | `Parent.TemplateWidth - 18` / `Parent.TemplateHeight - 18` |
-| | | Fill / BorderColor / BorderThickness | `ThemeSurface` / `ThemeLine` / `1` |
+| | | Fill / HoverFill / PressedFill | `ThemeSurface` (las tres) |
+| | | BorderColor / HoverBorderColor / PressedBorderColor | `ThemeLine` (las tres) |
+| | | BorderThickness | `1` |
 | | | Radius (las 4) | `13` |
-| `shpHubSkGlifo` | Etiqueta clásica | Text | `""` |
+| `shpHubSkGlifo` | Botón clásico | Text / DisplayMode | `""` / `DisplayMode.View` |
 | | | X / Y / W / H | `20` / `20` / `44` / `44` |
-| | | Fill / Radius (las 4) | `ThemeLineSoft` / `11` |
-| `shpHubSkBarra1` | Etiqueta clásica | Text | `""` |
+| | | Fill / HoverFill / PressedFill | `ThemeLineSoft` (las tres) |
+| | | Radius (las 4) | `11` |
+| `shpHubSkBarra1` | Botón clásico | Text / DisplayMode | `""` / `DisplayMode.View` |
 | | | X / Y / H | `20` / `82` / `12` |
 | | | Width | `(Parent.TemplateWidth - 58) * 0.55` |
-| | | Fill / Radius (las 4) | `ThemeLineSoft` / `6` |
-| `shpHubSkBarra2` | Etiqueta clásica | Text | `""` |
+| | | Fill / HoverFill / PressedFill | `ThemeLineSoft` (las tres) |
+| | | Radius (las 4) | `6` |
+| `shpHubSkBarra2` | Botón clásico | Text / DisplayMode | `""` / `DisplayMode.View` |
 | | | X / Y / H | `20` / `106` / `10` |
 | | | Width | `(Parent.TemplateWidth - 58) * 0.85` |
-| | | Fill / Radius (las 4) | `ThemeLineSoft` / `6` |
-| `shpHubSkBarra3` | Etiqueta clásica | Text | `""` |
+| | | Fill / HoverFill / PressedFill | `ThemeLineSoft` (las tres) |
+| | | Radius (las 4) | `6` |
+| `shpHubSkBarra3` | Botón clásico | Text / DisplayMode | `""` / `DisplayMode.View` |
 | | | X / Y / H | `20` / `124` / `10` |
 | | | Width | `(Parent.TemplateWidth - 58) * 0.6` |
-| | | Fill / Radius (las 4) | `ThemeLineSoft` / `6` |
+| | | Fill / HoverFill / PressedFill | `ThemeLineSoft` (las tres) |
+| | | Radius (las 4) | `6` |
 
 > **El shimmer del mockup no existe en canvas clásico** (es una animación CSS de
 > `background-position`). Quedan rectángulos grises estáticos. Divergencia §8.3.
@@ -1037,10 +1056,12 @@ la vez la superficie blanca de la tarjeta y su zona clicable.
 | | | `HoverBorderColor` / `PressedBorderColor` | `ThemeAccent` / `ThemeAccent` |
 | | | Radius (las 4) | `13` |
 | | | `OnSelect` | `Select(Parent)` |
-| | | `AccessibleLabel` | `"Abrir " & ThisItem.'Display Name'` |
-| `shpHubGlifo` | **Etiqueta clásica** *(no rectángulo: necesita `Radius`, §0.3)* | Text | `""` |
+| | | `Tooltip` | `"Abrir " & ThisItem.'Display Name'` *(el Botón clásico NO tiene `AccessibleLabel` — verificado contra `button_2.2.0.xml`; con `Text` vacío, el Tooltip es lo único que anuncia la zona clicable)* |
+| `shpHubGlifo` | **Botón clásico** *(única superficie con `Radius`, §0.3)* | Text | `""` |
+| | | DisplayMode | `DisplayMode.Edit` *(¡NO View! View no dispara `OnSelect` y el clic sobre el tile dejaría de abrir la app)* |
 | | | X / Y / W / H | `20` / `20` / `44` / `44` |
-| | | Fill / Radius (las 4) | `ThemeAccentSoft` / `11` |
+| | | Fill / HoverFill / PressedFill | `ThemeAccentSoft` (las tres — que no parpadee) |
+| | | Radius (las 4) | `11` |
 | | | `OnSelect` | `Select(Parent)` |
 | `imgHubGlifo` | Imagen clásica | X / Y / W / H | `20` / `20` / `44` / `44` |
 | | | `Image` | `ThisItem.Icon` |
@@ -1191,10 +1212,13 @@ Visible cuando la carga terminó y no hay ni una app para mostrar.
 
 | Control | Tipo | Propiedad | Valor |
 |---|---|---|---|
-| `shpHubVacio` | **Etiqueta clásica** *(no rectángulo: necesita `Radius`, §0.3)* | Text | `""` |
+| `shpHubVacio` | **Botón clásico** *(única superficie con `Radius`, §0.3)* | Text | `""` |
+| | | DisplayMode | `DisplayMode.View` |
 | | | X / Y | `galHubApps.X` / `galHubApps.Y` |
 | | | W / H | `galHubApps.Width - 18` / `150` |
-| | | Fill / BorderColor / BorderThickness | `ThemeSurface` / `ThemeLine` / `1` |
+| | | Fill / HoverFill / PressedFill | `ThemeSurface` (las tres) |
+| | | BorderColor / HoverBorderColor / PressedBorderColor | `ThemeLine` (las tres) |
+| | | BorderThickness | `1` |
 | | | Radius (las 4) | `13` |
 | | | `Visible` | `gvarLoaded && CountRows(colAppData) = 0` |
 | `lblHubVacioTitulo` | Etiqueta clásica | X / Y | `shpHubVacio.X + 28` / `shpHubVacio.Y + 44` |
@@ -1545,17 +1569,20 @@ El constructor no cierra la tarea hasta que TODO esto esté tildado.
       `App.MinScreenWidth = 768`, `App.MinScreenHeight = 640`.
 - [ ] `App.OnStart` es exactamente el de §2.6 (tokens arriba, bloques 2–7
       intactos) y `App.OnError` el de §2.7.
-- [ ] **Ningún Rectángulo clásico tiene `Radius`** (§0.3): las 9 superficies
-      redondeadas (`shpHubUserChip`, `shpHubPildoraAccesos`, `shpHubSkTarjeta`,
-      `shpHubSkGlifo`, `shpHubSkBarra1/2/3`, `shpHubGlifo`, `shpHubVacio`) son
-      **Etiquetas clásicas con `Text: ""`**.
+- [ ] **Ningún Rectángulo ni Etiqueta clásica tiene `Radius`** (§0.3): las 9
+      superficies redondeadas (`shpHubUserChip`, `shpHubPildoraAccesos`,
+      `shpHubSkTarjeta`, `shpHubSkGlifo`, `shpHubSkBarra1/2/3`, `shpHubGlifo`,
+      `shpHubVacio`) son **Botones clásicos con `Text: ""`** — todos en
+      `DisplayMode.View` salvo `shpHubGlifo` (Edit + `Select(Parent)`), y todos
+      con `HoverFill`/`PressedFill` = su `Fill`.
 - [ ] **Todo Botón y toda Etiqueta tienen `Font = Font.'Segoe UI'`** (§2.5). En
       particular, `shpHubMarca` muestra el glifo **`₵`** y no una caja vacía — si
       ves tofu, quedó en Open Sans.
-- [ ] Los 4 botones tienen `BorderThickness` pisado (`0`, salvo `btnHubTarjeta`
-      que va en `1`): el default del tema es **2**.
-- [ ] Las etiquetas usadas como superficie tienen `Padding*` en `0` y `Wrap` en
-      `false` (§2.5).
+- [ ] Los 13 botones tienen `BorderThickness` pisado (`0`, salvo `btnHubTarjeta`,
+      `shpHubUserChip`, `shpHubSkTarjeta` y `shpHubVacio` que van en `1`): el
+      default del tema es **2**.
+- [ ] Los botones usados como superficie tienen `Padding*` en `0`, y toda
+      etiqueta arranca con `Wrap` en `false` (§2.5).
 - [ ] **App Checker en cero errores.** Ningún ícono de delegación (banda azul)
       en `galHubApps` ni en `galHubSkeleton` — sus `Items` son colecciones.
 - [ ] Ninguna fórmula **de pantalla** menciona `'CH-Tbl-AppCatalogs'`,
