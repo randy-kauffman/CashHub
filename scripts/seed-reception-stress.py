@@ -8,11 +8,53 @@ topes de delegacion de Power Fx (500 / 2000 filas) y contra el volumen de lotes:
     ~6.000 planillas (1-4 por lote, montos NIO/USD realistas)
     ~13.000 tulas    (1-4 por planilla)
 
+y el universo de CLIENTES/SUCURSALES que el combo de la v2 tiene que aguantar:
+
+    ~5.000 clientes   (nombres de empresa nicaraguenses, combinatoria rubro +
+                       nombre + sufijo, todos Active)
+    ~50.000 sucursales (5-15 por cliente, nombres de plaza/zona reales,
+                        todas Active)
+
 MARCADORES (todo lo sembrado es rastreable y borrable por prefijo):
     lote     sanic_transportadora = 'STRESS-RCP <TransportadoraFicticia>'
     planilla sanic_receiptid      = 'SR' + correlativo   (y sanic_name igual)
     tula     sanic_bagid          = 'ST' + correlativo   (y sanic_name igual)
     cliente  sanic_name           = 'STRESS-RCP ...'     (solo si hay que crearlos)
+    cliente  sanic_cifbco         = 'STRESS-CLI' + correlativo   (fase de clientes)
+    sucursal (sin marcador propio: se rastrean por su cliente)
+
+-----------------------------------------------------------------------------
+POR QUE EL MARCADOR DE CLIENTES VA EN sanic_cifbco Y NO EN EL NOMBRE
+-----------------------------------------------------------------------------
+La fase de clientes existe para probar el COMBO DE SUCURSALES de la v2, que
+busca por nombre de cliente con StartsWith DELEGADO sobre el espejo
+sanic_clientnamemirror. Un prefijo 'STRESS-' en sanic_name arruinaria
+exactamente lo que se quiere medir: todos los nombres empezarian igual y
+StartsWith('Distribuidora') no devolveria nada.
+
+sanic_chtblclient NO tiene columna de comentarios/descripcion. Las unicas
+columnas secundarias de texto son sanic_cifbco (CIF bancario) y sanic_cifcom
+(CIF comercial). El marcador va en sanic_cifbco = 'STRESS-CLI' + correlativo:
+  - es un campo secundario, no se muestra en el combo ni participa de la busqueda;
+  - es filtrable server-side (startswith) — el --clean no adivina nada;
+  - hace de correlativo, igual que SR*/ST* en planillas y tulas;
+  - un cliente sintetico con un CIF sintetico es coherente, no basura.
+sanic_cifcom se llena con un CIF de formato realista (J031...) para que la ficha
+no quede a medias.
+
+Las SUCURSALES no tienen columna secundaria libre (solo Name, Client,
+RecordStatus y el espejo). Se rastrean por su CLIENTE: se leen todas con
+_sanic_client_value y se cruzan en memoria contra el set de clientes STRESS.
+Es una sola pasada paginada de a 5.000, no 5.000 consultas.
+
+-----------------------------------------------------------------------------
+EL ESPEJO DE NOMBRE DE CLIENTE — NO SE SIEMBRA, SE VERIFICA
+-----------------------------------------------------------------------------
+sanic_clientnamemirror lo estampa ClientBranchNameMirrorPlugin (Pre-operation
+Create/Update de la sucursal). El seed NO lo manda: si lo mandara, estaria
+probando su propio JSON en vez del plugin. Despues de sembrar se toma una
+muestra y se compara contra el nombre real del cliente. Si el plugin no corre
+dentro de $batch, la muestra lo delata.
 
 -----------------------------------------------------------------------------
 EL GUARD Y COMO SE LO RESPETA
@@ -55,6 +97,8 @@ Uso:
     python3 scripts/seed-reception-stress.py --verify        # solo verificar
     python3 scripts/seed-reception-stress.py --clean         # borrar lo marcado
     python3 scripts/seed-reception-stress.py --restore-steps # rescate de steps
+    python3 scripts/seed-reception-stress.py --only-clients  # solo clientes/sucursales
+    python3 scripts/seed-reception-stress.py --no-clients    # recepcion sin esa fase
 Requiere pp_secrets.env en la raiz. NO correr en produccion.
 """
 import argparse
@@ -78,6 +122,10 @@ TRANSPORTADORA_PREFIX = 'STRESS-RCP '
 RECEIPT_PREFIX = 'SR'
 BAG_PREFIX = 'ST'
 CLIENT_PREFIX = 'STRESS-RCP '
+# Marcador de la fase de clientes/sucursales: va en sanic_cifbco (campo
+# SECUNDARIO) para no ensuciar sanic_name, que es lo que el combo de la v2
+# busca con StartsWith delegado. Ver el docstring del modulo.
+CLIENT_CIF_PREFIX = 'STRESS-CLI'
 
 TRANSPORTADORAS = [
     'Valores Sinteticos', 'Blindados Fantasma', 'Custodia Espectro',
@@ -94,6 +142,14 @@ BATCH_LABEL = {BATCH_EN_PROGRESO: 'En progreso', BATCH_RECIBIDO: 'Recibido',
 
 BAG_ESCLUSA = 159460000
 BAG_BOVEDA = 159460001
+
+# sanic_chchrecordstatus (global): clientes y sucursales.
+# OJO: sanic_recordstatus del cliente tiene AppDefaultValue=159460002
+# (PendingApproval), pero eso es un default DE FORMULARIO — el Web API NO lo
+# aplica. El seed manda 159460000 (Active) EXPLICITO en cliente y sucursal.
+RECORD_ACTIVE = 159460000
+RECORD_INACTIVE = 159460001
+RECORD_PENDING = 159460002
 
 # ------------------------------------------------------------ steps del guard
 STEP_DEL_BATCH = 'CashHub.GuardReception: Delete de sanic_chtblreceptionbatch'
@@ -112,6 +168,7 @@ ES_BATCH = 'sanic_chtblreceptionbatchs'
 ES_RECEPTION = 'sanic_chtblreceptionses'
 ES_BAG = 'sanic_chtblbagses'
 ES_CLIENT = 'sanic_chtblclients'
+ES_BRANCH = 'sanic_chtblclientbranchs'
 
 # ===========================================================================
 # auth + http (mismo patron que seed-supervisor-aprobaciones.py)
@@ -209,7 +266,8 @@ def count_of(entity_set, filtro):
 
 
 PK = {ES_BATCH: 'sanic_chtblreceptionbatchid', ES_RECEPTION: 'sanic_chtblreceptionsid',
-      ES_BAG: 'sanic_chtblbagsid', ES_CLIENT: 'sanic_chtblclientid'}
+      ES_BAG: 'sanic_chtblbagsid', ES_CLIENT: 'sanic_chtblclientid',
+      ES_BRANCH: 'sanic_chtblclientbranchid'}
 
 
 # ===========================================================================
@@ -484,6 +542,295 @@ def clientes(crear_si_falta=True):
 
 
 # ===========================================================================
+# FASE CLIENTES / SUCURSALES — el universo del combo de CH-App-Reception v2
+# ===========================================================================
+# Nombres de empresa por COMBINATORIA rubro x nombre x sufijo. 25 x 40 x 5 =
+# 5.000 combinaciones distintas: alcanza justo para el volumen objetivo sin
+# repetir un solo nombre, y cada rubro queda con ~200 clientes — suficiente para
+# que StartsWith('Distribuidora') sobre el espejo devuelva un universo de prueba
+# de verdad y no tres filas.
+RUBROS = [
+    'Distribuidora', 'Ferreteria', 'Supermercados', 'Farmacias', 'Comercial',
+    'Importaciones', 'Transportes', 'Almacenes', 'Agroservicios', 'Panaderia',
+    'Lacteos', 'Textiles', 'Repuestos', 'Libreria', 'Materiales',
+    'Constructora', 'Inversiones', 'Servicios', 'Automotriz', 'Tecnologia',
+    'Muebleria', 'Calzado', 'Optica', 'Veterinaria', 'Molinos',
+]
+NOMBRES = [
+    'El Progreso', 'Central del Norte', 'San Judas', 'La Esperanza', 'Xolotlan',
+    'Momotombo', 'Nicarao', 'El Gueguense', 'Chontales', 'Las Segovias',
+    'Ruben Dario', 'El Carmen', 'Los Robles', 'Santo Domingo', 'El Trapiche',
+    'La Fuente', 'San Jeronimo', 'Las Colinas', 'El Mirador', 'La Merced',
+    'Rio Coco', 'Sierra Madre', 'El Zapote', 'Las Palmas', 'Monte Fresco',
+    'La Union', 'San Rafael', 'El Cardon', 'Los Pinos', 'Villa Nueva',
+    'El Rosario', 'La Concordia', 'Cerro Negro', 'San Marcos', 'El Portal',
+    'Los Angeles', 'La Providencia', 'Mar Dulce', 'El Naranjo', 'Los Cedros',
+]
+# El sufijo vacio da nombres tipo 'Ferreteria Central del Norte', que es como
+# se llaman de verdad muchos negocios chicos.
+SUFIJOS = ['S.A.', 'S.A. de C.V.', 'Cia. Ltda.', 'y Cia. Ltda.', '']
+
+# Plazas, carreteras, barrios y mercados reales de Nicaragua. Seis arrancan con
+# 'Metro' a proposito: son el objetivo de la busqueda delegable de prueba
+# StartsWith(sanic_name,'Metro') sobre 50.000 sucursales.
+LUGARES = [
+    'Metrocentro Managua', 'Metrocentro Leon', 'Metrocentro Esteli',
+    'Metrocentro Granada', 'Metrocentro Masaya', 'Metropolis Managua',
+    'Plaza Inter', 'Galerias Santo Domingo', 'Multicentro Las Americas',
+    'Plaza Espana', 'Plaza El Sol', 'Plaza Julio Martinez',
+    'Carretera Masaya Km 4', 'Carretera Masaya Km 8', 'Carretera Masaya Km 11',
+    'Carretera Norte Km 5', 'Carretera Norte Km 8', 'Carretera Sur Km 6',
+    'Carretera a Leon Km 12', 'Leon Centro', 'Granada Centro', 'Esteli Centro',
+    'Matagalpa Centro', 'Chinandega Central', 'Masaya Mercado', 'Jinotepe Centro',
+    'Rivas Centro', 'Juigalpa Centro', 'Ocotal Centro', 'Somoto Centro',
+    'Boaco Centro', 'Bluefields Puerto', 'Bilwi Centro', 'Nueva Guinea',
+    'El Rama', 'Tipitapa', 'Ciudad Sandino', 'Bolonia', 'Altamira',
+    'Villa Fontana', 'Ciudad Jardin', 'Bello Horizonte', 'Linda Vista',
+    'Los Robles', 'Las Colinas', 'Reparto San Juan', 'Batahola Norte',
+    'Batahola Sur', 'Monsenor Lezcano', 'Barrio Martha Quezada',
+    'Mercado Oriental', 'Mercado Israel Lewites', 'Mercado Huembes',
+    'Mercado Ivan Montenegro', 'Zona Franca Las Mercedes', 'Aeropuerto',
+    'Puerto Salvador Allende', 'Rotonda Jean Paul Genie', 'Rotonda Ruben Dario',
+    'Pista Suburbana',
+]
+
+
+def nombres_de_empresa(n):
+    """n razones sociales DISTINTAS de la combinatoria, en orden aleatorio."""
+    todas = [f'{rubro} {nombre}' + (f', {suf}' if suf else '')
+             for rubro in RUBROS for nombre in NOMBRES for suf in SUFIJOS]
+    if n > len(todas):
+        raise RuntimeError(
+            f'la combinatoria da {len(todas)} nombres distintos y se piden {n}: '
+            'agregar rubros/nombres/sufijos antes de subir el volumen')
+    return random.sample(todas, n)
+
+
+def clientes_stress(select='sanic_name,sanic_cifbco'):
+    """Clientes de la fase, por el marcador de sanic_cifbco (filtro server-side)."""
+    flt = urllib.parse.quote(f"startswith(sanic_cifbco,'{CLIENT_CIF_PREFIX}')")
+    return get_all(f'/{ES_CLIENT}?$select={select}&$filter={flt}')
+
+
+def sucursales_de(client_ids, select='sanic_name,_sanic_client_value'):
+    """Sucursales de un set de clientes.
+
+    La sucursal NO tiene columna secundaria libre para marcar, asi que se leen
+    TODAS (paginado de a 5.000) y se cruzan en memoria contra el set de clientes.
+    Una consulta por cliente serian 5.000 idas y vueltas; el filtro por
+    navegacion (sanic_Client/sanic_cifbco) funciona pero obliga a un join en el
+    servidor por cada pagina y es notoriamente mas lento a este volumen.
+    """
+    rows = []
+    url = (f'/{ES_BRANCH}?$select={select},{PK[ES_BRANCH]}')
+    while url:
+        d = req('GET', url, prefer='odata.maxpagesize=5000')
+        rows.extend(r for r in d.get('value', [])
+                    if (r.get('_sanic_client_value') or '').lower() in client_ids)
+        nxt = d.get('@odata.nextLink')
+        url = nxt[len(API):] if nxt else None
+    return rows
+
+
+def seed_clients(a):
+    """Siembra ~5.000 clientes Active y ~50.000 sucursales Active.
+
+    NINGUNA de las dos tablas tiene guard registrado (se verifico contra
+    sdkmessageprocessingsteps: no hay un solo paso sobre sanic_chtblclient ni
+    sobre sanic_chtblclientbranch fuera del espejo). Por eso esta fase no toca
+    steps ni necesita orden especial: es escritura pura.
+
+    El unico plugin que corre es ClientBranchNameMirrorPlugin (Pre-operation),
+    y su espejo NO se manda en el JSON: se verifica despues.
+    """
+    t_ini = time.perf_counter()
+    print('\n' + '=' * 78)
+    print('FASE CLIENTES / SUCURSALES')
+    print('=' * 78)
+
+    print('\n== INVENTARIO PREVIO ==')
+    previos = clientes_stress()
+    print(f'  clientes STRESS ya sembrados: {len(previos)}')
+    seq_cli = next_correlativo(previos, 'sanic_cifbco', CLIENT_CIF_PREFIX)
+    print(f'  correlativo de clientes desde {CLIENT_CIF_PREFIX}{seq_cli:06d}')
+
+    usados = {c.get('sanic_name') for c in previos}
+    n_cli = a.clients
+    print('\n== PLAN ==')
+    print(f'  clientes  : {n_cli} (Active explicito {RECORD_ACTIVE})')
+    print(f'  sucursales: {a.branch_min}-{a.branch_max} por cliente '
+          f'(~{n_cli * (a.branch_min + a.branch_max) // 2})')
+    print(f'  espejo sanic_clientnamemirror: NO se manda — lo estampa el plugin')
+    if a.dry_run:
+        print('\n(dry-run) no se escribe nada')
+        return None
+
+    tiempos = {}
+    # ---------------- 1) clientes -------------------------------------------
+    print('\n== 1) CLIENTES ==')
+    # Se pide toda la combinatoria y se descartan los nombres ya sembrados: asi
+    # re-correr la fase agrega clientes NUEVOS en vez de duplicar razones sociales.
+    total_combinatoria = len(RUBROS) * len(NOMBRES) * len(SUFIJOS)
+    nombres = [n for n in nombres_de_empresa(total_combinatoria) if n not in usados][:n_cli]
+    if len(nombres) < n_cli:
+        print(f'  !! la combinatoria ({total_combinatoria} nombres) ya esta agotada: '
+              f'solo quedan {len(nombres)} razones sociales libres de las {n_cli} pedidas. '
+              'Agregar rubros/nombres/sufijos para subir el volumen.', file=sys.stderr)
+    reqs, meta = [], []
+    for nombre in nombres:
+        cif = f'{CLIENT_CIF_PREFIX}{seq_cli:06d}'
+        seq_cli += 1
+        reqs.append(('POST', f'/{ES_CLIENT}', {
+            'sanic_name': nombre,
+            # marcador rastreable (y correlativo), en campo SECUNDARIO
+            'sanic_cifbco': cif,
+            # CIF comercial de formato realista: la ficha no queda a medias
+            'sanic_cifcom': f'J031{random.randint(0, 9999999999):010d}',
+            # AppDefaultValue del formulario es PendingApproval; el Web API no lo
+            # aplica, asi que Active va EXPLICITO.
+            'sanic_recordstatus': RECORD_ACTIVE,
+        }))
+        meta.append(nombre)
+    res, tiempos['clientes'] = run_batches(reqs, 'creando clientes', a.chunk, a.workers)
+    clientes_ok = []
+    for nombre, (st, cid, err) in zip(meta, res):
+        if err or not cid:
+            continue
+        clientes_ok.append({'id': cid, 'nombre': nombre})
+    print(f'  clientes creados: {len(clientes_ok)}/{len(meta)}')
+    if reqs and not clientes_ok:
+        raise RuntimeError('no se creo ningun cliente')
+
+    # ---------------- 2) sucursales -----------------------------------------
+    # El nombre de la sucursal es SOLO el lugar ('Metrocentro Managua'): es lo
+    # que la app muestra y lo que StartsWith busca. Quien es el cliente lo dice
+    # el espejo, que es justamente lo que se esta probando.
+    print('\n== 2) SUCURSALES ==')
+    reqs = []
+    for c in clientes_ok:
+        k = random.randint(a.branch_min, a.branch_max)
+        for lugar in random.sample(LUGARES, k):
+            reqs.append(('POST', f'/{ES_BRANCH}', {
+                'sanic_name': lugar,
+                'sanic_Client@odata.bind': f'/{ES_CLIENT}({c["id"]})',
+                'sanic_recordstatus': RECORD_ACTIVE,
+            }))
+    res, tiempos['sucursales'] = run_batches(reqs, 'creando sucursales', a.chunk, a.workers)
+    n_suc_ok = sum(1 for (st, sid, err) in res if sid)
+    print(f'  sucursales creadas: {n_suc_ok}/{len(reqs)}')
+
+    dt = time.perf_counter() - t_ini
+    total = len(meta) + len(reqs)
+    print('\n== RESUMEN DE LA FASE CLIENTES/SUCURSALES ==')
+    for k, v in tiempos.items():
+        print(f'  {k:12} {v:7.1f}s  ({(len(meta) if k == "clientes" else len(reqs)) / v if v else 0:.0f} op/s)')
+    print(f'  TOTAL {dt:.1f}s · {total} escrituras · '
+          f'{total / dt if dt else 0:.1f} op/s efectivas')
+    return {'clientes': len(clientes_ok), 'sucursales': n_suc_ok, 'segundos': dt}
+
+
+def clean_clients(a):
+    """Borra sucursales y despues clientes de la fase. Sin tocar un solo step.
+
+    Ninguna de las dos tablas tiene guard: el --clean de recepcion apaga 3 pasos
+    Delete porque los lotes en boveda estan congelados, pero aca no hay nada que
+    apagar. Orden obligado: sucursales primero (el lookup al cliente es
+    requerido y borrar el cliente antes dejaria huerfanas o rebotaria).
+    """
+    print('\n== LIMPIEZA DE CLIENTES / SUCURSALES ==')
+    cli = clientes_stress()
+    if not cli:
+        print('  no hay clientes STRESS marcados que borrar')
+        return
+    ids = {c['sanic_chtblclientid'].lower() for c in cli}
+    print(f'  clientes STRESS: {len(cli)} — buscando sus sucursales...')
+    suc = sucursales_de(ids)
+    print(f'  a borrar: sucursales {len(suc)} · clientes {len(cli)}')
+
+    if suc:
+        run_batches([('DELETE', f'/{ES_BRANCH}({r[PK[ES_BRANCH]]})', None) for r in suc],
+                    'borrando sucursales', a.chunk, a.workers)
+    run_batches([('DELETE', f'/{ES_CLIENT}({c["sanic_chtblclientid"]})', None) for c in cli],
+                'borrando clientes', a.chunk, a.workers)
+
+    quedan = clientes_stress('sanic_cifbco')
+    print(f'  quedan clientes STRESS: {len(quedan)}')
+
+
+def verify_clients(a):
+    """Conteos, % de espejo estampado y las dos busquedas delegables de prueba."""
+    print('\n' + '=' * 78)
+    print('VERIFICACION — clientes / sucursales / espejo de nombre de cliente')
+    print('=' * 78)
+    res = {}
+
+    # ---- 1) conteos ----
+    print('\n[1] CONTEOS (paginados de verdad, no el @odata.count que tope en 5000)')
+    cli_active = count_of(ES_CLIENT, f'sanic_recordstatus eq {RECORD_ACTIVE}')
+    suc_active = count_of(ES_BRANCH, f'sanic_recordstatus eq {RECORD_ACTIVE}')
+    suc_total = count_of(ES_BRANCH, f'sanic_recordstatus ne {RECORD_ACTIVE}')
+    print(f'  clientes   Active : {cli_active}')
+    print(f'  sucursales Active : {suc_active}   (no-Active: {suc_total})')
+    res['clientes_active'] = cli_active
+    res['sucursales_active'] = suc_active
+
+    # ---- 2) espejo estampado (muestra) ----
+    # Muestra y no censo: con 50.000 sucursales el $expand completo es varios
+    # minutos de red para responder una pregunta binaria (corrio o no corrio el
+    # plugin dentro de $batch).
+    print(f'\n[2] ESPEJO sanic_clientnamemirror — muestra de {a.mirror_sample}')
+    muestra = req('GET',
+        f'/{ES_BRANCH}?$select={PK[ES_BRANCH]},sanic_name,sanic_clientnamemirror'
+        '&$expand=sanic_Client($select=sanic_name)&$orderby=createdon desc',
+        prefer=f'odata.maxpagesize={a.mirror_sample}').get('value', [])
+    ok = nulos = 0
+    malos = []
+    for r in muestra:
+        esperado = ((r.get('sanic_Client') or {}).get('sanic_name') or '').strip() or None
+        actual = (r.get('sanic_clientnamemirror') or '').strip() or None
+        if actual is None:
+            nulos += 1
+        elif actual == esperado:
+            ok += 1
+        else:
+            malos.append((r.get('sanic_name'), actual, esperado))
+    n = len(muestra) or 1
+    print(f'  sucursales muestreadas: {len(muestra)}')
+    print(f'  espejo correcto : {ok}/{len(muestra)} ({100.0 * ok / n:.2f}%)')
+    print(f'  espejo NULO     : {nulos}  ·  espejo DISTINTO: {len(malos)}')
+    if nulos:
+        print('  !! HALLAZGO CRITICO: el plugin del espejo NO corrio en esas '
+              'sucursales (revisar que el step este ACTIVO y que $batch lo dispare)',
+              file=sys.stderr)
+    for m in malos[:5]:
+        print(f'      !! {m}', file=sys.stderr)
+    res['espejo'] = (ok, nulos, len(malos), len(muestra))
+
+    # ---- 3) busquedas DELEGABLES de prueba ----
+    print('\n[3] BUSQUEDAS DELEGABLES (lo que hace el combo de la v2)')
+    for etiqueta, flt in (
+            ("StartsWith(sanic_name,'Metro')",
+             "startswith(sanic_name,'Metro')"),
+            ("StartsWith(sanic_clientnamemirror,'Distribuidora')",
+             "startswith(sanic_clientnamemirror,'Distribuidora')"),
+            ("las dos juntas (nombre + cliente)",
+             "startswith(sanic_name,'Metro') and "
+             "startswith(sanic_clientnamemirror,'Distribuidora')")):
+        real = count_of(ES_BRANCH, flt)
+        d = req('GET', f'/{ES_BRANCH}?$count=true&$top=1&$select=sanic_name&$filter='
+                + urllib.parse.quote(flt))
+        _, ts = timed_query(
+            f'/{ES_BRANCH}?$select=sanic_name,sanic_clientnamemirror'
+            f'&$filter={urllib.parse.quote(flt)}&$orderby=sanic_name asc&$top=100', n=8)
+        p50, p95 = percentiles(ts)
+        print(f'  {etiqueta:52} -> {real:6} filas  '
+              f'({">2000 OK" if real > 2000 else ">500 OK" if real > 500 else "        "})  '
+              f'p50={p50:.0f}/p95={p95:.0f}ms')
+        res[etiqueta] = real
+    return res
+
+
+# ===========================================================================
 # SEED
 # ===========================================================================
 def plan_volumes(a):
@@ -723,13 +1070,18 @@ def seed(a):
 # ===========================================================================
 def clean(a):
     print('\n== LIMPIEZA ==')
+    # Primero recepcion (lotes/planillas/tulas), que es la que necesita apagar
+    # los steps Delete del guard; despues clientes/sucursales, que no tocan
+    # ningun step. En ese orden porque las planillas apuntan a clientes.
     bats = batches_stress()
     recs = receptions_stress('sanic_receiptid,_sanic_receptionbatch_value')
     bags = bags_stress('sanic_bagid')
     print(f'  a borrar: tulas {len(bags)} · planillas {len(recs)} · lotes {len(bats)}')
     if not (bats or recs or bags):
-        print('  nada marcado que borrar')
+        print('  nada marcado que borrar en recepcion')
         mostrar_steps('steps (intactos):')
+        if not a.no_clients:
+            clean_clients(a)
         return
 
     todos = mostrar_steps('steps ANTES:')
@@ -767,6 +1119,13 @@ def clean(a):
           f'planillas {len(receptions_stress("sanic_receiptid"))} · '
           f'tulas {len(bags_stress("sanic_bagid"))}')
     mostrar_steps('\nESTADO FINAL DE LOS STEPS (deben quedar ACTIVOS):')
+
+    # Fuera del try/finally del guard a proposito: estas tablas no tienen steps
+    # que restaurar, y la reactivacion del guard no puede quedar esperando a que
+    # terminen 50.000 DELETE.
+    if not a.no_clients:
+        clean_clients(a)
+
     if not ok:
         sys.exit(2)
 
@@ -993,6 +1352,17 @@ def main():
                     help='tulas que nacen en esclusa y se patchean a boveda POST-cierre')
     ap.add_argument('--chunk', type=int, default=100, help='requests por $batch')
     ap.add_argument('--workers', type=int, default=6, help='$batch en paralelo')
+    # ---- fase clientes / sucursales ----
+    ap.add_argument('--clients', type=int, default=5000,
+                    help='clientes de la fase de clientes/sucursales')
+    ap.add_argument('--branch-min', type=int, default=5, help='sucursales minimas por cliente')
+    ap.add_argument('--branch-max', type=int, default=15, help='sucursales maximas por cliente')
+    ap.add_argument('--mirror-sample', type=int, default=500,
+                    help='sucursales muestreadas para medir el espejo estampado')
+    ap.add_argument('--only-clients', action='store_true',
+                    help='corre SOLO la fase de clientes/sucursales (y su verificacion)')
+    ap.add_argument('--no-clients', action='store_true',
+                    help='omite la fase de clientes/sucursales (tambien en --clean/--verify)')
     ap.add_argument('--clean', action='store_true')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--verify', action='store_true', help='solo verificar, no sembrar')
@@ -1013,16 +1383,34 @@ def main():
         mostrar_steps('estado final de los steps:')
         sys.exit(0 if ok else 1)
 
+    if a.branch_min > a.branch_max:
+        raise SystemExit('--branch-min no puede ser mayor que --branch-max')
+    if a.only_clients and a.no_clients:
+        raise SystemExit('--only-clients y --no-clients se contradicen')
+
     if a.clean:
         clean(a)
         return
     if a.verify:
-        verify(a)
+        if not a.only_clients:
+            verify(a)
+        if not a.no_clients:
+            verify_clients(a)
         return
 
+    if a.only_clients:
+        seed_clients(a)
+        if not a.no_verify:
+            verify_clients(a)
+        return
+
+    if not a.no_clients:
+        seed_clients(a)
     seed(a)
     if not a.no_verify:
         verify(a)
+        if not a.no_clients:
+            verify_clients(a)
 
 
 if __name__ == '__main__':
