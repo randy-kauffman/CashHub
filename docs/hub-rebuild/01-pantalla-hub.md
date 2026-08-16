@@ -481,29 +481,32 @@ desaparece:
 
 La clave `sanic_icon` se agrega a las 7 filas de
 **`data/seed/30-appcatalogs.json`**, junto a `sanic_appkey` / `sanic_displayname`
-/ etc. (hoy ninguna fila la tiene — por eso la pantalla muestra el respaldo).
+/ etc. (✅ sembrada en las 7 filas el 2026-08-15 — ver §2.8.3).
 
-#### 2.8.3 ⚠️ Tarea de backend PENDIENTE (fuera del alcance de esta guía)
+#### 2.8.3 ✅ Tarea de backend EJECUTADA (2026-08-15)
 
-**El seeder actual no soporta columnas de imagen**, y además **el atributo está
-declarado en el formato equivocado**. Antes de poder sembrar hay que:
+Los tres pasos que esta sección agendaba ya corrieron contra DEV:
 
-0. 🚨 **Cambiar el formato de la columna de imagen de JPEG a PNG.**
-   `Entity.xml` declara `<Format>jpeg</Format>` en `sanic_Icon`, y **JPEG no
-   tiene canal alfa**: si subís los PNG transparentes de §2.8.1 tal cual, la
-   plataforma los recodifica y el fondo transparente se convierte en **negro
-   sólido** — siete cuadrados negros dentro de tiles rosados. Es el error más
-   caro de esta lista porque no falla, sale feo en producción. Se cambia en el
-   diseñador de la tabla (propiedad **Formato de imagen**) o en la metadata del
-   atributo, y viaja en la solución Core.
-1. Extender el seeder para reconocer columnas de imagen y enviar el contenido en
-   base64 (leyendo el PNG desde una ruta relativa declarada en el JSON, p. ej.
-   `"sanic_icon": "@file:assets/icons/reception.png"`, siguiendo el mismo patrón
-   de resolución en vivo que ya usa `"@canvasapp:…"` para `sanic_appurl`).
-2. Sembrar / actualizar las 7 filas.
-
-**Esto se AGENDA, no se ejecuta en esta tarea.** No toques el seeder ni el JSON
-mientras construís la pantalla.
+0. ~~Cambiar el formato de la columna de imagen de JPEG a PNG~~ — **NO HIZO
+   FALTA, y que nadie lo "arregle"**: el `<Format>jpeg</Format>` que declara
+   `Entity.xml` en `sanic_Icon` resultó ser **inerte**. Verificado
+   empíricamente contra DEV (2026-08-15): la metadata viva del atributo
+   (`ImageAttributeMetadata` vía Web API) **no expone ninguna propiedad
+   `Format`**, y al subir un PNG transparente la miniatura vuelve como **PNG
+   RGBA 88×88 con el canal alfa intacto** (pixel de esquina `(0,0,0,0)`). El
+   miedo al "cuadrado negro" era plausible leyendo el XML, pero está refutado
+   por el round-trip real.
+1. ✅ El seeder reconoce columnas de imagen: `"sanic_icon":
+   "@file:assets/icons/reception.png"` (ruta relativa a `data/seed`) sube el
+   PNG en base64, mismo patrón de resolución en vivo que `"@canvasapp:…"`.
+   Solo sube si la columna está vacía; `FORCE_IMAGES=1` pisa lo existente
+   (el thumbnail devuelto está re-encodeado y no se puede comparar byte a
+   byte, así que la idempotencia es por presencia, no por contenido).
+2. ✅ Las 7 filas sembradas y verificadas por round-trip: los 7 thumbnails
+   vuelven `PNG` con alfa. Los assets se generan con
+   `docs/marca/generar-glifos-hub.py` (motivos calcados del mockup, lienzo 88,
+   motivo 46, trazo 4, supersampling 4× + LANCZOS) hacia
+   `data/seed/assets/icons/*.png` (2–4 KB cada uno).
 
 #### 2.8.4 Fallback mientras la columna esté vacía
 
@@ -1489,7 +1492,7 @@ la explicación está en esta tabla — y si NO está acá, es un bug.
 | 8.8 | **Píldora "Producción"** es un literal (`gvarEntorno` en `OnStart`) | La alternativa honesta es una variable de entorno de solución, que cuesta un datasource más y un `LookUp` en el arranque para dibujar 92px de texto. **En DEV va a decir "Producción" hasta que lo cambies a mano** | Bajo, pero es deuda: anotada |
 | 8.9 | **Icono de escudo (`shield-check`) de la píldora de accesos → `Icon.Check`** | El set de iconos clásicos de canvas no tiene escudo. El check sostiene el mismo significado | Bajo |
 | 8.10 | **Estado vacío sin la conjunción `&& !gvarAccessError`** | Sería código muerto: en fail-open `colAppData` = catálogo completo, así que `= 0` implica catálogo vacío, donde el mismo mensaje aplica (razonamiento completo en §4.7) | Ninguno |
-| 8.11 | **Los 7 glifos del mockup SÍ se implementan, pero por DATO**: viajan en la columna de imagen `Icon` del catálogo (PNG 88×88 en `#C8102E`), no en el código de la app. Hasta que se siembren, cada tarjeta muestra un **respaldo de dos letras** derivado de `'App Key'` (RN, SR, RG, DN, EL, TR, CN) | Hardcodear los SVG violaría el requisito de tarjetas 100% dinámicas: un `Switch` por app key = una release de la canvas app por cada app nueva. La ruta correcta es el dato, y está especificada como **prerrequisito obligatorio en §2.8** (exportar los 7 motivos a PNG + agregar `sanic_icon` a `data/seed/30-appcatalogs.json` + extender el seeder, que **todavía no soporta columnas de imagen** — tarea de backend agendada, §2.8.3). El respaldo de dos letras existe porque una sola inicial colisiona: Recepción y Recuento dan ambas "R" (§4.6.1) | **ALTO visual mientras la columna esté vacía** — que es HOY. Nulo una vez sembrada. Beneficio de mantenimiento alto y permanente |
+| 8.11 | **Los 7 glifos del mockup SÍ se implementan, pero por DATO**: viajan en la columna de imagen `Icon` del catálogo (PNG 88×88 en `#C8102E`), no en el código de la app. Hasta que se siembren, cada tarjeta muestra un **respaldo de dos letras** derivado de `'App Key'` (RN, SR, RG, DN, EL, TR, CN) | Hardcodear los SVG violaría el requisito de tarjetas 100% dinámicas: un `Switch` por app key = una release de la canvas app por cada app nueva. La ruta correcta es el dato, y está especificada como **prerrequisito obligatorio en §2.8** (exportar los 7 motivos a PNG + agregar `sanic_icon` a `data/seed/30-appcatalogs.json` + extender el seeder — **ejecutado el 2026-08-15**, §2.8.3). El respaldo de dos letras existe porque una sola inicial colisiona: Recepción y Recuento dan ambas "R" (§4.6.1) | **Nulo: la columna ya está sembrada en DEV** (era ALTO mientras estuviera vacía). Beneficio de mantenimiento alto y permanente |
 | 8.12 | **Tres elementos se ocultan bajo 900px de ancho**: la nota larga del footer, el nombre + correo del chip de usuario (colapsa a solo avatar) y la **píldora de entorno `pilHubEntorno`** | No entran en tablet vertical sin superponerse: chip (232) + píldora (92) + gaps + marca ya suman más que 768 | Bajo — la nota del footer vive también en el estado vacío, y nombre + correo se recuperan del `Tooltip` del avatar. El entorno **no** tiene recuperación en vertical: es informativo y ya está en la URL |
 | 8.13 | **Saludo bicolor con Texto HTML** en vez de dos etiquetas | Canvas no tiene auto-ancho: dos etiquetas dejarían el nombre flotando a distancia fija (feo con "Ana" y roto con "Maximiliano") | Ninguno |
 | 8.14 | **Descripciones largas se cortan a 3 líneas, sin elipsis** | Las etiquetas clásicas recortan sin `…` | Bajo |
@@ -1509,24 +1512,25 @@ El constructor no cierra la tarea hasta que TODO esto esté tildado.
 
 ### 9.0 Prerrequisitos de datos (§2.8)
 
-- [ ] 🚨 **`sanic_Icon` está en formato PNG, no JPEG** (§2.8.3 paso 0).
-      **Hasta que esto se haga, los ítems de abajo NO son verificables**: podés
-      subir el PNG y la plataforma te lo devuelve con fondo negro, así que un
-      "sí, cargué el ícono" sin este paso es un falso positivo.
-- [ ] Los 7 motivos del mockup están exportados a **PNG 88 × 88, motivo centrado
-      de ~46 × 46, trazo 4 en `#C8102E`, fondo transparente, < 10 KB** cada uno.
-- [ ] El seeder soporta columnas de imagen (base64) — **tarea de backend**, hoy
-      pendiente.
-- [ ] `data/seed/30-appcatalogs.json` tiene la clave `sanic_icon` en las 7 filas.
-- [ ] **Las 7 filas del catálogo tienen `Icon` cargado en el entorno.**
-      Verificalo en la tabla, no en la app.
+- [x] ~~`sanic_Icon` está en formato PNG, no JPEG~~ — **refutado y sin acción**
+      (§2.8.3 paso 0): la miniatura que sirve Dataverse conserva el PNG con
+      alfa aunque el Entity.xml diga `jpeg`. Verificado por round-trip contra
+      DEV el 2026-08-15.
+- [x] Los 7 motivos del mockup exportados a **PNG 88 × 88, motivo centrado
+      de ~46 × 46, trazo 4 en `#C8102E`, fondo transparente, < 10 KB** cada uno
+      (`docs/marca/generar-glifos-hub.py` → `data/seed/assets/icons/`).
+- [x] El seeder soporta columnas de imagen (base64, patrón `@file:`).
+- [x] `data/seed/30-appcatalogs.json` tiene la clave `sanic_icon` en las 7 filas.
+- [x] **Las 7 filas del catálogo tienen `Icon` cargado en el entorno (DEV).**
+      Verificado en la tabla por Web API, no en la app. Para otros ambientes:
+      `./scripts/seed-data.sh`.
 
 > ⚠️ Este bloque es **prerrequisito de la prueba visual (§9.2)**, no de la
 > construcción de la pantalla. Podés construir y probar todo el comportamiento
 > con la columna vacía; lo que NO podés es dar por aprobada la fidelidad visual
 > contra el mockup mientras las tarjetas muestren el respaldo de dos letras.
-> Si el seeder todavía no está y hay que desbloquear la revisión, cargá las 7
-> imágenes a mano desde el formulario del catálogo y anotalo.
+> En DEV ya está sembrado; en un ambiente nuevo, corré `./scripts/seed-data.sh`
+> antes de la revisión visual.
 
 ### 9.1 Construcción
 
@@ -1586,7 +1590,8 @@ El constructor no cierra la tarea hasta que TODO esto esté tildado.
 - [ ] **Con §9.0 cumplido**: las 7 tarjetas muestran su glifo del mockup
       (camión, balanza, monedas, teclado, sobre, eslabones, persona+) a 44 × 44
       sobre el tile rosado, **con el fondo rosado visible alrededor del trazo**
-      (si ves un cuadrado negro, el atributo quedó en JPEG: §2.8.3 paso 0).
+      (un cuadrado negro NO puede venir del formato del atributo — eso está
+      refutado en §2.8.3 paso 0; si aparece, el PNG subido es el equivocado).
 - [ ] **Prueba del respaldo**: vaciá el `Icon` de UNA sola app en la tabla → esa
       tarjeta pasa al identificador de dos letras (`reception` → **RN**) **sin
       republicar la app**, y las otras seis siguen mostrando su imagen. Volvé a

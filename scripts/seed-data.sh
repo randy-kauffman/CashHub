@@ -8,6 +8,10 @@
 #   - fila idéntica     -> SKIP
 #   - valor "PENDIENTE*" -> se OMITE la fila con advertencia (config faltante)
 #   - "@canvasapp:<nombre>" -> se resuelve a la URL real de la app en el ambiente
+#   - "@file:<ruta>" -> columna de IMAGEN: sube el archivo (base64) leido desde
+#     la ruta relativa al directorio de datos. Solo se sube si la columna esta
+#     vacia; FORCE_IMAGES=1 fuerza la re-subida (el thumbnail que devuelve
+#     Dataverse esta re-encodeado, no se puede comparar byte a byte).
 #
 # Requiere pp_secrets.env en la raíz (DATAVERSE_URL, PP_TENANT_ID,
 # PP_CLIENT_ID, PP_CLIENT_SECRET).
@@ -34,7 +38,7 @@ TOKEN=$(curl -sf -X POST "https://login.microsoftonline.com/${PP_TENANT_ID}/oaut
 export TOKEN DATAVERSE_URL DRY_RUN DATA_DIR
 
 python3 - <<'PYEOF'
-import glob, json, os, subprocess, urllib.parse
+import base64, glob, json, os, subprocess, urllib.parse
 
 API = os.environ['DATAVERSE_URL'] + '/api/data/v9.2'
 H = ['-H', f"Authorization: Bearer {os.environ['TOKEN']}", '-H', 'Content-Type: application/json']
@@ -95,6 +99,11 @@ for path in sorted(glob.glob(os.environ.get('DATA_DIR', 'data/seed') + '/*.json'
             total['omit'] += 1
             continue
         row = {k: resolve(v) for k, v in row.items()}
+        # columnas de imagen ("@file:...") van por canal aparte: el GET de la fila
+        # devuelve el thumbnail re-encodeado y romperia el diff normal
+        imgs = {k: v[len('@file:'):] for k, v in row.items()
+                if isinstance(v, str) and v.startswith('@file:')}
+        row = {k: v for k, v in row.items() if k not in imgs}
         def key_expr(k):
             if k.endswith('@odata.bind'):
                 logical = k[:-len('@odata.bind')].lower()
@@ -104,9 +113,28 @@ for path in sorted(glob.glob(os.environ.get('DATA_DIR', 'data/seed') + '/*.json'
         flt = ' and '.join(key_expr(k) for k in nk)
         existing = req('GET', f"/{es}?$filter={urllib.parse.quote(flt)}").get('value', [])
         key = ' / '.join(str(row[k]) for k in nk)
+        def seed_images(rec_id):
+            for col, rel in imgs.items():
+                ruta = os.path.join(os.environ.get('DATA_DIR', 'data/seed'), rel)
+                if not os.path.isfile(ruta):
+                    raise RuntimeError(f"@file no encontrado: {ruta} ({key}.{col})")
+                cur_val = req('GET', f"/{es}({rec_id})?$select={col}").get(col)
+                if cur_val and os.environ.get('FORCE_IMAGES') != '1':
+                    print(f"   IMAGEN sin tocar (ya cargada, FORCE_IMAGES=1 para pisar): {key}.{col}")
+                    continue
+                if not DRY:
+                    b64 = base64.b64encode(open(ruta, 'rb').read()).decode()
+                    req('PATCH', f"/{es}({rec_id})", {col: b64})
+                print(f"   IMAGEN sembrada: {key}.{col} <- {rel}{' [DRY-RUN]' if DRY else ''}")
         if not existing:
             if not DRY:
                 req('POST', f"/{es}", row)
+                if imgs:
+                    creado = req('GET', f"/{es}?$filter={urllib.parse.quote(flt)}").get('value', [])
+                    pk = next(k for k in creado[0] if k.endswith('id') and not k.startswith('_') and 'odata' not in k)
+                    seed_images(creado[0][pk])
+            elif imgs:
+                print(f"   IMAGEN sembrada: {key} ({', '.join(imgs)}) [DRY-RUN]")
             print(f"   CREADA: {key}")
             total['create'] += 1
         else:
@@ -122,13 +150,15 @@ for path in sorted(glob.glob(os.environ.get('DATA_DIR', 'data/seed') + '/*.json'
                     return (cur_id or '').lower() != (new_id or '').lower()
                 return norm(cur.get(k)) != norm(v)
             diff = {k: v for k, v in row.items() if changed(k, v)}
+            pk = next(k for k in cur if k.endswith('id') and not k.startswith('_') and 'odata' not in k)
             if diff:
                 if not DRY:
-                    pk = next(k for k in cur if k.endswith('id') and not k.startswith('_') and 'odata' not in k)
                     req('PATCH', f"/{es}({cur[pk]})", diff)
                 print(f"   ACTUALIZADA: {key} ({', '.join(diff)})")
                 total['update'] += 1
             else:
                 total['skip'] += 1
+            if imgs:
+                seed_images(cur[pk])
 print(f"\nResumen: {total['create']} creadas, {total['update']} actualizadas, {total['skip']} sin cambios, {total['omit']} omitidas por config pendiente{' [DRY-RUN]' if DRY else ''}")
 PYEOF
