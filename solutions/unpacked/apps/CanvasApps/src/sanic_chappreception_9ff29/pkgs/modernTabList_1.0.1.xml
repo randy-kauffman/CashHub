@@ -1,0 +1,156 @@
+<widget xmlns="http://openajax.org/metadata" xmlns:appMagic="http://schemas.microsoft.com/appMagic" spec="1.0" id="http://microsoft.com/appmagic/modernTabList" name="modernTabList" jsClass="AppMagic.Controls.ModernTabListControl" version="1.0.1" styleable="true" runtimeCost="1" enabledForFeatureGate="Controls.ModernTabListControl">
+  <author name="Microsoft AppMagic" />
+  <license type="text/html"><![CDATA[<p>Copyright (C) Microsoft Corporation. All rights reserved.</p>]]></license>
+  <description><![CDATA[Modern TabList control using Fluent UI v9 TabList component.]]></description>
+  <requires>
+    <require type="javascript" src="/openSource/modified/pcfplatformlibs/fluent_9_4_0.js" />
+    <require type="javascript" src="/ctrllib/shared/js/PowerAppsControlsFluentIcons.js" />
+    <require type="javascript" src="js/modernTabList.js" />
+  </requires>
+  <appMagic:capabilities contextualViewsEnabled="true" autoDisabledViewState="true" isVersionFlexible="true" passThisItemThrough="true" supportsResettableProperties="true" />
+  <appMagic:accessibilityChecks controlIsInteractive="true" />
+  <content><![CDATA[]]></content>
+  <properties>
+    <!-- Default selected tab value -->
+    <property name="Default" localizedName="##TabList_Default##" datatype="object" direction="in" isTypeBoundToPrimaryInput="true">
+      <title>##TabList_Default##</title>
+      <appMagic:category>data</appMagic:category>
+      <appMagic:displayName>##TabList_Default_DisplayName##</appMagic:displayName>
+      <appMagic:tooltip>##TabList_Default_Tooltip##</appMagic:tooltip>
+    </property>
+    <!-- Display text for each tab -->
+    <property name="ItemDisplayText" localizedName="##TabList_ItemDisplayText##" datatype="string" direction="in" defaultValue="ThisItem.Value" isExpr="true">
+      <title>##TabList_ItemDisplayText##</title>
+      <appMagic:category>data</appMagic:category>
+      <appMagic:displayName>##TabList_ItemDisplayText_DisplayName##</appMagic:displayName>
+      <appMagic:tooltip>##TabList_ItemDisplayText_Tooltip##</appMagic:tooltip>
+      <appMagic:isConstrainedToSimpleExpressions />
+      <appMagic:selfThisItemScopeAccess />
+      <appMagic:autoBind>true</appMagic:autoBind>
+    </property>
+    <!-- Dataset of items to display as tabs -->
+    <property name="Items" localizedName="##TabList_Items##" datatype="Array" direction="in" isPrimaryInputProperty="true" isExpr="true" defaultValue="Table({Value: &quot;##TabList_DefaultItem1##&quot;}, {Value: &quot;##TabList_DefaultItem2##&quot;}, {Value: &quot;##TabList_DefaultItem3##&quot;})">
+      <title>##TabList_Items##</title>
+      <appMagic:category>data</appMagic:category>
+      <appMagic:displayName>##TabList_Items_DisplayName##</appMagic:displayName>
+      <appMagic:tooltip>##TabList_Items_Tooltip##</appMagic:tooltip>
+      <appMagic:thisItemInput />
+    </property>
+    <!-- Selected tab value -->
+    <property name="Selected" localizedName="##TabList_Selected##" datatype="object" direction="out" isPrimaryOutputProperty="true">
+      <title>##TabList_Selected##</title>
+      <appMagic:category>data</appMagic:category>
+      <appMagic:passThroughReference>Items</appMagic:passThroughReference>
+      <appMagic:excludeFromReachability />
+    </property>
+    <!-- Size of the tabs (Small, Medium, Large) -->
+    <property name="TabSize" localizedName="##TabList_TabSize##" datatype="TabSize" defaultValue="%TabSize.RESERVED%.Large" isExpr="true" enabledForFeatureGate="Controls.ModernTabListControl">
+      <title>##TabList_TabSize##</title>
+      <appMagic:category>design</appMagic:category>
+      <appMagic:displayName>##TabList_TabSize_DisplayName##</appMagic:displayName>
+      <appMagic:tooltip>##TabList_TabSize_Tooltip##</appMagic:tooltip>
+    </property>
+    <!-- Alignment (Horizontal/Vertical) -->
+    <property name="Alignment" localizedName="##TabList_Alignment##" datatype="LayoutDirection" defaultValue="%LayoutDirection.RESERVED%.Horizontal" isExpr="true" enabledForFeatureGate="Controls.ModernTabListControl">
+      <title>##TabList_Alignment##</title>
+      <appMagic:category>design</appMagic:category>
+      <appMagic:displayName>##TabList_Alignment_DisplayName##</appMagic:displayName>
+      <appMagic:tooltip>##TabList_Alignment_Tooltip##</appMagic:tooltip>
+    </property>
+    <!-- Appearance (Transparent, Subtle, Subtle-Circular, Filled-Circular) -->
+    <property name="Appearance" localizedName="##TabList_Appearance##" datatype="TabListAppearance" defaultValue="%TabListAppearance.RESERVED%.Transparent" isExpr="true" enabledForFeatureGate="Controls.ModernTabListControl">
+      <title>##TabList_Appearance##</title>
+      <appMagic:category>design</appMagic:category>
+      <appMagic:displayName>##TabList_Appearance_DisplayName##</appMagic:displayName>
+      <appMagic:tooltip>##TabList_Appearance_Tooltip##</appMagic:tooltip>
+    </property>
+  </properties>
+  <appMagic:includeProperties>
+    <!-- Data -->
+    <appMagic:includeProperty name="ContentLanguage" />
+    <!-- Design - Color Palette -->
+    <appMagic:includeProperty name="BasePaletteColor" isResettableToManifestDefault="true" isLinkableToParentTheme="true" />
+    <!-- Design - Font -->
+    <appMagic:includeProperty name="Font" defaultValue="" nullDefault="" isExpr="false" isResettableToManifestDefault="true" isLinkableToParentTheme="true" />
+    <appMagic:includeProperty name="Size" defaultValue="14" phoneDefaultValue="26" isExpr="true" isResettableToManifestDefault="true" isLinkableToParentTheme="true" />
+    <appMagic:includeProperty name="Color" defaultValue="" isExpr="true" isResettableToManifestDefault="true" isLinkableToParentTheme="true" />
+    <appMagic:includeProperty name="FontWeight" defaultValue="" nullDefault="" isExpr="true" isResettableToManifestDefault="true" isLinkableToParentTheme="true" />
+    <appMagic:includeProperty name="Italic" defaultValue="false" />
+    <appMagic:includeProperty name="Underline" defaultValue="false" />
+    <appMagic:includeProperty name="Strikethrough" defaultValue="false" />
+    <appMagic:includeProperty name="Align" defaultValue="%Align.RESERVED%.Left" isExpr="true" />
+    <!-- Design - Padding -->
+    <appMagic:includeProperty name="PaddingTop" defaultValue="" nullDefault="" isExpr="true" />
+    <appMagic:includeProperty name="PaddingRight" defaultValue="" nullDefault="" isExpr="true" />
+    <appMagic:includeProperty name="PaddingBottom" defaultValue="" nullDefault="" isExpr="true" />
+    <appMagic:includeProperty name="PaddingLeft" defaultValue="" nullDefault="" isExpr="true" />
+    <!-- Position and Size -->
+    <appMagic:includeProperty name="X" />
+    <appMagic:includeProperty name="Y" />
+    <appMagic:includeProperty name="Width" defaultValue="300" phoneDefaultValue="360" />
+    <appMagic:includeProperty name="Height" defaultValue="60" phoneDefaultValue="72" />
+    <appMagic:includeProperty name="Visible" />
+    <appMagic:includeProperty name="DisplayMode" />
+    <!-- Accessibility -->
+    <appMagic:includeProperty name="AccessibleLabel" />
+    <!-- Behavior - Events -->
+    <appMagic:includeProperty name="OnChange" direction="in" isPrimaryBehaviorProperty="true" />
+    <appMagic:includeProperty name="OnSelect" direction="in" />
+    <!-- Hidden properties -->
+    <appMagic:includeProperty name="maximumHeight" defaultValue="768" />
+    <appMagic:includeProperty name="maximumWidth" defaultValue="1366" />
+    <appMagic:includeProperty name="minimumHeight" defaultValue="30" />
+    <appMagic:includeProperty name="minimumWidth" defaultValue="10" />
+  </appMagic:includeProperties>
+  <appMagic:propertyDependencies>
+    <appMagic:propertyDependency input="Items" output="Selected" />
+    <appMagic:propertyDependency input="Default" output="Selected" />
+  </appMagic:propertyDependencies>
+  <appMagic:insertMetadata>
+    <appMagic:category name="Input" priority="20" />
+  </appMagic:insertMetadata>
+  <!-- Display metadata providing property visibility, order, sections, and grouping in UI (e.g. properties panel) -->
+  <appMagic:displayMetadata>
+    <appMagic:section type="GeneralSection">
+      <appMagic:property name="Items" labelOverride="##ControlSidebar_PropertiesPanel_Datasource_Displayname##" serverProvidesValue="true" shouldAutoBind="true" computedValueType="NativeCdsDataSourceName" />
+      <appMagic:dataSourceSelectionCallout dataSourcePropertyName="Items" />
+      <appMagic:configureCdsViews propertyToReplace="Items" />
+      <appMagic:configureProperty propertyInvariantName="DependentItems" ruleToSet="Items" shouldAutoBind="true" computedValueType="DataSourceName" />
+      <appMagic:property name="ItemDisplayText" />
+      <appMagic:property name="Default" />
+      <appMagic:property name="AccessibleLabel" />
+    </appMagic:section>
+    <appMagic:section type="BehaviorSection">
+      <appMagic:property name="DisplayMode" />
+      <appMagic:property name="Visible" />
+    </appMagic:section>
+    <appMagic:section type="SizeAndPositioningSection">
+      <appMagic:property name="TabSize" itemsOrder="Small;Medium;Large" />
+      <appMagic:property name="Alignment" itemsOrder="Horizontal;Vertical" />
+      <appMagic:property name="Appearance" itemsOrder="Transparent;Subtle;SubtleCircular;FilledCircular" />
+      <appMagic:propertyGroup name="Position">
+        <appMagic:property name="X" />
+        <appMagic:property name="Y" />
+      </appMagic:propertyGroup>
+      <appMagic:propertyGroup name="Size">
+        <appMagic:property name="Width" />
+        <appMagic:property name="Height" />
+      </appMagic:propertyGroup>
+    </appMagic:section>
+    <appMagic:section type="StyleAndThemeSection">
+      <appMagic:property name="BasePaletteColor" displayType="ColorPalette" />
+      <appMagic:property name="Font" displayType="FontEnum" showInFloatie="true" showInCommandBar="true" />
+      <appMagic:property name="Size" labelOverride="##FontSize_Property##" showInFloatie="true" showInCommandBar="true" />
+      <appMagic:property name="Color" showInFloatie="true" showInCommandBar="true" />
+      <appMagic:property name="FontWeight" displayType="EnumIcon" itemsOrder="Bold;Semibold;Normal;Lighter" />
+      <appMagic:propertyGroup name="Style">
+        <appMagic:property name="Italic" displayType="ToggleButton" />
+        <appMagic:property name="Underline" displayType="ToggleButton" />
+        <appMagic:property name="Strikethrough" displayType="ToggleButton" />
+      </appMagic:propertyGroup>
+    </appMagic:section>
+  </appMagic:displayMetadata>
+  <appMagic:conversion from="1.0.0" to="1.0.1">
+    <!-- Metadata update: add isResettableToManifestDefault and isLinkableToParentTheme attributes to BasePaletteColor -->
+  </appMagic:conversion>
+</widget>

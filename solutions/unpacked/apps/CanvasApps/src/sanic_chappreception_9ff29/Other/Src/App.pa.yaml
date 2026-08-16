@@ -8,36 +8,209 @@
 # ************************************************************************************************
 App:
   Properties:
+    BackEnabled: =false
+    ConfirmExit: =gvarCambiosSinGuardar
+    ConfirmExitMessage: ="Tenés cambios sin guardar en el lote. Si salís ahora se pierden."
+    Formulas: |-
+      =// ===================== PALETA (RGBA exactos del mockup :root) =====================
+      ThemeAccent      = RGBA(200, 16, 46, 1);      // #C8102E
+      ThemeAccentDark  = RGBA(164, 13, 38, 1);      // #A40D26 — hover de botón primario
+      ThemeAccentSoft  = RGBA(251, 235, 237, 1);    // #FBEBED
+      ThemeBg          = RGBA(246, 245, 244, 1);    // #F6F5F4
+      ThemeSurface     = RGBA(255, 255, 255, 1);    // #FFFFFF
+      ThemeSurface2    = RGBA(250, 248, 247, 1);    // #FAF8F7
+      ThemeInk         = RGBA(32, 28, 29, 1);       // #201C1D
+      ThemeInk2        = RGBA(102, 89, 92, 1);      // #66595C
+      ThemeInk3        = RGBA(148, 138, 140, 1);    // #948A8C
+      ThemeLine        = RGBA(226, 220, 221, 1);    // #E2DCDD
+      ThemeLineSoft    = RGBA(237, 232, 233, 1);    // #EDE8E9
+      ThemeOk          = RGBA(14, 122, 60, 1);      // #0E7A3C
+      ThemeOkSoft      = RGBA(226, 242, 232, 1);    // #E2F2E8
+      ThemeInfo        = RGBA(35, 85, 125, 1);      // #23557D
+      ThemeInfoSoft    = RGBA(228, 238, 246, 1);    // #E4EEF6
+      ThemeInfoSoft2   = RGBA(212, 228, 242, 1);    // #D4E4F2 — hover del chip azul (.chip:hover)
+      ThemeWarn        = RGBA(154, 91, 0, 1);       // #9A5B00
+      ThemeWarnSoft    = RGBA(251, 240, 220, 1);    // #FBF0DC
+      ThemeWarnLine    = RGBA(228, 198, 140, 1);    // #E4C68C — borde de input en fila con problema
+      ThemeDanger      = RGBA(179, 38, 30, 1);      // #B3261E
+      ThemeDangerSoft  = RGBA(252, 234, 232, 1);    // #FCEAE8
+      ThemeDangerLine  = RGBA(231, 185, 181, 1);    // #E7B9B5 — borde de botón chico peligroso
+      ThemeOverlay     = RGBA(40, 30, 32, 0.45);    // rgba(40,30,32,.45) — velo de los modales
+      ThemeDotWarn     = RGBA(217, 154, 38, 1);     // #D99A26 — punto del panel de validación
+
+      // ===================== FORMATOS =====================
+      FmtMoney      = "#,##0.00";              // el '0' fuerza el entero: "#,###" daba "C$ .00"
+      FmtFecha      = "dd/mm/yyyy HH:mm";      // HH = 24 h. hh seria 12 h SIN AM/PM
+      FmtFechaCorta = "dd/mm HH:mm";
+      SimboloNIO = "C$";  SimboloUSD = "US$";
+
+      // ===================== IDENTIDAD (sin conectores) =====================
+      UsuarioNombre = User().FullName;
+      UsuarioIniciales =
+          Left(User().FullName, 1) &
+          If(
+              CountRows(Split(User().FullName, " ")) > 1,
+              Left(Last(Split(User().FullName, " ")).Value, 1),
+              ""
+          );
+      // Si IntelliSense nombra la columna de Split() distinto de 'Value' (algunas versiones
+      // la llaman 'Result'), EL SUYO MANDA.
+
+      // ===================== TOTALES DEL LOTE EN CAPTURA =====================
+      // Sobre la coleccion LOCAL: no hay delegacion que romper (regla D-2).
+      TotalChequeNIO   = Sum(colPlanillas, ChequeNIO);
+      TotalChequeUSD   = Sum(colPlanillas, ChequeUSD);
+      TotalEfectivoNIO = Sum(colPlanillas, EfectivoNIO);
+      TotalEfectivoUSD = Sum(colPlanillas, EfectivoUSD);
+      TotalTulas       = CountRows(colTulas);
+      TotalPlanillas   = CountRows(colPlanillas);
+
+      // ===================== VALIDACION — LAS 6 REGLAS DE LA v1, UNA SOLA VEZ =====================
+      // Devuelve una tabla { LocalId, Planilla, Regla, Malo } con SOLO las filas malas.
+      // Se materializa con ClearCollect(colProblemas, fxProblemas) desde Validar / Guardar / Cerrar.
+      fxProblemas =
+          Filter(
+              Ungroup(
+                  ForAll(
+                      colPlanillas As R,
+                      {
+                          LocalId: R.LocalId,
+                          Planilla: R.Planilla,
+                          Fallas:
+                              Table(
+                                  { Regla: "Empresa sin seleccionar",
+                                    Malo: IsBlank(R.Empresa.'CH-Tbl-ClientBranch') },
+                                  { Regla: "Número de planilla vacío",
+                                    Malo: IsBlank(Trim(R.Planilla)) },
+                                  { Regla: "Todos los montos en 0",
+                                    Malo: (R.ChequeNIO + R.ChequeUSD + R.EfectivoNIO + R.EfectivoUSD) = 0 },
+                                  { Regla: "Sin tulas asociadas",
+                                    Malo: CountRows(Filter(colTulas, PlanillaLocalId = R.LocalId)) = 0 },
+                                  { Regla: "Número de planilla duplicado en el lote",
+                                    Malo: !IsBlank(Trim(R.Planilla)) &&
+                                          CountRows(Filter(colPlanillas, Trim(Planilla) = Trim(R.Planilla))) > 1 },
+                                  // El mensaje ENUMERA los números repetidos de ESTA planilla: como
+                                  // las dos planillas del choque listan el mismo número, el operador
+                                  // ve el par al instante sin abrir nada. Todo sobre colecciones locales.
+                                  { Regla: "Tulas duplicadas: " &
+                                           Concat(
+                                               Distinct(
+                                                   Filter(
+                                                       colTulas As A,
+                                                       A.PlanillaLocalId = R.LocalId &&
+                                                       CountRows(Filter(colTulas As B, Trim(B.Numero) = Trim(A.Numero))) > 1
+                                                   ),
+                                                   Trim(Numero)
+                                               ) As N,
+                                               N.Value,
+                                               ", "
+                                           ),
+                                    Malo: CountRows(
+                                              Filter(
+                                                  colTulas As A,
+                                                  A.PlanillaLocalId = R.LocalId &&
+                                                  CountRows(Filter(colTulas As B, Trim(B.Numero) = Trim(A.Numero))) > 1
+                                              )
+                                          ) > 0 }
+                              )
+                      }
+                  ),
+                  Fallas
+              ),
+              Malo
+          );
+
+      fxHayProblemas = !IsEmpty(fxProblemas);
+
+      // Habilitacion de "Cerrar lote": hay lote, hay planillas y no hay problemas.
+      fxPuedeCerrar = !IsBlank(gvarLoteActivo) && CountRows(colPlanillas) > 0 && !fxHayProblemas;
+
+      // ===================== TEMPLATE HTML DE APPROVAL (receta 7.7) =====================
+      // Literal SIN interpolacion: el $"..." exige duplicar TODA llave de CSS ({{ }}).
+      // Adentro del CSS se usan comillas SIMPLES; en los atributos HTML, dobles ("" en Power Fx).
+      HtmlApEstilo =
+      "<style>
+      .ap{font-family:'Segoe UI',Arial,sans-serif;color:#201C1D;border:1px solid #E2DCDD;border-radius:12px;overflow:hidden;max-width:620px}
+      .ap .apHead{padding:13px 18px 11px;border-bottom:3px solid #C8102E}
+      .ap .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.8px;color:#C8102E;background:#FBEBED;border-radius:999px;padding:3px 10px;text-transform:uppercase}
+      .ap h3{font-size:15px;margin:7px 0 2px}
+      .ap .sub{color:#948A8C;font-size:11px}
+      .ap table{width:100%;border-collapse:collapse;font-size:12px}
+      .ap th{text-align:left;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:#948A8C;padding:9px 18px 5px;border-bottom:1px solid #E2DCDD}
+      .ap td{padding:8px 18px;border-bottom:1px solid #EDE8E9;vertical-align:top}
+      .ap td.k{color:#66595C;width:38%}
+      .ap b.new{color:#C8102E}
+      .ap .foot{padding:10px 18px 12px;font-size:10.5px;color:#948A8C}
+      </style>";
+
+      // DOS encabezados, no uno (receta 7.7): COMPARATIVO cuando la solicitud muestra
+      // "de X a Y" (Remapear / Editar tula / Editar planilla) y SIMPLE cuando solo
+      // enumera campos (Agregar / Eliminar). Calcado de previewApproval(conActual).
+      HtmlApEncabezadoTabla =
+      "<table><tr><th>Campo</th><th>Actual</th><th>Solicitado</th></tr>";
+
+      HtmlApEncabezadoTablaSimple =
+      "<table><tr><th>Campo</th><th>Valor</th></tr>";
     OnError: |-
-      =Notify("Error: " & FirstError.Message, NotificationType.Error)
-    OnStart: |+
-      =Collect(
+      =Trace(
+          $"[Reception] {FirstError.Message} | Kind: {FirstError.Kind} | Origen: {FirstError.Source} | Obs: {FirstError.Observed}",
+          TraceSeverity.Error
+      );
+      Notify(
+          If(
+              FirstError.Kind = ErrorKind.Validation || FirstError.Kind = ErrorKind.Conflict || FirstError.Kind = ErrorKind.Sync,
+              FirstError.Message,   // mensaje de negocio del GuardReceptionPlugin, TAL CUAL
+              "Ocurrió un error inesperado. El detalle quedó registrado para soporte."
+          ),
+          NotificationType.Error
+      )
+    OnStart: |-
+      =// ===== 1. Semilla de ESQUEMA de las colecciones (Collect + Clear) =====
+      // Sin esto, las colecciones no existen en tiempo de diseño y toda referencia a sus
+      // columnas queda en rojo. Defaults(ds) da un registro TIPADO sin ninguna consulta.
+
+      Collect(
           colPlanillas,
           {
-              ID: Max(
-                  colPlanillas,
-                  ID
-              ) + 1,
-              Empresa: "",
+              LocalId: "",
+              GUID: Defaults('CH-Tbl-Receptions').'CH-Tbl-Receptions',   // GUID en blanco, TIPADO
+              Empresa: Defaults('CH-Tbl-ClientBranches'),                 // registro TIPADO de sucursal
               Planilla: "",
               ChequeNIO: 0,
               ChequeUSD: 0,
               EfectivoNIO: 0,
-              EfectivoUSD: 0,
-              Cliente: {},
-              Sucursal:{}
+              EfectivoUSD: 0
           }
       );
+      Clear(colPlanillas);
 
       Collect(
           colTulas,
           {
-              Numero: ""
-              ,RelatedRowID: 0
+              LocalId: "",
+              PlanillaLocalId: "",
+              Numero: "",
+              GUID: Defaults('CH-Tbl-Bags').'CH-Tbl-Bags'
           }
       );
-
       Clear(colTulas);
 
-      Clear(colPlanillas);
+      Collect(colPlanillasDV, Defaults('CH-Tbl-Receptions'));
+      Clear(colPlanillasDV);
+
+      Collect(colTulasDV, Defaults('CH-Tbl-Bags'));
+      Clear(colTulasDV);
+
+      Collect(colProblemas, { LocalId: "", Planilla: "", Regla: "", Malo: false });
+      Clear(colProblemas);
+
+      Collect(colFallidas, { LocalId: "", Planilla: "", Mensaje: "" });
+      Clear(colFallidas);
+
+      Clear(colTransportadoras);
+
+      // ===== 2. Estado global inicial =====
+      Set(gvarLoteActivo, Blank());          // sin lote => scrCaptura muestra el overlay de nuevo lote
+      Set(gvarCambiosSinGuardar, false)
+    StartScreen: =scrCaptura
     Theme: =PowerAppsTheme

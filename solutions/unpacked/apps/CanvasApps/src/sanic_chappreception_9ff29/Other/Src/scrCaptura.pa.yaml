@@ -1,0 +1,4057 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrCaptura:
+    Properties:
+      Fill: =ThemeBg
+      OnVisible: |-
+        =// ============================================================================
+        // BLOQUE 1 — CATÁLOGO. La ÚNICA consulta fija de esta pantalla.
+        //   Transportadoras es una tabla estructuralmente acotada: colección legítima.
+        //   Sucursales NO tiene colección: el combo de empresa busca server-side
+        //   (delegable a cualquier escala) — decisión L-23, mata el truncamiento a 2000.
+        // ============================================================================
+        If(
+            IsEmpty(colTransportadoras),
+            ClearCollect(
+                colTransportadoras,
+                Filter('CH-Tbl-TransportCompanies', 'CH-Tbl-TransportCompanies (Views)'.'CH-Tbl-TransportCompany Lookup View')
+            )
+        );
+
+        // ============================================================================
+        // BLOQUE 2 — RED DE SEGURIDAD DEL CONTRATO DE ENTRADA.
+        //   Si hay lote activo pero las colecciones llegaron vacías, se re-hidrata
+        //   con 2 consultas delegables. El If va POR FUERA del ClearCollect.
+        // ============================================================================
+        If(
+            !IsBlank(gvarLoteActivo) && IsEmpty(colPlanillas) && IsEmpty(colPlanillasDV),
+            ClearCollect(colPlanillasDV, Filter('CH-Tbl-Receptions', ReceptionBatch.'CH-Tbl-ReceptionBatch' = gvarLoteActivo.'CH-Tbl-ReceptionBatch'));
+            ClearCollect(colTulasDV,     Filter('CH-Tbl-Bags',       ReceptionBatchId.'CH-Tbl-ReceptionBatch' = gvarLoteActivo.'CH-Tbl-ReceptionBatch'))
+        );
+
+        // ============================================================================
+        // RECETA 01 §7.10 — proyección DV -> colecciones de EDICIÓN.
+        //   LocalId de fila persistida = Text(GUID real); fila nueva = Text(GUID()).
+        // ============================================================================
+        If(
+            !IsBlank(gvarLoteActivo) && IsEmpty(colPlanillas) && !IsEmpty(colPlanillasDV),
+            ClearCollect(
+                colPlanillas,
+                ForAll(
+                    colPlanillasDV As D,
+                    {
+                        LocalId:     Text(D.'CH-Tbl-Receptions'),
+                        GUID:        D.'CH-Tbl-Receptions',
+                        // Registro FRESCO del datasource (LookUp por PK, delegable): garantiza
+                        // .Client navegable para el Patch de 7.5 — nunca RemitentClient en blanco.
+                        Empresa:     LookUp('CH-Tbl-ClientBranches',
+                                            'CH-Tbl-ClientBranch' = D.BranchName.'CH-Tbl-ClientBranch'),
+                        Planilla:    D.ReceiptID,
+                        ChequeNIO:   D.NIOCheck,
+                        ChequeUSD:   D.USDCheck,
+                        EfectivoNIO: D.NIOCash,
+                        EfectivoUSD: D.USDCash
+                    }
+                )
+            );
+            ClearCollect(
+                colTulas,
+                ForAll(
+                    colTulasDV As B,
+                    {
+                        LocalId:         Text(B.'CH-Tbl-Bags'),
+                        PlanillaLocalId: Text(B.ReceptionID.'CH-Tbl-Receptions'),
+                        Numero:          B.BagID,
+                        GUID:            B.'CH-Tbl-Bags'
+                    }
+                )
+            )
+        );
+
+        // ============================================================================
+        // BLOQUE 3 — ESQUEMA de las colecciones propias de la pantalla.
+        //   FirstN(col, 0) devuelve tabla VACÍA con el esquema de col, sin warning.
+        // ============================================================================
+        ClearCollect(colTulasBorradasCap, FirstN(colTulas, 0));
+        ClearCollect(colTulasNuevoCap,    FirstN(colTulas, 0));
+        // DELTA de guardado (§8.2): qué se manda a Dataverse en el próximo Guardar.
+        //   colCambiosPlanCap = planillas NUEVAS o MODIFICADAS contra el snapshot colPlanillasDV.
+        //   colTulasNuevasCap = tulas todavía sin GUID. Las bajas viven en colTulasBorradasCap.
+        ClearCollect(colCambiosPlanCap,   FirstN(colPlanillas, 0));
+        ClearCollect(colTulasNuevasCap,   FirstN(colTulas, 0));
+        Collect(colErrBorrarCap,       { Mensaje: "" });                          Clear(colErrBorrarCap);
+        Collect(colEstadoGuardadoCap,  { Planilla: "", Ok: false, Mensaje: "" }); Clear(colEstadoGuardadoCap);
+        Clear(colTulasEdit);
+
+        // ============================================================================
+        // BLOQUE 4 — ESTADO DE UI. Todos los diálogos CERRADOS al entrar.
+        // ============================================================================
+        UpdateContext({
+            ctxDlgTulasCap:        false,
+            ctxDlgBorrarFilaCap:   false,
+            ctxDlgCerrarCap:       false,
+            ctxDlgSalirCap:        false,
+            ctxDlgResultadoCap:    false,
+            ctxGuardarDesdeCierreCap: false,
+            // ctxGuardandoCap: guardado EN VUELO. Arranca tmrGuardarCap (Start) y pinta el
+            //   diálogo en modo "Guardando…". Es la variable que hace posible el defer de un
+            //   frame: canvas repinta ENTRE el OnSelect y el OnTimerEnd, no a mitad de fórmula.
+            ctxGuardandoCap:       false,
+            // ctxSalirTrasGuardarCap: "Guardar y salir". La navegación NO puede vivir en el
+            //   OnSelect del botón (si navegás, el timer de esta pantalla nunca dispara):
+            //   se difiere al final del OnTimerEnd.
+            ctxSalirTrasGuardarCap: false,
+            ctxPlanillaTulasCap:    "",
+            ctxPlanillaTulasTxtCap: "",
+            ctxPlanillaTulasEmpCap: "",
+            ctxFilaBorrarCap:       "",
+            ctxFilaBorrarTxtCap:    "",
+            ctxFilaBorrarTulasCap:  0,
+            ctxScanDupCap:          ""
+        });
+        // GUID TIPADO en blanco: Blank() pelado deja la variable sin tipo.
+        UpdateContext({ ctxFilaBorrarGuidCap: Defaults('CH-Tbl-Receptions').'CH-Tbl-Receptions' });
+
+        Clear(colProblemas);
+        Clear(colFallidas);
+        Reset(galPlanillasCap);
+        Reset(cmbTransportadoraCap)
+    Children:
+      - shpHeaderCap:
+          Control: Rectangle@2.3.0
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            BorderStyle: =BorderStyle.None
+            Fill: =ThemeSurface
+            Height: =56
+            Width: =Parent.Width
+      - shpHeaderLineaCap:
+          Control: Rectangle@2.3.0
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            BorderStyle: =BorderStyle.None
+            Fill: =ThemeLine
+            Height: =1
+            Width: =Parent.Width
+            Y: =shpHeaderCap.Height
+      - imgMarcaCap:
+          Control: Image@2.2.3
+          Group: EncabezadoCap
+          Properties:
+            AccessibleLabel: ="Marca de CH-App-Reception"
+            BorderColor: =RGBA(0, 0, 0, 1)
+            DisabledBorderColor: =RGBA(56, 56, 56, 1)
+            DisabledFill: =RGBA(119, 119, 119, 1)
+            Height: =34
+            Image: ='icono-reception-192'
+            ImagePosition: =ImagePosition.Fill
+            RadiusBottomLeft: =9
+            RadiusBottomRight: =9
+            RadiusTopLeft: =9
+            RadiusTopRight: =9
+            Width: =34
+            X: =18
+            Y: =11
+      - lblTituloCap:
+          Control: Label@2.5.1
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10.5
+            Text: ="Recepción"
+            Width: =120
+            Wrap: =false
+            X: =66
+            Y: =11
+      - lblSubtituloCap:
+          Control: Label@2.5.1
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="Captura de lote"
+            Width: =120
+            Wrap: =false
+            X: =66
+            Y: =lblTituloCap.Y + lblTituloCap.Height
+      - shpSegNavCap:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =32
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =16
+            RadiusBottomRight: =16
+            RadiusTopLeft: =16
+            RadiusTopRight: =16
+            Size: =9
+            Text: =""
+            Width: =179
+            X: =210
+            Y: =12
+      - segCapturaCap:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeAccent
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            Height: =26
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: ="Captura"
+            Width: =85
+            X: =shpSegNavCap.X + 3
+            Y: =shpSegNavCap.Y + 3
+      - segLotesCap:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeInk2
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            Fill: =Color.Transparent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =26
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface
+            OnSelect: |-
+              =If(
+                  gvarCambiosSinGuardar,
+                  UpdateContext({ ctxDlgSalirCap: true }),
+                  Navigate(scrLotes)
+              )
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: ="Lotes"
+            Width: =85
+            X: =segCapturaCap.X + segCapturaCap.Width + 3
+            Y: =segCapturaCap.Y
+      - shpChipLoteCap:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =32
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =16
+            RadiusBottomRight: =16
+            RadiusTopLeft: =16
+            RadiusTopRight: =16
+            Size: =9
+            Text: =""
+            Visible: =!IsBlank(gvarLoteActivo)
+            Width: =14 + lblChipLoteNumCap.Width + lblChipLoteTransCap.Width + 8 + pilEstadoLoteCap.Width + 8
+            X: =shpSegNavCap.X + shpSegNavCap.Width + 14
+            Y: =12
+      - lblChipLoteNumCap:
+          Control: Label@2.5.1
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =shpChipLoteCap.Height
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =gvarLoteActivo.Name
+            Visible: =!IsBlank(gvarLoteActivo)
+            Width: =6.5 * Len(Self.Text) + 4
+            Wrap: =false
+            X: =shpChipLoteCap.X + 14
+            Y: =shpChipLoteCap.Y
+      - lblChipLoteTransCap:
+          Control: Label@2.5.1
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =shpChipLoteCap.Height
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="   ·   " & gvarLoteActivo.Transportadora
+            Visible: =!IsBlank(gvarLoteActivo)
+            Width: =6.2 * Len(Self.Text) + 4
+            Wrap: =false
+            X: =lblChipLoteNumCap.X + lblChipLoteNumCap.Width
+            Y: =shpChipLoteCap.Y
+      - pilEstadoLoteCap:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =If(Self.Fill = ThemeLineSoft, 1, 0)
+            Color: |-
+              =Switch(
+                  gvarLoteActivo.ReceptionStatus,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', ThemeInfo,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      ThemeOk,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   ThemeInk3,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       ThemeDanger,
+                  ThemeInk3
+              )
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: |-
+              =Switch(
+                  gvarLoteActivo.ReceptionStatus,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', ThemeInfoSoft,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      ThemeOkSoft,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   ThemeLineSoft,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       ThemeDangerSoft,
+                  ThemeLineSoft
+              )
+            Font: =Font.'Open Sans'
+            Height: =22
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: |-
+              =Switch(
+                  gvarLoteActivo.ReceptionStatus,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', ThemeInfoSoft,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      ThemeOkSoft,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   ThemeLineSoft,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       ThemeDangerSoft,
+                  ThemeLineSoft
+              )
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: |-
+              =Switch(
+                  gvarLoteActivo.ReceptionStatus,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', ThemeInfoSoft,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      ThemeOkSoft,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   ThemeLineSoft,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       ThemeDangerSoft,
+                  ThemeLineSoft
+              )
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =7.88
+            Text: |-
+              =Switch(
+                  gvarLoteActivo.ReceptionStatus,
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', "En progreso",
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      "Recibido",
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   "En bóveda",
+                  'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       "Anulado",
+                  "—"
+              )
+            Visible: =!IsBlank(gvarLoteActivo)
+            Width: =14 + 6.2 * Len(Self.Text)
+            X: =lblChipLoteTransCap.X + lblChipLoteTransCap.Width + 8
+            Y: =shpChipLoteCap.Y + (shpChipLoteCap.Height - Self.Height) / 2
+      - shpChipUserCap:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =34
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =17
+            RadiusBottomRight: =17
+            RadiusTopLeft: =17
+            RadiusTopRight: =17
+            Size: =9
+            Text: =""
+            Width: =5 + btnAvatarCap.Width + 8 + lblUsuarioCap.Width + 12
+            X: =Parent.Width - 18 - Self.Width
+            Y: =11
+      - btnAvatarCap:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeAccent
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccentSoft
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeAccentSoft
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =7.88
+            Text: =UsuarioIniciales
+            Width: =26
+            X: =shpChipUserCap.X + 5
+            Y: =15
+      - lblUsuarioCap:
+          Control: Label@2.5.1
+          Group: EncabezadoCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =shpChipUserCap.Height
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.63
+            Text: =UsuarioNombre
+            Width: =5.8 * Len(Self.Text) + 6
+            Wrap: =false
+            X: =btnAvatarCap.X + btnAvatarCap.Width + 8
+            Y: =shpChipUserCap.Y
+      - lblMetaCap:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =32
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: |-
+              =If(
+                  IsBlank(gvarLoteActivo),
+                  "",
+                  TotalPlanillas & " planillas   ·   " & TotalTulas & " tulas   ·   creado " &
+                  Text(gvarLoteActivo.'Created On', FmtFecha)
+              )
+            Width: =640
+            Wrap: =false
+            X: =18
+            Y: =68
+      - btnValidarCap:
+          Control: Classic/Button@2.2.0
+          Group: BotonesCap
+          Properties:
+            Align: =Align.Left
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk2
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: |-
+              =If(
+                  !IsBlank(gvarLoteActivo),
+                  DisplayMode.Edit,
+                  DisplayMode.Disabled
+              )
+            Fill: =Color.Transparent
+            Font: =Font.'Open Sans'
+            Height: =32
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            OnSelect: |-
+              =// VOLCADO: los inputs de la grilla NO escriben en colPlanillas al tipear (el
+              // re-render mataba el foco). Este bloque lee los controles vía AllItems y
+              // sincroniza la colección UNA vez, al inicio de cada acción que la consume.
+              ForAll(
+                  galPlanillasCap.AllItems As Fila,
+                  Patch(
+                      colPlanillas,
+                      LookUp(colPlanillas, LocalId = Fila.LocalId),
+                      {
+                          Empresa:     Fila.cmbEmpresaCap.Selected,
+                          Planilla:    Trim(Fila.inpPlanillaCap.Text),
+                          ChequeNIO:   Coalesce(Value(Fila.inpChequeNIOCap.Text), 0),
+                          ChequeUSD:   Coalesce(Value(Fila.inpChequeUSDCap.Text), 0),
+                          EfectivoNIO: Coalesce(Value(Fila.inpEfectivoNIOCap.Text), 0),
+                          EfectivoUSD: Coalesce(Value(Fila.inpEfectivoUSDCap.Text), 0)
+                      }
+                  )
+              );
+              // fxProblemas es la ÚNICA definición de las 6 reglas (01 §3.1). Acá no se
+              // reescribe ni una: se materializa. Validar, Guardar y Cerrar usan la misma.
+              ClearCollect(colProblemas, fxProblemas);
+              If(
+                  IsEmpty(colProblemas),
+                  Notify("Todos los registros son válidos.", NotificationType.Success),
+                  Notify(
+                      CountRows(Distinct(colProblemas, LocalId)) &
+                      If(CountRows(Distinct(colProblemas, LocalId)) > 1, " planillas", " planilla") &
+                      " con problemas — mirá el panel de validación",
+                      NotificationType.Error
+                  )
+              )
+            PaddingBottom: =0
+            PaddingLeft: =34
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =9
+            Text: ="Validar"
+            Width: =104
+            X: =btnGuardarCap.X - 10 - Self.Width
+            Y: =68
+      - icoValidarCap:
+          Control: Classic/Icon@2.5.0
+          Group: BotonesCap
+          Properties:
+            AccessibleLabel: ="Validar"
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledBorderColor: =RGBA(56, 56, 56, 1)
+            DisabledColor: =RGBA(119, 119, 119, 1)
+            DisplayMode: =btnValidarCap.DisplayMode
+            Height: =14
+            Icon: =Icon.Check
+            OnSelect: =Select(btnValidarCap)
+            Width: =14
+            X: =btnValidarCap.X + 14
+            Y: =btnValidarCap.Y + 9
+      - btnGuardarCap:
+          Control: Classic/Button@2.2.0
+          Group: BotonesCap
+          Properties:
+            BorderColor: =ThemeAccent
+            BorderThickness: =1
+            Color: =ThemeAccent
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: |-
+              =If(
+                  !IsBlank(gvarLoteActivo),
+                  DisplayMode.Edit,
+                  DisplayMode.Disabled
+              )
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            Height: =32
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeAccentSoft
+            OnSelect: |-
+              =// VOLCADO: los inputs de la grilla NO escriben en colPlanillas al tipear (el
+              // re-render mataba el foco). Este bloque lee los controles vía AllItems y
+              // sincroniza la colección UNA vez, al inicio de cada acción que la consume.
+              ForAll(
+                  galPlanillasCap.AllItems As Fila,
+                  Patch(
+                      colPlanillas,
+                      LookUp(colPlanillas, LocalId = Fila.LocalId),
+                      {
+                          Empresa:     Fila.cmbEmpresaCap.Selected,
+                          Planilla:    Trim(Fila.inpPlanillaCap.Text),
+                          ChequeNIO:   Coalesce(Value(Fila.inpChequeNIOCap.Text), 0),
+                          ChequeUSD:   Coalesce(Value(Fila.inpChequeUSDCap.Text), 0),
+                          EfectivoNIO: Coalesce(Value(Fila.inpEfectivoNIOCap.Text), 0),
+                          EfectivoUSD: Coalesce(Value(Fila.inpEfectivoUSDCap.Text), 0)
+                      }
+                  )
+              );
+              // ===== 0. Guardas =====
+              If(
+                  CountRows(colPlanillas) = 0,
+                  Notify("No hay planillas que guardar.", NotificationType.Error),
+
+                  // ===== 1. Validación (única fuente: fxProblemas) =====
+                  ClearCollect(colProblemas, fxProblemas);
+                  If(
+                      !IsEmpty(colProblemas),
+                      Notify("Corregí los problemas de validación antes de guardar.", NotificationType.Error),
+
+                      // ===== 2. DELTA: qué hay que mandarle REALMENTE a Dataverse =====
+                      //    Una planilla entra si es NUEVA (sin GUID) o si algún campo difiere del
+                      //    snapshot colPlanillasDV. Sin esto, cada Guardar re-patchea el lote entero.
+                      ClearCollect(colCambiosPlanCap,
+                          Filter(colPlanillas As P,
+                              IsBlank(P.GUID) ||
+                              With({dv: LookUp(colPlanillasDV, 'CH-Tbl-Receptions' = P.GUID)},
+                                  Trim(P.Planilla) <> dv.ReceiptID ||
+                                  Coalesce(P.ChequeNIO, 0)   <> Coalesce(dv.NIOCheck, 0) ||
+                                  Coalesce(P.ChequeUSD, 0)   <> Coalesce(dv.USDCheck, 0) ||
+                                  Coalesce(P.EfectivoNIO, 0) <> Coalesce(dv.NIOCash, 0) ||
+                                  Coalesce(P.EfectivoUSD, 0) <> Coalesce(dv.USDCash, 0) ||
+                                  P.Empresa.'CH-Tbl-ClientBranch' <> dv.BranchName.'CH-Tbl-ClientBranch'
+                              )
+                          )
+                      );
+                      ClearCollect(colTulasNuevasCap, Filter(colTulas, IsBlank(GUID)));
+
+                      // ===== 3. Arranque =====
+                      //    NI UN Patch a Dataverse en este OnSelect: canvas NO repinta a mitad de
+                      //    fórmula, así que el diálogo se abre ACÁ y el guardado corre un frame
+                      //    después, en tmrGuardarCap.OnTimerEnd (Start = ctxGuardandoCap).
+                      If(
+                          IsEmpty(colCambiosPlanCap) && IsEmpty(colTulasNuevasCap) && IsEmpty(colTulasBorradasCap),
+
+                          // ---------- SIN CAMBIOS: no se abre nada y no se patchea nada ----------
+                          Set(gvarCambiosSinGuardar, false);
+                          If(
+                              // El CIERRE tiene que CONTINUAR igual: el lote pasa a Recibido aunque
+                              // no hubiera deltas. Se dispara el timer con las tres colecciones
+                              // vacías — cada fase del OnTimerEnd está guardada por su propio
+                              // IsEmpty, así que no toca Dataverse y cae directo en la continuación
+                              // del cierre. Sin diálogo: un modal de 50 ms es un parpadeo.
+                              ctxGuardarDesdeCierreCap,
+                              Clear(colFallidas); Clear(colEstadoGuardadoCap);
+                              UpdateContext({ ctxGuardandoCap: true }),
+
+                              // "Guardar y salir" sin nada que guardar: se navega en el acto.
+                              If(
+                                  ctxSalirTrasGuardarCap,
+                                  UpdateContext({ ctxDlgResultadoCap: false, ctxSalirTrasGuardarCap: false });
+                                  Navigate(scrLotes),
+                                  Notify("No hay cambios que guardar.", NotificationType.Information)
+                              )
+                          ),
+
+                          // ---------- CON CAMBIOS: se abre el diálogo y arranca el timer ----------
+                          Clear(colFallidas);
+                          Clear(colEstadoGuardadoCap);
+                          UpdateContext({ ctxDlgResultadoCap: true, ctxGuardandoCap: true })
+                      )
+                  )
+              );
+
+              // Las señales de origen se consumen SOLO si el guardado NO quedó en vuelo: si el
+              // timer va a correr, las necesita vivas para su continuación (cierre / salir) y las
+              // apaga él al final. Dentro de una misma fórmula las variables de contexto se leen
+              // ya actualizadas, así que este If ve el ctxGuardandoCap recién seteado.
+              If(
+                  !ctxGuardandoCap,
+                  UpdateContext({ ctxGuardarDesdeCierreCap: false, ctxSalirTrasGuardarCap: false })
+              )
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =9
+            Text: ="Guardar"
+            Width: =96
+            X: =btnCerrarCap.X - 10 - Self.Width
+            Y: =68
+      - btnCerrarCap:
+          Control: Classic/Button@2.2.0
+          Group: BotonesCap
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeSurface
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: |-
+              =If(
+                  !IsBlank(gvarLoteActivo),
+                  DisplayMode.Edit,
+                  DisplayMode.Disabled
+              )
+            Fill: =ThemeAccent
+            Font: =Font.'Open Sans'
+            Height: =32
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeAccentDark
+            OnSelect: |-
+              =// VOLCADO: los inputs de la grilla NO escriben en colPlanillas al tipear (el
+              // re-render mataba el foco). Este bloque lee los controles vía AllItems y
+              // sincroniza la colección UNA vez, al inicio de cada acción que la consume.
+              ForAll(
+                  galPlanillasCap.AllItems As Fila,
+                  Patch(
+                      colPlanillas,
+                      LookUp(colPlanillas, LocalId = Fila.LocalId),
+                      {
+                          Empresa:     Fila.cmbEmpresaCap.Selected,
+                          Planilla:    Trim(Fila.inpPlanillaCap.Text),
+                          ChequeNIO:   Coalesce(Value(Fila.inpChequeNIOCap.Text), 0),
+                          ChequeUSD:   Coalesce(Value(Fila.inpChequeUSDCap.Text), 0),
+                          EfectivoNIO: Coalesce(Value(Fila.inpEfectivoNIOCap.Text), 0),
+                          EfectivoUSD: Coalesce(Value(Fila.inpEfectivoUSDCap.Text), 0)
+                      }
+                  )
+              );
+              If(
+                  CountRows(colPlanillas) = 0,
+                  Notify("El lote no tiene planillas.", NotificationType.Error),
+
+                  ClearCollect(colProblemas, fxProblemas);
+                  If(
+                      !IsEmpty(colProblemas),
+                      Notify("Corregí los problemas de validación antes de cerrar.", NotificationType.Error),
+                      UpdateContext({ ctxDlgCerrarCap: true })
+                  )
+              )
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeAccentDark
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =9
+            Text: ="Cerrar lote"
+            Width: =108
+            X: =Parent.Width - 18 - Self.Width
+            Y: =68
+      - shpCardGrillaCap:
+          Control: Classic/Button@2.2.0
+          Group: BaseGrillaCap
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =640
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: =""
+            Width: =1068
+            X: =18
+            Y: =112
+      - shpHeadGrillaCap:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoGrillaCap
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =28
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: =""
+            Width: =shpCardGrillaCap.Width
+            X: =shpCardGrillaCap.X
+            Y: =shpCardGrillaCap.Y
+      - lblColIdxCap:
+          Control: Label@2.5.1
+          Group: EncabezadoGrillaCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="#"
+            Width: =30
+            Wrap: =false
+            X: =32
+            Y: =119
+      - lblColEmpresaCap:
+          Control: Label@2.5.1
+          Group: EncabezadoGrillaCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="EMPRESA / SUCURSAL"
+            Width: =250
+            Wrap: =false
+            X: =69
+            Y: =119
+      - lblColPlanillaCap:
+          Control: Label@2.5.1
+          Group: EncabezadoGrillaCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="N° PLANILLA"
+            Width: =126
+            Wrap: =false
+            X: =326
+            Y: =119
+      - lblColChequeNIOCap:
+          Control: Label@2.5.1
+          Group: EncabezadoGrillaCap
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="CHEQUE C$"
+            Width: =118
+            Wrap: =false
+            X: =459
+            Y: =119
+      - lblColChequeUSDCap:
+          Control: Label@2.5.1
+          Group: EncabezadoGrillaCap
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="CHEQUE US$"
+            Width: =118
+            Wrap: =false
+            X: =584
+            Y: =119
+      - lblColEfectivoNIOCap:
+          Control: Label@2.5.1
+          Group: EncabezadoGrillaCap
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="EFECTIVO C$"
+            Width: =118
+            Wrap: =false
+            X: =709
+            Y: =119
+      - lblColEfectivoUSDCap:
+          Control: Label@2.5.1
+          Group: EncabezadoGrillaCap
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="EFECTIVO US$"
+            Width: =118
+            Wrap: =false
+            X: =834
+            Y: =119
+      - lblColTulasCap:
+          Control: Label@2.5.1
+          Group: EncabezadoGrillaCap
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="TULAS"
+            Width: =62
+            Wrap: =false
+            X: =959
+            Y: =119
+      - shpLineaHeadGrillaCap:
+          Control: Rectangle@2.3.0
+          Group: EncabezadoGrillaCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            BorderStyle: =BorderStyle.None
+            Fill: =ThemeLine
+            Height: =1
+            Width: =shpCardGrillaCap.Width
+            X: =shpCardGrillaCap.X
+            Y: =shpHeadGrillaCap.Y + shpHeadGrillaCap.Height - 1
+      - galPlanillasCap:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            DelayItemLoading: =false
+            Height: =shpCardGrillaCap.Height - shpHeadGrillaCap.Height - 52
+            Items: |-
+              =// galPlanillasCap.Items — proyección que agrega el número de fila VIVO.
+              // Patch(registro, {cambios}) en su forma de DOS argumentos devuelve el registro
+              // fusionado SIN tocar el origen: es una proyección, no una escritura.
+              ForAll(
+                  Sequence(CountRows(colPlanillas)) As S,
+                  Patch(Index(colPlanillas, S.Value), { Fila: S.Value })
+              )
+            LoadingSpinner: =LoadingSpinner.None
+            TemplatePadding: =0
+            TemplateSize: =40
+            Width: =shpCardGrillaCap.Width
+            X: =18
+            Y: =shpLineaHeadGrillaCap.Y + shpLineaHeadGrillaCap.Height
+          Children:
+            - shpFilaCap:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =ThemeInk
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =If(!IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) || !IsEmpty(Filter(colFallidas, LocalId = ThisItem.LocalId)), ThemeWarnSoft, Color.Transparent)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =galPlanillasCap.TemplateHeight
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =If(!IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) || !IsEmpty(Filter(colFallidas, LocalId = ThisItem.LocalId)), ThemeWarnSoft, Color.Transparent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =If(!IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) || !IsEmpty(Filter(colFallidas, LocalId = ThisItem.LocalId)), ThemeWarnSoft, Color.Transparent)
+                  RadiusBottomLeft: =0
+                  RadiusBottomRight: =0
+                  RadiusTopLeft: =0
+                  RadiusTopRight: =0
+                  Size: =9
+                  Text: =""
+                  Width: =galPlanillasCap.Width
+            - lblIdxCap:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk3
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =20
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =8.25
+                  Text: =Text(ThisItem.Fila)
+                  Width: =30
+                  Wrap: =false
+                  X: =14
+                  Y: =10
+            - cmbEmpresaCap:
+                Control: Classic/ComboBox@2.4.0
+                Properties:
+                  BorderColor: |-
+                    =If(
+                        !IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) ||
+                        !IsEmpty(Filter(colFallidas,  LocalId = ThisItem.LocalId)),
+                        ThemeWarnLine,
+                        ThemeLine
+                    )
+                  BorderThickness: =1
+                  ChevronBackground: =RGBA(35, 31, 32, 1)
+                  ChevronDisabledBackground: =RGBA(215, 210, 204, 1)
+                  ChevronDisabledFill: =RGBA(235, 233, 229, 1)
+                  ChevronFill: =RGBA(255, 255, 255, 1)
+                  ChevronHoverBackground: =ColorFade(Self.ChevronBackground, 20%)
+                  ChevronHoverFill: =Self.ChevronFill
+                  Color: =ThemeInk
+                  DefaultSelectedItems: =If(IsBlank(ThisItem.Empresa.'CH-Tbl-ClientBranch'), Blank(), Table(ThisItem.Empresa))
+                  DisabledBorderColor: =RGBA(186, 186, 186, 1)
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  DisabledFill: =RGBA(242, 242, 242, 1)
+                  DisplayFields: =["sanic_name","sanic_clientnamemirror"]
+                  Fill: =ThemeSurface
+                  Font: =Font.'Open Sans'
+                  Height: =28
+                  HoverColor: =Self.Color
+                  HoverFill: =RGBA(186, 186, 186, 1)
+                  InputTextPlaceholder: ="Buscar sucursal…"
+                  Items: =Filter('CH-Tbl-ClientBranches', RecordStatus = 'CH-Ch-RecordStatus'.Active)
+                  OnChange: |-
+                    =// Solo marca DIRTY. El volcado a colPlanillas lo hace el bloque VOLCADO al
+                    // inicio de cada accion consumidora: patchear aca re-renderizaba la galeria
+                    // y el foco moria en cada Tab.
+                    Set(gvarCambiosSinGuardar, true)
+                  PressedColor: =Self.Color
+                  PressedFill: =ColorFade(Self.SelectionFill, -30%)
+                  SearchFields: =["sanic_name","sanic_clientnamemirror"]
+                  SelectMultiple: =false
+                  SelectionColor: =RGBA(255, 255, 255, 1)
+                  SelectionFill: =RGBA(0, 176, 240, 1)
+                  Size: =9
+                  Width: =250
+                  X: =51
+                  Y: =6
+            - inpPlanillaCap:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  BorderColor: |-
+                    =If(
+                        !IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) ||
+                        !IsEmpty(Filter(colFallidas,  LocalId = ThisItem.LocalId)),
+                        ThemeWarnLine,
+                        ThemeLine
+                    )
+                  BorderThickness: =1
+                  Color: =ThemeInk
+                  Default: =ThisItem.Planilla
+                  DelayOutput: =true
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 40%)
+                  DisabledColor: =ColorFade(Self.Color, 40%)
+                  DisabledFill: =Self.Fill
+                  Fill: =ThemeSurface
+                  FocusedBorderThickness: =3
+                  Font: =Font.'Open Sans'
+                  Height: =28
+                  HintText: ="N° planilla"
+                  HoverBorderColor: =Self.Color
+                  HoverColor: =Self.Color
+                  HoverFill: =Self.Fill
+                  OnChange: |-
+                    =// Solo marca DIRTY — el volcado lo hace la accion consumidora.
+                    Set(gvarCambiosSinGuardar, true)
+                  RadiusBottomLeft: =7
+                  RadiusBottomRight: =7
+                  RadiusTopLeft: =7
+                  RadiusTopRight: =7
+                  Size: =9
+                  Width: =126
+                  X: =308
+                  Y: =6
+            - inpChequeNIOCap:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: |-
+                    =If(
+                        !IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) ||
+                        !IsEmpty(Filter(colFallidas,  LocalId = ThisItem.LocalId)),
+                        ThemeWarnLine,
+                        ThemeLine
+                    )
+                  BorderThickness: =1
+                  Color: =ThemeInk
+                  Default: =If(ThisItem.ChequeNIO = 0, "", Text(ThisItem.ChequeNIO))
+                  DelayOutput: =true
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 40%)
+                  DisabledColor: =ColorFade(Self.Color, 40%)
+                  DisabledFill: =Self.Fill
+                  Fill: =ThemeSurface
+                  FocusedBorderThickness: =3
+                  Font: =Font.'Open Sans'
+                  Format: =TextFormat.Number
+                  Height: =28
+                  HintText: ="0.00"
+                  HoverBorderColor: =Self.Color
+                  HoverColor: =Self.Color
+                  HoverFill: =Self.Fill
+                  OnChange: |-
+                    =// Solo marca DIRTY — el volcado lo hace la accion consumidora.
+                    Set(gvarCambiosSinGuardar, true)
+                  RadiusBottomLeft: =7
+                  RadiusBottomRight: =7
+                  RadiusTopLeft: =7
+                  RadiusTopRight: =7
+                  Size: =9
+                  Width: =118
+                  X: =441
+                  Y: =6
+            - inpChequeUSDCap:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: |-
+                    =If(
+                        !IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) ||
+                        !IsEmpty(Filter(colFallidas,  LocalId = ThisItem.LocalId)),
+                        ThemeWarnLine,
+                        ThemeLine
+                    )
+                  BorderThickness: =1
+                  Color: =ThemeInk
+                  Default: =If(ThisItem.ChequeUSD = 0, "", Text(ThisItem.ChequeUSD))
+                  DelayOutput: =true
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 40%)
+                  DisabledColor: =ColorFade(Self.Color, 40%)
+                  DisabledFill: =Self.Fill
+                  Fill: =ThemeSurface
+                  FocusedBorderThickness: =3
+                  Font: =Font.'Open Sans'
+                  Format: =TextFormat.Number
+                  Height: =28
+                  HintText: ="0.00"
+                  HoverBorderColor: =Self.Color
+                  HoverColor: =Self.Color
+                  HoverFill: =Self.Fill
+                  OnChange: |-
+                    =// Solo marca DIRTY — el volcado lo hace la accion consumidora.
+                    Set(gvarCambiosSinGuardar, true)
+                  RadiusBottomLeft: =7
+                  RadiusBottomRight: =7
+                  RadiusTopLeft: =7
+                  RadiusTopRight: =7
+                  Size: =9
+                  Width: =118
+                  X: =566
+                  Y: =6
+            - inpEfectivoNIOCap:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: |-
+                    =If(
+                        !IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) ||
+                        !IsEmpty(Filter(colFallidas,  LocalId = ThisItem.LocalId)),
+                        ThemeWarnLine,
+                        ThemeLine
+                    )
+                  BorderThickness: =1
+                  Color: =ThemeInk
+                  Default: =If(ThisItem.EfectivoNIO = 0, "", Text(ThisItem.EfectivoNIO))
+                  DelayOutput: =true
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 40%)
+                  DisabledColor: =ColorFade(Self.Color, 40%)
+                  DisabledFill: =Self.Fill
+                  Fill: =ThemeSurface
+                  FocusedBorderThickness: =3
+                  Font: =Font.'Open Sans'
+                  Format: =TextFormat.Number
+                  Height: =28
+                  HintText: ="0.00"
+                  HoverBorderColor: =Self.Color
+                  HoverColor: =Self.Color
+                  HoverFill: =Self.Fill
+                  OnChange: |-
+                    =// Solo marca DIRTY — el volcado lo hace la accion consumidora.
+                    Set(gvarCambiosSinGuardar, true)
+                  RadiusBottomLeft: =7
+                  RadiusBottomRight: =7
+                  RadiusTopLeft: =7
+                  RadiusTopRight: =7
+                  Size: =9
+                  Width: =118
+                  X: =691
+                  Y: =6
+            - inpEfectivoUSDCap:
+                Control: Classic/TextInput@2.3.2
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: |-
+                    =If(
+                        !IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) ||
+                        !IsEmpty(Filter(colFallidas,  LocalId = ThisItem.LocalId)),
+                        ThemeWarnLine,
+                        ThemeLine
+                    )
+                  BorderThickness: =1
+                  Color: =ThemeInk
+                  Default: =If(ThisItem.EfectivoUSD = 0, "", Text(ThisItem.EfectivoUSD))
+                  DelayOutput: =true
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 40%)
+                  DisabledColor: =ColorFade(Self.Color, 40%)
+                  DisabledFill: =Self.Fill
+                  Fill: =ThemeSurface
+                  FocusedBorderThickness: =3
+                  Font: =Font.'Open Sans'
+                  Format: =TextFormat.Number
+                  Height: =28
+                  HintText: ="0.00"
+                  HoverBorderColor: =Self.Color
+                  HoverColor: =Self.Color
+                  HoverFill: =Self.Fill
+                  OnChange: |-
+                    =// Solo marca DIRTY — el volcado lo hace la accion consumidora.
+                    Set(gvarCambiosSinGuardar, true)
+                  RadiusBottomLeft: =7
+                  RadiusBottomRight: =7
+                  RadiusTopLeft: =7
+                  RadiusTopRight: =7
+                  Size: =9
+                  Width: =118
+                  X: =816
+                  Y: =6
+            - btnChipTulasCap:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeWarnLine
+                  BorderThickness: |-
+                    =// Sobre una fila ámbar el chip ámbar se fundiría con el fondo: el borde lo
+                    // recorta para que el operador vea QUÉ planillas comparten el problema.
+                    If(
+                        CountRows(Filter(colTulas, PlanillaLocalId = ThisItem.LocalId)) = 0 ||
+                        !IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) ||
+                        !IsEmpty(Filter(colFallidas,  LocalId = ThisItem.LocalId)),
+                        1,
+                        0
+                    )
+                  Color: |-
+                    =If(
+                        CountRows(Filter(colTulas, PlanillaLocalId = ThisItem.LocalId)) = 0 ||
+                        !IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) ||
+                        !IsEmpty(Filter(colFallidas,  LocalId = ThisItem.LocalId)),
+                        ThemeWarn,
+                        ThemeInfo
+                    )
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: |-
+                    =If(
+                        CountRows(Filter(colTulas, PlanillaLocalId = ThisItem.LocalId)) = 0 ||
+                        !IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) ||
+                        !IsEmpty(Filter(colFallidas,  LocalId = ThisItem.LocalId)),
+                        ThemeWarnSoft,
+                        ThemeInfoSoft
+                    )
+                  Font: =Font.'Open Sans'
+                  Height: =24
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: |-
+                    =If(
+                        CountRows(Filter(colTulas, PlanillaLocalId = ThisItem.LocalId)) = 0 ||
+                        !IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) ||
+                        !IsEmpty(Filter(colFallidas,  LocalId = ThisItem.LocalId)),
+                        ThemeWarnSoft,
+                        ThemeInfoSoft2
+                    )
+                  OnSelect: |-
+                    =// VOLCADO: los inputs de la grilla NO escriben en colPlanillas al tipear (el
+                    // re-render mataba el foco). Este bloque lee los controles vía AllItems y
+                    // sincroniza la colección UNA vez, al inicio de cada acción que la consume.
+                    ForAll(
+                        galPlanillasCap.AllItems As Fila,
+                        Patch(
+                            colPlanillas,
+                            LookUp(colPlanillas, LocalId = Fila.LocalId),
+                            {
+                                Empresa:     Fila.cmbEmpresaCap.Selected,
+                                Planilla:    Trim(Fila.inpPlanillaCap.Text),
+                                ChequeNIO:   Coalesce(Value(Fila.inpChequeNIOCap.Text), 0),
+                                ChequeUSD:   Coalesce(Value(Fila.inpChequeUSDCap.Text), 0),
+                                EfectivoNIO: Coalesce(Value(Fila.inpEfectivoNIOCap.Text), 0),
+                                EfectivoUSD: Coalesce(Value(Fila.inpEfectivoUSDCap.Text), 0)
+                            }
+                        )
+                    );
+                    // btnChipTulasCap.OnSelect — abre el panel de tulas de ESTA fila (§7.2)
+                    // El subtítulo del panel dice la EMPRESA (Client.Name), no la sucursal: es lo que
+                    // muestra el mockup. El dot-walk se paga UNA vez por clic, no por render.
+                    // Título y subtítulo se leen de los controles HERMANOS del template, no de
+                    // ThisItem: el volcado de arriba todavía no se refleja en ThisItem dentro de
+                    // la misma fórmula.
+                    UpdateContext({
+                        ctxPlanillaTulasCap:    ThisItem.LocalId,
+                        ctxPlanillaTulasTxtCap: Trim(inpPlanillaCap.Text),
+                        ctxPlanillaTulasEmpCap: Coalesce(cmbEmpresaCap.Selected.Client.Name, "Empresa sin seleccionar")
+                    });
+                    ClearCollect(colTulasEdit, Filter(colTulas, PlanillaLocalId = ThisItem.LocalId));
+                    Reset(galTulasEditCap);
+                    UpdateContext({ ctxDlgTulasCap: true });UpdateContext({ctxScanDupCap: ""}); SetFocus(inpTulaScanCap)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: |-
+                    =If(
+                        CountRows(Filter(colTulas, PlanillaLocalId = ThisItem.LocalId)) = 0 ||
+                        !IsEmpty(Filter(colProblemas, LocalId = ThisItem.LocalId)) ||
+                        !IsEmpty(Filter(colFallidas,  LocalId = ThisItem.LocalId)),
+                        ThemeWarnSoft,
+                        ThemeInfoSoft
+                    )
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Size: =8.25
+                  Text: =Text(CountRows(Filter(colTulas, PlanillaLocalId = ThisItem.LocalId)))
+                  Width: =44
+                  X: =950
+                  Y: =8
+            - icoBorrarFilaCap:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: ="Eliminar planilla"
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk3
+                  DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                  DisabledColor: =RGBA(119, 119, 119, 1)
+                  Height: =16
+                  HoverColor: =ThemeDanger
+                  Icon: =Icon.Trash
+                  OnSelect: |-
+                    =// VOLCADO: los inputs de la grilla NO escriben en colPlanillas al tipear (el
+                    // re-render mataba el foco). Este bloque lee los controles vía AllItems y
+                    // sincroniza la colección UNA vez, al inicio de cada acción que la consume.
+                    ForAll(
+                        galPlanillasCap.AllItems As Fila,
+                        Patch(
+                            colPlanillas,
+                            LookUp(colPlanillas, LocalId = Fila.LocalId),
+                            {
+                                Empresa:     Fila.cmbEmpresaCap.Selected,
+                                Planilla:    Trim(Fila.inpPlanillaCap.Text),
+                                ChequeNIO:   Coalesce(Value(Fila.inpChequeNIOCap.Text), 0),
+                                ChequeUSD:   Coalesce(Value(Fila.inpChequeUSDCap.Text), 0),
+                                EfectivoNIO: Coalesce(Value(Fila.inpEfectivoNIOCap.Text), 0),
+                                EfectivoUSD: Coalesce(Value(Fila.inpEfectivoUSDCap.Text), 0)
+                            }
+                        )
+                    );
+                    // icoBorrarFilaCap.OnSelect — abre el diálogo capturando la fila POR LocalId
+                    UpdateContext({
+                        ctxFilaBorrarCap:      ThisItem.LocalId,
+                        ctxFilaBorrarTxtCap:   Trim(inpPlanillaCap.Text),
+                        ctxFilaBorrarGuidCap:  ThisItem.GUID,
+                        ctxFilaBorrarTulasCap: CountRows(Filter(colTulas, PlanillaLocalId = ThisItem.LocalId)),
+                        ctxDlgBorrarFilaCap:   true
+                    })
+                  TabIndex: =0
+                  Width: =16
+                  X: =1020
+                  Y: =12
+            - shpSepFilaCap:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 255, 1)
+                  BorderStyle: =BorderStyle.None
+                  Fill: =ThemeLineSoft
+                  Height: =1
+                  Width: =galPlanillasCap.Width
+                  Y: =galPlanillasCap.TemplateHeight - 1
+      - lblVacioGrillaCap:
+          Control: Label@2.5.1
+          Group: BaseGrillaCap
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.38
+            Text: ="Este lote todavía no tiene planillas. Tocá «Nueva planilla» para empezar."
+            Visible: =IsEmpty(colPlanillas) && !IsBlank(gvarLoteActivo)
+            Width: =shpCardGrillaCap.Width
+            X: =shpCardGrillaCap.X
+            Y: =galPlanillasCap.Y + (galPlanillasCap.Height - Self.Height) / 2
+      - shpLineaAddCap:
+          Control: Rectangle@2.3.0
+          Group: BaseGrillaCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            BorderStyle: =BorderStyle.None
+            Fill: =ThemeLineSoft
+            Height: =1
+            Width: =shpCardGrillaCap.Width
+            X: =shpCardGrillaCap.X
+            Y: =galPlanillasCap.Y + galPlanillasCap.Height
+      - btnNuevaPlanillaCap:
+          Control: Classic/Button@2.2.0
+          Group: BaseGrillaCap
+          Properties:
+            Align: =Align.Left
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk2
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =If(!IsBlank(gvarLoteActivo), DisplayMode.Edit, DisplayMode.Disabled)
+            Fill: =Color.Transparent
+            Font: =Font.'Open Sans'
+            Height: =32
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            OnSelect: |-
+              =// VOLCADO: los inputs de la grilla NO escriben en colPlanillas al tipear (el
+              // re-render mataba el foco). Este bloque lee los controles vía AllItems y
+              // sincroniza la colección UNA vez, al inicio de cada acción que la consume.
+              ForAll(
+                  galPlanillasCap.AllItems As Fila,
+                  Patch(
+                      colPlanillas,
+                      LookUp(colPlanillas, LocalId = Fila.LocalId),
+                      {
+                          Empresa:     Fila.cmbEmpresaCap.Selected,
+                          Planilla:    Trim(Fila.inpPlanillaCap.Text),
+                          ChequeNIO:   Coalesce(Value(Fila.inpChequeNIOCap.Text), 0),
+                          ChequeUSD:   Coalesce(Value(Fila.inpChequeUSDCap.Text), 0),
+                          EfectivoNIO: Coalesce(Value(Fila.inpEfectivoNIOCap.Text), 0),
+                          EfectivoUSD: Coalesce(Value(Fila.inpEfectivoUSDCap.Text), 0)
+                      }
+                  )
+              );
+              // El registro nace con EXACTAMENTE el esquema sembrado en App.OnStart (01 §3.2):
+              // GUID y Empresa van con Defaults(...) para nacer EN BLANCO PERO TIPADOS.
+              Collect(
+                  colPlanillas,
+                  {
+                      LocalId:     Text(GUID()),
+                      GUID:        Defaults('CH-Tbl-Receptions').'CH-Tbl-Receptions',
+                      Empresa:     Defaults('CH-Tbl-ClientBranches'),
+                      Planilla:    "",
+                      ChequeNIO:   0,
+                      ChequeUSD:   0,
+                      EfectivoNIO: 0,
+                      EfectivoUSD: 0
+                  }
+              );
+              Set(gvarCambiosSinGuardar, true)
+            PaddingBottom: =0
+            PaddingLeft: =34
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =9
+            Text: ="Nueva planilla"
+            X: =shpCardGrillaCap.X + 14
+            Y: =shpLineaAddCap.Y + 10
+      - icoNuevaPlanillaCap:
+          Control: Classic/Icon@2.5.0
+          Group: BaseGrillaCap
+          Properties:
+            AccessibleLabel: ="Nueva planilla"
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledBorderColor: =RGBA(56, 56, 56, 1)
+            DisabledColor: =RGBA(119, 119, 119, 1)
+            DisplayMode: =btnNuevaPlanillaCap.DisplayMode
+            Height: =14
+            Icon: =Icon.Add
+            OnSelect: =Select(btnNuevaPlanillaCap)
+            Width: =14
+            X: =btnNuevaPlanillaCap.X + 14
+            Y: =btnNuevaPlanillaCap.Y + 9
+      - shpTotChequeNIOCap:
+          Control: Classic/Button@2.2.0
+          Group: TarjetaChequeNIOCap
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =54
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Size: =9
+            Text: =""
+            Width: =248
+            X: =1100
+            Y: =112
+      - lblTotChequeNIOLabCap:
+          Control: Label@2.5.1
+          Group: TarjetaChequeNIOCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =13
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="CHEQUE C$"
+            Width: =220
+            Wrap: =false
+            X: =1114
+            Y: =shpTotChequeNIOCap.Y + 9
+      - lblTotChequeNIOCap:
+          Control: Label@2.5.1
+          Group: TarjetaChequeNIOCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =12.38
+            Text: =Text(TotalChequeNIO, FmtMoney)
+            Width: =220
+            Wrap: =false
+            X: =1114
+            Y: =lblTotChequeNIOLabCap.Y + lblTotChequeNIOLabCap.Height + 1
+      - shpTotChequeUSDCap:
+          Control: Classic/Button@2.2.0
+          Group: TarjetaChequeUSDCap
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =54
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Size: =9
+            Text: =""
+            Width: =248
+            X: =1100
+            Y: =shpTotChequeNIOCap.Y + shpTotChequeNIOCap.Height + 9
+      - lblTotChequeUSDLabCap:
+          Control: Label@2.5.1
+          Group: TarjetaChequeUSDCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =13
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="CHEQUE US$"
+            Width: =220
+            Wrap: =false
+            X: =1114
+            Y: =shpTotChequeUSDCap.Y + 9
+      - lblTotChequeUSDCap:
+          Control: Label@2.5.1
+          Group: TarjetaChequeUSDCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =12.38
+            Text: =Text(TotalChequeUSD, FmtMoney)
+            Width: =220
+            Wrap: =false
+            X: =1114
+            Y: =lblTotChequeUSDLabCap.Y + lblTotChequeUSDLabCap.Height + 1
+      - shpTotEfectivoNIOCap:
+          Control: Classic/Button@2.2.0
+          Group: TarjetaEfectivoNIOCap
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =54
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Size: =9
+            Text: =""
+            Width: =248
+            X: =1100
+            Y: =shpTotChequeUSDCap.Y + shpTotChequeUSDCap.Height + 9
+      - lblTotEfectivoNIOLabCap:
+          Control: Label@2.5.1
+          Group: TarjetaEfectivoNIOCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =13
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="EFECTIVO C$"
+            Width: =220
+            Wrap: =false
+            X: =1114
+            Y: =shpTotEfectivoNIOCap.Y + 9
+      - lblTotEfectivoNIOCap:
+          Control: Label@2.5.1
+          Group: TarjetaEfectivoNIOCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =12.38
+            Text: =Text(TotalEfectivoNIO, FmtMoney)
+            Width: =220
+            Wrap: =false
+            X: =1114
+            Y: =lblTotEfectivoNIOLabCap.Y + lblTotEfectivoNIOLabCap.Height + 1
+      - shpTotEfectivoUSDCap:
+          Control: Classic/Button@2.2.0
+          Group: TarjetaEfectivoUSDCap
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =54
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Size: =9
+            Text: =""
+            Width: =248
+            X: =1100
+            Y: =shpTotEfectivoNIOCap.Y + shpTotEfectivoNIOCap.Height + 9
+      - lblTotEfectivoUSDLabCap:
+          Control: Label@2.5.1
+          Group: TarjetaEfectivoUSDCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =13
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="EFECTIVO US$"
+            Width: =220
+            Wrap: =false
+            X: =1114
+            Y: =shpTotEfectivoUSDCap.Y + 9
+      - lblTotEfectivoUSDCap:
+          Control: Label@2.5.1
+          Group: TarjetaEfectivoUSDCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =12.38
+            Text: =Text(TotalEfectivoUSD, FmtMoney)
+            Width: =220
+            Wrap: =false
+            X: =1114
+            Y: =lblTotEfectivoUSDLabCap.Y + lblTotEfectivoUSDLabCap.Height + 1
+      - shpPanelValCap:
+          Control: Classic/Button@2.2.0
+          Group: TarjetaValidacionesCap
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =Parent.Height - 16 - Self.Y
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Size: =9
+            Text: =""
+            Width: =248
+            X: =1100
+            Y: =shpTotEfectivoUSDCap.Y + shpTotEfectivoUSDCap.Height + 9
+      - lblValTituloCap:
+          Control: Label@2.5.1
+          Group: TarjetaValidacionesCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="VALIDACIÓN"
+            Width: =220
+            Wrap: =false
+            X: =1114
+            Y: =shpPanelValCap.Y + 11
+      - shpDotOkValCap:
+          Control: Classic/Button@2.2.0
+          Group: TarjetaValidacionesCap
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeOk
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =7
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeOk
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeOk
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            Size: =9
+            Text: =""
+            Visible: =IsEmpty(colProblemas)
+            Width: =7
+            X: =1114
+            Y: =lblValTituloCap.Y + lblValTituloCap.Height + 12
+      - lblValVacioCap:
+          Control: Label@2.5.1
+          Group: TarjetaValidacionesCap
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =32
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.63
+            Text: ="Sin problemas detectados. Validá para confirmar."
+            Visible: =IsEmpty(colProblemas)
+            Width: =206
+            X: =1128
+            Y: =lblValTituloCap.Y + lblValTituloCap.Height + 6
+      - galProblemasCap:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            DelayItemLoading: =false
+            Height: =shpPanelValCap.Y + shpPanelValCap.Height - 12 - Self.Y
+            Items: =colProblemas
+            LoadingSpinner: =LoadingSpinner.None
+            TemplatePadding: =0
+            TemplateSize: =40
+            Visible: =!IsEmpty(colProblemas)
+            Width: =220
+            X: =1114
+            Y: =lblValTituloCap.Y + lblValTituloCap.Height + 6
+          Children:
+            - shpDotProblemaCap:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =ThemeInk
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =ThemeDotWarn
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =7
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =ThemeDotWarn
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =ThemeDotWarn
+                  RadiusBottomLeft: =4
+                  RadiusBottomRight: =4
+                  RadiusTopLeft: =4
+                  RadiusTopRight: =4
+                  Size: =9
+                  Text: =""
+                  Width: =7
+                  Y: =10
+            - lblProblemaCap:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk2
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =32
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =8.63
+                  Text: |-
+                    =If(
+                        IsBlank(Trim(ThisItem.Planilla)),
+                        "Planilla sin número",
+                        "Planilla " & Trim(ThisItem.Planilla)
+                    ) & " — " & ThisItem.Regla
+                  Width: =galProblemasCap.Width - 20
+                  X: =14
+                  Y: =4
+      - cntDlgNuevoLoteCap:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =ThemeBg
+            Height: =Parent.Height - Self.Y
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =IsBlank(gvarLoteActivo)
+            Width: =Parent.Width
+            Y: =shpHeaderCap.Height + 1
+          Children:
+            - btnDlgBloqueoNuevoLoteCap:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =ThemeInk
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =Parent.Height
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =Color.Transparent
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Color.Transparent
+                  Size: =9
+                  Text: =""
+                  Width: =Parent.Width
+            - cntDlgCardNuevoLoteCap:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.Regular
+                  Fill: =ThemeSurface
+                  Height: =224
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Width: =380
+                  X: =(Parent.Width - Self.Width) / 2
+                  Y: =(Parent.Height - Self.Height) / 2
+                Children:
+                  - lblDlgTitNuevoLoteCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =22
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.88
+                        Text: ="Nuevo lote de recepción"
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =16
+                  - lblDlgTxtNuevoLoteCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        Height: =34
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Text: ="El lote se crea en estado En progreso. El número (RB-…) lo asigna Dataverse."
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblDlgTitNuevoLoteCap.Y + lblDlgTitNuevoLoteCap.Height + 4
+                  - lblCampoTransCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.25
+                        Text: ="Transportadora"
+                        Width: =200
+                        Wrap: =false
+                        X: =20
+                        Y: =lblDlgTxtNuevoLoteCap.Y + lblDlgTxtNuevoLoteCap.Height + 10
+                  - cmbTransportadoraCap:
+                      Control: Classic/ComboBox@2.4.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        ChevronBackground: =RGBA(35, 31, 32, 1)
+                        ChevronDisabledBackground: =RGBA(215, 210, 204, 1)
+                        ChevronDisabledFill: =RGBA(235, 233, 229, 1)
+                        ChevronFill: =RGBA(255, 255, 255, 1)
+                        ChevronHoverBackground: =ColorFade(Self.ChevronBackground, 20%)
+                        ChevronHoverFill: =Self.ChevronFill
+                        Color: =ThemeInk
+                        DisabledBorderColor: =RGBA(186, 186, 186, 1)
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        DisabledFill: =RGBA(242, 242, 242, 1)
+                        DisplayFields: =["sanic_name"]
+                        Fill: =ThemeSurface
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverColor: =Self.Color
+                        HoverFill: =RGBA(186, 186, 186, 1)
+                        InputTextPlaceholder: ="Elegí la transportadora…"
+                        IsSearchable: =false
+                        Items: =colTransportadoras
+                        PressedColor: =Self.Color
+                        PressedFill: =ColorFade(Self.SelectionFill, -30%)
+                        SearchFields: =[""]
+                        SelectMultiple: =false
+                        SelectionColor: =RGBA(255, 255, 255, 1)
+                        SelectionFill: =RGBA(0, 176, 240, 1)
+                        Size: =9
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblCampoTransCap.Y + lblCampoTransCap.Height + 4
+                  - btnIrALotesCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeSurface2
+                        OnSelect: =Navigate(scrLotes)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeSurface2
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Ir a Lotes"
+                        Width: =96
+                        X: =btnCrearLoteCap.X - 8 - Self.Width
+                        Y: =btnCrearLoteCap.Y
+                  - btnCrearLoteCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorFade(Self.Fill, -15%)
+                        BorderThickness: =0
+                        Color: =ThemeSurface
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =If(!IsBlank(cmbTransportadoraCap.Selected), DisplayMode.Edit, DisplayMode.Disabled)
+                        Fill: =ThemeAccent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeAccentDark
+                        OnSelect: |-
+                          =// Q5 de §2. 'Name' es AUTONUMBER RB-{SEQNUM:5}: NUNCA se patchea (01 §2.4).
+                          // El lote nace 'En progreso' (159460000) — estado explícito, no heredado.
+                          IfError(
+                              Set(
+                                  gvarLoteActivo,
+                                  Patch(
+                                      'CH-Tbl-ReceptionBatches',
+                                      Defaults('CH-Tbl-ReceptionBatches'),
+                                      {
+                                          ReceptionStatus: 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso',
+                                          Transportadora:  cmbTransportadoraCap.Selected.Name
+                                      }
+                                  )
+                              ),
+
+                              // --- rama de ERROR: la variable NO puede quedar con un valor de error pegado ---
+                              Set(gvarLoteActivo, Blank());
+                              Notify("No se pudo crear el lote: " & FirstError.Message, NotificationType.Error),
+
+                              // --- rama de ÉXITO (3er argumento de IfError) ---
+                              Clear(colPlanillas);   Clear(colTulas);
+                              Clear(colPlanillasDV); Clear(colTulasDV);
+                              Clear(colProblemas);   Clear(colFallidas);
+                              Clear(colTulasBorradasCap); Clear(colEstadoGuardadoCap);
+                              Set(gvarCambiosSinGuardar, false);
+                              Reset(cmbTransportadoraCap);
+                              Notify("Lote " & gvarLoteActivo.Name & " creado en estado En progreso.", NotificationType.Success)
+                          )
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeAccentDark
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Crear lote"
+                        Width: =108
+                        X: =Parent.Width - 20 - Self.Width
+                        Y: =Parent.Height - 50
+      - cntDlgTulasCap:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =ThemeOverlay
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =ctxDlgTulasCap
+            Width: =Parent.Width
+          Children:
+            - btnDlgBloqueoTulasCap:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =ThemeInk
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =Parent.Height
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =Color.Transparent
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Color.Transparent
+                  Size: =9
+                  Text: =""
+                  Width: =Parent.Width
+            - cntDlgCardTulasCap:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.Regular
+                  Fill: =ThemeSurface
+                  Height: =460
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Width: =520
+                  X: =(Parent.Width - Self.Width) / 2
+                  Y: =(Parent.Height - Self.Height) / 2
+                Children:
+                  - lblDlgTitTulasCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =22
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.88
+                        Text: ="Tulas — Planilla " & If(IsBlank(Trim(ctxPlanillaTulasTxtCap)), "s/n", Trim(ctxPlanillaTulasTxtCap))
+                        Width: =Parent.Width - 66
+                        X: =20
+                        Y: =16
+                  - lblDlgTxtTulasCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Text: =ctxPlanillaTulasEmpCap
+                        Width: =Parent.Width - 66
+                        Wrap: =false
+                        X: =20
+                        Y: =lblDlgTitTulasCap.Y + lblDlgTitTulasCap.Height + 4
+                  - icoDlgXTulasCap:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AccessibleLabel: ="Cerrar el panel de tulas"
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk3
+                        DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                        DisabledColor: =RGBA(119, 119, 119, 1)
+                        Height: =18
+                        HoverColor: =ThemeInk
+                        Icon: =Icon.Cancel
+                        OnSelect: |-
+                          =// DESCARTA la copia: colTulas no se toca. Es el fix del bug N4.
+                          Clear(colTulasEdit);
+                          UpdateContext({ ctxDlgTulasCap: false })
+                        Width: =18
+                        X: =Parent.Width - 34
+                        Y: =16
+                  - galTulasEditCap:
+                      Control: Gallery@2.15.0
+                      Variant: Vertical
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        DelayItemLoading: =false
+                        Height: =264
+                        Items: =colTulasEdit
+                        LoadingSpinner: =LoadingSpinner.None
+                        TemplatePadding: =0
+                        TemplateSize: =32
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =inpTulaScanCap.Y + inpTulaScanCap.Height + 22
+                      Children:
+                        - inpTulaEditCap:
+                            Control: Classic/TextInput@2.3.2
+                            Properties:
+                              BorderColor: |-
+                                =// DUPLICADO EN TODO EL LOTE: repetida en ESTE panel, o ya escaneada en
+                                // OTRA planilla del lote. La tula no se edita: se borra y se re-escanea.
+                                If(
+                                    CountRows(Filter(colTulasEdit As X, Trim(X.Numero) = Trim(ThisItem.Numero))) > 1 ||
+                                    !IsBlank(LookUp(colTulas, Trim(Numero) = Trim(ThisItem.Numero) && PlanillaLocalId <> ctxPlanillaTulasCap).LocalId),
+                                    ThemeDanger,
+                                    ThemeLineSoft
+                                )
+                              BorderThickness: |-
+                                =If(
+                                    CountRows(Filter(colTulasEdit As X, Trim(X.Numero) = Trim(ThisItem.Numero))) > 1 ||
+                                    !IsBlank(LookUp(colTulas, Trim(Numero) = Trim(ThisItem.Numero) && PlanillaLocalId <> ctxPlanillaTulasCap).LocalId),
+                                    1,
+                                    0
+                                )
+                              Color: |-
+                                =If(
+                                    CountRows(Filter(colTulasEdit As X, Trim(X.Numero) = Trim(ThisItem.Numero))) > 1 ||
+                                    !IsBlank(LookUp(colTulas, Trim(Numero) = Trim(ThisItem.Numero) && PlanillaLocalId <> ctxPlanillaTulasCap).LocalId),
+                                    ThemeDanger,
+                                    ThemeInk
+                                )
+                              Default: =ThisItem.Numero
+                              DelayOutput: =true
+                              DisabledBorderColor: =ColorFade(Self.BorderColor, 40%)
+                              DisabledColor: =ColorFade(Self.Color, 40%)
+                              DisabledFill: =Self.Fill
+                              DisplayMode: =DisplayMode.View
+                              Fill: =ThemeSurface2
+                              FocusedBorderThickness: =3
+                              Font: =Font.'Open Sans'
+                              Height: =28
+                              HintText: ="N° de tula…"
+                              HoverBorderColor: =Self.Color
+                              HoverColor: =Self.Color
+                              HoverFill: =Self.Fill
+                              RadiusBottomLeft: =7
+                              RadiusBottomRight: =7
+                              RadiusTopLeft: =7
+                              RadiusTopRight: =7
+                              Size: =9
+                              Width: =galTulasEditCap.Width - 34
+                              Y: =(Parent.TemplateHeight - Self.Height) / 2
+                        - icoBorrarTulaEditCap:
+                            Control: Classic/Icon@2.5.0
+                            Properties:
+                              AccessibleLabel: ="Quitar tula"
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =ThemeInk3
+                              DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                              DisabledColor: =RGBA(119, 119, 119, 1)
+                              Height: =16
+                              Icon: =Icon.Trash
+                              OnSelect: =Remove(colTulasEdit, ThisItem)
+                              Width: =16
+                              X: =galTulasEditCap.Width - 26
+                              Y: =(Parent.TemplateHeight - Self.Height) / 2
+                  - lblVacioTulasCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        Height: =24
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Text: ="Sin tulas todavía."
+                        Visible: =IsEmpty(colTulasEdit)
+                        Width: =Parent.Width - 40
+                        Wrap: =false
+                        X: =20
+                        Y: =galTulasEditCap.Y
+                  - Label1:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeDanger
+                        Font: =Font.'Open Sans'
+                        Height: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.25
+                        Text: ="La tula " & ctxScanDupCap & "."
+                        Visible: =!IsBlank(ctxScanDupCap)
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =inpTulaScanCap.Y + inpTulaScanCap.Height + 2
+                  - inpTulaScanCap:
+                      Control: Classic/TextInput@2.3.2
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk
+                        Default: =
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HintText: ="Escaneá el código o escribí el N° y Enter"
+                        OnChange: |-
+                          =// El chequeo de duplicado es de LOTE, no de planilla: primero acá mismo,
+                          // después contra colTulas de las OTRAS planillas. En los dos casos NO
+                          // colecciona y ctxScanDupCap carga el mensaje completo del choque.
+                          With({num: Trim(Self.Text)},
+                              If(!IsBlank(num),
+                                  If(
+                                      CountRows(Filter(colTulasEdit As X, Trim(X.Numero) = num)) > 0,
+                                      UpdateContext({ctxScanDupCap: num & " ya está en esta planilla"}),
+                                      !IsBlank(LookUp(colTulas, Trim(Numero) = num && PlanillaLocalId <> ctxPlanillaTulasCap).LocalId),
+                                      UpdateContext({
+                                          ctxScanDupCap:
+                                              num & " — ya está en la planilla " &
+                                              LookUp(
+                                                  colPlanillas,
+                                                  LocalId = LookUp(colTulas, Trim(Numero) = num && PlanillaLocalId <> ctxPlanillaTulasCap).PlanillaLocalId
+                                              ).Planilla
+                                      }),
+                                      Collect(
+                                          colTulasEdit,
+                                          {
+                                              LocalId:         Text(GUID()),
+                                              PlanillaLocalId: ctxPlanillaTulasCap,
+                                              Numero:          num,
+                                              GUID:            Defaults('CH-Tbl-Bags').'CH-Tbl-Bags'
+                                          }
+                                      );
+                                      UpdateContext({ctxScanDupCap: ""})
+                                  )
+                              )
+                          );
+                          Reset(Self);
+                          SetFocus(Self)
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9.38
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblDlgTxtTulasCap.Y + lblDlgTxtTulasCap.Height + 12
+                  - btnDlgCancelTulasCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                          =// DESCARTA la copia: colTulas no se toca. Es el fix del bug N4.
+                          Clear(colTulasEdit);
+                          UpdateContext({ ctxDlgTulasCap: false })
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeSurface2
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Cancelar"
+                        Width: =96
+                        X: =btnDlgOkTulasCap.X - 8 - Self.Width
+                        Y: =Parent.Height - 50
+                  - btnDlgOkTulasCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorFade(Self.Fill, -15%)
+                        BorderThickness: =0
+                        Color: =ThemeSurface
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: |-
+                          =If(
+                              CountRows(
+                                  Filter(
+                                      colTulasEdit As X,
+                                      !IsBlank(Trim(X.Numero)) &&
+                                      CountRows(Filter(colTulasEdit As Y, Trim(Y.Numero) = Trim(X.Numero))) > 1
+                                  )
+                              ) = 0,
+                              DisplayMode.Edit,
+                              DisplayMode.Disabled
+                          )
+                        Fill: =ThemeAccent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeAccentDark
+                        OnSelect: |-
+                          =// VOLCADO de la copia a colTulas
+                          // 1) Las tulas que YA vivían en Dataverse y el usuario sacó del panel quedan
+                          //    anotadas: el guardado (§8.2 paso 4) las borra de Dataverse con Remove
+                          //    de registro explícito. Sin esto, quitarlas del panel las dejaba huérfanas.
+                          Collect(
+                              colTulasBorradasCap,
+                              Filter(
+                                  colTulas As T,
+                                  T.PlanillaLocalId = ctxPlanillaTulasCap &&
+                                  !IsBlank(T.GUID) &&
+                                  IsEmpty(Filter(colTulasEdit As E, E.LocalId = T.LocalId))
+                              )
+                          );
+
+                          // 2) Reconstrucción de colTulas en un BUFFER. Nunca se muta una colección mientras
+                          //    un Filter la está leyendo: eso deja filas fantasma de forma intermitente.
+                          ClearCollect(colTulasNuevoCap, Filter(colTulas, PlanillaLocalId <> ctxPlanillaTulasCap));
+                          Collect(colTulasNuevoCap, Filter(colTulasEdit, !IsBlank(Trim(Numero))));
+                          ClearCollect(colTulas, colTulasNuevoCap);
+                          Clear(colTulasNuevoCap);
+                          Clear(colTulasEdit);
+
+                          // 3) Si el panel de validación estaba poblado, se recalcula: la regla "sin tulas
+                          //    asociadas" y la de "tulas duplicadas" acaban de cambiar de verdad.
+                          If(!IsEmpty(colProblemas), ClearCollect(colProblemas, fxProblemas));
+
+                          Set(gvarCambiosSinGuardar, true);
+                          UpdateContext({ ctxDlgTulasCap: false });
+                          Notify("Tulas de la planilla actualizadas (solo en memoria — guardá el lote para persistir).", NotificationType.Information)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeAccentDark
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Aplicar"
+                        Width: =96
+                        X: =Parent.Width - 20 - Self.Width
+                        Y: =Parent.Height - 50
+      - cntDlgBorrarFilaCap:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =ThemeOverlay
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =ctxDlgBorrarFilaCap
+            Width: =Parent.Width
+          Children:
+            - btnDlgBloqueoBorrarFilaCap:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =ThemeInk
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =Parent.Height
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =Color.Transparent
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Color.Transparent
+                  Size: =9
+                  Text: =""
+                  Width: =Parent.Width
+            - cntDlgCardBorrarFilaCap:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.Regular
+                  Fill: =ThemeSurface
+                  Height: =196
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Width: =380
+                  X: =(Parent.Width - Self.Width) / 2
+                  Y: =(Parent.Height - Self.Height) / 2
+                Children:
+                  - lblDlgTitBorrarFilaCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =44
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.88
+                        Text: ="¿Eliminar la planilla " & If(IsBlank(Trim(ctxFilaBorrarTxtCap)), "sin número", Trim(ctxFilaBorrarTxtCap)) & "?"
+                        Width: =Parent.Width - 66
+                        X: =20
+                        Y: =16
+                  - lblDlgTxtBorrarFilaCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        Height: =56
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Text: |-
+                          ="Se eliminará" &
+                          If(ctxFilaBorrarTulasCap > 0, "n también sus " & ctxFilaBorrarTulasCap & " tulas", " la fila") &
+                          If(!IsBlank(ctxFilaBorrarGuidCap), " de Dataverse", "") &
+                          ". Esta acción no se puede deshacer."
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblDlgTitBorrarFilaCap.Y + lblDlgTitBorrarFilaCap.Height + 4
+                  - icoDlgXBorrarFilaCap:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AccessibleLabel: ="Cancelar el borrado"
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk3
+                        DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                        DisabledColor: =RGBA(119, 119, 119, 1)
+                        Height: =18
+                        HoverColor: =ThemeInk
+                        Icon: =Icon.Cancel
+                        OnSelect: |-
+                          =UpdateContext({ctxDlgBorrarFilaCap: false})
+                        Width: =18
+                        X: =Parent.Width - 34
+                        Y: =16
+                  - btnDlgCancelBorrarFilaCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                          =UpdateContext({ctxDlgBorrarFilaCap: false})
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeSurface2
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Cancelar"
+                        Width: =96
+                        X: =btnDlgOkBorrarFilaCap.X - 8 - Self.Width
+                        Y: =Parent.Height - 50
+                  - btnDlgOkBorrarFilaCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorFade(Self.Fill, -15%)
+                        BorderThickness: =0
+                        Color: =ThemeSurface
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =ThemeDanger
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeDanger
+                        OnSelect: |-
+                          =// DATAVERSE PRIMERO, colección local DESPUÉS.
+                          // Ese orden es el fix del bug N2: la v1 mutaba la colección y después leía
+                          // ThisItem.GUID (ya inexistente), dejando tulas huérfanas en Dataverse.
+                          Clear(colErrBorrarCap);
+
+                          If(
+                              !IsBlank(ctxFilaBorrarGuidCap),
+
+                              // --- a) sus tulas persistidas. Remove con REGISTRO explícito (regla D-3),
+                              //        jamás RemoveIf(ds, predicado). Sin Set() adentro del ForAll (01 §3.2):
+                              //        se acumula con Collect y se decide afuera.
+                              ForAll(
+                                  Filter(colTulas, PlanillaLocalId = ctxFilaBorrarCap && !IsBlank(GUID)) As B,
+                                  IfError(
+                                      Remove('CH-Tbl-Bags', LookUp(colTulasDV, 'CH-Tbl-Bags' = B.GUID)),
+                                      Collect(colErrBorrarCap, { Mensaje: "Tula " & B.Numero & ": " & FirstError.Message })
+                                  )
+                              );
+
+                              // --- b) la planilla, SOLO si ninguna tula falló ---
+                              If(
+                                  IsEmpty(colErrBorrarCap),
+                                  IfError(
+                                      Remove('CH-Tbl-Receptions', LookUp(colPlanillasDV, 'CH-Tbl-Receptions' = ctxFilaBorrarGuidCap)),
+                                      Collect(colErrBorrarCap, { Mensaje: "Planilla: " & FirstError.Message })
+                                  )
+                              )
+                          );
+
+                          If(
+                              !IsEmpty(colErrBorrarCap),
+                              // Dataverse rechazó algo: la pantalla NO miente. No se toca nada local.
+                              Notify(
+                                  "No se pudo eliminar: " & First(colErrBorrarCap).Mensaje & " — no se modificó nada en pantalla.",
+                                  NotificationType.Error
+                              ),
+
+                              // --- c) recién ahora se muta lo local ---
+                              ClearCollect(colTulasNuevoCap, Filter(colTulas, PlanillaLocalId <> ctxFilaBorrarCap));
+                              ClearCollect(colTulas, colTulasNuevoCap);
+                              Clear(colTulasNuevoCap);
+                              Remove(colPlanillas, LookUp(colPlanillas, LocalId = ctxFilaBorrarCap));
+
+                              // Snapshots al día (Q3 y Q4) — solo si de verdad tocamos Dataverse.
+                              If(
+                                  !IsBlank(ctxFilaBorrarGuidCap),
+                                  ClearCollect(colPlanillasDV, Filter('CH-Tbl-Receptions', ReceptionBatch.'CH-Tbl-ReceptionBatch' = gvarLoteActivo.'CH-Tbl-ReceptionBatch'));
+                                  ClearCollect(colTulasDV,     Filter('CH-Tbl-Bags',       ReceptionBatchId.'CH-Tbl-ReceptionBatch' = gvarLoteActivo.'CH-Tbl-ReceptionBatch'))
+                              );
+
+                              If(!IsEmpty(colProblemas), ClearCollect(colProblemas, fxProblemas));
+                              Set(gvarCambiosSinGuardar, true);
+                              Notify("Planilla eliminada junto con sus tulas.", NotificationType.Success)
+                          );
+
+                          UpdateContext({ ctxDlgBorrarFilaCap: false })
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeDanger
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Eliminar"
+                        Width: =100
+                        X: =Parent.Width - 20 - Self.Width
+                        Y: =Parent.Height - 50
+      - cntDlgGuardarCap:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =ThemeOverlay
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =ctxDlgResultadoCap
+            Width: =Parent.Width
+          Children:
+            - btnDlgBloqueoGuardarCap:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =ThemeInk
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =Parent.Height
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =Color.Transparent
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Color.Transparent
+                  Size: =9
+                  Text: =""
+                  Width: =Parent.Width
+            - cntDlgCardGuardarCap:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.Regular
+                  Fill: =ThemeSurface
+                  Height: =400
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Width: =520
+                  X: =(Parent.Width - Self.Width) / 2
+                  Y: =(Parent.Height - Self.Height) / 2
+                Children:
+                  - lblDlgTitGuardarCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =22
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.88
+                        Text: |-
+                          =// Mientras el guardado está EN VUELO el diálogo no tiene resultado que
+                          // contar: colFallidas está vacía porque se limpió, no porque haya salido bien.
+                          If(
+                              ctxGuardandoCap,
+                              "Guardando cambios…",
+                              If(IsEmpty(colFallidas), "Lote guardado", "Guardado con errores")
+                          )
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =16
+                  - shpBarraFondoCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorFade(Self.Fill, -15%)
+                        BorderThickness: =0
+                        Color: =ThemeInk
+                        DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                        DisabledColor: =ColorFade(Self.Fill, 90%)
+                        DisabledFill: =ColorFade(Self.Fill, 70%)
+                        DisplayMode: =DisplayMode.View
+                        Fill: =ThemeLineSoft
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Normal
+                        Height: =7
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeLineSoft
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeLineSoft
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Size: =9
+                        Text: =""
+                        Visible: =!ctxGuardandoCap
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =50
+                  - shpBarraProgresoCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorFade(Self.Fill, -15%)
+                        BorderThickness: =0
+                        Color: =ThemeInk
+                        DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                        DisabledColor: =ColorFade(Self.Fill, 90%)
+                        DisabledFill: =ColorFade(Self.Fill, 70%)
+                        DisplayMode: =DisplayMode.View
+                        Fill: =ThemeAccent
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Normal
+                        Height: =shpBarraFondoCap.Height
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeAccent
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeAccent
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Size: =9
+                        Text: =""
+                        Visible: =!ctxGuardandoCap
+                        Width: |-
+                          =// porcentaje REAL, no animación
+                          shpBarraFondoCap.Width *
+                              (CountRows(colPlanillas) - CountRows(Distinct(colFallidas, LocalId))) /
+                              Max(CountRows(colPlanillas), 1)
+                        X: =shpBarraFondoCap.X
+                        Y: =shpBarraFondoCap.Y
+                  - lblDlgTxtGuardarCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.63
+                        Text: |-
+                          =// NADA de spinner animado: durante los Patches el hilo de UI está tomado y
+                          // una animación congelada parece la app colgada. Texto estático con el número
+                          // real de cambios en vuelo — eso sí es información.
+                          If(
+                              ctxGuardandoCap,
+                              "Guardando " &
+                              (CountRows(colCambiosPlanCap) + CountRows(colTulasNuevasCap) + CountRows(colTulasBorradasCap)) &
+                              " cambios…",
+                              CountRows(colPlanillas) - CountRows(Distinct(colFallidas, LocalId)) & " de " &
+                              CountRows(colPlanillas) & " planillas guardadas."
+                          )
+                        Width: =Parent.Width - 40
+                        Wrap: =false
+                        X: =20
+                        Y: =shpBarraFondoCap.Y + shpBarraFondoCap.Height + 7
+                  - galEstadoGuardarCap:
+                      Control: Gallery@2.15.0
+                      Variant: Vertical
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        DelayItemLoading: =false
+                        Height: =btnDlgListoGuardarCap.Y - 6 - Self.Y
+                        Items: =colEstadoGuardadoCap
+                        LoadingSpinner: =LoadingSpinner.None
+                        TemplatePadding: =0
+                        TemplateSize: =34
+                        Visible: =!ctxGuardandoCap
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblDlgTxtGuardarCap.Y + lblDlgTxtGuardarCap.Height + 8
+                      Children:
+                        - shpDotEstadoCap:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Align: =%Align.RESERVED%.Center
+                              BorderColor: =ColorFade(Self.Fill, -15%)
+                              BorderThickness: =0
+                              Color: =ThemeInk
+                              DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                              DisabledColor: =ColorFade(Self.Fill, 90%)
+                              DisabledFill: =ColorFade(Self.Fill, 70%)
+                              DisplayMode: =DisplayMode.View
+                              Fill: =If(ThisItem.Ok, ThemeOk, ThemeDanger)
+                              Font: =Font.'Open Sans'
+                              FontWeight: =%FontWeight.RESERVED%.Normal
+                              Height: =7
+                              HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                              HoverColor: =Self.Color
+                              HoverFill: =If(ThisItem.Ok, ThemeOk, ThemeDanger)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              PressedBorderColor: =Self.Fill
+                              PressedColor: =Self.Fill
+                              PressedFill: =If(ThisItem.Ok, ThemeOk, ThemeDanger)
+                              RadiusBottomLeft: =4
+                              RadiusBottomRight: =4
+                              RadiusTopLeft: =4
+                              RadiusTopRight: =4
+                              Size: =9
+                              Text: =""
+                              Width: =7
+                              Y: =11
+                        - lblEstadoCap:
+                            Control: Label@2.5.1
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =ThemeInk2
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              Height: =28
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =8.63
+                              Text: |-
+                                ="Planilla " &
+                                If(IsBlank(Trim(ThisItem.Planilla)), "sin número", Trim(ThisItem.Planilla)) &
+                                " — " & ThisItem.Mensaje
+                              Width: =galEstadoGuardarCap.Width - 28
+                              X: =14
+                              Y: =3
+                  - btnDlgListoGuardarCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorFade(Self.Fill, -15%)
+                        BorderThickness: =0
+                        Color: =ThemeSurface
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =ThemeAccent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeAccentDark
+                        OnSelect: |-
+                          =// Cerrar el diálogo también CANCELA un "Guardar y salir" pendiente: si el
+                          // usuario descarta el resultado, el próximo Guardar no puede teletransportarlo.
+                          UpdateContext({ctxDlgResultadoCap: false, ctxSalirTrasGuardarCap: false});
+                          Clear(colEstadoGuardadoCap)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeAccentDark
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Listo"
+                        Visible: =IsEmpty(colFallidas) && !ctxGuardandoCap
+                        Width: =96
+                        X: =Parent.Width - 20 - Self.Width
+                        Y: =Parent.Height - 50
+                  - btnDlgCerrarGuardarCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                          =// Idem "Listo": descartar el resultado cancela un "Guardar y salir" pendiente.
+                          UpdateContext({ctxDlgResultadoCap: false, ctxSalirTrasGuardarCap: false});
+                          Clear(colEstadoGuardadoCap)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeSurface2
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Cerrar"
+                        Visible: =!IsEmpty(colFallidas) && !ctxGuardandoCap
+                        Width: =96
+                        X: =btnDlgOkGuardarCap.X - 8 - Self.Width
+                        Y: =Parent.Height - 50
+                  - btnDlgOkGuardarCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeAccent
+                        BorderThickness: =1
+                        Color: =ThemeAccent
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =ThemeSurface
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeAccentSoft
+                        OnSelect: |-
+                          =// "Reintentar fallidas"
+                          // Se vuelve a correr EL guardado real, no una copia: Select re-vuelca, recalcula
+                          // el DELTA y vuelve a disparar el timer. Lo que falló sigue en el delta (una
+                          // planilla rechazada se quedó sin GUID o con valores distintos al snapshot), así
+                          // que entra sola; lo que ya entró quedó re-keyado y NO se vuelve a mandar.
+                          Clear(colFallidas);
+                          Clear(colEstadoGuardadoCap);
+                          UpdateContext({ ctxDlgResultadoCap: false });
+                          Select(btnGuardarCap)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeAccentSoft
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Reintentar fallidas"
+                        Visible: =!IsEmpty(colFallidas) && !ctxGuardandoCap
+                        Width: =150
+                        X: =Parent.Width - 20 - Self.Width
+                        Y: =Parent.Height - 50
+      - cntDlgCerrarCap:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =ThemeOverlay
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =ctxDlgCerrarCap
+            Width: =Parent.Width
+          Children:
+            - btnDlgBloqueoCerrarCap:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =ThemeInk
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =Parent.Height
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =Color.Transparent
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Color.Transparent
+                  Size: =9
+                  Text: =""
+                  Width: =Parent.Width
+            - cntDlgCardCerrarCap:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.Regular
+                  Fill: =ThemeSurface
+                  Height: =220
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Width: =380
+                  X: =(Parent.Width - Self.Width) / 2
+                  Y: =(Parent.Height - Self.Height) / 2
+                Children:
+                  - lblDlgTitCerrarCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =22
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.88
+                        Text: ="¿Cerrar el lote " & gvarLoteActivo.Name & "?"
+                        Width: =Parent.Width - 66
+                        X: =20
+                        Y: =16
+                  - lblDlgTxtCerrarCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        Height: =96
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Text: |-
+                          ="Se persisten las " & CountRows(colPlanillas) & " planillas con sus " & TotalTulas &
+                          " tulas y el lote pasa a Recibido. Después del cierre, toda modificación se hace desde la pantalla Lotes."
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblDlgTitCerrarCap.Y + lblDlgTitCerrarCap.Height + 4
+                  - icoDlgXCerrarCap:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AccessibleLabel: ="Cancelar el cierre del lote"
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk3
+                        DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                        DisabledColor: =RGBA(119, 119, 119, 1)
+                        Height: =18
+                        HoverColor: =ThemeInk
+                        Icon: =Icon.Cancel
+                        OnSelect: |-
+                          =UpdateContext({ctxDlgCerrarCap: false})
+                        Width: =18
+                        X: =Parent.Width - 34
+                        Y: =16
+                  - btnDlgCancelCerrarCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                          =UpdateContext({ctxDlgCerrarCap: false})
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeSurface2
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Cancelar"
+                        Width: =96
+                        X: =btnDlgOkCerrarCap.X - 8 - Self.Width
+                        Y: =Parent.Height - 50
+                  - btnDlgOkCerrarCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorFade(Self.Fill, -15%)
+                        BorderThickness: =0
+                        Color: =ThemeSurface
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =ThemeAccent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeAccentDark
+                        OnSelect: |-
+                          =// receta 7.9 (cierre CLIENT-SIDE, ver nota B0-3)
+                          UpdateContext({ ctxDlgCerrarCap: false });
+
+                          // ===== 1. Guarda de habilitación (misma condición que fxPuedeCerrar) =====
+                          If(
+                              !fxPuedeCerrar,
+                              Notify(
+                                  If(
+                                      IsBlank(gvarLoteActivo),        "No hay un lote activo.",
+                                      CountRows(colPlanillas) = 0,    "El lote no tiene planillas.",
+                                                                      "Corregí los problemas de validación antes de cerrar."
+                                  ),
+                                  NotificationType.Error
+                              ),
+
+                              // ===== 2. Persistir TODO primero — se invoca el guardado REAL =====
+                              //    ctxGuardarDesdeCierreCap es la señal de ORIGEN. OJO: este Select
+                              //    vuelve ANTES de que se haya patcheado una sola fila — el guardado
+                              //    corre diferido en tmrGuardarCap.OnTimerEnd. Por eso la transición del
+                              //    lote a Recibido y su limpieza YA NO viven acá: viven al final de ese
+                              //    OnTimerEnd, el único lugar donde se sabe si quedaron fallidas.
+                              UpdateContext({ ctxGuardarDesdeCierreCap: true });
+                              Select(btnGuardarCap)
+                          )
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeAccentDark
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Cerrar lote"
+                        Width: =108
+                        X: =Parent.Width - 20 - Self.Width
+                        Y: =Parent.Height - 50
+      - cntDlgSalirCap:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =ThemeOverlay
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =ctxDlgSalirCap
+            Width: =Parent.Width
+          Children:
+            - btnDlgBloqueoSalirCap:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =ThemeInk
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =Parent.Height
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =Color.Transparent
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Color.Transparent
+                  Size: =9
+                  Text: =""
+                  Width: =Parent.Width
+            - cntDlgCardSalirCap:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.Regular
+                  Fill: =ThemeSurface
+                  Height: =190
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Width: =420
+                  X: =(Parent.Width - Self.Width) / 2
+                  Y: =(Parent.Height - Self.Height) / 2
+                Children:
+                  - lblDlgTitSalirCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =22
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.88
+                        Text: ="Tenés cambios sin guardar"
+                        Width: =Parent.Width - 66
+                        X: =20
+                        Y: =16
+                  - lblDlgTxtSalirCap:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        Height: =56
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Text: ="Si salís sin guardar, los cambios de este lote se pierden."
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblDlgTitSalirCap.Y + lblDlgTitSalirCap.Height + 4
+                  - icoDlgXSalirCap:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AccessibleLabel: ="Seguir en Captura"
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk3
+                        DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                        DisabledColor: =RGBA(119, 119, 119, 1)
+                        Height: =18
+                        HoverColor: =ThemeInk
+                        Icon: =Icon.Cancel
+                        OnSelect: |-
+                          =UpdateContext({ctxDlgSalirCap: false})
+                        Width: =18
+                        X: =Parent.Width - 34
+                        Y: =16
+                  - btnDlgCancelSalirCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                          =UpdateContext({ctxDlgSalirCap: false})
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeSurface2
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Cancelar"
+                        Width: =96
+                        X: =btnDlgDescartarSalirCap.X - 8 - Self.Width
+                        Y: =Parent.Height - 50
+                  - btnDlgDescartarSalirCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeAccent
+                        BorderThickness: =1
+                        Color: =ThemeAccent
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =ThemeSurface
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeAccentSoft
+                        OnSelect: |-
+                          =UpdateContext({ctxDlgSalirCap: false}); Set(gvarCambiosSinGuardar, false); Clear(colPlanillas); Clear(colTulas); Clear(colTulasBorradasCap); Navigate(scrLotes)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeAccentSoft
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Descartar"
+                        Width: =100
+                        X: =btnDlgOkSalirCap.X - 8 - Self.Width
+                        Y: =Parent.Height - 50
+                  - btnDlgOkSalirCap:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorFade(Self.Fill, -15%)
+                        BorderThickness: =0
+                        Color: =ThemeSurface
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =ThemeAccent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        HoverFill: =ThemeAccentDark
+                        OnSelect: |-
+                          =// "Guardar y salir". PELIGRO CONOCIDO: los timers NO corren en pantallas que
+                          // no están visibles, así que un Navigate en este OnSelect mataría el guardado
+                          // antes de que tmrGuardarCap llegue a disparar. Se deja la SEÑAL y navega el
+                          // OnTimerEnd, ya con el resultado en la mano (si hay fallidas no navega:
+                          // el diálogo se queda con el detalle y el botón Reintentar).
+                          // Tampoco se prende ctxGuardarDesdeCierreCap: esa bandera ahora DISPARA la
+                          // transición del lote a Recibido — acá solo se guarda y se sale.
+                          UpdateContext({ctxDlgSalirCap: false, ctxSalirTrasGuardarCap: true});
+                          Select(btnGuardarCap)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =ThemeAccentDark
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Guardar y salir"
+                        Width: =126
+                        X: =Parent.Width - 20 - Self.Width
+                        Y: =Parent.Height - 50
+      - tmrGuardarCap:
+          Control: Timer@2.1.0
+          Properties:
+            Duration: =50
+            OnTimerEnd: |-
+              =// ===========================================================================
+              // GUARDADO REAL — corre UN FRAME DESPUÉS del click (Start = ctxGuardandoCap).
+              //   btnGuardarCap.OnSelect solo vuelca, valida, calcula el delta y abre el
+              //   diálogo; los Patches viven ACÁ. Canvas no repinta a mitad de fórmula: este
+              //   salto de frame es lo ÚNICO que hace visible el "Guardando…" (§8.3 / L-10).
+              //   Se manda SOLO el delta: colCambiosPlanCap, colTulasNuevasCap y las bajas de
+              //   colTulasBorradasCap. Cada fase está guardada por su IsEmpty, así que un
+              //   disparo con delta CERO (cierre sin cambios) no toca Dataverse y cae derecho
+              //   en la continuación del cierre.
+              // ===========================================================================
+
+              // ---------- FASE A: PLANILLAS del delta, un solo Patch con tabla ----------
+              If(
+                  !IsEmpty(colCambiosPlanCap),
+                  IfError(
+                      Patch(
+                          'CH-Tbl-Receptions',
+                          // registros BASE, alineados fila a fila con el 3er argumento.
+                          // Defaults() crea; el LookUp es sobre colección LOCAL (cero consultas).
+                          ForAll(
+                              colCambiosPlanCap As P,
+                              If(
+                                  IsBlank(P.GUID),
+                                  Defaults('CH-Tbl-Receptions'),
+                                  LookUp(colPlanillasDV, 'CH-Tbl-Receptions' = P.GUID)
+                              )
+                          ),
+                          // registros de CAMBIO
+                          ForAll(
+                              colCambiosPlanCap As P,
+                              {
+                                  ReceiptID:      Trim(P.Planilla),
+                                  Name:           Trim(P.Planilla),
+                                  ReceptionBatch: gvarLoteActivo,
+                                  RemitentClient: P.Empresa.Client,
+                                  BranchName:     P.Empresa,
+                                  RemitentName:   P.Empresa.Name,
+                                  NIOCheck:       P.ChequeNIO,
+                                  USDCheck:       P.ChequeUSD,
+                                  NIOCash:        P.EfectivoNIO,
+                                  USDCash:        P.EfectivoUSD
+                              }
+                          )
+                      ),
+
+                      // ---------- FASE B: algo falló. Fila por fila para saber CUÁL ----------
+                      ForAll(
+                          colCambiosPlanCap As P,
+                          IfError(
+                              Patch(
+                                  'CH-Tbl-Receptions',
+                                  If(
+                                      IsBlank(P.GUID),
+                                      Defaults('CH-Tbl-Receptions'),
+                                      LookUp(colPlanillasDV, 'CH-Tbl-Receptions' = P.GUID)
+                                  ),
+                                  {
+                                      ReceiptID:      Trim(P.Planilla),
+                                      Name:           Trim(P.Planilla),
+                                      ReceptionBatch: gvarLoteActivo,
+                                      RemitentClient: P.Empresa.Client,
+                                      BranchName:     P.Empresa,
+                                      RemitentName:   P.Empresa.Name,
+                                      NIOCheck:       P.ChequeNIO,
+                                      USDCheck:       P.ChequeUSD,
+                                      NIOCash:        P.EfectivoNIO,
+                                      USDCash:        P.EfectivoUSD
+                                  }
+                              ),
+                              Collect(colFallidas, { LocalId: P.LocalId, Planilla: P.Planilla, Mensaje: FirstError.Message }); Blank()
+                          )
+                      )
+                  );
+
+                  // ===== Re-hidratación (Q3) y RE-KEYADO de GUIDs =====
+                  //    El N° de planilla es único dentro del lote (reglas 5 y 6 de fxProblemas):
+                  //    sirve de clave natural. Sin este paso una fila recién creada se queda sin
+                  //    GUID, el delta la ve NUEVA para siempre y el próximo guardado la DUPLICA.
+                  //    El snapshot a refrescar acá es colPlanillasDV (el de tulas tiene su propio
+                  //    paso más abajo) — y encima es el que alimenta la comparación del delta.
+                  ClearCollect(
+                      colPlanillasDV,
+                      Filter('CH-Tbl-Receptions', ReceptionBatch.'CH-Tbl-ReceptionBatch' = gvarLoteActivo.'CH-Tbl-ReceptionBatch')
+                  );
+                  ForAll(
+                      colPlanillasDV As D,
+                      Patch(
+                          colPlanillas,
+                          LookUp(colPlanillas, Trim(Planilla) = Trim(D.ReceiptID)),
+                          { GUID: D.'CH-Tbl-Receptions' }
+                      )
+                  )
+              );
+
+              // ===== PASO DE BAJAS (receta 01 §7.5, regla 5) =====
+              //    Tulas quitadas del panel que YA existían en Dataverse (Q8).
+              //    Remove con registro explícito, nunca RemoveIf(ds, predicado) (D-3).
+              //    Una baja fallida CUENTA como fallida => el lote no se cierra.
+              If(
+                  !IsEmpty(colTulasBorradasCap),
+                  ClearCollect(
+                      colTulasDV,
+                      Filter('CH-Tbl-Bags', ReceptionBatchId.'CH-Tbl-ReceptionBatch' = gvarLoteActivo.'CH-Tbl-ReceptionBatch')
+                  );
+                  ForAll(
+                      Filter(colTulasBorradasCap, !IsBlank(GUID)) As X,
+                      IfError(
+                          Remove('CH-Tbl-Bags', LookUp(colTulasDV, 'CH-Tbl-Bags' = X.GUID)),
+                          Collect(
+                              colFallidas,
+                              { LocalId: X.PlanillaLocalId, Planilla: "tula " & X.Numero, Mensaje: FirstError.Message }
+                          )
+                      )
+                  )
+              );
+
+              // ===== TULAS NUEVAS: mismo patrón, DESPUÉS de las planillas (7.5 regla 4) =====
+              //    Necesitan el GUID de la planilla dueña YA re-keyado arriba. Las tulas que ya
+              //    existen no se re-patchean: en esta pantalla una tula se agrega o se borra,
+              //    nunca se edita. BagStatus se calcula EXPLÍCITO por camino (01 §5.4).
+              If(
+                  !IsEmpty(colTulasNuevasCap),
+                  IfError(
+                      Patch(
+                          'CH-Tbl-Bags',
+                          ForAll(
+                              colTulasNuevasCap As T,
+                              If(
+                                  IsBlank(T.GUID),
+                                  Defaults('CH-Tbl-Bags'),
+                                  LookUp(colTulasDV, 'CH-Tbl-Bags' = T.GUID)
+                              )
+                          ),
+                          ForAll(
+                              colTulasNuevasCap As T,
+                              {
+                                  BagID:       Trim(T.Numero),
+                                  Name:        Trim(T.Numero),
+                                  ReceptionID: LookUp(
+                                                  colPlanillasDV,
+                                                  'CH-Tbl-Receptions' = LookUp(colPlanillas, LocalId = T.PlanillaLocalId).GUID
+                                               ),
+                                  BagStatus:   'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'   // 159460000
+                              }
+                          )
+                      ),
+                      ForAll(
+                          colTulasNuevasCap As T,
+                          IfError(
+                              Patch(
+                                  'CH-Tbl-Bags',
+                                  If(
+                                      IsBlank(T.GUID),
+                                      Defaults('CH-Tbl-Bags'),
+                                      LookUp(colTulasDV, 'CH-Tbl-Bags' = T.GUID)
+                                  ),
+                                  {
+                                      BagID:       Trim(T.Numero),
+                                      Name:        Trim(T.Numero),
+                                      ReceptionID: LookUp(
+                                                      colPlanillasDV,
+                                                      'CH-Tbl-Receptions' = LookUp(colPlanillas, LocalId = T.PlanillaLocalId).GUID
+                                                   ),
+                                      BagStatus:   'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'
+                                  }
+                              ),
+                              Collect(colFallidas, { LocalId: T.PlanillaLocalId, Planilla: "tula " & T.Numero, Mensaje: FirstError.Message }); Blank()
+                          )
+                      )
+                  )
+              );
+
+              // ===== Re-hidratación de tulas (Q4, espejo B-2 / regla D-7) y re-keyado =====
+              If(
+                  !IsEmpty(colTulasNuevasCap) || !IsEmpty(colTulasBorradasCap),
+                  ClearCollect(
+                      colTulasDV,
+                      Filter('CH-Tbl-Bags', ReceptionBatchId.'CH-Tbl-ReceptionBatch' = gvarLoteActivo.'CH-Tbl-ReceptionBatch')
+                  );
+                  ForAll(
+                      colTulasDV As B,
+                      Patch(colTulas, LookUp(colTulas, Trim(Numero) = Trim(B.BagID)), { GUID: B.'CH-Tbl-Bags' })
+                  );
+                  // PURGA de las bajas que SÍ se ejecutaron. NO es un Clear() a ciegas: una baja
+                  // que Dataverse rechazó sigue viva en colTulasDV (el snapshot recién
+                  // re-hidratado) y TIENE que quedar en colTulasBorradasCap para el reintento.
+                  ClearCollect(colTulasNuevoCap, Filter(colTulasBorradasCap As X, !IsBlank(LookUp(colTulasDV, 'CH-Tbl-Bags' = X.GUID))));
+                  ClearCollect(colTulasBorradasCap, colTulasNuevoCap);
+                  Clear(colTulasNuevoCap)
+              );
+
+              // ===== Estado POR PLANILLA para el diálogo de resultado (§8.3) =====
+              //    Lista el lote ENTERO, no solo el delta: una fila que no cambió también está
+              //    persistida en Dataverse, así que "Guardada" es la verdad y no un relleno.
+              ClearCollect(
+                  colEstadoGuardadoCap,
+                  ForAll(
+                      colPlanillas As P,
+                      {
+                          Planilla: P.Planilla,
+                          Ok:       IsEmpty(Filter(colFallidas, LocalId = P.LocalId)),
+                          Mensaje:  Coalesce(LookUp(colFallidas, LocalId = P.LocalId).Mensaje, "Guardada")
+                      }
+                  )
+              );
+
+              // ===== Resultado =====
+              //    El toast de éxito es SOLO del Guardar standalone: el cierre y el "Guardar y
+              //    salir" tienen su propio final (toast único / navegación) y dos toasts seguidos
+              //    son ruido. El diálogo ya está abierto desde el OnSelect.
+              If(
+                  IsEmpty(colFallidas),
+                  Set(gvarCambiosSinGuardar, false);
+                  If(
+                      !ctxGuardarDesdeCierreCap && !ctxSalirTrasGuardarCap,
+                      Notify("Lote guardado: " & CountRows(colPlanillas) & " planillas.", NotificationType.Success)
+                  ),
+                  Notify(
+                      CountRows(colFallidas) & " registro(s) rechazados — revisá el panel y reintentá.",
+                      NotificationType.Error
+                  )
+              );
+
+              // ===== Continuación del CIERRE (§9.2) =====
+              //    Vivía DESPUÉS del Select(btnGuardarCap) en btnDlgOkCerrarCap. Con el guardado
+              //    diferido, ese Select vuelve antes de que exista un solo Patch: si la transición
+              //    se quedaba allá, cerraba un lote que todavía no se había guardado.
+              If(
+                  ctxGuardarDesdeCierreCap,
+                  If(
+                      !IsEmpty(colFallidas),
+                      Notify(
+                          "El lote NO se cerró: hay registros rechazados. Reintentá y volvé a cerrar.",
+                          NotificationType.Error
+                      ),
+                      IfError(
+                          Patch(
+                              'CH-Tbl-ReceptionBatches',
+                              gvarLoteActivo,
+                              { ReceptionStatus: 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido }   // 159460001
+                          ),
+                          Notify("El cierre fue rechazado: " & FirstError.Message, NotificationType.Error),
+
+                          // --- rama de ÉXITO de IfError ---
+                          Set(gvarLoteActivo, Blank());
+                          Clear(colPlanillas);   Clear(colTulas);
+                          Clear(colPlanillasDV); Clear(colTulasDV);
+                          Clear(colProblemas);   Clear(colFallidas);
+                          Clear(colTulasEdit);   Clear(colTulasBorradasCap); Clear(colEstadoGuardadoCap);
+                          Clear(colCambiosPlanCap); Clear(colTulasNuevasCap);
+                          Set(gvarCambiosSinGuardar, false);
+                          UpdateContext({ ctxDlgResultadoCap: false });
+                          // El overlay A vuelve solo (Visible = IsBlank(gvarLoteActivo)) y su combo
+                          // tiene que volver VACÍO: sin este Reset, el próximo lote nace con la
+                          // transportadora residual del que se acaba de cerrar (es L-19 otra vez).
+                          Reset(cmbTransportadoraCap);
+                          Notify("Lote cerrado. Pasó a Recibido y ya aparece en la pantalla Lotes.", NotificationType.Success)
+                      )
+                  )
+              );
+
+              // ===== Apagado del ciclo + continuación de SALIR (§9.3) =====
+              //    ctxGuardandoCap: false SIEMPRE — es lo que baja Start y deja el timer listo
+              //    para el próximo guardado. Va ANTES del Navigate a propósito: una vez que se
+              //    abandona la pantalla no hay nada garantizado corriendo.
+              //    Si quedaron fallidas, NO se navega: el diálogo se queda con el detalle y el
+              //    botón Reintentar (que vuelve a entrar por acá con la bandera todavía viva).
+              UpdateContext({ ctxGuardarDesdeCierreCap: false, ctxGuardandoCap: false });
+              If(
+                  ctxSalirTrasGuardarCap && IsEmpty(colFallidas),
+                  UpdateContext({ ctxDlgResultadoCap: false, ctxSalirTrasGuardarCap: false });
+                  Navigate(scrLotes)
+              )
+            Start: =ctxGuardandoCap
+            Visible: =false
+            X: =40
+            Y: =40

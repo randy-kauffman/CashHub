@@ -1,0 +1,4263 @@
+scrLotes As screen:
+    Fill: =ThemeBg
+    LoadingSpinnerColor: =ThemeAccent
+    OnVisible: |-
+        =UpdateContext(
+            {
+                ctxDlgBovedaLot:         false,
+                ctxDlgAgregarLot:        false,
+                ctxDlgEliminarLot:       false,
+                ctxDlgRemapearLot:       false,
+                ctxDlgEditarTulaLot:     false,
+                ctxDlgEditarPlanillaLot: false,
+                ctxTulaSelLot:           Defaults('CH-Tbl-Bags'),
+                ctxDesdeLot:             Today(),
+                ctxHastaLot:             Today()
+            }
+        );
+        Reset(tabVistaLot);
+        Reset(inpBuscarLot);
+        Reset(drpEstadoLot);
+        Reset(dtpDesdeLot);
+        Reset(dtpHastaLot);
+        Reset(galLotesLot);
+        Reset(galPlanillasLot);
+        Clear(colTulasBovedaLot)
+
+    galLotesLot As gallery.galleryVertical:
+        '#CopilotOverlayLabel': ="Filtered"
+        Height: =606
+        Items: |-
+            =If(
+                drpEstadoLot.Selected.Value = "Todos",
+                SortByColumns(
+                    Filter('CH-Tbl-ReceptionBatches',
+                        (StartsWith(Name, inpBuscarLot.Text) || StartsWith(Transportadora, inpBuscarLot.Text) || inpBuscarLot.Text = Blank())
+                        && 'Created On' >= Coalesce(ctxDesdeLot,Today())
+                        && 'Created On' < DateAdd(DateAdd(Coalesce(ctxHastaLot,Today()),1,TimeUnit.Days),-1,TimeUnit.Milliseconds)
+                    ),
+                    "createdon", SortOrder.Descending
+                ),
+                SortByColumns(
+                    Filter('CH-Tbl-ReceptionBatches',
+                        ReceptionStatus = Switch(
+                            drpEstadoLot.Selected.Value,
+                            "En progreso", 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso',
+                            "Recibido",    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,
+                            'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda'
+                        )
+                        && (StartsWith(Name, inpBuscarLot.Text) || StartsWith(Transportadora, inpBuscarLot.Text) || inpBuscarLot.Text = Blank())
+                        && 'Created On' >= Coalesce(ctxDesdeLot,Today())
+                        && 'Created On' < DateAdd(DateAdd(Coalesce(ctxHastaLot,Today()),1,TimeUnit.Days),-1,TimeUnit.Milliseconds)
+                    ),
+                    "createdon", SortOrder.Descending
+                )
+            )
+        Layout: =Layout.Vertical
+        OnSelect: |-
+            =UpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})
+        TemplatePadding: =0
+        TemplateSize: =46
+        Visible: =tabVistaLot.Selected.Value = "Lotes"
+        Width: =674
+        X: =18
+        Y: =146
+        ZIndex: =26
+
+        btnFilaLotesLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =Color.Transparent
+            Height: =46
+            HoverFill: =ThemeSurface2
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeAccentSoft
+            Size: =9
+            Text: =""
+            Width: =galLotesLot.Width
+            ZIndex: =1
+
+        shpSelLotesLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+            Height: =46
+            HoverFill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =9
+            Text: =""
+            Width: =galLotesLot.Width
+            ZIndex: =2
+
+        shpSelBarraLotesLot As rectangle:
+            Fill: =ThemeAccent
+            Height: =46
+            Visible: =ThisItem.IsSelected
+            Width: =3
+            ZIndex: =3
+
+        lblFilaLoteNumLot As label:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =16
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.38
+            Text: =ThisItem.Name
+            Width: =300
+            Wrap: =false
+            X: =14
+            Y: =6
+            ZIndex: =4
+
+        lblFilaLoteMetaLot As label:
+            Color: =ThemeInk3
+            Height: =15
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: =ThisItem.Transportadora
+            Width: =440
+            Wrap: =false
+            X: =14
+            Y: =24
+            ZIndex: =5
+
+        pilFilaLoteLot As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =If(Self.Fill = ThemeLineSoft, 1, 0)
+            Color: |-
+                =Switch(
+                    ThisItem.ReceptionStatus,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', ThemeInfo,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      ThemeOk,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   ThemeInk3,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       ThemeDanger,
+                    ThemeInk3
+                )
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: |-
+                =Switch(
+                    ThisItem.ReceptionStatus,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', ThemeInfoSoft,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      ThemeOkSoft,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   ThemeLineSoft,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       ThemeDangerSoft,
+                    ThemeLineSoft
+                )
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            HoverFill: =Self.Fill
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =7.88
+            Text: |-
+                =Switch(
+                    ThisItem.ReceptionStatus,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', "En progreso",
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      "Recibido",
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   "En bóveda",
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       "Anulado",
+                    "—"
+                )
+            Width: =14 + 6.2 * Len(Self.Text)
+            X: =galLotesLot.Width - 14 - Self.Width
+            Y: =12
+            ZIndex: =6
+
+        shpSepLotesLot As rectangle:
+            Fill: =ThemeLineSoft
+            Height: =1
+            OnSelect: =Select(Parent)
+            Width: =galLotesLot.Width
+            Y: =45
+            ZIndex: =7
+
+    lblVacioLotesLot As label:
+        Align: =Align.Center
+        Color: =ThemeInk3
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9.38
+        Text: ="Ningún lote coincide con el filtro."
+        Visible: =tabVistaLot.Selected.Value = "Lotes" && IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+        Width: =614
+        X: =48
+        Y: =250
+        ZIndex: =27
+
+    galPlanillasLot As gallery.galleryVertical:
+        '#CopilotOverlayLabel': ="Filtered"
+        Height: =606
+        Items: |-
+            =If(
+                drpEstadoLot.Selected.Value = "Todos",
+                SortByColumns(
+                    Filter(
+                        'CH-Tbl-Receptions',
+                        (StartsWith(ReceiptID, inpBuscarLot.Text) || StartsWith(RemitentName, inpBuscarLot.Text) || inpBuscarLot.Text = Blank())
+                        && 'Created On' >= Coalesce(ctxDesdeLot,Today())
+                        && 'Created On' <  DateAdd(DateAdd(Coalesce(ctxHastaLot,Today()),1,TimeUnit.Days),-1,TimeUnit.Milliseconds)
+                    ),
+                    "createdon",
+                    SortOrder.Descending
+                ),
+                SortByColumns(
+                    Filter(
+                        'CH-Tbl-Receptions',
+                        BatchStatus =
+                            Switch(
+                                drpEstadoLot.Selected.Value,
+                                "En progreso", 159460000,
+                                "Recibido",    159460001,
+                                159460003
+                            )
+                        && (StartsWith(ReceiptID, inpBuscarLot.Text) || StartsWith(RemitentName, inpBuscarLot.Text) || inpBuscarLot.Text = Blank())
+                        && 'Created On' >= Coalesce(ctxDesdeLot,Today())
+                        && 'Created On' <  DateAdd(DateAdd(Coalesce(ctxHastaLot,Today()),1,TimeUnit.Days),-1,TimeUnit.Milliseconds)
+                    ),
+                    "createdon",
+                    SortOrder.Descending
+                )
+            )
+        Layout: =Layout.Vertical
+        OnSelect: |-
+            =UpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})
+        TemplatePadding: =0
+        TemplateSize: =46
+        Visible: =tabVistaLot.Selected.Value = "Planillas"
+        Width: =674
+        X: =18
+        Y: =146
+        ZIndex: =28
+
+        btnFilaPlanLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =Color.Transparent
+            Height: =46
+            HoverFill: =ThemeSurface2
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeAccentSoft
+            Size: =9
+            Text: =""
+            Width: =galPlanillasLot.Width
+            ZIndex: =1
+
+        shpSelPlanLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+            Height: =46
+            HoverFill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =9
+            Text: =""
+            Width: =galPlanillasLot.Width
+            ZIndex: =2
+
+        shpSelBarraPlanLot As rectangle:
+            Fill: =ThemeAccent
+            Height: =46
+            Visible: =ThisItem.IsSelected
+            Width: =3
+            ZIndex: =3
+
+        lblFilaPlanTitLot As label:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =16
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.38
+            Text: =ThisItem.Name
+            Width: =400
+            Wrap: =false
+            X: =14
+            Y: =6
+            ZIndex: =4
+
+        lblFilaPlanMetaLot As label:
+            Color: =ThemeInk3
+            Height: =15
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: =ThisItem.RemitentName
+            Width: =400
+            Wrap: =false
+            X: =14
+            Y: =24
+            ZIndex: =5
+
+        lblFilaPlanLoteLot As label:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            Height: =15
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: =ThisItem.ReceptionBatch.Name
+            Width: =136
+            Wrap: =false
+            X: =galPlanillasLot.Width - 150
+            Y: =6
+            ZIndex: =6
+
+        pilFilaPlanLot As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =If(Self.Fill = ThemeLineSoft, 1, 0)
+            Color: |-
+                =Switch(ThisItem.BatchStatus,
+                    159460000, ThemeInfo,
+                    159460001, ThemeOk,
+                    159460003, ThemeInk3,
+                    159460002, ThemeDanger,
+                    ThemeInk3)
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: |-
+                =Switch(ThisItem.BatchStatus,
+                    159460000, ThemeInfoSoft,
+                    159460001, ThemeOkSoft,
+                    159460003, ThemeLineSoft,
+                    159460002, ThemeDangerSoft,
+                    ThemeLineSoft)
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            HoverFill: =Self.Fill
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =7.88
+            Text: |-
+                =Switch(ThisItem.BatchStatus,
+                    159460000, "En progreso",
+                    159460001, "Recibido",
+                    159460003, "En bóveda",
+                    159460002, "Anulado",
+                    "—")
+            Width: =14 + 6.2 * Len(Self.Text)
+            X: =galPlanillasLot.Width - 14 - Self.Width
+            Y: =23
+            ZIndex: =7
+
+        shpSepPlanLot As rectangle:
+            Fill: =ThemeLineSoft
+            Height: =1
+            OnSelect: =Select(Parent)
+            Width: =galPlanillasLot.Width
+            Y: =45
+            ZIndex: =8
+
+    lblVacioPlanillasLot As label:
+        Align: =Align.Center
+        Color: =ThemeInk3
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9.38
+        Text: ="Ninguna planilla coincide con el filtro."
+        Visible: =tabVistaLot.Selected.Value = "Planillas" && galPlanillasLot.AllItemsCount = 0
+        Width: =614
+        X: =48
+        Y: =250
+        ZIndex: =29
+
+    btnMoverBovedaLot As button:
+        BorderColor: =ThemeAccent
+        BorderThickness: =1
+        Color: =ThemeAccent
+        DisabledBorderColor: =Color.Transparent
+        DisabledColor: =ThemeInk3
+        DisabledFill: =ThemeLineSoft
+        DisplayMode: |-
+            =If(
+                galLotesLot.Selected.ReceptionStatus = 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,
+                DisplayMode.Edit,
+                DisplayMode.Disabled
+            )
+        Fill: =ThemeSurface
+        FontWeight: =FontWeight.Semibold
+        Height: =26
+        HoverFill: =ThemeAccentSoft
+        OnSelect: |-
+            =ClearCollect(
+                colTulasBovedaLot,
+                Filter(
+                    'CH-Tbl-Bags',
+                    ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galLotesLot.Selected.'CH-Tbl-ReceptionBatch'
+                    && BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'
+                )
+            );
+            UpdateContext({ctxDlgBovedaLot: true})
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeAccentSoft
+        RadiusBottomLeft: =7
+        RadiusBottomRight: =7
+        RadiusTopLeft: =7
+        RadiusTopRight: =7
+        Size: =8.25
+        Text: ="Mover a bóveda"
+        Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+        Width: =128
+        X: =720
+        Y: =181
+        ZIndex: =35
+
+    btnEditarLoteLot As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        Color: =ThemeInk2
+        DisabledBorderColor: =Color.Transparent
+        DisabledColor: =ThemeInk3
+        DisabledFill: =ThemeLineSoft
+        DisplayMode: |-
+            =If(
+                galLotesLot.Selected.ReceptionStatus = 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso',
+                DisplayMode.Edit,
+                DisplayMode.Disabled
+            )
+        Fill: =ThemeSurface
+        FontWeight: =FontWeight.Semibold
+        Height: =26
+        HoverFill: =ThemeSurface2
+        OnSelect: |-
+            =// btnEditarLoteLot.OnSelect — habilitado SOLO con el lote en 'En progreso'
+            Set(gvarLoteActivo, galLotesLot.Selected);
+            
+            // ===== 1. Snapshots CRUDOS: dos consultas, una por tabla, para TODO el lote =====
+            ClearCollect(colPlanillasDV, Filter('CH-Tbl-Receptions', ReceptionBatch.'CH-Tbl-ReceptionBatch' = gvarLoteActivo.'CH-Tbl-ReceptionBatch'));
+            ClearCollect(colTulasDV,     Filter('CH-Tbl-Bags',       ReceptionBatchId.'CH-Tbl-ReceptionBatch' = gvarLoteActivo.'CH-Tbl-ReceptionBatch'));
+            
+            // ===== 2. Vaciar las colecciones de EDICIÓN — 🧨 OBLIGATORIO =====
+            //    scrLotes NO las proyecta: lo hace el OnVisible de scrCaptura con la receta
+            //    01 §7.10. Vaciarlas es lo que HABILITA esa proyección: su guarda es
+            //    IsEmpty(colPlanillas). Si el usuario venía editando OTRO lote y no se
+            //    vacían, la proyección no dispara y scrCaptura muestra las filas del lote
+            //    anterior con el gvarLoteActivo nuevo.
+            Clear(colPlanillas); Clear(colTulas);
+            Clear(colProblemas); Clear(colFallidas);
+            
+            // ===== 3. Salida =====
+            Set(gvarCambiosSinGuardar, false);
+            Notify("Lote " & galLotesLot.Selected.Name & " cargado en Captura.", NotificationType.Information);
+            Navigate(scrCaptura)
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeSurface2
+        RadiusBottomLeft: =7
+        RadiusBottomRight: =7
+        RadiusTopLeft: =7
+        RadiusTopRight: =7
+        Size: =8.25
+        Text: ="Editar lote"
+        Tooltip: ="Solo lotes En progreso"
+        Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+        Width: =96
+        X: =856
+        Y: =181
+        ZIndex: =36
+
+    galPlanillasDelLoteLot As gallery.galleryVertical:
+        '#CopilotOverlayLabel': ="Filtered"
+        Height: =btnCardDetLot.Y + btnCardDetLot.Height - Self.Y
+        Items: |-
+            =SortByColumns(
+                Filter('CH-Tbl-Receptions', ReceptionBatch.'CH-Tbl-ReceptionBatch' = galLotesLot.Selected.'CH-Tbl-ReceptionBatch'),
+                "createdon", SortOrder.Ascending
+            )
+        Layout: =Layout.Vertical
+        TemplatePadding: =0
+        TemplateSize: =36
+        Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+        Width: =642
+        X: =706
+        Y: =shpLineaHeadPlanLoteLot.Y + 1
+        ZIndex: =44
+
+        lblCelPlanLoteNumLot As label:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =36
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.38
+            Text: =ThisItem.ReceiptID
+            Width: =96
+            Wrap: =false
+            X: =16
+            ZIndex: =1
+
+        lblCelPlanLoteRemLot As label:
+            Color: =ThemeInk
+            Height: =36
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =ThisItem.RemitentName
+            Width: =246
+            Wrap: =false
+            X: =120
+            ZIndex: =2
+
+        lblCelPlanLoteNioLot As label:
+            Align: =Align.Right
+            Color: =ThemeInk
+            Height: =36
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =SimboloNIO & " " & Text(ThisItem.NIOCash + ThisItem.NIOCheck, FmtMoney)
+            Width: =120
+            Wrap: =false
+            X: =370
+            ZIndex: =3
+
+        lblCelPlanLoteUsdLot As label:
+            Align: =Align.Right
+            Color: =ThemeInk
+            Height: =36
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =SimboloUSD & " " & Text(ThisItem.USDCash + ThisItem.USDCheck, FmtMoney)
+            Width: =126
+            Wrap: =false
+            X: =500
+            ZIndex: =4
+
+        shpSepPlanLoteLot As rectangle:
+            Fill: =ThemeLineSoft
+            Height: =1
+            Width: =642
+            Y: =35
+            ZIndex: =5
+
+    lblVacioPlanLoteLot As label:
+        Align: =Align.Center
+        Color: =ThemeInk3
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9.38
+        Text: ="Este lote no tiene planillas."
+        Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch') && IsEmpty(galPlanillasDelLoteLot.AllItems)
+        Width: =582
+        X: =736
+        Y: =galPlanillasDelLoteLot.Y + 40
+        ZIndex: =45
+
+    lblVacioDetLoteLot As label:
+        Align: =Align.Center
+        Color: =ThemeInk3
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9.38
+        Text: |-
+            ="Sin lote que mostrar: ningún lote coincide con el filtro."
+        Visible: =tabVistaLot.Selected.Value = "Lotes" && IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+        Width: =582
+        X: =736
+        Y: =380
+        ZIndex: =46
+
+    galTulasLot As gallery.galleryVertical:
+        '#CopilotOverlayLabel': ="Filtered"
+        Height: =btnCardDetLot.Y + btnCardDetLot.Height - Self.Y
+        Items: |-
+            =SortByColumns(
+                Filter('CH-Tbl-Bags', ReceptionID.'CH-Tbl-Receptions' = galPlanillasLot.Selected.'CH-Tbl-Receptions'),
+                "createdon", SortOrder.Ascending
+            )
+        Layout: =Layout.Vertical
+        OnSelect: |-
+            =UpdateContext({ctxTulaSelLot: ThisItem})
+        TemplatePadding: =0
+        TemplateSize: =36
+        Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+        Width: =642
+        X: =706
+        Y: =shpLineaHeadTulasLot.Y + 1
+        ZIndex: =67
+
+        btnFilaTulaLot_1 As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =Color.Transparent
+            Height: =36
+            HoverFill: =ThemeSurface2
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeAccentSoft
+            Size: =9
+            Text: =""
+            Width: =galTulasLot.Width
+            ZIndex: =1
+
+        shpSelTulaLot_1 As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =If(ThisItem.'CH-Tbl-Bags' = ctxTulaSelLot.'CH-Tbl-Bags', ThemeAccentSoft, Color.Transparent)
+            Height: =36
+            HoverFill: =If(ThisItem.'CH-Tbl-Bags' = ctxTulaSelLot.'CH-Tbl-Bags', ThemeAccentSoft, Color.Transparent)
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =If(ThisItem.'CH-Tbl-Bags' = ctxTulaSelLot.'CH-Tbl-Bags', ThemeAccentSoft, Color.Transparent)
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =9
+            Text: =""
+            Width: =galTulasLot.Width
+            ZIndex: =2
+
+        shpSelBarraTulaLot_1 As rectangle:
+            Fill: =ThemeAccent
+            Height: =36
+            Visible: =ThisItem.'CH-Tbl-Bags' = ctxTulaSelLot.'CH-Tbl-Bags'
+            Width: =3
+            ZIndex: =3
+
+        lblCelTulaNumLot_1 As label:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =36
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.38
+            Text: =ThisItem.BagID
+            Width: =130
+            Wrap: =false
+            X: =16
+            ZIndex: =4
+
+        pilCelTulaLot_1 As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =If(Self.Fill = ThemeLineSoft, 1, 0)
+            Color: |-
+                =Switch(
+                    ThisItem.BagStatus,
+                    'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeInfo,
+                    'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOk,
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeWarn,
+                    ThemeInk3
+                )
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: |-
+                =Switch(
+                    ThisItem.BagStatus,
+                    'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeInfoSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeWarnSoft,
+                    ThemeLineSoft
+                )
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            HoverFill: =Self.Fill
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =7.88
+            Text: |-
+                =Switch(
+                    ThisItem.BagStatus,
+                    'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                           "Recibida en esclusa",
+                    'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                          "Almacenada en bóveda",
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',"Pendiente supervisor",
+                    ThisItem.BagStatus
+                )
+            Width: =14 + 6.2 * Len(Self.Text)
+            X: =154
+            Y: =7
+            ZIndex: =5
+
+        lblCelTulaFechaLot_1 As label:
+            Color: =ThemeInk2
+            Height: =36
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =Text(ThisItem.'Created On', FmtFechaCorta)
+            Width: =128
+            Wrap: =false
+            X: =362
+            ZIndex: =6
+
+        lblCelTulaAutorLot_1 As label:
+            Color: =ThemeInk2
+            Height: =36
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =ThisItem.'Created By'.'Full Name'
+            Width: =128
+            Wrap: =false
+            X: =498
+            ZIndex: =7
+
+        shpSepTulaLot_1 As rectangle:
+            Fill: =ThemeLineSoft
+            Height: =1
+            OnSelect: =Select(Parent)
+            Width: =galTulasLot.Width
+            Y: =35
+            ZIndex: =8
+
+    lblVacioTulasLot As label:
+        Align: =Align.Center
+        Color: =ThemeInk3
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9.38
+        Text: ="Esta planilla no tiene tulas."
+        Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions') && IsEmpty(galTulasLot.AllItems)
+        Width: =582
+        X: =736
+        Y: =galTulasLot.Y + 40
+        ZIndex: =68
+
+    lblVacioDetPlanLot As label:
+        Align: =Align.Center
+        Color: =ThemeInk3
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9.38
+        Text: |-
+            ="Sin planilla que mostrar: ninguna planilla coincide con el filtro."
+        Visible: =tabVistaLot.Selected.Value = "Planillas" && IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+        Width: =582
+        X: =736
+        Y: =380
+        ZIndex: =69
+
+    cntDlgBovedaLot As groupContainer.manualLayoutContainer:
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxDlgBovedaLot
+        Width: =Parent.Width
+        ZIndex: =70
+
+        btnDlgBloqueoBovedaLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =Color.Transparent
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            Size: =9
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntDlgCardBovedaLot As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =214
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =380
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            lblDlgTitBovedaLot As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Bold
+                Height: =44
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.88
+                Text: ="¿Mover el lote " & galLotesLot.Selected.Name & " a bóveda?"
+                Width: =Parent.Width - 66
+                X: =20
+                Y: =16
+                ZIndex: =1
+
+            lblDlgTxtBovedaLot As label:
+                Color: =ThemeInk2
+                Height: =66
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: |-
+                    =CountRows(colTulasBovedaLot) &
+                    " tula(s) en esclusa pasan a Almacenada en bóveda y el lote a En bóveda. " &
+                    "Desde ahí, toda modificación requiere aprobación del supervisor."
+                Width: =340
+                X: =20
+                Y: =lblDlgTitBovedaLot.Y + lblDlgTitBovedaLot.Height + 4
+                ZIndex: =2
+
+            icoDlgXBovedaLot As icon:
+                AccessibleLabel: ="Cerrar sin guardar"
+                Color: =ThemeInk3
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ctxDlgBovedaLot: false})
+                Width: =18
+                X: =Parent.Width - 34
+                Y: =16
+                ZIndex: =3
+
+            btnDlgCancelBovedaLot As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ctxDlgBovedaLot: false})
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Cancelar"
+                Width: =100
+                X: =20
+                Y: =Parent.Height - 50
+                ZIndex: =4
+
+            btnDlgOkBovedaLot As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =ThemeAccent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeAccentDark
+                OnSelect: |-
+                    =UpdateContext({ctxDlgBovedaLot: false});
+                    
+                    If(
+                        IsEmpty(colTulasBovedaLot),
+                    
+                        // ---- Caso A: no hay tulas en esclusa. Solo transiciona el lote. ----
+                        IfError(
+                            Patch(
+                                'CH-Tbl-ReceptionBatches',
+                                galLotesLot.Selected,
+                                { ReceptionStatus: 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda' }
+                            ),
+                            Notify("El lote no se movió: " & FirstError.Message, NotificationType.Error),
+                            Notify(
+                                "Lote " & galLotesLot.Selected.Name & " movido a bóveda (no tenía tulas en esclusa).",
+                                NotificationType.Success
+                            )
+                        ),
+                    
+                        // ---- Caso B: FASE 1 = las tulas, en UN SOLO Patch con tabla ----
+                        IfError(
+                            Patch(
+                                'CH-Tbl-Bags',
+                                colTulasBovedaLot,
+                                ForAll(
+                                    colTulasBovedaLot,
+                                    { BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda' }
+                                )
+                            ),
+                            Notify(
+                                "Las tulas NO se movieron (" & FirstError.Message &
+                                "). El lote sigue en Recibido: no se cambió su estado.",
+                                NotificationType.Error
+                            ),
+                    
+                            // ---- FASE 2: el lote, SOLO si las tulas pasaron ----
+                            IfError(
+                                Patch(
+                                    'CH-Tbl-ReceptionBatches',
+                                    galLotesLot.Selected,
+                                    { ReceptionStatus: 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda' }
+                                ),
+                                Notify(
+                                    "Quedó A MEDIAS: las " & CountRows(colTulasBovedaLot) &
+                                    " tula(s) ya están en bóveda pero el lote sigue en Recibido (" &
+                                    FirstError.Message & "). Volvé a ejecutar «Mover a bóveda»: la operación es idempotente.",
+                                    NotificationType.Error
+                                ),
+                                Notify(
+                                    "Lote " & galLotesLot.Selected.Name & " movido a bóveda: " &
+                                    CountRows(colTulasBovedaLot) & " tula(s) almacenadas.",
+                                    NotificationType.Success
+                                )
+                            )
+                        )
+                    );
+                    
+                    Clear(colTulasBovedaLot);
+                    Select(icoRefrescarLot)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeAccentDark
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Mover a bóveda"
+                Width: =120
+                X: =240
+                Y: =Parent.Height - 50
+                ZIndex: =5
+
+    cntDlgAgregarLot As groupContainer.manualLayoutContainer:
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxDlgAgregarLot
+        Width: =Parent.Width
+        ZIndex: =71
+
+        btnDlgBloqueoAgregarLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =Color.Transparent
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            Size: =9
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntDlgCardAgregarLot As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =258
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =380
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            lblDlgTitAgregarLot As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Bold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.88
+                Text: ="Agregar tula"
+                Width: =Parent.Width - 66
+                X: =20
+                Y: =16
+                ZIndex: =1
+
+            lblDlgTxtAgregarLot As label:
+                Color: =ThemeInk2
+                Height: =32
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: ="Planilla " & galPlanillasLot.Selected.ReceiptID & "  ·  Lote " & galPlanillasLot.Selected.ReceptionBatch.Name
+                Width: =340
+                X: =20
+                Y: =42
+                ZIndex: =2
+
+            icoDlgXAgregarLot As icon:
+                AccessibleLabel: ="Cerrar sin guardar"
+                Color: =ThemeInk3
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ctxDlgAgregarLot: false})
+                Width: =18
+                X: =Parent.Width - 34
+                Y: =16
+                ZIndex: =3
+
+            lblCampoTulaAgregarLot As label:
+                Color: =ThemeInk2
+                FontWeight: =FontWeight.Semibold
+                Height: =14
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="N° de tula"
+                Width: =340
+                Wrap: =false
+                X: =20
+                Y: =82
+                ZIndex: =4
+
+            inpTulaAgregarLot As text:
+                BorderColor: =If(lblErrTulaAgregarLot.Visible, ThemeWarnLine, ThemeLine)
+                Color: =ThemeInk
+                DelayOutput: =true
+                Fill: =ThemeSurface
+                Height: =32
+                HintText: |-
+                    ="Ej: 0470"
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Width: =340
+                X: =20
+                Y: =98
+                ZIndex: =5
+
+            lblErrTulaAgregarLot As label:
+                Color: =ThemeDanger
+                Height: =30
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="La tula " & Trim(inpTulaAgregarLot.Text) & " ya existe en este lote."
+                Visible: |-
+                    =!IsBlank(Trim(inpTulaAgregarLot.Text))
+                    && !IsBlank(
+                        LookUp(
+                            'CH-Tbl-Bags',
+                            ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
+                            && BagID = Trim(inpTulaAgregarLot.Text)
+                        ).'CH-Tbl-Bags'
+                    )
+                Width: =340
+                X: =20
+                Y: =132
+                ZIndex: =6
+
+            btnAvisoAgregarLot As button:
+                BorderThickness: =0
+                Color: =ThemeInk
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeWarnSoft
+                HoverFill: =ThemeWarnSoft
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeWarnSoft
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Size: =9
+                Text: =""
+                Visible: =galPlanillasLot.Selected.BatchStatus = 159460003
+                Width: =340
+                X: =20
+                Y: =lblErrTulaAgregarLot.Y + lblErrTulaAgregarLot.Height + 2
+                ZIndex: =7
+
+            icoAvisoAgregarLot As icon:
+                Color: =ThemeWarn
+                Height: =16
+                Icon: =Icon.Lock
+                Visible: =btnAvisoAgregarLot.Visible
+                Width: =16
+                X: =btnAvisoAgregarLot.X + 12
+                Y: =btnAvisoAgregarLot.Y + 12
+                ZIndex: =8
+
+            lblAvisoAgregarLot As label:
+                Color: =ThemeWarn
+                Height: =btnAvisoAgregarLot.Height
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.63
+                Text: ="Se enviará como solicitud de aprobación al supervisor."
+                Visible: =btnAvisoAgregarLot.Visible
+                Width: =292
+                X: =btnAvisoAgregarLot.X + 36
+                Y: =btnAvisoAgregarLot.Y
+                ZIndex: =9
+
+            btnDlgCancelAgregarLot As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ctxDlgAgregarLot: false})
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Cancelar"
+                Width: =100
+                X: =20
+                Y: =Parent.Height - 50
+                ZIndex: =10
+
+            btnDlgOkAgregarLot As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: |-
+                    =If(
+                        IsBlank(Trim(inpTulaAgregarLot.Text))
+                        || !IsBlank(
+                            LookUp(
+                                'CH-Tbl-Bags',
+                                ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
+                                && BagID = Trim(inpTulaAgregarLot.Text)
+                            ).'CH-Tbl-Bags'
+                        ),
+                        DisplayMode.Disabled,
+                        DisplayMode.Edit
+                    )
+                Fill: =ThemeAccent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeAccentDark
+                OnSelect: |-
+                    =UpdateContext({ctxDlgAgregarLot: false});
+                    
+                    If(
+                        galPlanillasLot.Selected.BatchStatus = 159460003,
+                    
+                        // ================== CAMINO APROBACIÓN ==================
+                        // La tula se CREA ya en Pendiente: por eso el JSON puede llevar BagGUID.
+                        IfError(
+                            UpdateContext(
+                                {
+                                    ctxTulaNuevaLot:
+                                        Patch(
+                                            'CH-Tbl-Bags',
+                                            Defaults('CH-Tbl-Bags'),
+                                            {
+                                                ReceptionID: galPlanillasLot.Selected,
+                                                BagID:       Trim(inpTulaAgregarLot.Text),
+                                                Name:        Trim(inpTulaAgregarLot.Text),
+                                                BagStatus:   'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa'
+                                            }
+                                        )
+                                }
+                            ),
+                            Notify("No se pudo crear la tula: " & FirstError.Message, NotificationType.Error),
+                    
+                            // ---- ÉXITO: la tula existe. Ahora la solicitud. ----
+                            // >>> BLOQUE E (§13.1) <<<
+                            UpdateContext(
+                                {
+                                    ctxELoteLot:
+                                        Substitute(Substitute(Substitute(
+                                            Trim(galPlanillasLot.Selected.ReceptionBatch.Name), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                    ctxETransportadoraLot:
+                                        Substitute(Substitute(Substitute(
+                                            Trim(galPlanillasLot.Selected.ReceptionBatch.Transportadora), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                    ctxEPlanillaLot:
+                                        Substitute(Substitute(Substitute(
+                                            Trim(galPlanillasLot.Selected.ReceiptID), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                    ctxEEmpresaLot:
+                                        Substitute(Substitute(Substitute(
+                                            Trim(galPlanillasLot.Selected.RemitentName), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                    ctxEUsuarioLot:
+                                        Substitute(Substitute(Substitute(
+                                            UsuarioNombre, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                    ctxEEstadoLoteLot:
+                                        Switch(
+                                            galPlanillasLot.Selected.BatchStatus,
+                                            159460000, "En progreso",
+                                            159460001, "Recibido",
+                                            159460003, "En bóveda",
+                                            159460002, "Anulado",
+                                            "—"
+                                        )
+                                }
+                            );
+                            UpdateContext(
+                                {
+                                    ctxETipoLot:       Upper("Agregar tula"),
+                                    ctxEncabezadoLot:  "simple",          // no hay "valor actual" que comparar
+                                    ctxETulaLot:
+                                        Substitute(Substitute(Substitute(
+                                            Trim(inpTulaAgregarLot.Text), "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
+                                }
+                            );
+                            UpdateContext(
+                                {
+                                    ctxFilasLot:
+                                        "<tr><td class=""k"">Planilla</td><td>" & ctxEPlanillaLot & " — " & ctxEEmpresaLot & "</td></tr>" &
+                                        "<tr><td class=""k"">Tula solicitada</td><td><b class=""new"">" & ctxETulaLot & "</b></td></tr>" &
+                                        "<tr><td class=""k"">Estado al aprobar</td><td>Almacenada en bóveda</td></tr>"
+                                }
+                            );
+                            // >>> BLOQUE H (§13.3) <<<
+                            UpdateContext(
+                                {
+                                    ctxHtmlLot:
+                                        HtmlApEstilo &
+                                        "<div class=""ap"">" &
+                                          "<div class=""apHead"">" &
+                                            "<span class=""tag"">" & ctxETipoLot & "</span>" &
+                                            "<h3>Lote " & ctxELoteLot & "</h3>" &
+                                            "<div class=""sub"">" & ctxETransportadoraLot & " · " & ctxEEstadoLoteLot & "</div>" &
+                                          "</div>" &
+                                          If(ctxEncabezadoLot = "simple", HtmlApEncabezadoTablaSimple, HtmlApEncabezadoTabla) &
+                                            ctxFilasLot &
+                                          "</table>" &
+                                          "<div class=""foot"">Solicitud generada por CH-App-Reception · " &
+                                            ctxEUsuarioLot & " · " & Text(Now(), FmtFecha) & "</div>" &
+                                        "</div>"
+                                }
+                            );
+                            IfError(
+                                Patch(
+                                    'CH-Tbl-ApprovalRequests',
+                                    Defaults('CH-Tbl-ApprovalRequests'),
+                                    {
+                                        RequestType:      "Agregar tula",
+                                        RequestDetails:   ctxHtmlLot,
+                                        RequestResources: JSON(
+                                            {
+                                                ReceiptGUID:        Text(galPlanillasLot.Selected.'CH-Tbl-Receptions'),
+                                                BagID:              Trim(inpTulaAgregarLot.Text),
+                                                BagGUID:            Text(ctxTulaNuevaLot.'CH-Tbl-Bags'),
+                                                ReceptionBatchGUID: Text(galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch')
+                                            }
+                                        )
+                                    }
+                                ),
+                                Notify(
+                                    "La tula quedó creada en Pendiente de revisión pero NO se pudo crear la solicitud: " &
+                                    FirstError.Message & " Avisale al supervisor.",
+                                    NotificationType.Error
+                                ),
+                                Notify("Solicitud «Agregar tula» enviada al supervisor.", NotificationType.Success)
+                            )
+                        ),
+                    
+                        // ================== CAMINO DIRECTO ('En progreso' / 'Recibido') ==================
+                        IfError(
+                            Patch(
+                                'CH-Tbl-Bags',
+                                Defaults('CH-Tbl-Bags'),
+                                {
+                                    ReceptionID: galPlanillasLot.Selected,
+                                    BagID:       Trim(inpTulaAgregarLot.Text),
+                                    Name:        Trim(inpTulaAgregarLot.Text),
+                                    BagStatus:   'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'
+                                }
+                            ),
+                            Notify("No se pudo agregar la tula: " & FirstError.Message, NotificationType.Error),
+                            Notify("Tula " & Trim(inpTulaAgregarLot.Text) & " agregada (acción directa).", NotificationType.Success)
+                        )
+                    );
+                    
+                    // Recarga PUNTUAL: la única tabla que esta operación tocó. NO se llama a
+                    // icoRefrescarLot — ese recarga TAMBIÉN lotes y planillas, y recargar la maestra
+                    // le cambia el Selected a la galería: la planilla del detalle se mueve sola bajo
+                    // los pies del usuario (§4.2 + §0.2). Ver DL-21 y la regla D-5 de 01 §2.3.
+                    Refresh('CH-Tbl-Bags');
+                    UpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeAccentDark
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: =If(galPlanillasLot.Selected.BatchStatus = 159460003, "Solicitar", "Agregar")
+                Width: =120
+                X: =240
+                Y: =Parent.Height - 50
+                ZIndex: =11
+
+    cntDlgEliminarLot As groupContainer.manualLayoutContainer:
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxDlgEliminarLot
+        Width: =Parent.Width
+        ZIndex: =72
+
+        btnDlgBloqueoEliminarLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =Color.Transparent
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            Size: =9
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntDlgCardEliminarLot As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =286
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =380
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            lblDlgTitEliminarLot As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Bold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.88
+                Text: ="Eliminar tula"
+                Width: =Parent.Width - 66
+                X: =20
+                Y: =16
+                ZIndex: =1
+
+            lblDlgTxtEliminarLot As label:
+                Color: =ThemeInk2
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: ="Revisá el detalle antes de confirmar."
+                Width: =340
+                X: =20
+                Y: =42
+                ZIndex: =2
+
+            icoDlgXEliminarLot As icon:
+                AccessibleLabel: ="Cerrar sin guardar"
+                Color: =ThemeInk3
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ctxDlgEliminarLot: false})
+                Width: =18
+                X: =Parent.Width - 34
+                Y: =16
+                ZIndex: =3
+
+            lblKvTulaEtqEliminarLot As label:
+                Color: =ThemeInk3
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Tula"
+                Width: =80
+                Wrap: =false
+                X: =20
+                Y: =lblDlgTxtEliminarLot.Y + lblDlgTxtEliminarLot.Height + 12
+                ZIndex: =4
+
+            lblKvTulaEliminarLot As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.38
+                Text: =ctxTulaSelLot.BagID
+                Width: =252
+                Wrap: =false
+                X: =108
+                Y: =lblKvTulaEtqEliminarLot.Y
+                ZIndex: =5
+
+            lblKvPlanEtqEliminarLot As label:
+                Color: =ThemeInk3
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Planilla"
+                Width: =80
+                Wrap: =false
+                X: =20
+                Y: =lblKvTulaEtqEliminarLot.Y + 22
+                ZIndex: =6
+
+            lblKvPlanEliminarLot As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.38
+                Text: =galPlanillasLot.Selected.ReceiptID & "  ·  " & galPlanillasLot.Selected.RemitentName
+                Width: =252
+                Wrap: =false
+                X: =108
+                Y: =lblKvPlanEtqEliminarLot.Y
+                ZIndex: =7
+
+            lblKvLoteEtqEliminarLot As label:
+                Color: =ThemeInk3
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Lote"
+                Width: =80
+                Wrap: =false
+                X: =20
+                Y: =lblKvPlanEtqEliminarLot.Y + 22
+                ZIndex: =8
+
+            lblKvLoteEliminarLot As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.38
+                Text: =galPlanillasLot.Selected.ReceptionBatch.Name
+                Width: =252
+                Wrap: =false
+                X: =108
+                Y: =lblKvLoteEtqEliminarLot.Y
+                ZIndex: =9
+
+            btnAvisoEliminarLot As button:
+                BorderThickness: =0
+                Color: =ThemeInk
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeWarnSoft
+                HoverFill: =ThemeWarnSoft
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeWarnSoft
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Size: =9
+                Text: =""
+                Visible: =galPlanillasLot.Selected.BatchStatus = 159460003
+                Width: =340
+                X: =20
+                Y: =lblKvLoteEtqEliminarLot.Y + lblKvLoteEtqEliminarLot.Height + 14
+                ZIndex: =10
+
+            icoAvisoEliminarLot As icon:
+                Color: =ThemeWarn
+                Height: =16
+                Icon: =Icon.Lock
+                Visible: =btnAvisoEliminarLot.Visible
+                Width: =16
+                X: =btnAvisoEliminarLot.X + 12
+                Y: =btnAvisoEliminarLot.Y + 12
+                ZIndex: =11
+
+            lblAvisoEliminarLot As label:
+                Color: =If(btnAvisoEliminarLot.Visible, ThemeWarn, ThemeInk2)
+                Height: =btnAvisoEliminarLot.Height
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.63
+                Text: =If(btnAvisoEliminarLot.Visible, "Se enviará como solicitud de aprobación al supervisor.", "Esta acción no se puede deshacer.")
+                Width: =If(btnAvisoEliminarLot.Visible, 292, 328)
+                X: =If(btnAvisoEliminarLot.Visible, 56, 20)
+                Y: =btnAvisoEliminarLot.Y
+                ZIndex: =12
+
+            btnDlgCancelEliminarLot As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ctxDlgEliminarLot: false})
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Cancelar"
+                Width: =100
+                X: =20
+                Y: =Parent.Height - 50
+                ZIndex: =13
+
+            btnDlgOkEliminarLot As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: =If(IsBlank(ctxTulaSelLot.'CH-Tbl-Bags'), DisplayMode.Disabled, DisplayMode.Edit)
+                Fill: =ThemeDanger
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeDanger
+                OnSelect: |-
+                    =UpdateContext({ctxDlgEliminarLot: false});
+                    
+                    If(
+                        galPlanillasLot.Selected.BatchStatus = 159460003,
+                    
+                        // ================== CAMINO APROBACIÓN ==================
+                        // >>> BLOQUE P (§13.2) — ANTES de tocar el BagStatus <<<
+                        UpdateContext(
+                            {
+                                ctxBagPrevioLot:
+                                    Switch(
+                                        ctxTulaSelLot.BagStatus,
+                                        'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            "Recibida en esclusa",
+                                        'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           "Almacenada en boveda",
+                                        'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa', "Pendiente de revision por supervisor - esclusa",
+                                        Text(ctxTulaSelLot.BagStatus)
+                                    )
+                            }
+                        );
+                        UpdateContext(
+                            {
+                                ctxEBagPrevioLot:
+                                    Substitute(Substitute(Substitute(ctxBagPrevioLot, "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
+                            }
+                        );
+                        // >>> BLOQUE E (§13.1) <<<
+                        UpdateContext(
+                            {
+                                ctxELoteLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.ReceptionBatch.Name), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxETransportadoraLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.ReceptionBatch.Transportadora), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEPlanillaLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.ReceiptID), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEEmpresaLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.RemitentName), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEUsuarioLot:
+                                    Substitute(Substitute(Substitute(
+                                        UsuarioNombre, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEEstadoLoteLot:
+                                    Switch(
+                                        galPlanillasLot.Selected.BatchStatus,
+                                        159460000, "En progreso",
+                                        159460001, "Recibido",
+                                        159460003, "En bóveda",
+                                        159460002, "Anulado",
+                                        "—"
+                                    )
+                            }
+                        );
+                        UpdateContext(
+                            {
+                                ctxETipoLot:       Upper("Eliminar tula"),
+                                ctxEncabezadoLot:  "simple",              // no hay "valor solicitado" que comparar
+                                ctxETulaLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(ctxTulaSelLot.BagID), "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
+                            }
+                        );
+                        UpdateContext(
+                            {
+                                ctxFilasLot:
+                                    "<tr><td class=""k"">Planilla</td><td>" & ctxEPlanillaLot & " — " & ctxEEmpresaLot & "</td></tr>" &
+                                    "<tr><td class=""k"">Tula a eliminar</td><td><b>" & ctxETulaLot & "</b></td></tr>" &
+                                    "<tr><td class=""k"">Estado actual</td><td>" & ctxEBagPrevioLot & "</td></tr>"
+                            }
+                        );
+                        // >>> BLOQUE H (§13.3) <<<
+                        UpdateContext(
+                            {
+                                ctxHtmlLot:
+                                    HtmlApEstilo &
+                                    "<div class=""ap"">" &
+                                      "<div class=""apHead"">" &
+                                        "<span class=""tag"">" & ctxETipoLot & "</span>" &
+                                        "<h3>Lote " & ctxELoteLot & "</h3>" &
+                                        "<div class=""sub"">" & ctxETransportadoraLot & " · " & ctxEEstadoLoteLot & "</div>" &
+                                      "</div>" &
+                                      If(ctxEncabezadoLot = "simple", HtmlApEncabezadoTablaSimple, HtmlApEncabezadoTabla) &
+                                        ctxFilasLot &
+                                      "</table>" &
+                                      "<div class=""foot"">Solicitud generada por CH-App-Reception · " &
+                                        ctxEUsuarioLot & " · " & Text(Now(), FmtFecha) & "</div>" &
+                                    "</div>"
+                            }
+                        );
+                        IfError(
+                            Patch(
+                                'CH-Tbl-Bags',
+                                ctxTulaSelLot,
+                                { BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa' }
+                            ),
+                            Notify(
+                                "No se pudo marcar la tula como pendiente (" & FirstError.Message &
+                                "). NO se creó la solicitud.",
+                                NotificationType.Error
+                            ),
+                            IfError(
+                                Patch(
+                                    'CH-Tbl-ApprovalRequests',
+                                    Defaults('CH-Tbl-ApprovalRequests'),
+                                    {
+                                        RequestType:      "Eliminar tula",
+                                        RequestDetails:   ctxHtmlLot,
+                                        RequestResources: JSON(
+                                            {
+                                                GUID:             Text(ctxTulaSelLot.'CH-Tbl-Bags'),
+                                                BagPreviousState: ctxBagPrevioLot
+                                            }
+                                        )
+                                    }
+                                ),
+                                Notify(
+                                    "La tula quedó en Pendiente de revisión pero NO se creó la solicitud: " &
+                                    FirstError.Message & " Avisale al supervisor.",
+                                    NotificationType.Error
+                                ),
+                                Notify("Solicitud «Eliminar tula» enviada al supervisor.", NotificationType.Success)
+                            )
+                        ),
+                    
+                        // ================== CAMINO DIRECTO ==================
+                        IfError(
+                            Remove('CH-Tbl-Bags', ctxTulaSelLot),
+                            Notify("No se pudo eliminar la tula: " & FirstError.Message, NotificationType.Error),
+                            Notify("Tula " & ctxTulaSelLot.BagID & " eliminada (acción directa).", NotificationType.Success)
+                        )
+                    );
+                    
+                    // Recarga PUNTUAL de la única tabla tocada (ver §14.1): icoRefrescarLot recargaría
+                    // además lotes y planillas, y eso le cambia el Selected a la galería maestra.
+                    Refresh('CH-Tbl-Bags');
+                    UpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeDanger
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: =If(galPlanillasLot.Selected.BatchStatus = 159460003, "Solicitar", "Eliminar")
+                Width: =120
+                X: =240
+                Y: =Parent.Height - 50
+                ZIndex: =14
+
+    cntDlgRemapearLot As groupContainer.manualLayoutContainer:
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxDlgRemapearLot
+        Width: =Parent.Width
+        ZIndex: =73
+
+        btnDlgBloqueoRemapearLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =Color.Transparent
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            Size: =9
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntDlgCardRemapearLot As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =276
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =380
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            lblDlgTitRemapearLot As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Bold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.88
+                Text: ="Remapear tula " & ctxTulaSelLot.BagID
+                Width: =Parent.Width - 66
+                X: =20
+                Y: =16
+                ZIndex: =1
+
+            lblDlgTxtRemapearLot As label:
+                Color: =ThemeInk2
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: ="Mover a otra planilla del mismo lote."
+                Width: =340
+                X: =20
+                Y: =42
+                ZIndex: =2
+
+            icoDlgXRemapearLot As icon:
+                AccessibleLabel: ="Cerrar sin guardar"
+                Color: =ThemeInk3
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ctxDlgRemapearLot: false})
+                Width: =18
+                X: =Parent.Width - 34
+                Y: =16
+                ZIndex: =3
+
+            lblCampoDestinoRemapearLot As label:
+                Color: =ThemeInk2
+                FontWeight: =FontWeight.Semibold
+                Height: =14
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Planilla destino"
+                Width: =340
+                Wrap: =false
+                X: =20
+                Y: =74
+                ZIndex: =4
+
+            cmbDestinoRemapearLot As combobox:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk
+                DefaultSelectedItems: |-
+                    =Table(
+                        First(
+                            Filter(
+                                Filter('CH-Tbl-Receptions',ReceptionBatch.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'),
+                                'CH-Tbl-Receptions' <> galPlanillasLot.Selected.'CH-Tbl-Receptions'
+                            )
+                        )
+                    )
+                DisplayFields: =["sanic_name"]
+                Fill: =ThemeSurface
+                Height: =44
+                Items: |-
+                    =Filter(
+                        Filter('CH-Tbl-Receptions', ReceptionBatch.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'),
+                        'CH-Tbl-Receptions' <> galPlanillasLot.Selected.'CH-Tbl-Receptions'
+                    )
+                SearchFields: =["sanic_name"]
+                SearchItems: =Search(Filter(Filter('CH-Tbl-Receptions',ReceptionBatch.'CH-Tbl-ReceptionBatch'=galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'),'CH-Tbl-Receptions'<>galPlanillasLot.Selected.'CH-Tbl-Receptions'),cmbDestinoRemapearLot.SearchText,sanic_name)
+                SelectMultiple: =false
+                Size: =9
+                Width: =340
+                X: =20
+                Y: =lblCampoDestinoRemapearLot.Y + lblCampoDestinoRemapearLot.Height + 2
+                ZIndex: =5
+
+            lblErrRemapearLot As label:
+                Color: =ThemeDanger
+                Height: =28
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="El lote no tiene otra planilla destino."
+                Visible: =IsBlank(cmbDestinoRemapearLot.Selected.'CH-Tbl-Receptions')
+                Width: =340
+                X: =20
+                Y: =cmbDestinoRemapearLot.Y + cmbDestinoRemapearLot.Height + 4
+                ZIndex: =6
+
+            btnAvisoRemapearLot As button:
+                BorderThickness: =0
+                Color: =ThemeInk
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeWarnSoft
+                HoverFill: =ThemeWarnSoft
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeWarnSoft
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Size: =9
+                Text: =""
+                Visible: =galPlanillasLot.Selected.BatchStatus = 159460003
+                Width: =340
+                X: =20
+                Y: =lblErrRemapearLot.Y + lblErrRemapearLot.Height + 4
+                ZIndex: =7
+
+            icoAvisoRemapearLot As icon:
+                Color: =ThemeWarn
+                Height: =16
+                Icon: =Icon.Lock
+                Visible: =btnAvisoRemapearLot.Visible
+                Width: =16
+                X: =btnAvisoRemapearLot.X + 12
+                Y: =btnAvisoRemapearLot.Y + 12
+                ZIndex: =8
+
+            lblAvisoRemapearLot As label:
+                Color: =ThemeWarn
+                Height: =btnAvisoRemapearLot.Height
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.63
+                Text: ="Se enviará como solicitud de aprobación al supervisor."
+                Visible: =btnAvisoRemapearLot.Visible
+                Width: =292
+                X: =btnAvisoRemapearLot.X + 36
+                Y: =btnAvisoRemapearLot.Y
+                ZIndex: =9
+
+            btnDlgCancelRemapearLot As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ctxDlgRemapearLot: false})
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Cancelar"
+                Width: =100
+                X: =20
+                Y: =Parent.Height - 50
+                ZIndex: =10
+
+            btnDlgOkRemapearLot As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: |-
+                    =If(
+                        IsBlank(cmbDestinoRemapearLot.Selected.'CH-Tbl-Receptions'),
+                        DisplayMode.Disabled,
+                        DisplayMode.Edit
+                    )
+                Fill: =ThemeAccent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeAccentDark
+                OnSelect: |-
+                    =UpdateContext({ctxDlgRemapearLot: false});
+                    
+                    If(
+                        galPlanillasLot.Selected.BatchStatus = 159460003,
+                    
+                        // ================== CAMINO APROBACIÓN ==================
+                        // >>> BLOQUE P (§13.2) <<<
+                        UpdateContext(
+                            {
+                                ctxBagPrevioLot:
+                                    Switch(
+                                        ctxTulaSelLot.BagStatus,
+                                        'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            "Recibida en esclusa",
+                                        'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           "Almacenada en boveda",
+                                        'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa', "Pendiente de revision por supervisor - esclusa",
+                                        Text(ctxTulaSelLot.BagStatus)
+                                    )
+                            }
+                        );
+                        UpdateContext(
+                            {
+                                ctxEBagPrevioLot:
+                                    Substitute(Substitute(Substitute(ctxBagPrevioLot, "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
+                            }
+                        );
+                        // >>> BLOQUE E (§13.1) <<<
+                        UpdateContext(
+                            {
+                                ctxELoteLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.ReceptionBatch.Name), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxETransportadoraLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.ReceptionBatch.Transportadora), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEPlanillaLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.ReceiptID), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEEmpresaLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.RemitentName), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEUsuarioLot:
+                                    Substitute(Substitute(Substitute(
+                                        UsuarioNombre, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEEstadoLoteLot:
+                                    Switch(
+                                        galPlanillasLot.Selected.BatchStatus,
+                                        159460000, "En progreso",
+                                        159460001, "Recibido",
+                                        159460003, "En bóveda",
+                                        159460002, "Anulado",
+                                        "—"
+                                    )
+                            }
+                        );
+                        UpdateContext(
+                            {
+                                ctxETipoLot:       Upper("Remapear tula"),
+                                ctxEncabezadoLot:  "comparativo",         // planilla actual → planilla destino
+                                ctxETulaLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(ctxTulaSelLot.BagID), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEPlanillaDestinoLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(cmbDestinoRemapearLot.Selected.ReceiptID), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEEmpresaDestinoLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(cmbDestinoRemapearLot.Selected.RemitentName), "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
+                            }
+                        );
+                        UpdateContext(
+                            {
+                                ctxFilasLot:
+                                    "<tr><td class=""k"">Tula</td><td colspan=""2""><b>" & ctxETulaLot & "</b></td></tr>" &
+                                    "<tr><td class=""k"">Planilla</td><td>" & ctxEPlanillaLot & " — " & ctxEEmpresaLot & "</td>" &
+                                        "<td><b class=""new"">" & ctxEPlanillaDestinoLot & " — " & ctxEEmpresaDestinoLot & "</b></td></tr>" &
+                                    "<tr><td class=""k"">Estado actual</td><td colspan=""2"">" & ctxEBagPrevioLot & "</td></tr>"
+                            }
+                        );
+                        // >>> BLOQUE H (§13.3) <<<
+                        UpdateContext(
+                            {
+                                ctxHtmlLot:
+                                    HtmlApEstilo &
+                                    "<div class=""ap"">" &
+                                      "<div class=""apHead"">" &
+                                        "<span class=""tag"">" & ctxETipoLot & "</span>" &
+                                        "<h3>Lote " & ctxELoteLot & "</h3>" &
+                                        "<div class=""sub"">" & ctxETransportadoraLot & " · " & ctxEEstadoLoteLot & "</div>" &
+                                      "</div>" &
+                                      If(ctxEncabezadoLot = "simple", HtmlApEncabezadoTablaSimple, HtmlApEncabezadoTabla) &
+                                        ctxFilasLot &
+                                      "</table>" &
+                                      "<div class=""foot"">Solicitud generada por CH-App-Reception · " &
+                                        ctxEUsuarioLot & " · " & Text(Now(), FmtFecha) & "</div>" &
+                                    "</div>"
+                            }
+                        );
+                        IfError(
+                            Patch(
+                                'CH-Tbl-Bags',
+                                ctxTulaSelLot,
+                                { BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa' }
+                            ),
+                            Notify(
+                                "No se pudo marcar la tula como pendiente (" & FirstError.Message &
+                                "). NO se creó la solicitud.",
+                                NotificationType.Error
+                            ),
+                            IfError(
+                                Patch(
+                                    'CH-Tbl-ApprovalRequests',
+                                    Defaults('CH-Tbl-ApprovalRequests'),
+                                    {
+                                        RequestType:      "Remapear tula",
+                                        RequestDetails:   ctxHtmlLot,
+                                        RequestResources: JSON(
+                                            {
+                                                GUID:             Text(ctxTulaSelLot.'CH-Tbl-Bags'),
+                                                ReceiptID:        Trim(cmbDestinoRemapearLot.Selected.ReceiptID),
+                                                ReceiptGUID:      Text(cmbDestinoRemapearLot.Selected.'CH-Tbl-Receptions'),
+                                                BagPreviousState: ctxBagPrevioLot
+                                            }
+                                        )
+                                    }
+                                ),
+                                Notify(
+                                    "La tula quedó en Pendiente de revisión pero NO se creó la solicitud: " &
+                                    FirstError.Message & " Avisale al supervisor.",
+                                    NotificationType.Error
+                                ),
+                                Notify("Solicitud «Remapear tula» enviada al supervisor.", NotificationType.Success)
+                            )
+                        ),
+                    
+                        // ================== CAMINO DIRECTO ==================
+                        IfError(
+                            Patch('CH-Tbl-Bags', ctxTulaSelLot, { ReceptionID: cmbDestinoRemapearLot.Selected }),
+                            Notify("No se pudo remapear la tula: " & FirstError.Message, NotificationType.Error),
+                            Notify(
+                                "Tula " & ctxTulaSelLot.BagID & " remapeada a la planilla " &
+                                cmbDestinoRemapearLot.Selected.ReceiptID & " (acción directa).",
+                                NotificationType.Success
+                            )
+                        )
+                    );
+                    
+                    // Recarga PUNTUAL de la única tabla tocada (ver §14.1): icoRefrescarLot recargaría
+                    // además lotes y planillas, y eso le cambia el Selected a la galería maestra.
+                    Refresh('CH-Tbl-Bags');
+                    UpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeAccentDark
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: =If(galPlanillasLot.Selected.BatchStatus = 159460003, "Solicitar", "Remapear")
+                Width: =120
+                X: =240
+                Y: =Parent.Height - 50
+                ZIndex: =11
+
+    cntDlgEditarTulaLot As groupContainer.manualLayoutContainer:
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxDlgEditarTulaLot
+        Width: =Parent.Width
+        ZIndex: =74
+
+        btnDlgBloqueoEditarTulaLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =Color.Transparent
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            Size: =9
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntDlgCardEditarTulaLot As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =258
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =380
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            lblDlgTitEditarTulaLot As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Bold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.88
+                Text: ="Editar tula " & ctxTulaSelLot.BagID
+                Width: =Parent.Width - 66
+                X: =20
+                Y: =16
+                ZIndex: =1
+
+            lblDlgTxtEditarTulaLot As label:
+                Color: =ThemeInk2
+                Height: =32
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: ="Planilla " & galPlanillasLot.Selected.ReceiptID & "  ·  Lote " & galPlanillasLot.Selected.ReceptionBatch.Name
+                Width: =340
+                X: =20
+                Y: =42
+                ZIndex: =2
+
+            icoDlgXEditarTulaLot As icon:
+                AccessibleLabel: ="Cerrar sin guardar"
+                Color: =ThemeInk3
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ctxDlgEditarTulaLot: false})
+                Width: =18
+                X: =Parent.Width - 34
+                Y: =16
+                ZIndex: =3
+
+            lblCampoTulaEditarLot As label:
+                Color: =ThemeInk2
+                FontWeight: =FontWeight.Semibold
+                Height: =14
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Nuevo número"
+                Width: =340
+                Wrap: =false
+                X: =20
+                Y: =82
+                ZIndex: =4
+
+            inpTulaEditarLot As text:
+                BorderColor: =If(lblErrTulaEditarLot.Visible, ThemeWarnLine, ThemeLine)
+                Color: =ThemeInk
+                Default: =ctxTulaSelLot.BagID
+                DelayOutput: =true
+                Fill: =ThemeSurface
+                Height: =32
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Width: =340
+                X: =20
+                Y: =98
+                ZIndex: =5
+
+            lblErrTulaEditarLot As label:
+                Color: =ThemeDanger
+                Height: =30
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="La tula " & Trim(inpTulaEditarLot.Text) & " ya existe en este lote."
+                Visible: |-
+                    =!IsBlank(Trim(inpTulaAgregarLot.Text))
+                    && !IsBlank(
+                        LookUp(
+                            'CH-Tbl-Bags',
+                            ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
+                            && BagID = Trim(inpTulaAgregarLot.Text)
+                        ).'CH-Tbl-Bags'
+                    )
+                Width: =340
+                X: =20
+                Y: =inpTulaEditarLot.Y + inpTulaEditarLot.Height + 2
+                ZIndex: =6
+
+            btnAvisoEditarTulaLot As button:
+                BorderThickness: =0
+                Color: =ThemeInk
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeWarnSoft
+                HoverFill: =ThemeWarnSoft
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeWarnSoft
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Size: =9
+                Text: =""
+                Visible: =galPlanillasLot.Selected.BatchStatus = 159460003
+                Width: =340
+                X: =20
+                Y: =lblErrTulaEditarLot.Y + lblErrTulaEditarLot.Height + 2
+                ZIndex: =7
+
+            icoAvisoEditarTulaLot As icon:
+                Color: =ThemeWarn
+                Height: =16
+                Icon: =Icon.Lock
+                Visible: =btnAvisoEditarTulaLot.Visible
+                Width: =16
+                X: =btnAvisoEditarTulaLot.X + 12
+                Y: =btnAvisoEditarTulaLot.Y + 12
+                ZIndex: =8
+
+            lblAvisoEditarTulaLot As label:
+                Color: =ThemeWarn
+                Height: =btnAvisoEditarTulaLot.Height
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.63
+                Text: ="Se enviará como solicitud de aprobación al supervisor."
+                Visible: =btnAvisoEditarTulaLot.Visible
+                Width: =292
+                X: =btnAvisoEditarTulaLot.X + 36
+                Y: =btnAvisoEditarTulaLot.Y
+                ZIndex: =9
+
+            btnDlgCancelEditarTulaLot As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ctxDlgEditarTulaLot: false})
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Cancelar"
+                Width: =100
+                X: =20
+                Y: =Parent.Height - 50
+                ZIndex: =10
+
+            btnDlgOkEditarTulaLot As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: |-
+                    =If(
+                        // 1. Sin número nuevo
+                        IsBlank(Trim(inpTulaEditarLot.Text))
+                        // 2. El número no cambió
+                        || Trim(inpTulaEditarLot.Text) = Trim(ctxTulaSelLot.BagID)
+                        // 3. El número YA existe en otra tula de este lote (excluyéndose a sí misma)
+                        || !IsBlank(
+                            LookUp(
+                                'CH-Tbl-Bags',
+                                ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
+                                && BagID = Trim(inpTulaEditarLot.Text)
+                                && 'CH-Tbl-Bags' <> ctxTulaSelLot.'CH-Tbl-Bags'
+                            ).'CH-Tbl-Bags'
+                        ),
+                        DisplayMode.Disabled,
+                        DisplayMode.Edit
+                    )
+                Fill: =ThemeAccent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeAccentDark
+                OnSelect: |-
+                    =
+                    If(
+                        // Guarda autoritativa: re-chequea el duplicado en el momento del click
+                        !IsBlank(
+                            LookUp(
+                                'CH-Tbl-Bags',
+                                ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
+                                && BagID = Trim(inpTulaEditarLot.Text)
+                                && 'CH-Tbl-Bags' <> ctxTulaSelLot.'CH-Tbl-Bags'
+                            ).'CH-Tbl-Bags'
+                        ),
+                        Notify("La tula " & Trim(inpTulaEditarLot.Text) & " ya existe en este lote.", NotificationType.Error),
+                        UpdateContext({ctxDlgEditarTulaLot: false});
+                    
+                        If(
+                            galPlanillasLot.Selected.BatchStatus = 159460003,
+                    
+                            // ================== CAMINO APROBACIÓN ==================
+                            // (SIN bloque P: el contrato de "Editar tula" no lleva BagPreviousState — 01 §5.5)
+                            // >>> BLOQUE E (§13.1) <<<
+                            UpdateContext(
+                                {
+                                    ctxELoteLot:
+                                        Substitute(Substitute(Substitute(
+                                            Trim(galPlanillasLot.Selected.ReceptionBatch.Name), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                    ctxETransportadoraLot:
+                                        Substitute(Substitute(Substitute(
+                                            Trim(galPlanillasLot.Selected.ReceptionBatch.Transportadora), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                    ctxEPlanillaLot:
+                                        Substitute(Substitute(Substitute(
+                                            Trim(galPlanillasLot.Selected.ReceiptID), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                    ctxEEmpresaLot:
+                                        Substitute(Substitute(Substitute(
+                                            Trim(galPlanillasLot.Selected.RemitentName), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                    ctxEUsuarioLot:
+                                        Substitute(Substitute(Substitute(
+                                            UsuarioNombre, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                    ctxEEstadoLoteLot:
+                                        Switch(
+                                            galPlanillasLot.Selected.BatchStatus,
+                                            159460000, "En progreso",
+                                            159460001, "Recibido",
+                                            159460003, "En bóveda",
+                                            159460002, "Anulado",
+                                            "—"
+                                        )
+                                }
+                            );
+                            UpdateContext(
+                                {
+                                    ctxETipoLot:       Upper("Editar tula"),
+                                    ctxEncabezadoLot:  "comparativo",         // N° actual → N° nuevo
+                                    ctxETulaLot:
+                                        Substitute(Substitute(Substitute(
+                                            Trim(ctxTulaSelLot.BagID), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                    ctxETulaNuevaLot:
+                                        Substitute(Substitute(Substitute(
+                                            Trim(inpTulaEditarLot.Text), "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
+                                }
+                            );
+                            UpdateContext(
+                                {
+                                    ctxFilasLot:
+                                        "<tr><td class=""k"">Planilla</td><td colspan=""2"">" & ctxEPlanillaLot & " — " & ctxEEmpresaLot & "</td></tr>" &
+                                        "<tr><td class=""k"">N° de tula</td><td>" & ctxETulaLot & "</td>" &
+                                            "<td><b class=""new"">" & ctxETulaNuevaLot & "</b></td></tr>" &
+                                        "<tr><td class=""k"">Estado de la tula</td><td colspan=""2"">Pendiente de revisión por supervisor</td></tr>"
+                                }
+                            );
+                            // >>> BLOQUE H (§13.3) <<<
+                            UpdateContext(
+                                {
+                                    ctxHtmlLot:
+                                        HtmlApEstilo &
+                                        "<div class=""ap"">" &
+                                        "<div class=""apHead"">" &
+                                            "<span class=""tag"">" & ctxETipoLot & "</span>" &
+                                            "<h3>Lote " & ctxELoteLot & "</h3>" &
+                                            "<div class=""sub"">" & ctxETransportadoraLot & " · " & ctxEEstadoLoteLot & "</div>" &
+                                        "</div>" &
+                                        If(ctxEncabezadoLot = "simple", HtmlApEncabezadoTablaSimple, HtmlApEncabezadoTabla) &
+                                            ctxFilasLot &
+                                        "</table>" &
+                                        "<div class=""foot"">Solicitud generada por CH-App-Reception · " &
+                                            ctxEUsuarioLot & " · " & Text(Now(), FmtFecha) & "</div>" &
+                                        "</div>"
+                                }
+                            );
+                            IfError(
+                                Patch(
+                                    'CH-Tbl-Bags',
+                                    ctxTulaSelLot,
+                                    { BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa' }
+                                ),
+                                Notify(
+                                    "No se pudo marcar la tula como pendiente (" & FirstError.Message &
+                                    "). NO se creó la solicitud.",
+                                    NotificationType.Error
+                                ),
+                                IfError(
+                                    Patch(
+                                        'CH-Tbl-ApprovalRequests',
+                                        Defaults('CH-Tbl-ApprovalRequests'),
+                                        {
+                                            RequestType:      "Editar tula",
+                                            RequestDetails:   ctxHtmlLot,
+                                            RequestResources: JSON(
+                                                {
+                                                    ReceiptGUID:        Text(galPlanillasLot.Selected.'CH-Tbl-Receptions'),
+                                                    BagID:              Trim(inpTulaEditarLot.Text),
+                                                    ReceptionBatchGUID: Text(galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'),
+                                                    BagGUID:            Text(ctxTulaSelLot.'CH-Tbl-Bags')
+                                                }
+                                            )
+                                        }
+                                    ),
+                                    Notify(
+                                        "La tula quedó en Pendiente de revisión pero NO se creó la solicitud: " &
+                                        FirstError.Message & " Avisale al supervisor.",
+                                        NotificationType.Error
+                                    ),
+                                    Notify("Solicitud «Editar tula» enviada al supervisor.", NotificationType.Success)
+                                )
+                            ),
+                    
+                            // ================== CAMINO DIRECTO ==================
+                            IfError(
+                                Patch(
+                                    'CH-Tbl-Bags',
+                                    ctxTulaSelLot,
+                                    { BagID: Trim(inpTulaEditarLot.Text), Name: Trim(inpTulaEditarLot.Text) }
+                                ),
+                                Notify("No se pudo actualizar la tula: " & FirstError.Message, NotificationType.Error),
+                                Notify("Tula actualizada a " & Trim(inpTulaEditarLot.Text) & " (acción directa).", NotificationType.Success)
+                            )
+                        );
+                    
+                        // Recarga PUNTUAL de la única tabla tocada (ver §14.1): icoRefrescarLot recargaría
+                        // además lotes y planillas, y eso le cambia el Selected a la galería maestra.
+                        Refresh('CH-Tbl-Bags');
+                        UpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})
+                    )
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeAccentDark
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: =If(galPlanillasLot.Selected.BatchStatus = 159460003, "Solicitar", "Actualizar")
+                Tooltip: =
+                Width: =120
+                X: =240
+                Y: =Parent.Height - 50
+                ZIndex: =11
+
+    cntDlgEditarPlanillaLot As groupContainer.manualLayoutContainer:
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxDlgEditarPlanillaLot
+        Width: =Parent.Width
+        ZIndex: =75
+
+        btnDlgBloqueoEditarPlanillaLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =Color.Transparent
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            Size: =9
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntDlgCardEditarPlanillaLot As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =276
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =380
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            lblDlgTitEditarPlanillaLot As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Bold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.88
+                Text: ="Editar N° de planilla"
+                Width: =Parent.Width - 66
+                X: =20
+                Y: =16
+                ZIndex: =1
+
+            lblDlgTxtEditarPlanillaLot As label:
+                Color: =ThemeInk2
+                Height: =32
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: ="Planilla " & galPlanillasLot.Selected.ReceiptID & "  ·  Lote " & galPlanillasLot.Selected.ReceptionBatch.Name
+                Width: =340
+                X: =20
+                Y: =42
+                ZIndex: =2
+
+            icoDlgXEditarPlanillaLot As icon:
+                AccessibleLabel: ="Cerrar sin guardar"
+                Color: =ThemeInk3
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ctxDlgEditarPlanillaLot: false})
+                Width: =18
+                X: =Parent.Width - 34
+                Y: =16
+                ZIndex: =3
+
+            lblCampoPlanillaEditarLot As label:
+                Color: =ThemeInk2
+                FontWeight: =FontWeight.Semibold
+                Height: =14
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Nuevo número"
+                Width: =340
+                Wrap: =false
+                X: =20
+                Y: =82
+                ZIndex: =4
+
+            inpPlanillaEditarLot As text:
+                BorderColor: =If(lblErrPlanillaEditarLot.Visible, ThemeWarnLine, ThemeLine)
+                Color: =ThemeInk
+                Default: =galPlanillasLot.Selected.ReceiptID
+                DelayOutput: =true
+                Fill: =ThemeSurface
+                Height: =32
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Width: =340
+                X: =20
+                Y: =98
+                ZIndex: =5
+
+            lblErrPlanillaEditarLot As label:
+                Color: =ThemeDanger
+                Height: =30
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="La planilla " & Trim(inpPlanillaEditarLot.Text) & " ya existe en este lote."
+                Visible: |-
+                    =!IsBlank(Trim(inpTulaAgregarLot.Text))
+                    && !IsBlank(
+                        LookUp(
+                            'CH-Tbl-Bags',
+                            ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
+                            && BagID = Trim(inpTulaAgregarLot.Text)
+                        ).'CH-Tbl-Bags'
+                    )
+                Width: =340
+                X: =20
+                Y: =inpPlanillaEditarLot.Y + inpPlanillaEditarLot.Height + 2
+                ZIndex: =6
+
+            btnAvisoEditarPlanillaLot As button:
+                BorderThickness: =0
+                Color: =ThemeInk
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeInfoSoft
+                Height: =58
+                HoverFill: =ThemeInfoSoft
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeInfoSoft
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Size: =9
+                Text: =""
+                Width: =340
+                X: =20
+                Y: =lblErrPlanillaEditarLot.Y + lblErrPlanillaEditarLot.Height + 2
+                ZIndex: =7
+
+            icoAvisoEditarPlanillaLot As icon:
+                Color: =ThemeInfo
+                Height: =16
+                Icon: =Icon.Information
+                Width: =16
+                X: =btnAvisoEditarPlanillaLot.X + 12
+                Y: =btnAvisoEditarPlanillaLot.Y + 12
+                ZIndex: =8
+
+            lblAvisoEditarPlanillaLot As label:
+                Color: =ThemeInfo
+                Height: =btnAvisoEditarPlanillaLot.Height
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.63
+                Text: ="El cambio de número de planilla SIEMPRE requiere aprobación del supervisor, sin importar el estado del lote."
+                Width: =292
+                X: =btnAvisoEditarPlanillaLot.X + 36
+                Y: =btnAvisoEditarPlanillaLot.Y
+                ZIndex: =9
+
+            btnDlgCancelEditarPlanillaLot As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ctxDlgEditarPlanillaLot: false})
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Cancelar"
+                Width: =100
+                X: =20
+                Y: =Parent.Height - 50
+                ZIndex: =10
+
+            btnDlgOkEditarPlanillaLot As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: |-
+                    =If(
+                        IsBlank(Trim(inpPlanillaEditarLot.Text))
+                        || Trim(inpPlanillaEditarLot.Text) = galPlanillasLot.Selected.ReceiptID
+                        || lblErrPlanillaEditarLot.Visible,
+                        DisplayMode.Disabled,
+                        DisplayMode.Edit
+                    )
+                Fill: =ThemeAccent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeAccentDark
+                OnSelect: |-
+                    =UpdateContext({ctxDlgEditarPlanillaLot: false});
+                    
+                    // >>> BLOQUE E (§13.1) <<<
+                    UpdateContext(
+                        {
+                            ctxELoteLot:
+                                Substitute(Substitute(Substitute(
+                                    Trim(galPlanillasLot.Selected.ReceptionBatch.Name), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                            ctxETransportadoraLot:
+                                Substitute(Substitute(Substitute(
+                                    Trim(galPlanillasLot.Selected.ReceptionBatch.Transportadora), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                            ctxEPlanillaLot:
+                                Substitute(Substitute(Substitute(
+                                    Trim(galPlanillasLot.Selected.ReceiptID), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                            ctxEEmpresaLot:
+                                Substitute(Substitute(Substitute(
+                                    Trim(galPlanillasLot.Selected.RemitentName), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                            ctxEUsuarioLot:
+                                Substitute(Substitute(Substitute(
+                                    UsuarioNombre, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                            ctxEEstadoLoteLot:
+                                Switch(
+                                    galPlanillasLot.Selected.BatchStatus,
+                                    159460000, "En progreso",
+                                    159460001, "Recibido",
+                                    159460003, "En bóveda",
+                                    159460002, "Anulado",
+                                    "—"
+                                )
+                        }
+                    );
+                    UpdateContext(
+                        {
+                            // PRESENTACIÓN, no contrato: literal propio, con ° y sin Upper().
+                            // El RequestType que viaja abajo NO se toca (ver la nota al pie).
+                            ctxETipoLot:          "MODIFICAR N° DE PLANILLA",
+                            ctxEncabezadoLot:     "comparativo",          // N° actual → N° nuevo
+                            ctxEPlanillaNuevaLot:
+                                Substitute(Substitute(Substitute(
+                                    Trim(inpPlanillaEditarLot.Text), "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
+                        }
+                    );
+                    UpdateContext(
+                        {
+                            ctxFilasLot:
+                                "<tr><td class=""k"">Empresa</td><td colspan=""2"">" & ctxEEmpresaLot & "</td></tr>" &
+                                "<tr><td class=""k"">N° de planilla</td><td>" & ctxEPlanillaLot & "</td>" &
+                                    "<td><b class=""new"">" & ctxEPlanillaNuevaLot & "</b></td></tr>"
+                        }
+                    );
+                    // >>> BLOQUE H (§13.3) <<<
+                    UpdateContext(
+                        {
+                            ctxHtmlLot:
+                                HtmlApEstilo &
+                                "<div class=""ap"">" &
+                                  "<div class=""apHead"">" &
+                                    "<span class=""tag"">" & ctxETipoLot & "</span>" &
+                                    "<h3>Lote " & ctxELoteLot & "</h3>" &
+                                    "<div class=""sub"">" & ctxETransportadoraLot & " · " & ctxEEstadoLoteLot & "</div>" &
+                                  "</div>" &
+                                  If(ctxEncabezadoLot = "simple", HtmlApEncabezadoTablaSimple, HtmlApEncabezadoTabla) &
+                                    ctxFilasLot &
+                                  "</table>" &
+                                  "<div class=""foot"">Solicitud generada por CH-App-Reception · " &
+                                    ctxEUsuarioLot & " · " & Text(Now(), FmtFecha) & "</div>" &
+                                "</div>"
+                        }
+                    );
+                    IfError(
+                        Patch(
+                            'CH-Tbl-ApprovalRequests',
+                            Defaults('CH-Tbl-ApprovalRequests'),
+                            {
+                                RequestType:      "Modificar numero de planilla",
+                                RequestDetails:   ctxHtmlLot,
+                                RequestResources: JSON(
+                                    {
+                                        ReceiptGUID:  Text(galPlanillasLot.Selected.'CH-Tbl-Receptions'),
+                                        NewReceiptID: Trim(inpPlanillaEditarLot.Text)
+                                    }
+                                )
+                            }
+                        ),
+                        Notify("No se pudo crear la solicitud: " & FirstError.Message, NotificationType.Error),
+                        Notify("Solicitud «Modificar número de planilla» enviada al supervisor.", NotificationType.Success)
+                    )
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeAccentDark
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Solicitar"
+                Width: =120
+                X: =240
+                Y: =Parent.Height - 50
+                ZIndex: =11
+
+    EncabezadoLot As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =76
+
+        shpHeaderLot As rectangle:
+            Fill: =ThemeSurface
+            Height: =56
+            Width: =1366
+            ZIndex: =1
+
+        shpHeaderLineaLot As rectangle:
+            Fill: =ThemeLine
+            Height: =1
+            Width: =1366
+            Y: =55
+            ZIndex: =2
+
+        imgTileLot As image:
+            AccessibleLabel: ="CashHub Recepción"
+            Height: =34
+            Image: ='icono-reception-192'
+            ImagePosition: =ImagePosition.Fill
+            RadiusBottomLeft: =9
+            RadiusBottomRight: =9
+            RadiusTopLeft: =9
+            RadiusTopRight: =9
+            Width: =34
+            X: =18
+            Y: =11
+            ZIndex: =3
+
+        lblTituloLot As label:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10.5
+            Text: ="Recepción"
+            Width: =140
+            Wrap: =false
+            X: =66
+            Y: =11
+            ZIndex: =4
+
+        lblSubtituloLot As label:
+            Color: =ThemeInk3
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="Administración de lotes"
+            Width: =160
+            Wrap: =false
+            X: =66
+            Y: =29
+            ZIndex: =5
+
+        shpSegNavLot As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Height: =32
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =16
+            RadiusBottomRight: =16
+            RadiusTopLeft: =16
+            RadiusTopRight: =16
+            Size: =9
+            Text: =""
+            Width: =179
+            X: =230
+            Y: =12
+            ZIndex: =6
+
+        segCapturaLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk2
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =Color.Transparent
+            Height: =26
+            HoverFill: =ThemeSurface
+            OnSelect: =Navigate(scrCaptura)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: ="Captura"
+            Width: =85
+            X: =shpSegNavLot.X + 3
+            Y: =shpSegNavLot.Y + 3
+            ZIndex: =7
+
+        segLotesLot As button:
+            BorderThickness: =0
+            Color: =ThemeAccent
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =ThemeSurface
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: ="Lotes"
+            Width: =85
+            X: =segCapturaLot.X + segCapturaLot.Width + 3
+            Y: =segCapturaLot.Y
+            ZIndex: =8
+
+        btnChipUsuarioLot As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Height: =34
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =17
+            RadiusBottomRight: =17
+            RadiusTopLeft: =17
+            RadiusTopRight: =17
+            Size: =9
+            Text: =""
+            Width: =46 + 6.2 * Len(UsuarioNombre)
+            X: =1348 - Self.Width
+            Y: =11
+            ZIndex: =9
+
+        btnAvatarUsuarioLot As button:
+            BorderThickness: =0
+            Color: =ThemeAccent
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccentSoft
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            HoverFill: =ThemeAccentSoft
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =7.88
+            Text: =UsuarioIniciales
+            Width: =26
+            X: =btnChipUsuarioLot.X + 5
+            Y: =btnChipUsuarioLot.Y + 4
+            ZIndex: =10
+
+        lblUsuarioLot As label:
+            Color: =ThemeInk2
+            Height: =34
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.63
+            Text: =UsuarioNombre
+            Width: =btnChipUsuarioLot.Width - 47
+            Wrap: =false
+            X: =btnAvatarUsuarioLot.X + btnAvatarUsuarioLot.Width + 8
+            Y: =11
+            ZIndex: =11
+
+    FiltrosLot As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =76
+
+        tabVistaLot As modernTabList:
+            Height: =34
+            Items: =["Lotes", "Planillas"]
+            OnChange: |-
+                =UpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})
+            Width: =176
+            X: =18
+            Y: =68
+            ZIndex: =12
+
+        inpBuscarLot As text:
+            BorderColor: =ThemeLine
+            Clear: =true
+            Color: =ThemeInk
+            DelayOutput: =true
+            Fill: =ThemeSurface
+            Height: =32
+            HintText: =If(tabVistaLot.Selected.Value = "Lotes", "Buscar por lote o transportadora…", "Buscar por planilla o empresa…")
+            OnChange: |-
+                =UpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})
+            PaddingLeft: =28
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =9
+            X: =204
+            Y: =69
+            ZIndex: =13
+
+        icoBuscarLot As icon:
+            AccessibleLabel: ="Buscar"
+            Color: =ThemeInk3
+            DisplayMode: =DisplayMode.View
+            Height: =16
+            Icon: =Icon.Search
+            Width: =16
+            X: =214
+            Y: =77
+            ZIndex: =14
+
+        drpEstadoLot As dropdown:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            Default: ="Todos"
+            Fill: =ThemeSurface
+            Height: =32
+            Items: =["Todos", "En progreso", "Recibido", "En bóveda"]
+            OnChange: |-
+                =UpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})
+            Size: =9
+            Width: =150
+            X: =534
+            Y: =69
+            ZIndex: =15
+
+        dtpDesdeLot As modernDatePicker:
+            DefaultDate: =Today()
+            Format: =DatePickerFormat.Short
+            OnChange: |-
+                =UpdateContext(
+                    {
+                        ctxDesdeLot:   Coalesce(dtpDesdeLot.SelectedDate, Today()),
+                        ctxTulaSelLot: Defaults('CH-Tbl-Bags')
+                    }
+                )
+            Width: =150
+            X: =694
+            Y: =69
+            ZIndex: =16
+
+        lblRangoLot As label:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            Height: =32
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="—"
+            Width: =14
+            Wrap: =false
+            X: =850
+            Y: =69
+            ZIndex: =17
+
+        dtpHastaLot As modernDatePicker:
+            DefaultDate: =Today()
+            Format: =DatePickerFormat.Short
+            OnChange: |-
+                =UpdateContext(
+                    {
+                        ctxHastaLot:   DateAdd(Coalesce(dtpHastaLot.SelectedDate, Date(2099, 12, 31)), 1, TimeUnit.Days),
+                        ctxTulaSelLot: Defaults('CH-Tbl-Bags')
+                    }
+                )
+            Width: =150
+            X: =870
+            Y: =69
+            ZIndex: =18
+
+        icoLimpiarFechasLot As icon:
+            AccessibleLabel: ="Limpiar el rango de fechas"
+            Color: =ThemeInk3
+            Height: =16
+            Icon: =Icon.Cancel
+            OnSelect: |-
+                =Reset(dtpDesdeLot);
+                Reset(dtpHastaLot);
+                UpdateContext(
+                    {
+                        ctxDesdeLot:   Today(),
+                        ctxHastaLot:   Today(),
+                        ctxTulaSelLot: Defaults('CH-Tbl-Bags')
+                    }
+                )
+            Width: =16
+            X: =1030
+            Y: =77
+            ZIndex: =19
+
+        icoRefrescarLot As icon:
+            AccessibleLabel: ="Actualizar las listas"
+            Color: =ThemeInk2
+            Height: =20
+            Icon: =Icon.Reload
+            OnSelect: |-
+                =Refresh('CH-Tbl-ReceptionBatches');
+                Refresh('CH-Tbl-Receptions');
+                Refresh('CH-Tbl-Bags');
+                UpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})
+            Width: =20
+            X: =1058
+            Y: =75
+            ZIndex: =20
+
+    BaseGrillaLoteLot As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =76
+
+        btnCardListaLot As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Height: =638
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: =""
+            Width: =674
+            X: =18
+            Y: =114
+            ZIndex: =21
+
+        btnHeadListaLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Height: =30
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =9
+            Text: =""
+            Width: =672
+            X: =19
+            Y: =115
+            ZIndex: =22
+
+        lblHeadListaLotesLot As label:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="LOTE · TRANSPORTADORA · AUTOR"
+            Visible: =tabVistaLot.Selected.Value = "Lotes"
+            Width: =500
+            Wrap: =false
+            X: =32
+            Y: =115
+            ZIndex: =23
+
+        lblHeadListaPlanLot As label:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="PLANILLA · REMITENTE — LOTE · ESTADO"
+            Visible: =tabVistaLot.Selected.Value = "Planillas"
+            Width: =500
+            Wrap: =false
+            X: =32
+            Y: =115
+            ZIndex: =24
+
+        shpLineaHeadListaLot As rectangle:
+            Fill: =ThemeLine
+            Height: =1
+            Width: =674
+            X: =18
+            Y: =145
+            ZIndex: =25
+
+    BaseDetalleSelcGrillaPrinLot As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =76
+
+        btnCardDetLot As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Height: =638
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: =""
+            Width: =642
+            X: =706
+            Y: =114
+            ZIndex: =30
+
+        lblDetLoteTitLot As label:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10.13
+            Text: ="Lote " & galLotesLot.Selected.Name
+            Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+            Width: =380
+            Wrap: =false
+            X: =722
+            Y: =125
+            ZIndex: =31
+
+        lblDetLoteSubLot As label:
+            Color: =ThemeInk3
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: |-
+                =galLotesLot.Selected.Transportadora & "  ·  " &
+                Text(galLotesLot.Selected.'Created On', FmtFecha) & "  ·  " &
+                galLotesLot.Selected.'Created By'.'Full Name'
+            Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+            Width: =440
+            Wrap: =false
+            X: =722
+            Y: =144
+            ZIndex: =32
+
+        pilDetLoteLot As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =If(Self.Fill = ThemeLineSoft, 1, 0)
+            Color: |-
+                =Switch(
+                    galLotesLot.Selected.ReceptionStatus,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', ThemeInfo,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      ThemeOk,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   ThemeInk3,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       ThemeDanger,
+                    ThemeInk3
+                )
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =DisplayMode.View
+            Fill: |-
+                =Switch(
+                    galLotesLot.Selected.ReceptionStatus,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', ThemeInfoSoft,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      ThemeOkSoft,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   ThemeLineSoft,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       ThemeDangerSoft,
+                    ThemeLineSoft
+                )
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            HoverFill: =Self.Fill
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =7.88
+            Text: |-
+                =Switch(
+                    galLotesLot.Selected.ReceptionStatus,
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', "En progreso",
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido,      "Recibido",
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda',   "En bóveda",
+                    'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado,       "Anulado",
+                    "—"
+                )
+            Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+            Width: =14 + 6.2 * Len(Self.Text)
+            X: =1332 - Self.Width
+            Y: =132
+            ZIndex: =33
+
+        shpLineaDetLoteLot As rectangle:
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+            Width: =642
+            X: =706
+            Y: =170
+            ZIndex: =34
+
+        shpLineaOpsLoteLot As rectangle:
+            Fill: =ThemeLineSoft
+            Height: =1
+            Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+            Width: =642
+            X: =706
+            Y: =btnMoverBovedaLot.Y + btnMoverBovedaLot.Height + 10
+            ZIndex: =37
+
+    EncabezadoTulaSelecLot As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =76
+
+        lblDetPlanTitLot As label:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10.13
+            Text: ="Planilla " & galPlanillasLot.Selected.ReceiptID & " — " & galPlanillasLot.Selected.RemitentName
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =440
+            Wrap: =false
+            X: =722
+            Y: =125
+            ZIndex: =47
+
+        lblDetPlanSubLot As label:
+            Color: =ThemeInk3
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: |-
+                ="Lote " & galPlanillasLot.Selected.ReceptionBatch.Name &
+                "  ·  " & galPlanillasLot.Selected.ReceptionBatch.Transportadora
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =440
+            Wrap: =false
+            X: =722
+            Y: =144
+            ZIndex: =48
+
+        pilDetPlanLot As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =If(Self.Fill = ThemeLineSoft, 1, 0)
+            Color: |-
+                =Switch(galPlanillasLot.Selected.BatchStatus,
+                    159460000, ThemeInfo,
+                    159460001, ThemeOk,
+                    159460003, ThemeInk3,
+                    159460002, ThemeDanger,
+                    ThemeInk3)
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =DisplayMode.View
+            Fill: |-
+                =Switch(galPlanillasLot.Selected.BatchStatus,
+                    159460000, ThemeInfoSoft,
+                    159460001, ThemeOkSoft,
+                    159460003, ThemeLineSoft,
+                    159460002, ThemeDangerSoft,
+                    ThemeLineSoft)
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            HoverFill: =Self.Fill
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Self.Fill
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =7.88
+            Text: |-
+                =Switch(galPlanillasLot.Selected.BatchStatus,
+                    159460000, "En progreso",
+                    159460001, "Recibido",
+                    159460003, "En bóveda",
+                    159460002, "Anulado",
+                    "—")
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =14 + 6.2 * Len(Self.Text)
+            X: =1332 - Self.Width
+            Y: =132
+            ZIndex: =49
+
+        shpLineaDetPlanLot As rectangle:
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =642
+            X: =706
+            Y: =170
+            ZIndex: =50
+
+        btnBannerBovedaLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeWarnSoft
+            Height: =34
+            HoverFill: =ThemeWarnSoft
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeWarnSoft
+            RadiusBottomLeft: =9
+            RadiusBottomRight: =9
+            RadiusTopLeft: =9
+            RadiusTopRight: =9
+            Size: =9
+            Text: =""
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions') && galPlanillasLot.Selected.BatchStatus = 159460003
+            Width: =614
+            X: =720
+            Y: =179
+            ZIndex: =51
+
+        icoBannerBovedaLot As icon:
+            Color: =ThemeWarn
+            DisplayMode: =DisplayMode.View
+            Height: =16
+            Icon: =Icon.Lock
+            Visible: =btnBannerBovedaLot.Visible
+            Width: =16
+            X: =732
+            Y: =187
+            ZIndex: =52
+
+        lblBannerBovedaLot As label:
+            Color: =ThemeWarn
+            Height: =34
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.63
+            Text: |-
+                ="Lote en bóveda: toda operación genera una solicitud de aprobación al supervisor."
+            Visible: =btnBannerBovedaLot.Visible
+            Width: =566
+            Wrap: =false
+            X: =756
+            Y: =179
+            ZIndex: =53
+
+        btnAgregarTulaLot As button:
+            BorderColor: =ThemeAccent
+            BorderThickness: =1
+            Color: =ThemeAccent
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: |-
+                =If(
+                    // 1. Sin planilla seleccionada (por PK, nunca por registro)
+                    IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+                    // 2. Los lotes En progreso se editan en Captura (DL-20)
+                    || galPlanillasLot.Selected.BatchStatus = 159460000,
+                    DisplayMode.Disabled,
+                    DisplayMode.Edit
+                )
+            Fill: =ThemeSurface
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            HoverFill: =ThemeAccentSoft
+            OnSelect: |-
+                =If(
+                    !IsBlank(
+                        LookUp(
+                            'CH-Tbl-Bags',
+                            ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
+                            && BagID = Trim(inpTulaAgregarLot.Text)
+                        ).'CH-Tbl-Bags'
+                    ),
+                    Notify("La tula " & Trim(inpTulaAgregarLot.Text) & " ya existe en este lote.", NotificationType.Error),UpdateContext({ctxDlgAgregarLot: true}); Reset(inpTulaAgregarLot))
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =8.25
+            Text: ="Agregar tula"
+            Tooltip: |-
+                =If(
+                    galPlanillasLot.Selected.BatchStatus = 159460000,
+                    "Los lotes En progreso se editan en Captura",
+                    ""
+                )
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =118
+            X: =720
+            Y: |-
+                =If(
+                    btnBannerBovedaLot.Visible,
+                    btnBannerBovedaLot.Y + btnBannerBovedaLot.Height + 9,
+                    shpLineaDetPlanLot.Y + 11
+                )
+            ZIndex: =54
+
+        btnEditarPlanillaLot As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk2
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: |-
+                =If(
+                    IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+                    || galPlanillasLot.Selected.BatchStatus = 159460000,
+                    DisplayMode.Disabled,
+                    DisplayMode.Edit
+                )
+            Fill: =ThemeSurface
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            HoverFill: =ThemeSurface2
+            OnSelect: |-
+                =UpdateContext({ctxDlgEditarPlanillaLot: true}); Reset(inpPlanillaEditarLot)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =8.25
+            Text: ="Editar planilla"
+            Tooltip: |-
+                =If(
+                    galPlanillasLot.Selected.BatchStatus = 159460000,
+                    "Los lotes En progreso se editan en Captura",
+                    ""
+                )
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =108
+            X: =845
+            Y: =btnAgregarTulaLot.Y
+            ZIndex: =55
+
+        btnEditarTulaLot As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk2
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: |-
+                =If(
+                    // 1. Sin tula seleccionada (el centinela se lee por PK, nunca por registro)
+                    IsBlank(ctxTulaSelLot.'CH-Tbl-Bags')
+                    // 2. La tula no está en un estado operable
+                    || !(
+                        ctxTulaSelLot.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'
+                        || ctxTulaSelLot.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'
+                    )
+                    // 3. Los lotes En progreso se editan en Captura (DL-20)
+                    || galPlanillasLot.Selected.BatchStatus = 159460000,
+                    DisplayMode.Disabled,
+                    DisplayMode.Edit
+                )
+            Fill: =ThemeSurface
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            HoverFill: =ThemeSurface2
+            OnSelect: |-
+                =If(
+                    !IsBlank(
+                        LookUp(
+                            'CH-Tbl-Bags',
+                            ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
+                            && BagID = Trim(inpTulaAgregarLot.Text)
+                        ).'CH-Tbl-Bags'
+                    ),
+                    Notify("La tula " & Trim(inpTulaAgregarLot.Text) & " ya existe en este lote.", NotificationType.Error),UpdateContext({ctxDlgEditarTulaLot: true}); Reset(inpTulaEditarLot))
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =8.25
+            Text: ="Editar"
+            Tooltip: |-
+                =If(
+                    galPlanillasLot.Selected.BatchStatus = 159460000,
+                    "Los lotes En progreso se editan en Captura",
+                    "Seleccioná una tula"
+                )
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =72
+            X: =1080
+            Y: =btnAgregarTulaLot.Y
+            ZIndex: =56
+
+        btnRemapearTulaLot As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk2
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: |-
+                =If(
+                    IsBlank(ctxTulaSelLot.'CH-Tbl-Bags')
+                    || ctxTulaSelLot.ReceptionID.'CH-Tbl-Receptions' <> galPlanillasLot.Selected.'CH-Tbl-Receptions'
+                    || ctxTulaSelLot.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa'
+                    || galPlanillasLot.Selected.BatchStatus = 159460000
+                    || CountRows(galTulasLot.AllItems) <= 1,
+                    DisplayMode.Disabled,
+                    DisplayMode.Edit
+                )
+            Fill: =ThemeSurface
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            HoverFill: =ThemeSurface2
+            OnSelect: |-
+                =UpdateContext({ctxDlgRemapearLot: true}); Reset(cmbDestinoRemapearLot)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =8.25
+            Text: ="Remapear"
+            Tooltip: |-
+                =If(
+                    galPlanillasLot.Selected.BatchStatus = 159460000,
+                    "Los lotes En progreso se editan en Captura",
+                    "Seleccioná una tula"
+                ) & If(CountRows(galTulasLot.AllItems) <= 1, " No se puede: es la única tula de la planilla y quedaría vacía.", "")
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =88
+            X: =1159
+            Y: =btnAgregarTulaLot.Y
+            ZIndex: =57
+
+        btnEliminarTulaLot As button:
+            BorderColor: =ThemeDangerLine
+            BorderThickness: =1
+            Color: =ThemeDanger
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: |-
+                =If(
+                    IsBlank(ctxTulaSelLot.'CH-Tbl-Bags')
+                    || ctxTulaSelLot.ReceptionID.'CH-Tbl-Receptions' <> galPlanillasLot.Selected.'CH-Tbl-Receptions'
+                    || ctxTulaSelLot.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa'
+                    || galPlanillasLot.Selected.BatchStatus = 159460000
+                    || CountRows(galTulasLot.AllItems) <= 1,
+                    DisplayMode.Disabled,
+                    DisplayMode.Edit
+                )
+            Fill: =ThemeSurface
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            HoverFill: =ThemeDangerSoft
+            OnSelect: |-
+                =UpdateContext({ctxDlgEliminarLot: true})
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeDangerSoft
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =8.25
+            Text: ="Eliminar"
+            Tooltip: |-
+                =If(
+                    galPlanillasLot.Selected.BatchStatus = 159460000,
+                    "Los lotes En progreso se editan en Captura",
+                    "Seleccioná una tula"
+                )& If(CountRows(galTulasLot.AllItems) <= 1, " No se puede: es la única tula de la planilla y quedaría vacía.", "")
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =78
+            X: =1254
+            Y: =btnAgregarTulaLot.Y
+            ZIndex: =58
+
+        shpLineaOpsPlanLot As rectangle:
+            Fill: =ThemeLineSoft
+            Height: =1
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =642
+            X: =706
+            Y: =btnAgregarTulaLot.Y + btnAgregarTulaLot.Height + 10
+            ZIndex: =59
+
+        btnHeadTulasLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Height: =30
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =9
+            Text: =""
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =640
+            X: =707
+            Y: =shpLineaOpsPlanLot.Y + 1
+            ZIndex: =60
+
+        lblHeadTulaNumLot As label:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="N° TULA"
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =130
+            Wrap: =false
+            X: =722
+            Y: =btnHeadTulasLot.Y
+            ZIndex: =61
+
+        lblHeadTulaEstadoLot As label:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="ESTADO"
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =200
+            Wrap: =false
+            X: =860
+            Y: =btnHeadTulasLot.Y
+            ZIndex: =62
+
+        lblHeadTulaFechaLot As label:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="CREADA"
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =128
+            Wrap: =false
+            X: =1068
+            Y: =btnHeadTulasLot.Y
+            ZIndex: =63
+
+        lblHeadTulaAutorLot As label:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="POR"
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =128
+            Wrap: =false
+            X: =1204
+            Y: =btnHeadTulasLot.Y
+            ZIndex: =64
+
+        shpLineaHeadTulasLot As rectangle:
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabVistaLot.Selected.Value = "Planillas" && !IsBlank(galPlanillasLot.Selected.'CH-Tbl-Receptions')
+            Width: =642
+            X: =706
+            Y: =btnHeadTulasLot.Y + btnHeadTulasLot.Height
+            ZIndex: =65
+
+    EncabezadoDetalleLoteLot As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =76
+
+        btnHeadPlanLoteLot As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Height: =30
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =9
+            Text: =""
+            Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+            Width: =640
+            X: =707
+            Y: =shpLineaOpsLoteLot.Y + 1
+            ZIndex: =38
+
+        lblHeadPlanLoteNumLot As label:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="PLANILLA"
+            Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+            Width: =96
+            Wrap: =false
+            X: =722
+            Y: =btnHeadPlanLoteLot.Y
+            ZIndex: =39
+
+        lblHeadPlanLoteRemLot As label:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="REMITENTE"
+            Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+            Width: =246
+            Wrap: =false
+            X: =826
+            Y: =btnHeadPlanLoteLot.Y
+            ZIndex: =40
+
+        lblHeadPlanLoteNioLot As label:
+            Align: =Align.Right
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="TOTAL C$"
+            Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+            Width: =120
+            Wrap: =false
+            X: =1076
+            Y: =btnHeadPlanLoteLot.Y
+            ZIndex: =41
+
+        lblHeadPlanLoteUsdLot As label:
+            Align: =Align.Right
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="TOTAL US$"
+            Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+            Width: =126
+            Wrap: =false
+            X: =1206
+            Y: =btnHeadPlanLoteLot.Y
+            ZIndex: =42
+
+        shpLineaHeadPlanLoteLot As rectangle:
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabVistaLot.Selected.Value = "Lotes" && !IsBlank(galLotesLot.Selected.'CH-Tbl-ReceptionBatch')
+            Width: =642
+            X: =706
+            Y: =btnHeadPlanLoteLot.Y + btnHeadPlanLoteLot.Height
+            ZIndex: =43
+
