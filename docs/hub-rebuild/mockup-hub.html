@@ -1,0 +1,244 @@
+<meta charset="utf-8">
+<title>CashHub · Mockup CH-App-Hub</title>
+<style>
+  :root{
+    --accent:#C8102E; --accent-dark:#A40D26; --accent-soft:#FBEBED;
+    --bg:#F6F5F4; --surface:#FFFFFF; --surface2:#FAF8F7;
+    --ink:#201C1D; --ink2:#66595C; --ink3:#948A8C;
+    --line:#E2DCDD; --line-soft:#EDE8E9;
+    --ok:#0E7A3C; --ok-soft:#E2F2E8;
+    --info:#23557D; --info-soft:#E4EEF6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#DDD9D7;font-family:"Segoe UI",system-ui,sans-serif;color:var(--ink);padding:28px 16px 60px}
+  .wrap{max-width:1200px;margin:0 auto}
+  .caption{font-size:13px;color:#5c5254;margin:0 0 10px 4px;letter-spacing:.2px}
+  .caption b{color:#201C1D}
+
+  /* ====== marco de la app (1366x768 escalado) ====== */
+  .frame{background:var(--bg);border:1px solid #c9c3c1;border-radius:14px;overflow:hidden;
+         box-shadow:0 18px 44px rgba(32,28,29,.18);margin-bottom:38px}
+
+  /* ---- header ---- */
+  .hdr{height:62px;background:var(--surface);border-bottom:1px solid var(--line);
+       display:flex;align-items:center;padding:0 22px;gap:14px}
+  .brandTile{width:36px;height:36px;border-radius:9px;background:var(--accent);color:#fff;
+             display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700}
+  .brandTxt b{display:block;font-size:14.5px;font-weight:600;letter-spacing:.2px}
+  .brandTxt span{display:block;font-size:11px;color:var(--ink3);margin-top:1px}
+  .hdr .sep{flex:1}
+  .envPill{font-size:11px;color:var(--info);background:var(--info-soft);border-radius:999px;
+           padding:4px 12px;font-weight:600}
+  .userChip{display:flex;align-items:center;gap:10px;background:var(--surface2);
+            border:1px solid var(--line-soft);border-radius:999px;padding:5px 14px 5px 5px}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+          display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+  .userChip .who b{display:block;font-size:12px;font-weight:600;line-height:1.2}
+  .userChip .who span{display:block;font-size:10.5px;color:var(--ink3)}
+
+  /* ---- body ---- */
+  .body{padding:34px 46px 30px}
+  .greet h1{font-size:26px;font-weight:600;letter-spacing:-.2px}
+  .greet h1 em{font-style:normal;color:var(--accent)}
+  .greet p{font-size:13.5px;color:var(--ink2);margin-top:6px}
+  .accessNote{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:12px;
+              color:var(--ok);background:var(--ok-soft);border-radius:999px;padding:5px 14px;font-weight:600}
+  .accessNote svg{width:13px;height:13px}
+
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:28px}
+  @media(max-width:1050px){.grid{grid-template-columns:repeat(2,1fr)}}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:13px;
+        padding:20px 20px 16px;display:flex;flex-direction:column;min-height:172px;
+        transition:border-color .15s, transform .15s, box-shadow .15s;cursor:pointer;position:relative}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 10px 24px rgba(200,16,46,.10)}
+  .glyph{width:44px;height:44px;border-radius:11px;background:var(--accent-soft);color:var(--accent);
+         display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .glyph svg{width:23px;height:23px}
+  .card h3{font-size:15px;font-weight:600;margin-bottom:5px}
+  .card p{font-size:12px;color:var(--ink2);line-height:1.45;flex:1}
+  .card .open{display:flex;align-items:center;justify-content:space-between;margin-top:14px;
+              padding-top:12px;border-top:1px solid var(--line-soft)}
+  .card .open span{font-size:12px;font-weight:600;color:var(--accent)}
+  .card .open i{font-style:normal;color:var(--ink3);font-size:12px;transition:transform .15s}
+  .card:hover .open i{transform:translateX(3px);color:var(--accent)}
+  /* tarjeta en hover permanente para el mockup */
+  .card.demoHover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 10px 24px rgba(200,16,46,.10)}
+
+  .ftr{display:flex;align-items:center;justify-content:space-between;padding:14px 46px;
+       border-top:1px solid var(--line-soft);background:var(--surface2)}
+  .ftr span{font-size:11px;color:var(--ink3)}
+
+  /* ====== estados secundarios ====== */
+  .statesRow{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:38px}
+  @media(max-width:900px){.statesRow{grid-template-columns:1fr}}
+  .mini{background:var(--bg);border:1px solid #c9c3c1;border-radius:12px;overflow:hidden;
+        box-shadow:0 10px 26px rgba(32,28,29,.12)}
+  .mini .mbody{padding:22px 26px 24px}
+  .mini h4{font-size:13px;font-weight:600;color:var(--ink2);padding:10px 26px;border-bottom:1px solid var(--line);
+           background:var(--surface)}
+  .miniGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  .miniCard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px;min-height:86px}
+  .miniCard .glyph{width:30px;height:30px;border-radius:8px;margin-bottom:8px}
+  .miniCard .glyph svg{width:16px;height:16px}
+  .miniCard b{font-size:11.5px;font-weight:600;display:block}
+  .sk{background:linear-gradient(90deg,var(--line-soft) 25%,#f4f0f0 50%,var(--line-soft) 75%);
+      background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .mini .greetSm{font-size:15px;font-weight:600}
+  .mini .greetSub{font-size:11.5px;color:var(--ink2);margin-top:3px}
+  .limNote{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;
+           color:var(--info);background:var(--info-soft);border-radius:999px;padding:4px 11px;font-weight:600}
+
+  /* ====== notas de diseño ====== */
+  .notes{background:#fff;border:1px solid #d8d2d0;border-radius:12px;padding:24px 28px}
+  .notes h2{font-size:15px;margin-bottom:14px}
+  .notes h2::before{content:"◆ ";color:var(--accent)}
+  .notes ul{list-style:none}
+  .notes li{font-size:13px;color:#40383a;line-height:1.55;padding:7px 0 7px 22px;position:relative;
+            border-bottom:1px dashed var(--line-soft)}
+  .notes li:last-child{border-bottom:none}
+  .notes li::before{content:"→";position:absolute;left:2px;color:var(--accent);font-weight:700}
+  .notes b{color:var(--ink)}
+</style>
+
+<div class="wrap">
+
+  <p class="caption"><b>CH-App-Hub · rediseño</b> — pantalla única (1366 × 768) · paleta corporativa rojo BAC sobre neutros cálidos (familia Tracker)</p>
+
+  <!-- ============ PANTALLA PRINCIPAL ============ -->
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">₵</div>
+      <div class="brandTxt"><b>CashHub</b><span>Portal de operaciones</span></div>
+      <div class="sep"></div>
+      <div class="envPill">Producción</div>
+      <div class="userChip">
+        <div class="avatar">RG</div>
+        <div class="who"><b>Randy García</b><span>randyekg@bac.cr</span></div>
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="greet">
+        <h1>Buenas tardes, <em>Randy</em></h1>
+        <p>viernes 15 de agosto · Estas son tus aplicaciones de tesorería.</p>
+      </div>
+      <div class="accessNote">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        Tenés acceso a 7 de 7 aplicaciones según tus grupos
+      </div>
+
+      <div class="grid">
+
+        <div class="card">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></div>
+          <h3>Recepción</h3>
+          <p>Recepción de tulas en esclusa y bóveda</p>
+          <div class="open"><span>Abrir aplicación</span><i>→</i></div>
+        </div>
+
+        <div class="card demoHover">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg></div>
+          <h3>Supervisor</h3>
+          <p>Aprobaciones y supervisión de recuento</p>
+          <div class="open"><span>Abrir aplicación</span><i>→</i></div>
+        </div>
+
+        <div class="card">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></svg></div>
+          <h3>Recuento</h3>
+          <p>Recuento de tulas por cajero</p>
+          <div class="open"><span>Abrir aplicación</span><i>→</i></div>
+        </div>
+
+        <div class="card">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"/></svg></div>
+          <h3>Digitación</h3>
+          <p>Lotes de transacciones y carga masiva IBS</p>
+          <div class="open"><span>Abrir aplicación</span><i>→</i></div>
+        </div>
+
+        <div class="card">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div>
+          <h3>Ingesta de correos</h3>
+          <p>Monitoreo de pre-registros y correos trabados</p>
+          <div class="open"><span>Abrir aplicación</span><i>→</i></div>
+        </div>
+
+        <div class="card">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></div>
+          <h3>Trazabilidad</h3>
+          <p>Seguimiento de depósitos y tulas</p>
+          <div class="open"><span>Abrir aplicación</span><i>→</i></div>
+        </div>
+
+        <div class="card">
+          <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div>
+          <h3>Admin. de clientes</h3>
+          <p>Altas y cambios de datos de clientes (RFC)</p>
+          <div class="open"><span>Abrir aplicación</span><i>→</i></div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="ftr">
+      <span>CashHub · CH-App-Hub v2.0</span>
+      <span>Los accesos se administran por grupos de Azure AD · ¿Te falta una app? Contactá a tu supervisor</span>
+    </div>
+  </div>
+
+  <!-- ============ ESTADOS SECUNDARIOS ============ -->
+  <p class="caption"><b>Estados secundarios</b> — mismos tokens, sin pantallas extra</p>
+  <div class="statesRow">
+
+    <div class="mini">
+      <h4>Estado: accesos limitados (usuario cajero — 2 grupos)</h4>
+      <div class="mbody">
+        <div class="greetSm">Buenas tardes, María</div>
+        <div class="greetSub">Estas son tus aplicaciones de tesorería.</div>
+        <div class="limNote">Tenés acceso a 2 de 7 aplicaciones según tus grupos</div>
+        <div class="miniGrid">
+          <div class="miniCard">
+            <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/></svg></div>
+            <b>Recuento</b>
+          </div>
+          <div class="miniCard">
+            <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></div>
+            <b>Trazabilidad</b>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini">
+      <h4>Estado: cargando accesos (mientras corre la validación AAD)</h4>
+      <div class="mbody">
+        <div class="greetSm">Buenas tardes, Randy</div>
+        <div class="greetSub">Verificando tus accesos…</div>
+        <div class="miniGrid" style="margin-top:18px">
+          <div class="miniCard"><div class="sk" style="width:30px;height:30px;margin-bottom:8px"></div><div class="sk" style="width:70%;height:10px"></div></div>
+          <div class="miniCard"><div class="sk" style="width:30px;height:30px;margin-bottom:8px"></div><div class="sk" style="width:55%;height:10px"></div></div>
+          <div class="miniCard"><div class="sk" style="width:30px;height:30px;margin-bottom:8px"></div><div class="sk" style="width:65%;height:10px"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ NOTAS ============ -->
+  <div class="notes">
+    <h2>Decisiones del rediseño (vs. app actual)</h2>
+    <ul>
+      <li><b>Se arregla el bug del filtro AAD:</b> hoy <code>Gallery1</code> consume la tabla completa e ignora <code>colAppData</code>. La galería nueva consume la colección filtrada por membresía — el launcher por fin respeta los grupos.</li>
+      <li><b>Mueren los contadores falsos:</b> el SVG hardcodeado ("Procesadas: 128", luces de estado) se elimina. En su lugar, un dato honesto y barato: cuántas apps ves según tus accesos.</li>
+      <li><b>Identidad corporativa:</b> rojo BAC <b>#C8102E</b> + neutros cálidos de la familia Tracker. Cada app conserva su glifo propio; el color unifica.</li>
+      <li><b>Saludo contextual:</b> "Buenos días / Buenas tardes" según hora + nombre del usuario (ya disponible en <code>User()</code>, costo cero).</li>
+      <li><b>Sigue siendo una sola pantalla:</b> tarjetas con <code>Launch(AppURL, {}, LaunchTarget.Replace)</code>, igual que hoy. Sin navegación interna.</li>
+      <li><b>Estado de carga real:</b> skeleton mientras corre <code>Office365Groups.ListGroupMembers</code> en <code>OnStart</code>, para que no parpadee la lista completa antes de filtrar.</li>
+      <li><b>Todo construible con controles clásicos:</b> tarjetas planas con borde 1px, radios 8–13, píldoras y glifos — la sombra del hover es la única pérdida aceptada al pasar a canvas.</li>
+    </ul>
+  </div>
+
+</div>
