@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Registra el espejo de nombre de cliente en la sucursal (idempotente):
+#   1. pluginassembly  CashHub.Plugins (re-sube el DLL con el tipo nuevo dentro)
+#   2. plugintype      CashHub.Plugins.ClientBranchNameMirrorPlugin
+#   3. pasos SINCRONOS:
+#        Pre-operation (20) Create de sanic_chtblclientbranch: estampa el espejo.
+#        Pre-operation (20) Update de sanic_chtblclientbranch (filtrado en
+#          sanic_client): re-estampa al re-colgar la sucursal de otro cliente.
+#
+# El espejo (sanic_clientnamemirror, texto 850) existe para que el combo de
+# sucursales de CH-App-Reception v2 muestre y busque por nombre de CLIENTE con
+# StartsWith DELEGADO, sin navegar la relacion.
+#
+# NO hay paso de cascada por rename del cliente: es una limitacion CONOCIDA,
+# documentada en el header de ClientBranchNameMirrorPlugin y cubierta por
+# scripts/backfill-clientbranch-mirror.py (re-ejecutable, idempotente).
+#
+# Requiere pp_secrets.env y el assembly compilado en Release.
+# Uso: ./scripts/register-clientbranch-mirror.sh
+# =============================================================================
+set -euo pipefail
+source "${ENV_FILE:-pp_secrets.env}"
+DATAVERSE_URL="${DATAVERSE_URL%$'\r'}"; DATAVERSE_URL="${DATAVERSE_URL%/}"
+PP_TENANT_ID="${PP_TENANT_ID%$'\r'}"; PP_CLIENT_ID="${PP_CLIENT_ID%$'\r'}"; PP_CLIENT_SECRET="${PP_CLIENT_SECRET%$'\r'}"
+
+ASSEMBLY="src/backend/CashHub.Plugins/bin/Release/net462/CashHub.Plugins.dll"
+[ -f "$ASSEMBLY" ] || { echo "Falta $ASSEMBLY — compilar primero (dotnet build -c Release)"; exit 1; }
+
+TOKEN=$(curl -sf -X POST "https://login.microsoftonline.com/${PP_TENANT_ID}/oauth2/v2.0/token" \
+  -d "grant_type=client_credentials&client_id=${PP_CLIENT_ID}&client_secret=${PP_CLIENT_SECRET}&scope=${DATAVERSE_URL}/.default" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+export TOKEN DATAVERSE_URL ASSEMBLY
+
+python3 - <<'PYEOF'
+import base64, json, os, subprocess, urllib.parse
+
+API = os.environ['DATAVERSE_URL'] + '/api/data/v9.2'
+H = ['-H', f"Authorization: Bearer {os.environ['TOKEN']}", '-H', 'Content-Type: application/json',
+     '-H', 'Prefer: return=representation']
+
+def req(method, path, body=None):
+    cmd = ['curl', '-s', *H, '-X', method, API + path]
+    tmp = None
+    if body is not None:
+        import tempfile
+        tmp = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False, encoding='utf-8')
+        json.dump(body, tmp); tmp.close()
+        cmd += ['--data-binary', '@' + tmp.name]
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True).stdout
+    finally:
+        if tmp:
+            os.unlink(tmp.name)
+    d = json.loads(out) if out.strip() else {}
+    if 'error' in d:
+        raise RuntimeError(f"{method} {path}: {d['error'].get('message','')[:300]}")
+    return d
+
+def find(path):
+    return req('GET', path).get('value', [])
+
+def one(entityset, filter_expr, select):
+    rows = find(f"/{entityset}?$select={select}&$filter={urllib.parse.quote(filter_expr)}")
+    if not rows:
+        raise RuntimeError(f"No se encontro {entityset} con filtro: {filter_expr}")
+    return rows[0][select]
+
+def upsert(entityset, filter_expr, body, label, select_id):
+    rows = find(f"/{entityset}?$select={select_id}&$filter={urllib.parse.quote(filter_expr)}")
+    if rows:
+        req('PATCH', f"/{entityset}({rows[0][select_id]})", body)
+        print(f"  actualizado: {label}")
+        return rows[0][select_id]
+    created = req('POST', f"/{entityset}", body)
+    print(f"  creado: {label}")
+    return created[select_id]
+
+content = base64.b64encode(open(os.environ['ASSEMBLY'], 'rb').read()).decode()
+
+asm_id = upsert('pluginassemblies', "name eq 'CashHub.Plugins'", {
+    'name': 'CashHub.Plugins', 'content': content,
+    'isolationmode': 2, 'sourcetype': 0,
+}, 'pluginassembly CashHub.Plugins', 'pluginassemblyid')
+
+type_id = upsert('plugintypes', "typename eq 'CashHub.Plugins.ClientBranchNameMirrorPlugin'", {
+    'typename': 'CashHub.Plugins.ClientBranchNameMirrorPlugin',
+    'friendlyname': 'CashHub Client Branch Name Mirror',
+    'name': 'CashHub.Plugins.ClientBranchNameMirrorPlugin',
+    'pluginassemblyid@odata.bind': f"/pluginassemblies({asm_id})",
+}, 'plugintype ClientBranchNameMirrorPlugin', 'plugintypeid')
+
+msg = {m: one('sdkmessages', f"name eq '{m}'", 'sdkmessageid') for m in ('Create', 'Update')}
+
+ENTITY = 'sanic_chtblclientbranch'
+# (mensaje, stage, filteringattributes, descripcion)
+STEPS = [
+    ('Create', 20, None,
+     'Estampa sanic_clientnamemirror con el nombre del cliente de la sucursal.'),
+    ('Update', 20, 'sanic_client',
+     'Re-estampa sanic_clientnamemirror al re-colgar la sucursal de otro cliente.'),
+]
+
+for message, stage, filtering, description in STEPS:
+    flt = one('sdkmessagefilters',
+        f"primaryobjecttypecode eq '{ENTITY}' and _sdkmessageid_value eq {msg[message]}",
+        'sdkmessagefilterid')
+    name = f"CashHub.ClientBranchNameMirror: {message} de {ENTITY}"
+    body = {
+        'name': name,
+        'description': description,
+        'plugintypeid@odata.bind': f"/plugintypes({type_id})",
+        'sdkmessageid@odata.bind': f"/sdkmessages({msg[message]})",
+        'sdkmessagefilterid@odata.bind': f"/sdkmessagefilters({flt})",
+        'stage': stage, 'mode': 0, 'rank': 10, 'supporteddeployment': 0,
+        'asyncautodelete': False, 'invocationsource': 0,
+    }
+    if filtering:
+        body['filteringattributes'] = filtering
+    upsert('sdkmessageprocessingsteps', f"name eq '{name}'", body, name,
+           'sdkmessageprocessingstepid')
+
+print("Registro del espejo de nombre de cliente completo.")
+PYEOF
