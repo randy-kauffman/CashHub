@@ -1,0 +1,1645 @@
+<meta charset="utf-8">
+<title>CashHub · Mockup CH-App-Recounting v2</title>
+<style>
+  :root{
+    --accent:#C8102E; --accent-dark:#A40D26; --accent-soft:#FBEBED;
+    --bg:#F6F5F4; --surface:#FFFFFF; --surface2:#FAF8F7;
+    --ink:#201C1D; --ink2:#66595C; --ink3:#948A8C;
+    --line:#E2DCDD; --line-soft:#EDE8E9;
+    --ok:#0E7A3C; --ok-soft:#E2F2E8;
+    --info:#23557D; --info-soft:#E4EEF6;
+    --warn:#9A5B00; --warn-soft:#FBF0DC;
+    --danger:#B3261E; --danger-soft:#FCEAE8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#DDD9D7;font-family:"Open Sans","Segoe UI",system-ui,sans-serif;color:var(--ink);
+       padding:24px 14px 70px}
+  .wrap{width:1366px;margin:0 auto}
+  button{font-family:inherit;cursor:default}
+  input,select{font-family:inherit;color:var(--ink)}
+
+  /* ---- chrome del documento ---- */
+  .docHead{background:#fff;border:1px solid #d8d2d0;border-radius:12px;padding:22px 28px}
+  .docHead h1{font-size:19px;margin-bottom:6px}
+  .docHead p{font-size:13px;color:#5c5254;line-height:1.6;max-width:900px}
+  .idx{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .idx a{font-size:11.5px;text-decoration:none;color:var(--ink2);background:var(--surface2);
+         border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+  .idx a b{color:var(--accent)}
+  .viewHead{margin:34px 0 10px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .vId{background:var(--accent);color:#fff;border-radius:7px;font-size:11px;font-weight:700;
+       padding:4px 10px;letter-spacing:.5px;flex:0 0 auto}
+  .viewHead h2{font-size:16px}
+  .viewHead p{font-size:12.5px;color:#5c5254;flex-basis:100%;line-height:1.5}
+  .notes{background:#fff;border:1px solid #d8d2d0;border-radius:12px;padding:22px 28px;margin-top:34px}
+  .notes h2{font-size:16px;margin-bottom:10px}
+  .notes li{font-size:13px;color:#4a4143;margin:7px 0 7px 18px;line-height:1.55}
+
+  /* ---- marco de la app (1366 x 768) ---- */
+  .frame{background:var(--bg);border:1px solid #c9c3c1;border-radius:14px;overflow:hidden;
+         box-shadow:0 12px 30px rgba(40,30,32,.16);display:flex;flex-direction:column;
+         width:1366px;height:768px;position:relative}
+
+  /* ---- header ---- */
+  .hdr{height:60px;background:var(--surface);border-bottom:1px solid var(--line);flex:0 0 auto;
+       display:flex;align-items:center;gap:14px;padding:0 20px}
+  .brandTile{width:34px;height:34px;border-radius:9px;background:var(--accent);color:#fff;
+             display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:0 0 auto}
+  .hTitle{font-size:14px;font-weight:600;line-height:1.15}
+  .hTitle small{display:block;font-size:11px;color:var(--ink3);font-weight:400}
+  .spacer{flex:1}
+  .backBtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--surface);
+           color:var(--ink2);font-size:15px;flex:0 0 auto}
+  .hBig{font-size:19px;font-weight:700;letter-spacing:.3px;line-height:1.1}
+  .hMeta{font-size:11.5px;color:var(--ink2);margin-top:3px;display:flex;align-items:center;gap:8px}
+  .mesaChip{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--line);
+            border-radius:999px;padding:5px 14px;font-size:12px;color:var(--ink2)}
+  .mesaChip b{color:var(--ink)}
+  .userChip{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--line);
+            border-radius:999px;padding:4px 12px 4px 5px;font-size:11.5px;color:var(--ink2);white-space:nowrap}
+  .avatar{width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+          display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex:0 0 auto}
+
+  /* ---- atomos compartidos con Reception ---- */
+  .pill{font-size:10.5px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap;display:inline-block}
+  .pInfo{color:var(--info);background:var(--info-soft)} .pOk{color:var(--ok);background:var(--ok-soft)}
+  .pWarn{color:var(--warn);background:var(--warn-soft)} .pMuted{color:var(--ink3);background:var(--line-soft)}
+  .pDanger{color:var(--danger);background:var(--danger-soft)}
+  .btn{font-size:12px;font-weight:600;border-radius:8px;padding:9px 18px;border:1px solid transparent;white-space:nowrap}
+  .btnPrimary{background:var(--accent);color:#fff}
+  .btnOutline{background:var(--surface);color:var(--accent);border-color:var(--accent)}
+  .btnGhost{background:transparent;color:var(--ink2);border-color:var(--line)}
+  .btnDanger{background:var(--danger);color:#fff}
+  .btn:disabled,.btnSm:disabled{background:var(--line-soft);color:var(--ink3);border-color:transparent}
+  .btnSm{font-size:11px;font-weight:600;border-radius:7px;padding:6px 11px;border:1px solid var(--line);
+         background:var(--surface);color:var(--ink2)}
+  .btnSmAcc{color:var(--accent);border-color:var(--accent)}
+  .btnSmDan{color:var(--danger);border-color:#E7B9B5}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:13px;display:flex;
+        flex-direction:column;min-height:0;overflow:hidden}
+  .scrollY{overflow-y:auto;flex:1;min-height:0}
+  .meta{font-size:12px;color:var(--ink2)} .meta b{color:var(--ink)}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .in{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;background:#fff}
+  .cin{border:1px solid var(--line);border-radius:7px;padding:5px 8px;background:#fff;font-size:12px;width:100%;min-height:28px}
+  .banner{display:flex;gap:9px;font-size:12px;border-radius:9px;padding:9px 13px;line-height:1.45;align-items:flex-start}
+  .bInfo{background:var(--info-soft);color:var(--info)} .bWarn{background:var(--warn-soft);color:var(--warn)}
+  .bDanger{background:var(--danger-soft);color:var(--danger)} .bOk{background:var(--ok-soft);color:var(--ok)}
+  .emptyMsg{padding:38px 30px;text-align:center;color:var(--ink3);font-size:12.5px;line-height:1.6}
+  .emptyMsg .big{font-size:26px;display:block;margin-bottom:8px;color:var(--line)}
+  .listHead{background:var(--surface2);font-size:10.5px;font-weight:600;text-transform:uppercase;
+            letter-spacing:.5px;color:var(--ink2);padding:9px 16px;border-bottom:1px solid var(--line)}
+  .iBtn{background:none;border:none;color:var(--ink3);font-size:13px;text-align:center;border-radius:6px;padding:3px 6px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;font-size:12px}
+  .kv dt{color:var(--ink3)} .kv dd{font-weight:600}
+  .body2{flex:1;display:flex;gap:14px;padding:12px 18px 16px;min-height:0}
+
+  /* ---- overlay / dialogos (patron Reception) ---- */
+  .ovl{position:absolute;inset:0;background:rgba(40,30,32,.45);display:flex;align-items:center;
+       justify-content:center;z-index:20;padding:26px;gap:14px}
+  .dlg{background:var(--surface);border-radius:13px;box-shadow:0 18px 40px rgba(30,20,22,.35);width:100%;
+       max-width:400px;max-height:100%;display:flex;flex-direction:column}
+  .dlgWide{max-width:560px} .dlgNarrow{max-width:330px}
+  .dlgH{padding:17px 22px 4px;display:flex;align-items:flex-start;gap:10px}
+  .dlgH h3{font-size:14.5px;flex:1;line-height:1.3}
+  .dlgH p{font-size:12px;color:var(--ink2);margin-top:4px;line-height:1.45}
+  .dlgX{background:none;border:none;color:var(--ink3);font-size:15px;border-radius:6px;padding:2px 7px}
+  .dlgB{padding:13px 22px 4px;display:flex;flex-direction:column;gap:11px;overflow-y:auto}
+  .dlgB p{font-size:12px;color:var(--ink2);line-height:1.5}
+  .dlgF{display:flex;justify-content:flex-end;gap:8px;padding:15px 22px 19px}
+  .field label{display:block;font-size:11px;font-weight:600;color:var(--ink2);margin-bottom:5px}
+  .dlgIcon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+           font-size:16px;flex:0 0 auto}
+  .icOk{background:var(--ok-soft);color:var(--ok)} .icWarn{background:var(--warn-soft);color:var(--warn)}
+  .icDanger{background:var(--danger-soft);color:var(--danger)} .icInfo{background:var(--info-soft);color:var(--info)}
+
+  /* ---- tarjetas de desambiguacion ---- */
+  .pickCard{border:1px solid var(--line);border-radius:11px;padding:11px 14px;background:var(--surface);
+            text-align:left;width:100%;display:flex;align-items:center;gap:12px}
+  .pickCard .m{flex:1;min-width:0}
+  .pickCard b{font-size:13px;display:block}
+  .pickCard small{font-size:11px;color:var(--ink3);display:block;margin-top:2px;line-height:1.45}
+  .pickSel{border-color:var(--accent);background:var(--accent-soft)}
+  .pickOff{background:var(--surface2);border-style:dashed;color:var(--ink3)}
+  .pickOff b{color:var(--ink3)}
+  .pickAmt{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .pickAmt small{display:block;font-size:11px;font-weight:400;color:var(--ink3)}
+
+  /* ---- scrSesion ---- */
+  .sesWrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
+  .sesCard{background:var(--surface);border:1px solid var(--line);border-radius:14px;width:430px;
+           padding:28px 30px 26px;display:flex;flex-direction:column;gap:15px;align-items:stretch}
+  .sesBrand{display:flex;flex-direction:column;align-items:center;gap:9px;margin-bottom:2px}
+  .sesBrand .tile{width:52px;height:52px;border-radius:14px;background:var(--accent);color:#fff;display:flex;
+                  align-items:center;justify-content:center;font-size:22px;font-weight:700}
+  .sesBrand h2{font-size:17px;text-align:center}
+  .sesBrand small{font-size:12px;color:var(--ink3);text-align:center}
+  .note{font-size:11px;color:var(--ink3);line-height:1.5}
+  .spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);
+        animation:sp .9s linear infinite;flex:0 0 auto}
+  .spinSm{width:20px;height:20px;border-width:2.5px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){.spin{animation:none}}
+  .waitRow{display:flex;align-items:center;gap:14px;background:var(--surface2);border:1px solid var(--line);
+           border-radius:11px;padding:14px 16px}
+  .waitRow b{font-size:13px;display:block} .waitRow small{font-size:11.5px;color:var(--ink3)}
+
+  /* ---- scrTulas: rail ---- */
+  .rail{width:250px;flex:0 0 auto;background:var(--surface);border-right:1px solid var(--line);
+        display:flex;flex-direction:column;padding:14px 12px;gap:9px}
+  .railBrand{display:flex;align-items:center;gap:10px;padding:0 4px 10px;border-bottom:1px solid var(--line-soft)}
+  .railFoot{border-top:1px solid var(--line-soft);padding:9px 4px 0;font-size:11px;color:var(--ink3);line-height:1.6}
+  .railFoot b{color:var(--ink2)}
+  .railLab{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);padding:4px 4px 0}
+  .kpi{background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:9px 12px 10px}
+  .kpi .cur{font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;
+            display:flex;justify-content:space-between;align-items:center}
+  .kpi .lin{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink2);padding:2px 0}
+  .kpi .lin b{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+  .kpi .tot{border-top:1px solid var(--line);margin-top:5px;padding-top:5px;display:flex;
+            justify-content:space-between;align-items:baseline}
+  .kpi .tot span{font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+  .kpi .tot b{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+
+  /* ---- scrTulas: cuerpo ---- */
+  .tulaBody{flex:1;display:flex;flex-direction:column;gap:12px;padding:16px 20px 18px;min-height:0}
+  .scan{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:16px 18px;
+        display:flex;flex-direction:column;gap:10px}
+  .scan h3{font-size:13.5px}
+  .scanRow{display:flex;gap:10px;align-items:center}
+  .scanIn{flex:1;display:flex;align-items:center;gap:10px;border:2px solid var(--accent);border-radius:9px;
+          padding:11px 14px;background:#fff}
+  .scanIn .mag{font-size:17px;color:var(--ink3);line-height:1}
+  .scanIn input{border:none;outline:none;font-size:16px;flex:1;letter-spacing:1px;font-weight:600}
+  .scanIn input::placeholder{color:var(--ink3);font-weight:400;letter-spacing:.3px}
+  .tuHead,.tuRow{display:grid;grid-template-columns:150px 140px 1fr 110px 190px 26px;align-items:center;
+                 gap:10px;padding:11px 16px;font-size:12.5px}
+  .tuRow{border-bottom:1px solid var(--line-soft);background:none;border-left:none;border-right:none;
+         border-top:none;text-align:left;width:100%}
+  .tuRow b{font-size:13px;font-variant-numeric:tabular-nums}
+  .tuRow .cli{color:var(--ink2)} .tuRow .hr{color:var(--ink3);font-size:11.5px}
+  .tuRow .chev{color:var(--ink3);text-align:center;font-size:14px}
+  .tuSel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+
+  /* ---- scrConteo: franja de matrices ---- */
+  .matStrip{display:flex;gap:12px;padding:12px 18px 0;flex:0 0 auto}
+  .mat{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:8px 14px;flex:1}
+  .mat h5{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:700;
+          display:flex;align-items:center;gap:7px;margin-bottom:4px}
+  .mat h5 em{font-style:normal;color:var(--ink);font-size:11px}
+  .matT{width:100%;border-collapse:collapse;font-size:12px}
+  .matT th{font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);font-weight:600;
+           text-align:right;padding:0 0 4px;border-bottom:1px solid var(--line-soft)}
+  .matT th:first-child{text-align:left}
+  .matT td{padding:2px 0;text-align:right;font-variant-numeric:tabular-nums}
+  .matT td:first-child{text-align:left;color:var(--ink2);font-size:11px}
+  .matT tr.dif td{font-weight:700;border-top:1px solid var(--line-soft);padding-top:4px}
+  .gOk{color:var(--ok)} .gBad{color:var(--danger)}
+
+  /* ---- TabList moderno ---- */
+  .tabl{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 10px;background:var(--surface);flex:0 0 auto}
+  .tabl button{background:none;border:none;font-size:12.5px;font-weight:600;color:var(--ink2);
+               padding:9px 14px 8px;position:relative}
+  .tabl button.on{color:var(--accent)}
+  .tabl button.on:after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;
+                        background:var(--accent);border-radius:2px 2px 0 0}
+  .panelH{display:flex;align-items:center;gap:10px;padding:9px 16px 8px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .panelH h4{font-size:13px} .panelH small{font-size:11px;color:var(--ink3)}
+  .ops{display:flex;gap:7px;padding:7px 14px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap;
+       align-items:center;flex:0 0 auto}
+
+  /* ---- tabla de depositos ---- */
+  .dpHead,.dpRow{display:grid;grid-template-columns:1.25fr 62px 52px 1fr 1.05fr 1.05fr 96px;align-items:center;
+                 gap:8px;padding:8px 16px;font-size:12px}
+  .dpRow{border-bottom:1px solid var(--line-soft);background:none;border-left:none;border-right:none;
+         border-top:none;text-align:left;width:100%}
+  .dpSel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+  .dpFoot{display:grid;grid-template-columns:1.25fr 62px 52px 1fr 1.05fr 1.05fr 96px;gap:8px;padding:9px 16px;
+          font-size:11.5px;font-weight:700;background:var(--surface2);border-top:1px solid var(--line)}
+  .dpFoot span{white-space:nowrap}
+  .thead{background:var(--surface2);color:var(--ink2);font-size:10px;font-weight:700;text-transform:uppercase;
+         letter-spacing:.5px;border-bottom:1px solid var(--line)}
+  .lnkOk{font-size:10.5px;font-weight:600;color:var(--ok);background:var(--ok-soft);border-radius:999px;
+         padding:3px 9px;display:inline-block}
+  .lnkNo{font-size:10.5px;font-weight:600;color:var(--ink3);background:var(--line-soft);border-radius:999px;
+         padding:3px 9px;display:inline-block}
+
+  /* ---- panel derecho: deposito en curso ---- */
+  .depMat{padding:7px 16px 8px;border-bottom:1px solid var(--line-soft);background:var(--surface2);flex:0 0 auto}
+  .curRow{display:flex;align-items:center;gap:9px;padding:8px 16px;border-bottom:1px solid var(--line-soft);flex:0 0 auto}
+  .curRow label{font-size:11px;font-weight:600;color:var(--ink2)}
+  .denHead,.denRow,.denFoot{display:grid;grid-template-columns:1.15fr 74px 104px 1.25fr;gap:10px;
+                            align-items:center;padding:4px 18px;font-size:12px}
+  .denRow{border-bottom:1px solid var(--line-soft)}
+  .denRow .den{text-align:right;font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums}
+  .denRow .tot{text-align:right;font-size:13px;font-variant-numeric:tabular-nums;font-weight:600}
+  .autoB{display:block;text-align:center;background:var(--line-soft);color:var(--ink2);border-radius:6px;
+         padding:4px 0;font-size:11.5px;font-variant-numeric:tabular-nums}
+  .autoB.z{color:var(--ink3)}
+  .qin{border:1px solid var(--line);border-radius:7px;padding:5px 9px;text-align:right;font-size:13.5px;
+       width:100%;font-variant-numeric:tabular-nums;background:#fff;font-weight:600}
+  .qin.foc{border:2px solid var(--accent);padding:4px 8px}
+  .denFoot{background:var(--surface2);border-top:1px solid var(--line);font-weight:700;font-size:12.5px}
+  .denFoot .tot{text-align:right;font-variant-numeric:tabular-nums;font-size:13.5px}
+  .chkHead,.chkRow{display:grid;grid-template-columns:30px 1.1fr 1.05fr 56px 1.15fr 92px 30px;gap:9px;
+                   align-items:center;padding:5px 16px;font-size:12px}
+  .chkRow{border-bottom:1px solid var(--line-soft)}
+  .chkRow.man{background:var(--warn-soft)}
+  .chkRow .cn{font-variant-numeric:tabular-nums;font-weight:600}
+  .cbox{width:15px;height:15px;border:1.5px solid var(--ink3);border-radius:4px;display:flex;align-items:center;
+        justify-content:center;font-size:10px;color:#fff;background:#fff}
+  .cbox.on{background:var(--accent);border-color:var(--accent)}
+  .tagDec{font-size:10px;font-weight:600;color:var(--info);background:var(--info-soft);border-radius:999px;padding:3px 8px}
+  .tagMan{font-size:10px;font-weight:600;color:var(--warn);background:#F6E3C0;border-radius:999px;padding:3px 8px}
+  .panelF{display:flex;gap:8px;align-items:center;padding:9px 16px;border-top:1px solid var(--line);
+          background:var(--surface2);flex:0 0 auto}
+
+  /* ---- preview del approval (email) ---- */
+  .mailPage{background:#E9E5E4;border:1px solid #d8d2d0;border-radius:12px;padding:26px;display:flex;
+            flex-direction:column;align-items:center;gap:22px}
+  .mail{width:640px;background:#fff;border:1px solid #d9d3d4;font-family:"Segoe UI",Arial,Helvetica,sans-serif}
+  .mailH{padding:17px 22px 15px;border-bottom:3px solid var(--accent)}
+  .mailH .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.9px;color:var(--accent);
+              background:var(--accent-soft);padding:4px 10px;text-transform:uppercase}
+  .mailH h3{font-size:16px;margin-top:9px}
+  .mailH small{color:var(--ink3);font-size:11.5px;display:block;margin-top:3px}
+  .mailSec{padding:15px 22px 3px}
+  .mailSec h4{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--accent);font-weight:700;
+              padding-bottom:6px;border-bottom:1px solid var(--line)}
+  table.mt{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:9px}
+  table.mt th{background:var(--surface2);text-align:left;font-size:9.5px;text-transform:uppercase;
+              letter-spacing:.5px;color:var(--ink2);padding:6px 9px;border:1px solid var(--line);font-weight:700}
+  table.mt td{padding:6px 9px;border:1px solid var(--line-soft);vertical-align:top}
+  table.mt tr.zeb td{background:var(--surface2)}
+  table.mt tr.sub td{background:#F2EEED;font-weight:700}
+  table.mt td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.mt td.cur{font-weight:700}
+  table.kvt{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:9px}
+  table.kvt td{padding:5px 9px;border-bottom:1px solid var(--line-soft)}
+  table.kvt td:first-child{color:var(--ink2);width:34%;background:var(--surface2);border-right:1px solid var(--line-soft)}
+  table.kvt td:last-child{font-weight:600}
+  .mailFoot{padding:12px 22px 15px;font-size:10.5px;color:var(--ink3);line-height:1.6;border-top:1px solid var(--line)}
+  .mailNote{font-size:12px;color:var(--ink2);padding:0 22px 4px;line-height:1.55}
+</style>
+
+<div class="wrap">
+<div class="docHead">
+    <h1>CashHub · Mockup CH-App-Recounting v2</h1>
+    <p>Contrato visual de las 3 pantallas del rediseño (<b>scrSesion</b>, <b>scrTulas</b>, <b>scrConteo</b>),
+      sus diálogos nativos y la plantilla nueva del HTML de aprobación. Mismo sistema de diseño que
+      <b>CH-App-Reception v2</b>: mismos tokens, tipografía Open Sans, misma densidad y los mismos patrones de
+      header, rail, pills, tablas, botones y overlay de diálogo. Cada marco está a la resolución de referencia
+      <b>1366 × 768</b>. Documento estático: nada es clickeable, todas las vistas se muestran apiladas.</p>
+    <p style="margin-top:8px">Controles: todo clásico (los únicos con <code>Radius</code>; las superficies
+      redondeadas se hacen con Botón clásico), salvo <b>TabList</b> y <b>Spinner</b> modernos. Cero PowerCAT.</p>
+    <div class="idx"><a href="#a1"><b>A1</b> · estado inicial</a><a href="#a2"><b>A2</b> · esperando aprobación</a><a href="#a3"><b>A3</b> · solicitud rechazada</a><a href="#b0"><b>B</b> · hub de la sesión</a><a href="#b0-vacio"><b>B·0</b> · estado vacío</a><a href="#b1"><b>B1</b> · diálogo «Seleccione la tula recibida»</a><a href="#b2"><b>B2</b> · diálogo «Seleccione la declaración»</a><a href="#b3"><b>B3</b> · diálogo «Tula sin declaración»</a><a href="#c0"><b>C1</b> · Depósitos «Declarado» + Depósito en curso «Billetes»</a><a href="#c0b"><b>C2</b> · Depósitos «Recontado» + Depósito en curso «Monedas»</a><a href="#c0c"><b>C3</b> · Depósito en curso «Cheques»</a><a href="#c1"><b>C4</b> · diálogo «Terminar tula» sin discrepancias</a><a href="#c2"><b>C5</b> · diálogo «Terminar tula» con discrepancias</a><a href="#c3"><b>C6</b> · confirmaciones simples</a><a href="#c4"><b>C7</b> · espera de aprobación</a><a href="#c5"><b>C8</b> · solicitud rechazada</a><a href="#d1"><b>D1</b> · revisión de reconteo (640 px)</a><a href="#d2"><b>D2</b> · variantes cortas</a></div>
+  </div>
+<section class="view" id="a1">
+  <div class="viewHead"><span class="vId">A1</span><h2>scrSesion — estado inicial</h2><p>Tarjeta centrada de apertura de sesión. Dropdown clásico de mesas, nota de filtrado y botón primario. Header mínimo con el chip del cajero.</p></div>
+  <div class="frame">
+<div class="hdr"><div class="brandTile">C$</div><div class="hTitle">Reconteo<small>Apertura de sesión</small></div><div class="spacer"></div><div class="userChip"><span class="avatar">LM</span>Luis Martínez · Cajero de conteo</div></div>
+  <div class="sesWrap">
+    <div class="sesCard">
+      <div class="sesBrand">
+        <div class="tile">C$</div>
+        <h2>CashHub · Reconteo</h2>
+        <small>Abra una sesión de conteo para comenzar</small>
+      </div>
+      <div class="field">
+        <label>Mesa de conteo</label>
+        <select class="cin" style="min-height:38px;font-size:13px"><option>Mesa 01 — Bóveda A</option><option>Mesa 02 — Bóveda A</option><option>Mesa 03 — Bóveda B</option><option>Mesa 05 — Bóveda B</option><option>Mesa 07 — Sala de conteo</option></select>
+        <div class="note" style="margin-top:6px">Solo se muestran las mesas sin sesión activa hoy.</div>
+      </div>
+      <button class="btn btnPrimary" style="padding:11px 18px;font-size:13px">Solicitar mesa</button>
+      <div class="note" style="text-align:center">La solicitud queda pendiente hasta que el supervisor la apruebe.
+        Si la mesa ya es suya, la aprobación es automática del lado del servidor.</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="view" id="a2">
+  <div class="viewHead"><span class="vId">A2</span><h2>scrSesion — esperando aprobación</h2><p>Mismo lienzo en modo espera: Spinner moderno, meta de la solicitud y salida por botón fantasma. Un solo timer de 15 s, sin Refresh en cascada.</p></div>
+  <div class="frame">
+<div class="hdr"><div class="brandTile">C$</div><div class="hTitle">Reconteo<small>Apertura de sesión</small></div><div class="spacer"></div><div class="userChip"><span class="avatar">LM</span>Luis Martínez · Cajero de conteo</div></div>
+  <div class="sesWrap">
+    <div class="sesCard">
+      <div class="sesBrand">
+        <div class="tile">C$</div>
+        <h2>CashHub · Reconteo</h2>
+        <small>Solicitud enviada</small>
+      </div>
+      <div class="waitRow">
+        <div class="spin"></div>
+        <div>
+          <b>Esperando aprobación del supervisor</b>
+          <small>Se consulta el estado cada 15 segundos.</small>
+        </div>
+      </div>
+      <dl class="kv">
+        <dt>Mesa solicitada</dt><dd>Mesa 03 — Bóveda B</dd>
+        <dt>Solicitada</dt><dd>16 ago 2026 · 07:41</dd>
+        <dt>Cajero</dt><dd>Luis Martínez</dd>
+      </dl>
+      <button class="btn btnGhost">Cancelar solicitud</button>
+      <div class="note" style="text-align:center">No cierre la aplicación: al aprobarse, la sesión se abre sola.</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="view" id="a3">
+  <div class="viewHead"><span class="vId">A3</span><h2>scrSesion — solicitud rechazada</h2><p>Estado de primera clase que la v1 no distinguía (S-4): el rechazo bloquea con motivo visible y ofrece elegir otra mesa. Nunca libera el ingreso.</p></div>
+  <div class="frame">
+<div class="hdr"><div class="brandTile">C$</div><div class="hTitle">Reconteo<small>Apertura de sesión</small></div><div class="spacer"></div><div class="userChip"><span class="avatar">LM</span>Luis Martínez · Cajero de conteo</div></div>
+  <div class="sesWrap">
+    <div class="sesCard">
+      <div class="sesBrand">
+        <div class="tile">C$</div>
+        <h2>CashHub · Reconteo</h2>
+        <small>Solicitud resuelta</small>
+      </div>
+      <div class="banner bDanger"><span>⊘</span><div><b>Solicitud rechazada por el supervisor</b><br>
+        Mesa 03 — Bóveda B · 16 ago 2026 07:48</div></div>
+      <div class="field">
+        <label>Motivo indicado por el supervisor</label>
+        <div class="in" style="width:100%;color:var(--ink2);line-height:1.5;min-height:56px">
+          La mesa 03 queda reservada para el arqueo de bóveda de esta mañana. Use la mesa 05.</div>
+      </div>
+      <button class="btn btnPrimary" style="padding:11px 18px;font-size:13px">Elegir otra mesa</button>
+      <div class="note" style="text-align:center">El rechazo bloquea el ingreso: sin aprobación no se abre sesión.</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="view" id="b0">
+  <div class="viewHead"><span class="vId">B</span><h2>scrTulas — hub de la sesión</h2><p>Rail de 250 px con identidad, mesa activa, los 3 cmpKpiSesion (NIO/USD/EUR) y la meta de sesión al pie. Cuerpo scan-first + lista de tulas aperturadas con pill de estado.</p></div>
+  <div class="frame">
+<div class="body2" style="padding:0;gap:0"><div class="rail">
+    <div class="railBrand"><div class="brandTile">C$</div><div class="hTitle">Reconteo<small>Sesión de conteo</small></div></div>
+    <div class="userChip" style="justify-content:flex-start"><span class="avatar">LM</span>Luis Martínez</div>
+    <div class="mesaChip" style="justify-content:center"><b>Mesa 03</b> · Bóveda B</div>
+    <div class="railLab">Totales de la sesión</div>
+    <div class="kpi">
+        <div class="cur"><span>Córdobas</span><span>NIO</span></div>
+        <div class="lin"><span>Efectivo</span><b>C$ 1,284,500.00</b></div>
+        <div class="lin"><span>Cheques</span><b>C$ 96,300.00</b></div>
+        <div class="tot"><span>Total</span><b>C$ 1,380,800.00</b></div>
+      </div>
+    <div class="kpi">
+        <div class="cur"><span>Dólares</span><span>USD</span></div>
+        <div class="lin"><span>Efectivo</span><b>U$ 42,180.00</b></div>
+        <div class="lin"><span>Cheques</span><b>U$ 3,250.00</b></div>
+        <div class="tot"><span>Total</span><b>U$ 45,430.00</b></div>
+      </div>
+    <div class="kpi">
+        <div class="cur"><span>Euros</span><span>EUR</span></div>
+        <div class="lin"><span>Efectivo</span><b>€ 0.00</b></div>
+        <div class="lin"><span>Cheques</span><b>€ 0.00</b></div>
+        <div class="tot"><span>Total</span><b>€ 0.00</b></div>
+      </div>
+    <div class="spacer"></div>
+    <div class="railFoot">
+      <b>16 ago 2026</b> · Mesa 03<br>
+      5 tulas aperturadas · 3 recontadas<br>
+      Los totales incluyen solo tulas recontadas.
+    </div>
+  </div><div class="tulaBody">
+    <div class="scan">
+      <h3>Abrir una tula</h3>
+      <div class="scanRow">
+        <div class="scanIn"><span class="mag">⌕</span>
+          <input placeholder="Escanee o digite el número de tula…" value="ST000123"></div>
+        <button class="btn btnPrimary" style="padding:12px 24px;font-size:13px">Abrir tula</button>
+      </div>
+      <div class="note">El campo toma el foco al entrar: el lector de código de barras dispara la apertura con Enter,
+        sin tocar el mouse.</div>
+    </div>
+    <div class="card" style="flex:1">
+      <div class="panelH"><h4>Tulas aperturadas hoy</h4>
+        <small>5 tulas · 3 recontadas</small><div class="spacer"></div>
+        <button class="btnSm">⟳ Actualizar</button></div>
+      <div class="tuHead listHead" style="border-radius:0"><span>N° de tula</span><span>Planilla</span><span>Cliente</span><span>Apertura</span><span>Estado</span><span></span></div>
+      <div class="scrollY"><button class="tuRow tuSel"><b>ST000123</b><span>SR000456</span><span class="cli">Distribuidora La Colonia — Metrocentro</span><span class="hr">09:12</span><span><span class="pill pInfo">Asignada a cajero</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000118</b><span>SR000441</span><span class="cli">Ferretería SINSA — Carr. Masaya</span><span class="hr">08:47</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000117</b><span>SR000440</span><span class="cli">Supermercados La Unión — Bello Horizonte</span><span class="hr">08:31</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000112</b><span>SR000433</span><span class="cli">Farmacias Kielsa — Altamira</span><span class="hr">08:05</span><span><span class="pill pWarn">Pendiente de revisión</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000109</b><span>SR000429</span><span class="cli">Casa Pellas — Acahualinca</span><span class="hr">07:52</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button></div>
+    </div>
+  </div></div>
+</div>
+</section>
+
+<section class="view" id="b0-vacio">
+  <div class="viewHead"><span class="vId">B·0</span><h2>scrTulas — estado vacío</h2><p>Primera tula del día: la lista muestra el vacío elegante y el foco vive en el campo de escaneo.</p></div>
+  <div class="frame">
+<div class="body2" style="padding:0;gap:0"><div class="rail">
+    <div class="railBrand"><div class="brandTile">C$</div><div class="hTitle">Reconteo<small>Sesión de conteo</small></div></div>
+    <div class="userChip" style="justify-content:flex-start"><span class="avatar">LM</span>Luis Martínez</div>
+    <div class="mesaChip" style="justify-content:center"><b>Mesa 03</b> · Bóveda B</div>
+    <div class="railLab">Totales de la sesión</div>
+    <div class="kpi">
+        <div class="cur"><span>Córdobas</span><span>NIO</span></div>
+        <div class="lin"><span>Efectivo</span><b>C$ 1,284,500.00</b></div>
+        <div class="lin"><span>Cheques</span><b>C$ 96,300.00</b></div>
+        <div class="tot"><span>Total</span><b>C$ 1,380,800.00</b></div>
+      </div>
+    <div class="kpi">
+        <div class="cur"><span>Dólares</span><span>USD</span></div>
+        <div class="lin"><span>Efectivo</span><b>U$ 42,180.00</b></div>
+        <div class="lin"><span>Cheques</span><b>U$ 3,250.00</b></div>
+        <div class="tot"><span>Total</span><b>U$ 45,430.00</b></div>
+      </div>
+    <div class="kpi">
+        <div class="cur"><span>Euros</span><span>EUR</span></div>
+        <div class="lin"><span>Efectivo</span><b>€ 0.00</b></div>
+        <div class="lin"><span>Cheques</span><b>€ 0.00</b></div>
+        <div class="tot"><span>Total</span><b>€ 0.00</b></div>
+      </div>
+    <div class="spacer"></div>
+    <div class="railFoot">
+      <b>16 ago 2026</b> · Mesa 03<br>
+      5 tulas aperturadas · 3 recontadas<br>
+      Los totales incluyen solo tulas recontadas.
+    </div>
+  </div><div class="tulaBody">
+    <div class="scan">
+      <h3>Abrir una tula</h3>
+      <div class="scanRow">
+        <div class="scanIn"><span class="mag">⌕</span>
+          <input placeholder="Escanee o digite el número de tula…" value=""></div>
+        <button class="btn btnPrimary" style="padding:12px 24px;font-size:13px">Abrir tula</button>
+      </div>
+      <div class="note">El campo toma el foco al entrar: el lector de código de barras dispara la apertura con Enter,
+        sin tocar el mouse.</div>
+    </div>
+    <div class="card" style="flex:1">
+      <div class="panelH"><h4>Tulas aperturadas hoy</h4>
+        <small>0 tulas</small><div class="spacer"></div>
+        <button class="btnSm">⟳ Actualizar</button></div>
+      <div class="tuHead listHead" style="border-radius:0"><span>N° de tula</span><span>Planilla</span><span>Cliente</span><span>Apertura</span><span>Estado</span><span></span></div>
+      <div class="emptyMsg"><span class="big">⛁</span><b style="color:var(--ink2)">Aún no abrió ninguna tula en esta sesión</b><br>Escanee el número de tula con el lector o escríbalo en la barra de arriba y presione Enter.</div>
+    </div>
+  </div></div>
+</div>
+</section>
+
+<section class="view" id="b1">
+  <div class="viewHead"><span class="vId">B1</span><h2>scrTulas — diálogo «Seleccione la tula recibida»</h2><p>Desambiguación de tulas homónimas. Solo las «Almacenada en bóveda» son seleccionables; la asignada a otro cajero se ve deshabilitada con el motivo.</p></div>
+  <div class="frame">
+<div class="body2" style="padding:0;gap:0"><div class="rail">
+    <div class="railBrand"><div class="brandTile">C$</div><div class="hTitle">Reconteo<small>Sesión de conteo</small></div></div>
+    <div class="userChip" style="justify-content:flex-start"><span class="avatar">LM</span>Luis Martínez</div>
+    <div class="mesaChip" style="justify-content:center"><b>Mesa 03</b> · Bóveda B</div>
+    <div class="railLab">Totales de la sesión</div>
+    <div class="kpi">
+        <div class="cur"><span>Córdobas</span><span>NIO</span></div>
+        <div class="lin"><span>Efectivo</span><b>C$ 1,284,500.00</b></div>
+        <div class="lin"><span>Cheques</span><b>C$ 96,300.00</b></div>
+        <div class="tot"><span>Total</span><b>C$ 1,380,800.00</b></div>
+      </div>
+    <div class="kpi">
+        <div class="cur"><span>Dólares</span><span>USD</span></div>
+        <div class="lin"><span>Efectivo</span><b>U$ 42,180.00</b></div>
+        <div class="lin"><span>Cheques</span><b>U$ 3,250.00</b></div>
+        <div class="tot"><span>Total</span><b>U$ 45,430.00</b></div>
+      </div>
+    <div class="kpi">
+        <div class="cur"><span>Euros</span><span>EUR</span></div>
+        <div class="lin"><span>Efectivo</span><b>€ 0.00</b></div>
+        <div class="lin"><span>Cheques</span><b>€ 0.00</b></div>
+        <div class="tot"><span>Total</span><b>€ 0.00</b></div>
+      </div>
+    <div class="spacer"></div>
+    <div class="railFoot">
+      <b>16 ago 2026</b> · Mesa 03<br>
+      5 tulas aperturadas · 3 recontadas<br>
+      Los totales incluyen solo tulas recontadas.
+    </div>
+  </div><div class="tulaBody">
+    <div class="scan">
+      <h3>Abrir una tula</h3>
+      <div class="scanRow">
+        <div class="scanIn"><span class="mag">⌕</span>
+          <input placeholder="Escanee o digite el número de tula…" value="ST000123"></div>
+        <button class="btn btnPrimary" style="padding:12px 24px;font-size:13px">Abrir tula</button>
+      </div>
+      <div class="note">El campo toma el foco al entrar: el lector de código de barras dispara la apertura con Enter,
+        sin tocar el mouse.</div>
+    </div>
+    <div class="card" style="flex:1">
+      <div class="panelH"><h4>Tulas aperturadas hoy</h4>
+        <small>5 tulas · 3 recontadas</small><div class="spacer"></div>
+        <button class="btnSm">⟳ Actualizar</button></div>
+      <div class="tuHead listHead" style="border-radius:0"><span>N° de tula</span><span>Planilla</span><span>Cliente</span><span>Apertura</span><span>Estado</span><span></span></div>
+      <div class="scrollY"><button class="tuRow tuSel"><b>ST000123</b><span>SR000456</span><span class="cli">Distribuidora La Colonia — Metrocentro</span><span class="hr">09:12</span><span><span class="pill pInfo">Asignada a cajero</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000118</b><span>SR000441</span><span class="cli">Ferretería SINSA — Carr. Masaya</span><span class="hr">08:47</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000117</b><span>SR000440</span><span class="cli">Supermercados La Unión — Bello Horizonte</span><span class="hr">08:31</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000112</b><span>SR000433</span><span class="cli">Farmacias Kielsa — Altamira</span><span class="hr">08:05</span><span><span class="pill pWarn">Pendiente de revisión</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000109</b><span>SR000429</span><span class="cli">Casa Pellas — Acahualinca</span><span class="hr">07:52</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button></div>
+    </div>
+  </div></div><div class="ovl"><div class="dlg dlgWide">
+  <div class="dlgH"><div><h3>Seleccione la tula recibida</h3>
+    <p>Hay 3 tulas con el número <b>ST000123</b> en el sistema. Elija la que tiene físicamente en la mesa.</p></div>
+    <button class="dlgX">✕</button></div>
+  <div class="dlgB">
+    <button class="pickCard pickSel"><div class="m"><b>ST000123 · Planilla SR000456</b>
+      <small>Distribuidora La Colonia — Metrocentro · Recibida 15 ago 2026 · Lote LR-2026-0148</small></div>
+      <span class="pill pOk">Almacenada en bóveda</span></button>
+    <button class="pickCard"><div class="m"><b>ST000123 · Planilla SR000431</b>
+      <small>Ferretería SINSA — Carr. Masaya · Recibida 12 ago 2026 · Lote LR-2026-0139</small></div>
+      <span class="pill pOk">Almacenada en bóveda</span></button>
+    <button class="pickCard pickOff"><div class="m"><b>ST000123 · Planilla SR000402</b>
+      <small>Casa Pellas — Acahualinca · Recibida 08 ago 2026 · Lote LR-2026-0127<br>
+      No seleccionable: ya está asignada a otro cajero (M. Gómez · Mesa 01).</small></div>
+      <span class="pill pInfo">Asignada a cajero</span></button>
+    <div class="banner bInfo"><span>ℹ</span><div>Solo las tulas <b>Almacenadas en bóveda</b> pueden abrirse para reconteo.</div></div>
+  </div>
+  <div class="dlgF"><button class="btn btnGhost">Cancelar</button>
+    <button class="btn btnPrimary">Abrir tula</button></div>
+</div></div>
+</div>
+</section>
+
+<section class="view" id="b2">
+  <div class="viewHead"><span class="vId">B2</span><h2>scrTulas — diálogo «Seleccione la declaración»</h2><p>Desambiguación de declaraciones del mismo cliente: fecha, monto declarado por moneda y origen del correo.</p></div>
+  <div class="frame">
+<div class="body2" style="padding:0;gap:0"><div class="rail">
+    <div class="railBrand"><div class="brandTile">C$</div><div class="hTitle">Reconteo<small>Sesión de conteo</small></div></div>
+    <div class="userChip" style="justify-content:flex-start"><span class="avatar">LM</span>Luis Martínez</div>
+    <div class="mesaChip" style="justify-content:center"><b>Mesa 03</b> · Bóveda B</div>
+    <div class="railLab">Totales de la sesión</div>
+    <div class="kpi">
+        <div class="cur"><span>Córdobas</span><span>NIO</span></div>
+        <div class="lin"><span>Efectivo</span><b>C$ 1,284,500.00</b></div>
+        <div class="lin"><span>Cheques</span><b>C$ 96,300.00</b></div>
+        <div class="tot"><span>Total</span><b>C$ 1,380,800.00</b></div>
+      </div>
+    <div class="kpi">
+        <div class="cur"><span>Dólares</span><span>USD</span></div>
+        <div class="lin"><span>Efectivo</span><b>U$ 42,180.00</b></div>
+        <div class="lin"><span>Cheques</span><b>U$ 3,250.00</b></div>
+        <div class="tot"><span>Total</span><b>U$ 45,430.00</b></div>
+      </div>
+    <div class="kpi">
+        <div class="cur"><span>Euros</span><span>EUR</span></div>
+        <div class="lin"><span>Efectivo</span><b>€ 0.00</b></div>
+        <div class="lin"><span>Cheques</span><b>€ 0.00</b></div>
+        <div class="tot"><span>Total</span><b>€ 0.00</b></div>
+      </div>
+    <div class="spacer"></div>
+    <div class="railFoot">
+      <b>16 ago 2026</b> · Mesa 03<br>
+      5 tulas aperturadas · 3 recontadas<br>
+      Los totales incluyen solo tulas recontadas.
+    </div>
+  </div><div class="tulaBody">
+    <div class="scan">
+      <h3>Abrir una tula</h3>
+      <div class="scanRow">
+        <div class="scanIn"><span class="mag">⌕</span>
+          <input placeholder="Escanee o digite el número de tula…" value="ST000123"></div>
+        <button class="btn btnPrimary" style="padding:12px 24px;font-size:13px">Abrir tula</button>
+      </div>
+      <div class="note">El campo toma el foco al entrar: el lector de código de barras dispara la apertura con Enter,
+        sin tocar el mouse.</div>
+    </div>
+    <div class="card" style="flex:1">
+      <div class="panelH"><h4>Tulas aperturadas hoy</h4>
+        <small>5 tulas · 3 recontadas</small><div class="spacer"></div>
+        <button class="btnSm">⟳ Actualizar</button></div>
+      <div class="tuHead listHead" style="border-radius:0"><span>N° de tula</span><span>Planilla</span><span>Cliente</span><span>Apertura</span><span>Estado</span><span></span></div>
+      <div class="scrollY"><button class="tuRow tuSel"><b>ST000123</b><span>SR000456</span><span class="cli">Distribuidora La Colonia — Metrocentro</span><span class="hr">09:12</span><span><span class="pill pInfo">Asignada a cajero</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000118</b><span>SR000441</span><span class="cli">Ferretería SINSA — Carr. Masaya</span><span class="hr">08:47</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000117</b><span>SR000440</span><span class="cli">Supermercados La Unión — Bello Horizonte</span><span class="hr">08:31</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000112</b><span>SR000433</span><span class="cli">Farmacias Kielsa — Altamira</span><span class="hr">08:05</span><span><span class="pill pWarn">Pendiente de revisión</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000109</b><span>SR000429</span><span class="cli">Casa Pellas — Acahualinca</span><span class="hr">07:52</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button></div>
+    </div>
+  </div></div><div class="ovl"><div class="dlg dlgWide">
+  <div class="dlgH"><div><h3>Seleccione la declaración</h3>
+    <p>El cliente <b>Distribuidora La Colonia</b> tiene 2 declaraciones vigentes para la tula <b>ST000123</b>.</p></div>
+    <button class="dlgX">✕</button></div>
+  <div class="dlgB">
+    <button class="pickCard pickSel"><div class="m"><b>Distribuidora La Colonia — Metrocentro</b>
+      <small>Declarada 15 ago 2026 · 08:42 · Origen: correo declaraciones@lacolonia.com.ni<br>
+      3 depósitos declarados · 6 cheques</small></div>
+      <div class="pickAmt">C$ 544,000.00<small>U$ 12,400.00</small></div></button>
+    <button class="pickCard"><div class="m"><b>Distribuidora La Colonia — Metrocentro</b>
+      <small>Declarada 14 ago 2026 · 17:05 · Origen: correo tesoreria@lacolonia.com.ni<br>
+      2 depósitos declarados · 1 cheque</small></div>
+      <div class="pickAmt">C$ 312,900.00<small>U$ 0.00</small></div></button>
+    <div class="banner bWarn"><span>⚠</span><div>La declaración elegida define lo <b>Declarado</b> de toda la tula.
+      Si elige la incorrecta, todas las diferencias van a estar mal.</div></div>
+  </div>
+  <div class="dlgF"><button class="btn btnGhost">Cancelar</button>
+    <button class="btn btnPrimary">Usar esta declaración</button></div>
+</div></div>
+</div>
+</section>
+
+<section class="view" id="b3">
+  <div class="viewHead"><span class="vId">B3</span><h2>scrTulas — diálogo «Tula sin declaración»</h2><p>Confirmar ANTES de ejecutar: la solicitud al supervisor se dispara recién con «Enviar solicitud».</p></div>
+  <div class="frame">
+<div class="body2" style="padding:0;gap:0"><div class="rail">
+    <div class="railBrand"><div class="brandTile">C$</div><div class="hTitle">Reconteo<small>Sesión de conteo</small></div></div>
+    <div class="userChip" style="justify-content:flex-start"><span class="avatar">LM</span>Luis Martínez</div>
+    <div class="mesaChip" style="justify-content:center"><b>Mesa 03</b> · Bóveda B</div>
+    <div class="railLab">Totales de la sesión</div>
+    <div class="kpi">
+        <div class="cur"><span>Córdobas</span><span>NIO</span></div>
+        <div class="lin"><span>Efectivo</span><b>C$ 1,284,500.00</b></div>
+        <div class="lin"><span>Cheques</span><b>C$ 96,300.00</b></div>
+        <div class="tot"><span>Total</span><b>C$ 1,380,800.00</b></div>
+      </div>
+    <div class="kpi">
+        <div class="cur"><span>Dólares</span><span>USD</span></div>
+        <div class="lin"><span>Efectivo</span><b>U$ 42,180.00</b></div>
+        <div class="lin"><span>Cheques</span><b>U$ 3,250.00</b></div>
+        <div class="tot"><span>Total</span><b>U$ 45,430.00</b></div>
+      </div>
+    <div class="kpi">
+        <div class="cur"><span>Euros</span><span>EUR</span></div>
+        <div class="lin"><span>Efectivo</span><b>€ 0.00</b></div>
+        <div class="lin"><span>Cheques</span><b>€ 0.00</b></div>
+        <div class="tot"><span>Total</span><b>€ 0.00</b></div>
+      </div>
+    <div class="spacer"></div>
+    <div class="railFoot">
+      <b>16 ago 2026</b> · Mesa 03<br>
+      5 tulas aperturadas · 3 recontadas<br>
+      Los totales incluyen solo tulas recontadas.
+    </div>
+  </div><div class="tulaBody">
+    <div class="scan">
+      <h3>Abrir una tula</h3>
+      <div class="scanRow">
+        <div class="scanIn"><span class="mag">⌕</span>
+          <input placeholder="Escanee o digite el número de tula…" value="ST000123"></div>
+        <button class="btn btnPrimary" style="padding:12px 24px;font-size:13px">Abrir tula</button>
+      </div>
+      <div class="note">El campo toma el foco al entrar: el lector de código de barras dispara la apertura con Enter,
+        sin tocar el mouse.</div>
+    </div>
+    <div class="card" style="flex:1">
+      <div class="panelH"><h4>Tulas aperturadas hoy</h4>
+        <small>5 tulas · 3 recontadas</small><div class="spacer"></div>
+        <button class="btnSm">⟳ Actualizar</button></div>
+      <div class="tuHead listHead" style="border-radius:0"><span>N° de tula</span><span>Planilla</span><span>Cliente</span><span>Apertura</span><span>Estado</span><span></span></div>
+      <div class="scrollY"><button class="tuRow tuSel"><b>ST000123</b><span>SR000456</span><span class="cli">Distribuidora La Colonia — Metrocentro</span><span class="hr">09:12</span><span><span class="pill pInfo">Asignada a cajero</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000118</b><span>SR000441</span><span class="cli">Ferretería SINSA — Carr. Masaya</span><span class="hr">08:47</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000117</b><span>SR000440</span><span class="cli">Supermercados La Unión — Bello Horizonte</span><span class="hr">08:31</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000112</b><span>SR000433</span><span class="cli">Farmacias Kielsa — Altamira</span><span class="hr">08:05</span><span><span class="pill pWarn">Pendiente de revisión</span></span><span class="chev">›</span></button><button class="tuRow"><b>ST000109</b><span>SR000429</span><span class="cli">Casa Pellas — Acahualinca</span><span class="hr">07:52</span><span><span class="pill pOk">Recontada</span></span><span class="chev">›</span></button></div>
+    </div>
+  </div></div><div class="ovl"><div class="dlg">
+  <div class="dlgH"><div class="dlgIcon icWarn">🔒</div><div><h3>Tula sin declaración</h3>
+    <p>La tula <b>ST000123</b> no fue declarada por el cliente <b>Distribuidora La Colonia</b>.</p></div>
+    <button class="dlgX">✕</button></div>
+  <div class="dlgB">
+    <dl class="kv"><dt>Tula</dt><dd>ST000123</dd><dt>Planilla</dt><dd>SR000456</dd>
+      <dt>Cliente</dt><dd>Distribuidora La Colonia</dd><dt>Mesa</dt><dd>Mesa 03 — Bóveda B</dd></dl>
+    <div class="banner bWarn"><span>⚠</span><div>Se enviará una <b>solicitud de aprobación al supervisor</b>.
+      La tula queda bloqueada hasta que responda.</div></div>
+  </div>
+  <div class="dlgF"><button class="btn btnGhost">Cancelar</button>
+    <button class="btn btnPrimary">Enviar solicitud</button></div>
+</div></div>
+</div>
+</section>
+
+<section class="view" id="c0">
+  <div class="viewHead"><span class="vId">C1</span><h2>scrConteo — Depósitos «Declarado» + Depósito en curso «Billetes»</h2><p>Header con tula/planilla/cliente + Cerrar/Terminar. Franja de 3 cmpMatrizMoneda. Izquierda: TabList Declarado/Recontado con chip de enlace. Derecha: grilla de denominaciones teclado-primero, columna Auto de solo lectura (se reinicia por depósito) y total en vivo.</p></div>
+  <div class="frame">
+<div class="hdr" style="height:66px">
+    <button class="backBtn">←</button>
+    <div>
+      <div class="hBig">Tula ST000123</div>
+      <div class="hMeta">Planilla <b style="color:var(--ink)">SR000456</b> · Distribuidora La Colonia — Metrocentro
+        <span class="pill pInfo">Asignada a cajero</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="mesaChip"><b>Mesa 03</b> · Bóveda B</div>
+    <button class="btn btnGhost">Cerrar</button>
+    <button class="btn btnPrimary">Terminar tula</button>
+  </div><div class="matStrip"><div class="mat">
+      <h5><span>NIO</span><em>Córdobas</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>4</td><td>C$ 96,300.00</td><td>C$ 482,150.00</td></tr>
+        <tr><td>Declarado</td><td>6</td><td>C$ 113,800.00</td><td>C$ 544,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">−2</td><td class="gBad">−C$ 17,500.00</td><td class="gBad">−C$ 61,850.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>USD</span><em>Dólares</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">U$ 0.00</td><td class="gOk">U$ 0.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>EUR</span><em>Euros</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr><td>Declarado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">€ 0.00</td><td class="gOk">€ 0.00</td></tr>
+      </table>
+    </div></div><div class="body2"><div class="card" style="flex:1.15">
+      <div class="panelH"><h4>Depósitos</h4><small>de la tula</small></div>
+      <div class="tabl">
+        <button class="on">Declarado</button>
+        <button class="">Recontado</button>
+      </div>
+      <div class="ops"><button class="btnSm btnSmAcc">Enlazar</button><button class="btnSm" disabled>Desenlazar</button><span class="spacer"></span><span class="meta">Seleccione un depósito declarado y uno recontado para enlazarlos.</span></div>
+      <div class="dpHead thead"><span>Cuenta</span><span>Moneda</span><span class="num">Chq</span><span class="num">Monto cheques</span><span class="num">Efectivo</span><span class="num">Total</span><span style="text-align:center">Enlace</span></div>
+      <div class="scrollY"><button class="dpRow"><b>100-501-2345</b><span style="color:var(--ink2)">NIO</span><span class="num">2</span><span class="num">C$ 43,300.00</span><span class="num">C$ 260,000.00</span><span class="num"><b>C$ 303,300.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2346</b><span style="color:var(--ink2)">NIO</span><span class="num">1</span><span class="num">C$ 48,000.00</span><span class="num">C$ 224,000.00</span><span class="num"><b>C$ 272,000.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>200-778-0091</b><span style="color:var(--ink2)">USD</span><span class="num">2</span><span class="num">U$ 1,250.00</span><span class="num">U$ 12,400.00</span><span class="num"><b>U$ 13,650.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2350</b><span style="color:var(--ink2)">NIO</span><span class="num">3</span><span class="num">C$ 22,500.00</span><span class="num">C$ 60,000.00</span><span class="num"><b>C$ 82,500.00</b></span><span style="text-align:center"><span class="lnkNo">Sin enlazar</span></span></button></div>
+      <div class="dpFoot"><span>Total declarado</span><span></span><span class="num">6</span><span class="num">C$ 113,800.00</span><span class="num">C$ 544,000.00</span><span class="num">C$ 657,800.00</span><span></span></div>
+    </div><div class="card" style="flex:1">
+      <div class="panelH"><h4>Depósito en curso</h4>
+        <small>enlazado a la cuenta declarada 100-501-2345</small>
+        <div class="spacer"></div><span class="pill pInfo">Sin guardar</span></div>
+      <div class="curRow"><label>Moneda</label>
+        <select class="cin" style="width:150px;min-height:32px"><option>NIO — Córdobas</option>
+          <option>USD — Dólares</option><option>EUR — Euros</option></select>
+        <div class="spacer"></div>
+        <label>Cuenta</label>
+        <input class="cin" style="width:160px;min-height:32px" value="100-501-2345"></div>
+      <div class="depMat">
+      <table class="matT">
+        <tr><th>Depósito 100-501-2345</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>3</td><td>C$ 48,300.00</td><td>C$ 235,000.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>C$ 43,300.00</td><td>C$ 260,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">+1</td><td class="gBad">+C$ 5,000.00</td>
+          <td class="gBad">−C$ 25,000.00</td></tr>
+      </table>
+    </div>
+      <div class="tabl">
+        <button class="on">Billetes</button><button class="">Monedas</button><button class="">Cheques</button>
+      </div>
+      <div class="ops" style="border-bottom:1px solid var(--line-soft)">
+        <span class="meta"><b>Billetes</b> · el conteo automático se reinicia en cada depósito</span>
+        <span class="spacer"></span>
+        <button class="btnSm btnSmAcc">⟳ Leer contadora</button></div>
+      <div class="denHead thead"><span style="text-align:right">Denominación</span>
+        <span style="text-align:center">Auto</span><span style="text-align:center">Cantidad</span>
+        <span style="text-align:right">Total</span></div>
+      <div class="scrollY"><div class="denRow"><span class="den">C$ 1,000</span><span class="autoB">120</span><input class="qin foc" value="45"><span class="tot">C$ 165,000.00</span></div><div class="denRow"><span class="den">C$ 500</span><span class="autoB">80</span><input class="qin" value="12"><span class="tot">C$ 46,000.00</span></div><div class="denRow"><span class="den">C$ 200</span><span class="autoB">50</span><input class="qin" value="5"><span class="tot">C$ 11,000.00</span></div><div class="denRow"><span class="den">C$ 100</span><span class="autoB">90</span><input class="qin" value="10"><span class="tot">C$ 10,000.00</span></div><div class="denRow"><span class="den">C$ 50</span><span class="autoB">30</span><input class="qin" value="4"><span class="tot">C$ 1,700.00</span></div><div class="denRow"><span class="den">C$ 20</span><span class="autoB">40</span><input class="qin" value="5"><span class="tot">C$ 900.00</span></div><div class="denRow"><span class="den">C$ 10</span><span class="autoB">25</span><input class="qin" value="5"><span class="tot">C$ 300.00</span></div></div>
+      <div class="denFoot"><span>Total billetes</span><span class="num" style="text-align:center">435</span>
+        <span class="num" style="text-align:center">86</span><span class="tot">C$ 234,900.00</span></div>
+      <div class="panelF"><button class="btnSm btnSmAcc">Nuevo</button>
+        <button class="btnSm">Descartar</button>
+        <span class="spacer"></span>
+        <span class="meta">Total del depósito <b>C$ 283,300.00</b></span>
+        <button class="btn btnPrimary">Guardar depósito</button></div>
+    </div></div>
+</div>
+</section>
+
+<section class="view" id="c0b">
+  <div class="viewHead"><span class="vId">C2</span><h2>scrConteo — Depósitos «Recontado» + Depósito en curso «Monedas»</h2><p>Fila recontada seleccionada (resalte con barra de acento) y botonera contextual completa: Enlazar, Desenlazar, Eliminar. La pestaña Monedas no tiene columna Auto.</p></div>
+  <div class="frame">
+<div class="hdr" style="height:66px">
+    <button class="backBtn">←</button>
+    <div>
+      <div class="hBig">Tula ST000123</div>
+      <div class="hMeta">Planilla <b style="color:var(--ink)">SR000456</b> · Distribuidora La Colonia — Metrocentro
+        <span class="pill pInfo">Asignada a cajero</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="mesaChip"><b>Mesa 03</b> · Bóveda B</div>
+    <button class="btn btnGhost">Cerrar</button>
+    <button class="btn btnPrimary">Terminar tula</button>
+  </div><div class="matStrip"><div class="mat">
+      <h5><span>NIO</span><em>Córdobas</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>4</td><td>C$ 96,300.00</td><td>C$ 482,150.00</td></tr>
+        <tr><td>Declarado</td><td>6</td><td>C$ 113,800.00</td><td>C$ 544,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">−2</td><td class="gBad">−C$ 17,500.00</td><td class="gBad">−C$ 61,850.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>USD</span><em>Dólares</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">U$ 0.00</td><td class="gOk">U$ 0.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>EUR</span><em>Euros</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr><td>Declarado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">€ 0.00</td><td class="gOk">€ 0.00</td></tr>
+      </table>
+    </div></div><div class="body2"><div class="card" style="flex:1.15">
+      <div class="panelH"><h4>Depósitos</h4><small>de la tula</small></div>
+      <div class="tabl">
+        <button class="">Declarado</button>
+        <button class="on">Recontado</button>
+      </div>
+      <div class="ops"><button class="btnSm btnSmAcc">Enlazar</button><button class="btnSm">Desenlazar</button><span class="spacer"></span><button class="btnSm btnSmDan">Eliminar</button></div>
+      <div class="dpHead thead"><span>Cuenta</span><span>Moneda</span><span class="num">Chq</span><span class="num">Monto cheques</span><span class="num">Efectivo</span><span class="num">Total</span><span style="text-align:center">Enlace</span></div>
+      <div class="scrollY"><button class="dpRow dpSel"><b>100-501-2345</b><span style="color:var(--ink2)">NIO</span><span class="num">3</span><span class="num">C$ 48,300.00</span><span class="num">C$ 235,000.00</span><span class="num"><b>C$ 283,300.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2346</b><span style="color:var(--ink2)">NIO</span><span class="num">1</span><span class="num">C$ 48,000.00</span><span class="num">C$ 223,000.00</span><span class="num"><b>C$ 271,000.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>200-778-0091</b><span style="color:var(--ink2)">USD</span><span class="num">2</span><span class="num">U$ 1,250.00</span><span class="num">U$ 12,400.00</span><span class="num"><b>U$ 13,650.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2388</b><span style="color:var(--ink2)">NIO</span><span class="num">0</span><span class="num">C$ 0.00</span><span class="num">C$ 24,150.00</span><span class="num"><b>C$ 24,150.00</b></span><span style="text-align:center"><span class="lnkNo">Sin enlazar</span></span></button></div>
+      <div class="dpFoot"><span>Total recontado</span><span></span><span class="num">4</span><span class="num">C$ 96,300.00</span><span class="num">C$ 482,150.00</span><span class="num">C$ 578,450.00</span><span></span></div>
+    </div><div class="card" style="flex:1">
+      <div class="panelH"><h4>Depósito en curso</h4>
+        <small>enlazado a la cuenta declarada 100-501-2345</small>
+        <div class="spacer"></div><span class="pill pInfo">Sin guardar</span></div>
+      <div class="curRow"><label>Moneda</label>
+        <select class="cin" style="width:150px;min-height:32px"><option>NIO — Córdobas</option>
+          <option>USD — Dólares</option><option>EUR — Euros</option></select>
+        <div class="spacer"></div>
+        <label>Cuenta</label>
+        <input class="cin" style="width:160px;min-height:32px" value="100-501-2345"></div>
+      <div class="depMat">
+      <table class="matT">
+        <tr><th>Depósito 100-501-2345</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>3</td><td>C$ 48,300.00</td><td>C$ 235,000.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>C$ 43,300.00</td><td>C$ 260,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">+1</td><td class="gBad">+C$ 5,000.00</td>
+          <td class="gBad">−C$ 25,000.00</td></tr>
+      </table>
+    </div>
+      <div class="tabl">
+        <button class="">Billetes</button><button class="on">Monedas</button><button class="">Cheques</button>
+      </div>
+      <div class="ops" style="border-bottom:1px solid var(--line-soft)">
+        <span class="meta"><b>Monedas</b> · sin lectura automática: la contadora no procesa moneda</span></div>
+      <div class="denHead thead" style="grid-template-columns:1.15fr 104px 1.25fr">
+        <span style="text-align:right">Denominación</span><span style="text-align:center">Cantidad</span>
+        <span style="text-align:right">Total</span></div>
+      <div class="scrollY"><div class="denRow" style="grid-template-columns:1.15fr 104px 1.25fr"><span class="den">C$ 5</span><input class="qin foc" value="15"><span class="tot">C$ 75.00</span></div><div class="denRow" style="grid-template-columns:1.15fr 104px 1.25fr"><span class="den">C$ 1</span><input class="qin" value="25"><span class="tot">C$ 25.00</span></div><div class="denRow" style="grid-template-columns:1.15fr 104px 1.25fr"><span class="den">C$ 0.50</span><input class="qin" value="0"><span class="tot">C$ 0.00</span></div></div>
+      <div class="denFoot" style="grid-template-columns:1.15fr 104px 1.25fr"><span>Total monedas</span>
+        <span class="num" style="text-align:center">40</span><span class="tot">C$ 100.00</span></div>
+      <div class="ops" style="border-bottom:none"><span class="meta">Efectivo del depósito
+        (billetes + monedas): <b>C$ 235,000.00</b></span></div>
+      <div class="panelF"><button class="btnSm btnSmAcc">Nuevo</button>
+        <button class="btnSm">Descartar</button>
+        <span class="spacer"></span>
+        <span class="meta">Total del depósito <b>C$ 283,300.00</b></span>
+        <button class="btn btnPrimary">Guardar depósito</button></div>
+    </div></div>
+</div>
+</section>
+
+<section class="view" id="c0c">
+  <div class="viewHead"><span class="vId">C3</span><h2>scrConteo — Depósito en curso «Cheques»</h2><p>Cheques declarados con checkbox para asignarlos al depósito, y cheques manuales distinguidos en ámbar con número/monto editables y papelera. Clave local por GUID: nada de Max()+1.</p></div>
+  <div class="frame">
+<div class="hdr" style="height:66px">
+    <button class="backBtn">←</button>
+    <div>
+      <div class="hBig">Tula ST000123</div>
+      <div class="hMeta">Planilla <b style="color:var(--ink)">SR000456</b> · Distribuidora La Colonia — Metrocentro
+        <span class="pill pInfo">Asignada a cajero</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="mesaChip"><b>Mesa 03</b> · Bóveda B</div>
+    <button class="btn btnGhost">Cerrar</button>
+    <button class="btn btnPrimary">Terminar tula</button>
+  </div><div class="matStrip"><div class="mat">
+      <h5><span>NIO</span><em>Córdobas</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>4</td><td>C$ 96,300.00</td><td>C$ 482,150.00</td></tr>
+        <tr><td>Declarado</td><td>6</td><td>C$ 113,800.00</td><td>C$ 544,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">−2</td><td class="gBad">−C$ 17,500.00</td><td class="gBad">−C$ 61,850.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>USD</span><em>Dólares</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">U$ 0.00</td><td class="gOk">U$ 0.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>EUR</span><em>Euros</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr><td>Declarado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">€ 0.00</td><td class="gOk">€ 0.00</td></tr>
+      </table>
+    </div></div><div class="body2"><div class="card" style="flex:1.15">
+      <div class="panelH"><h4>Depósitos</h4><small>de la tula</small></div>
+      <div class="tabl">
+        <button class="">Declarado</button>
+        <button class="on">Recontado</button>
+      </div>
+      <div class="ops"><button class="btnSm btnSmAcc">Enlazar</button><button class="btnSm">Desenlazar</button><span class="spacer"></span><button class="btnSm btnSmDan">Eliminar</button></div>
+      <div class="dpHead thead"><span>Cuenta</span><span>Moneda</span><span class="num">Chq</span><span class="num">Monto cheques</span><span class="num">Efectivo</span><span class="num">Total</span><span style="text-align:center">Enlace</span></div>
+      <div class="scrollY"><button class="dpRow dpSel"><b>100-501-2345</b><span style="color:var(--ink2)">NIO</span><span class="num">3</span><span class="num">C$ 48,300.00</span><span class="num">C$ 235,000.00</span><span class="num"><b>C$ 283,300.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2346</b><span style="color:var(--ink2)">NIO</span><span class="num">1</span><span class="num">C$ 48,000.00</span><span class="num">C$ 223,000.00</span><span class="num"><b>C$ 271,000.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>200-778-0091</b><span style="color:var(--ink2)">USD</span><span class="num">2</span><span class="num">U$ 1,250.00</span><span class="num">U$ 12,400.00</span><span class="num"><b>U$ 13,650.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2388</b><span style="color:var(--ink2)">NIO</span><span class="num">0</span><span class="num">C$ 0.00</span><span class="num">C$ 24,150.00</span><span class="num"><b>C$ 24,150.00</b></span><span style="text-align:center"><span class="lnkNo">Sin enlazar</span></span></button></div>
+      <div class="dpFoot"><span>Total recontado</span><span></span><span class="num">4</span><span class="num">C$ 96,300.00</span><span class="num">C$ 482,150.00</span><span class="num">C$ 578,450.00</span><span></span></div>
+    </div><div class="card" style="flex:1">
+      <div class="panelH"><h4>Depósito en curso</h4>
+        <small>enlazado a la cuenta declarada 100-501-2345</small>
+        <div class="spacer"></div><span class="pill pInfo">Sin guardar</span></div>
+      <div class="curRow"><label>Moneda</label>
+        <select class="cin" style="width:150px;min-height:32px"><option>NIO — Córdobas</option>
+          <option>USD — Dólares</option><option>EUR — Euros</option></select>
+        <div class="spacer"></div>
+        <label>Cuenta</label>
+        <input class="cin" style="width:160px;min-height:32px" value="100-501-2345"></div>
+      <div class="depMat">
+      <table class="matT">
+        <tr><th>Depósito 100-501-2345</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>3</td><td>C$ 48,300.00</td><td>C$ 235,000.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>C$ 43,300.00</td><td>C$ 260,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">+1</td><td class="gBad">+C$ 5,000.00</td>
+          <td class="gBad">−C$ 25,000.00</td></tr>
+      </table>
+    </div>
+      <div class="tabl">
+        <button class="">Billetes</button><button class="">Monedas</button><button class="on">Cheques</button>
+      </div>
+      <div class="ops" style="border-bottom:1px solid var(--line-soft)">
+        <span class="meta"><b>Cheques</b> · marque los declarados que entran en este depósito</span>
+        <span class="spacer"></span>
+        <button class="btnSm btnSmAcc">＋ Agregar cheque</button></div>
+      <div class="chkHead thead"><span></span><span>N° cheque</span><span>Tipo</span><span>Mon.</span>
+        <span class="num">Monto</span><span style="text-align:center">Origen</span><span></span></div>
+      <div class="scrollY"><div class="chkRow"><span class="cbox on">✓</span><span class="cn">0045821</span><span style="color:var(--ink2)">BAC Local</span><span style="color:var(--ink2)">C$</span><span class="num" style="display:block;font-weight:600">30,000.00</span><span style="text-align:center"><span class="tagDec">Declarado</span></span><span></span></div><div class="chkRow"><span class="cbox on">✓</span><span class="cn">0045822</span><span style="color:var(--ink2)">Otros Local</span><span style="color:var(--ink2)">C$</span><span class="num" style="display:block;font-weight:600">13,300.00</span><span style="text-align:center"><span class="tagDec">Declarado</span></span><span></span></div><div class="chkRow man"><span style="color:var(--ink3);text-align:center;display:block">—</span><input class="qin" style="text-align:left;font-size:12px;padding:4px 8px" value="0045915"><select class="cin"><option>BAC Local</option><option>Otros Local</option></select><span style="color:var(--ink2)">C$</span><input class="qin" style="font-size:12px;padding:4px 8px" value="5,000.00"><span style="text-align:center"><span class="tagMan">Manual</span></span><button class="iBtn">🗑</button></div><div class="chkRow"><span class="cbox"></span><span class="cn">0045830</span><span style="color:var(--ink2)">BAC Local</span><span style="color:var(--ink2)">C$</span><span class="num" style="display:block;font-weight:600">12,500.00</span><span style="text-align:center"><span class="tagDec">Declarado</span></span><span></span></div><div class="chkRow"><span class="cbox"></span><span class="cn">0045831</span><span style="color:var(--ink2)">Otros Local</span><span style="color:var(--ink2)">C$</span><span class="num" style="display:block;font-weight:600">6,000.00</span><span style="text-align:center"><span class="tagDec">Declarado</span></span><span></span></div><div class="chkRow"><span class="cbox"></span><span class="cn">0045832</span><span style="color:var(--ink2)">BAC Local</span><span style="color:var(--ink2)">C$</span><span class="num" style="display:block;font-weight:600">4,000.00</span><span style="text-align:center"><span class="tagDec">Declarado</span></span><span></span></div></div>
+      <div class="denFoot" style="grid-template-columns:1fr auto">
+        <span>Cheques del depósito: 3</span><span class="tot">C$ 48,300.00</span></div>
+      <div class="panelF"><button class="btnSm btnSmAcc">Nuevo</button>
+        <button class="btnSm">Descartar</button>
+        <span class="spacer"></span>
+        <span class="meta">Total del depósito <b>C$ 283,300.00</b></span>
+        <button class="btn btnPrimary">Guardar depósito</button></div>
+    </div></div>
+</div>
+</section>
+
+<section class="view" id="c1">
+  <div class="viewHead"><span class="vId">C4</span><h2>scrConteo — diálogo «Terminar tula» sin discrepancias</h2><p>Las 6 validaciones pasan: check verde, resumen por moneda y cierre directo a Recontada, sin supervisor.</p></div>
+  <div class="frame">
+<div class="hdr" style="height:66px">
+    <button class="backBtn">←</button>
+    <div>
+      <div class="hBig">Tula ST000118</div>
+      <div class="hMeta">Planilla <b style="color:var(--ink)">SR000441</b> · Ferretería SINSA — Carr. Masaya
+        <span class="pill pInfo">Asignada a cajero</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="mesaChip"><b>Mesa 03</b> · Bóveda B</div>
+    <button class="btn btnGhost">Cerrar</button>
+    <button class="btn btnPrimary">Terminar tula</button>
+  </div><div class="matStrip"><div class="mat">
+      <h5><span>NIO</span><em>Córdobas</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>3</td><td>C$ 91,300.00</td><td>C$ 484,000.00</td></tr>
+        <tr><td>Declarado</td><td>3</td><td>C$ 91,300.00</td><td>C$ 484,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">C$ 0.00</td><td class="gOk">C$ 0.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>USD</span><em>Dólares</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">U$ 0.00</td><td class="gOk">U$ 0.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>EUR</span><em>Euros</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr><td>Declarado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">€ 0.00</td><td class="gOk">€ 0.00</td></tr>
+      </table>
+    </div></div><div class="body2"><div class="card" style="flex:1.15">
+      <div class="panelH"><h4>Depósitos</h4><small>de la tula</small></div>
+      <div class="tabl">
+        <button class="">Declarado</button>
+        <button class="on">Recontado</button>
+      </div>
+      <div class="ops"><button class="btnSm btnSmAcc">Enlazar</button><button class="btnSm">Desenlazar</button><span class="spacer"></span><button class="btnSm btnSmDan">Eliminar</button></div>
+      <div class="dpHead thead"><span>Cuenta</span><span>Moneda</span><span class="num">Chq</span><span class="num">Monto cheques</span><span class="num">Efectivo</span><span class="num">Total</span><span style="text-align:center">Enlace</span></div>
+      <div class="scrollY"><button class="dpRow"><b>100-501-2345</b><span style="color:var(--ink2)">NIO</span><span class="num">2</span><span class="num">C$ 43,300.00</span><span class="num">C$ 260,000.00</span><span class="num"><b>C$ 303,300.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2346</b><span style="color:var(--ink2)">NIO</span><span class="num">1</span><span class="num">C$ 48,000.00</span><span class="num">C$ 224,000.00</span><span class="num"><b>C$ 272,000.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>200-778-0091</b><span style="color:var(--ink2)">USD</span><span class="num">2</span><span class="num">U$ 1,250.00</span><span class="num">U$ 12,400.00</span><span class="num"><b>U$ 13,650.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button></div>
+      <div class="dpFoot"><span>Total recontado</span><span></span><span class="num">3</span><span class="num">C$ 91,300.00</span><span class="num">C$ 484,000.00</span><span class="num">C$ 575,300.00</span><span></span></div>
+    </div><div class="card" style="flex:1">
+      <div class="panelH"><h4>Depósito en curso</h4><small>ninguno</small></div>
+      <div class="emptyMsg" style="flex:1;display:flex;flex-direction:column;justify-content:center">
+        <div><span class="big">＋</span><b style="color:var(--ink2)">No hay un depósito en curso</b><br>
+        Los 3 depósitos de la tula ya fueron guardados y enlazados.<br>
+        Presione <b>Nuevo</b> para capturar otro, o <b>Terminar tula</b> para cerrarla.</div></div>
+      <div class="panelF"><button class="btnSm btnSmAcc">Nuevo</button>
+        <span class="spacer"></span>
+        <button class="btn btnPrimary" disabled>Guardar depósito</button></div>
+    </div></div><div class="ovl"><div class="dlg dlgWide">
+  <div class="dlgH"><div class="dlgIcon icOk">✓</div><div><h3>Terminar tula ST000118</h3>
+    <p>No se encontró ninguna discrepancia entre lo recontado y lo declarado.</p></div>
+    <button class="dlgX">✕</button></div>
+  <div class="dlgB">
+    <div class="banner bOk"><span>✓</span><div>Las 6 validaciones pasaron. La tula pasa directo a
+      <b>Recontada</b>, sin solicitud al supervisor.</div></div>
+    <table class="matT" style="font-size:12px">
+      <tr><th>Resumen por moneda</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th><th>Total</th></tr>
+      <tr><td>Córdobas (NIO)</td><td>3</td><td>C$ 91,300.00</td><td>C$ 484,000.00</td>
+        <td><b>C$ 575,300.00</b></td></tr>
+      <tr><td>Dólares (USD)</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td>
+        <td><b>U$ 13,650.00</b></td></tr>
+      <tr><td>Euros (EUR)</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td><td><b>€ 0.00</b></td></tr>
+    </table>
+    <p>Los totales de la bolsa y los asientos contables los recalcula el servidor al recibir el cambio de estado.</p>
+  </div>
+  <div class="dlgF"><button class="btn btnGhost">Cancelar</button>
+    <button class="btn btnPrimary">Terminar tula</button></div>
+</div></div>
+</div>
+</section>
+
+<section class="view" id="c2">
+  <div class="viewHead"><span class="vId">C5</span><h2>scrConteo — diálogo «Terminar tula» con discrepancias</h2><p>Lista de hallazgos con las mismas 6 secciones que viajan al HTML de approval, y aviso de que la tula queda en Pendiente de revisión.</p></div>
+  <div class="frame">
+<div class="hdr" style="height:66px">
+    <button class="backBtn">←</button>
+    <div>
+      <div class="hBig">Tula ST000123</div>
+      <div class="hMeta">Planilla <b style="color:var(--ink)">SR000456</b> · Distribuidora La Colonia — Metrocentro
+        <span class="pill pInfo">Asignada a cajero</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="mesaChip"><b>Mesa 03</b> · Bóveda B</div>
+    <button class="btn btnGhost">Cerrar</button>
+    <button class="btn btnPrimary">Terminar tula</button>
+  </div><div class="matStrip"><div class="mat">
+      <h5><span>NIO</span><em>Córdobas</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>4</td><td>C$ 96,300.00</td><td>C$ 482,150.00</td></tr>
+        <tr><td>Declarado</td><td>6</td><td>C$ 113,800.00</td><td>C$ 544,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">−2</td><td class="gBad">−C$ 17,500.00</td><td class="gBad">−C$ 61,850.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>USD</span><em>Dólares</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">U$ 0.00</td><td class="gOk">U$ 0.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>EUR</span><em>Euros</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr><td>Declarado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">€ 0.00</td><td class="gOk">€ 0.00</td></tr>
+      </table>
+    </div></div><div class="body2"><div class="card" style="flex:1.15">
+      <div class="panelH"><h4>Depósitos</h4><small>de la tula</small></div>
+      <div class="tabl">
+        <button class="">Declarado</button>
+        <button class="on">Recontado</button>
+      </div>
+      <div class="ops"><button class="btnSm btnSmAcc">Enlazar</button><button class="btnSm">Desenlazar</button><span class="spacer"></span><button class="btnSm btnSmDan">Eliminar</button></div>
+      <div class="dpHead thead"><span>Cuenta</span><span>Moneda</span><span class="num">Chq</span><span class="num">Monto cheques</span><span class="num">Efectivo</span><span class="num">Total</span><span style="text-align:center">Enlace</span></div>
+      <div class="scrollY"><button class="dpRow dpSel"><b>100-501-2345</b><span style="color:var(--ink2)">NIO</span><span class="num">3</span><span class="num">C$ 48,300.00</span><span class="num">C$ 235,000.00</span><span class="num"><b>C$ 283,300.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2346</b><span style="color:var(--ink2)">NIO</span><span class="num">1</span><span class="num">C$ 48,000.00</span><span class="num">C$ 223,000.00</span><span class="num"><b>C$ 271,000.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>200-778-0091</b><span style="color:var(--ink2)">USD</span><span class="num">2</span><span class="num">U$ 1,250.00</span><span class="num">U$ 12,400.00</span><span class="num"><b>U$ 13,650.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2388</b><span style="color:var(--ink2)">NIO</span><span class="num">0</span><span class="num">C$ 0.00</span><span class="num">C$ 24,150.00</span><span class="num"><b>C$ 24,150.00</b></span><span style="text-align:center"><span class="lnkNo">Sin enlazar</span></span></button></div>
+      <div class="dpFoot"><span>Total recontado</span><span></span><span class="num">4</span><span class="num">C$ 96,300.00</span><span class="num">C$ 482,150.00</span><span class="num">C$ 578,450.00</span><span></span></div>
+    </div><div class="card" style="flex:1">
+      <div class="panelH"><h4>Depósito en curso</h4>
+        <small>enlazado a la cuenta declarada 100-501-2345</small>
+        <div class="spacer"></div><span class="pill pInfo">Sin guardar</span></div>
+      <div class="curRow"><label>Moneda</label>
+        <select class="cin" style="width:150px;min-height:32px"><option>NIO — Córdobas</option>
+          <option>USD — Dólares</option><option>EUR — Euros</option></select>
+        <div class="spacer"></div>
+        <label>Cuenta</label>
+        <input class="cin" style="width:160px;min-height:32px" value="100-501-2345"></div>
+      <div class="depMat">
+      <table class="matT">
+        <tr><th>Depósito 100-501-2345</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>3</td><td>C$ 48,300.00</td><td>C$ 235,000.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>C$ 43,300.00</td><td>C$ 260,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">+1</td><td class="gBad">+C$ 5,000.00</td>
+          <td class="gBad">−C$ 25,000.00</td></tr>
+      </table>
+    </div>
+      <div class="tabl">
+        <button class="on">Billetes</button><button class="">Monedas</button><button class="">Cheques</button>
+      </div>
+      <div class="ops" style="border-bottom:1px solid var(--line-soft)">
+        <span class="meta"><b>Billetes</b> · el conteo automático se reinicia en cada depósito</span>
+        <span class="spacer"></span>
+        <button class="btnSm btnSmAcc">⟳ Leer contadora</button></div>
+      <div class="denHead thead"><span style="text-align:right">Denominación</span>
+        <span style="text-align:center">Auto</span><span style="text-align:center">Cantidad</span>
+        <span style="text-align:right">Total</span></div>
+      <div class="scrollY"><div class="denRow"><span class="den">C$ 1,000</span><span class="autoB">120</span><input class="qin foc" value="45"><span class="tot">C$ 165,000.00</span></div><div class="denRow"><span class="den">C$ 500</span><span class="autoB">80</span><input class="qin" value="12"><span class="tot">C$ 46,000.00</span></div><div class="denRow"><span class="den">C$ 200</span><span class="autoB">50</span><input class="qin" value="5"><span class="tot">C$ 11,000.00</span></div><div class="denRow"><span class="den">C$ 100</span><span class="autoB">90</span><input class="qin" value="10"><span class="tot">C$ 10,000.00</span></div><div class="denRow"><span class="den">C$ 50</span><span class="autoB">30</span><input class="qin" value="4"><span class="tot">C$ 1,700.00</span></div><div class="denRow"><span class="den">C$ 20</span><span class="autoB">40</span><input class="qin" value="5"><span class="tot">C$ 900.00</span></div><div class="denRow"><span class="den">C$ 10</span><span class="autoB">25</span><input class="qin" value="5"><span class="tot">C$ 300.00</span></div></div>
+      <div class="denFoot"><span>Total billetes</span><span class="num" style="text-align:center">435</span>
+        <span class="num" style="text-align:center">86</span><span class="tot">C$ 234,900.00</span></div>
+      <div class="panelF"><button class="btnSm btnSmAcc">Nuevo</button>
+        <button class="btnSm">Descartar</button>
+        <span class="spacer"></span>
+        <span class="meta">Total del depósito <b>C$ 283,300.00</b></span>
+        <button class="btn btnPrimary">Guardar depósito</button></div>
+    </div></div><div class="ovl"><div class="dlg dlgWide">
+  <div class="dlgH"><div class="dlgIcon icWarn">⚠</div><div><h3>Terminar tula ST000123</h3>
+    <p>Se encontraron <b>5 hallazgos</b> que requieren revisión del supervisor.</p></div>
+    <button class="dlgX">✕</button></div>
+  <div class="dlgB">
+    <div class="valList">
+      <div class="banner bWarn"><span>⚠</span><div>Existen <b>diferencias globales</b> entre lo recontado y lo
+        declarado — NIO: −C$ 61,850.00 en efectivo y −C$ 17,500.00 en cheques.</div></div>
+      <div class="banner bWarn" style="margin-top:8px"><span>⚠</span><div><b>2 depósitos con diferencia</b> por
+        transacción — 100-501-2345 (−C$ 20,000.00) y 100-501-2346 (−C$ 1,000.00).</div></div>
+      <div class="banner bWarn" style="margin-top:8px"><span>⚠</span><div><b>3 cheques declarados sin enlazar</b>
+        por C$ 22,500.00 (0045830, 0045831, 0045832).</div></div>
+      <div class="banner bWarn" style="margin-top:8px"><span>⚠</span><div><b>1 depósito recontado sin enlazar</b>
+        — 100-501-2388 por C$ 24,150.00. Y <b>1 depósito declarado sin enlazar</b> — 100-501-2350 por C$ 82,500.00.</div></div>
+      <div class="banner bWarn" style="margin-top:8px"><span>⚠</span><div><b>1 cheque agregado manualmente</b>
+        — 0045915 · BAC Local · C$ 5,000.00 en el depósito 100-501-2345.</div></div>
+    </div>
+    <div class="banner bInfo"><span>ℹ</span><div>Se enviará una <b>solicitud de revisión al supervisor</b> con este
+      detalle. La tula queda en <b>Pendiente de revisión</b> y no puede seguir editándose.</div></div>
+  </div>
+  <div class="dlgF"><button class="btn btnGhost">Cancelar</button>
+    <button class="btn btnPrimary">Enviar a revisión</button></div>
+</div></div>
+</div>
+</section>
+
+<section class="view" id="c3">
+  <div class="viewHead"><span class="vId">C6</span><h2>scrConteo — confirmaciones simples</h2><p>Los tres diálogos triviales, juntos para comparar: cambiar moneda, eliminar depósito (peligro) y descartar cambios. Todos confirman antes de ejecutar.</p></div>
+  <div class="frame">
+<div class="hdr" style="height:66px">
+    <button class="backBtn">←</button>
+    <div>
+      <div class="hBig">Tula ST000123</div>
+      <div class="hMeta">Planilla <b style="color:var(--ink)">SR000456</b> · Distribuidora La Colonia — Metrocentro
+        <span class="pill pInfo">Asignada a cajero</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="mesaChip"><b>Mesa 03</b> · Bóveda B</div>
+    <button class="btn btnGhost">Cerrar</button>
+    <button class="btn btnPrimary">Terminar tula</button>
+  </div><div class="matStrip"><div class="mat">
+      <h5><span>NIO</span><em>Córdobas</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>4</td><td>C$ 96,300.00</td><td>C$ 482,150.00</td></tr>
+        <tr><td>Declarado</td><td>6</td><td>C$ 113,800.00</td><td>C$ 544,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">−2</td><td class="gBad">−C$ 17,500.00</td><td class="gBad">−C$ 61,850.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>USD</span><em>Dólares</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">U$ 0.00</td><td class="gOk">U$ 0.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>EUR</span><em>Euros</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr><td>Declarado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">€ 0.00</td><td class="gOk">€ 0.00</td></tr>
+      </table>
+    </div></div><div class="body2"><div class="card" style="flex:1.15">
+      <div class="panelH"><h4>Depósitos</h4><small>de la tula</small></div>
+      <div class="tabl">
+        <button class="">Declarado</button>
+        <button class="on">Recontado</button>
+      </div>
+      <div class="ops"><button class="btnSm btnSmAcc">Enlazar</button><button class="btnSm">Desenlazar</button><span class="spacer"></span><button class="btnSm btnSmDan">Eliminar</button></div>
+      <div class="dpHead thead"><span>Cuenta</span><span>Moneda</span><span class="num">Chq</span><span class="num">Monto cheques</span><span class="num">Efectivo</span><span class="num">Total</span><span style="text-align:center">Enlace</span></div>
+      <div class="scrollY"><button class="dpRow dpSel"><b>100-501-2345</b><span style="color:var(--ink2)">NIO</span><span class="num">3</span><span class="num">C$ 48,300.00</span><span class="num">C$ 235,000.00</span><span class="num"><b>C$ 283,300.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2346</b><span style="color:var(--ink2)">NIO</span><span class="num">1</span><span class="num">C$ 48,000.00</span><span class="num">C$ 223,000.00</span><span class="num"><b>C$ 271,000.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>200-778-0091</b><span style="color:var(--ink2)">USD</span><span class="num">2</span><span class="num">U$ 1,250.00</span><span class="num">U$ 12,400.00</span><span class="num"><b>U$ 13,650.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2388</b><span style="color:var(--ink2)">NIO</span><span class="num">0</span><span class="num">C$ 0.00</span><span class="num">C$ 24,150.00</span><span class="num"><b>C$ 24,150.00</b></span><span style="text-align:center"><span class="lnkNo">Sin enlazar</span></span></button></div>
+      <div class="dpFoot"><span>Total recontado</span><span></span><span class="num">4</span><span class="num">C$ 96,300.00</span><span class="num">C$ 482,150.00</span><span class="num">C$ 578,450.00</span><span></span></div>
+    </div><div class="card" style="flex:1">
+      <div class="panelH"><h4>Depósito en curso</h4>
+        <small>enlazado a la cuenta declarada 100-501-2345</small>
+        <div class="spacer"></div><span class="pill pInfo">Sin guardar</span></div>
+      <div class="curRow"><label>Moneda</label>
+        <select class="cin" style="width:150px;min-height:32px"><option>NIO — Córdobas</option>
+          <option>USD — Dólares</option><option>EUR — Euros</option></select>
+        <div class="spacer"></div>
+        <label>Cuenta</label>
+        <input class="cin" style="width:160px;min-height:32px" value="100-501-2345"></div>
+      <div class="depMat">
+      <table class="matT">
+        <tr><th>Depósito 100-501-2345</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>3</td><td>C$ 48,300.00</td><td>C$ 235,000.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>C$ 43,300.00</td><td>C$ 260,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">+1</td><td class="gBad">+C$ 5,000.00</td>
+          <td class="gBad">−C$ 25,000.00</td></tr>
+      </table>
+    </div>
+      <div class="tabl">
+        <button class="on">Billetes</button><button class="">Monedas</button><button class="">Cheques</button>
+      </div>
+      <div class="ops" style="border-bottom:1px solid var(--line-soft)">
+        <span class="meta"><b>Billetes</b> · el conteo automático se reinicia en cada depósito</span>
+        <span class="spacer"></span>
+        <button class="btnSm btnSmAcc">⟳ Leer contadora</button></div>
+      <div class="denHead thead"><span style="text-align:right">Denominación</span>
+        <span style="text-align:center">Auto</span><span style="text-align:center">Cantidad</span>
+        <span style="text-align:right">Total</span></div>
+      <div class="scrollY"><div class="denRow"><span class="den">C$ 1,000</span><span class="autoB">120</span><input class="qin foc" value="45"><span class="tot">C$ 165,000.00</span></div><div class="denRow"><span class="den">C$ 500</span><span class="autoB">80</span><input class="qin" value="12"><span class="tot">C$ 46,000.00</span></div><div class="denRow"><span class="den">C$ 200</span><span class="autoB">50</span><input class="qin" value="5"><span class="tot">C$ 11,000.00</span></div><div class="denRow"><span class="den">C$ 100</span><span class="autoB">90</span><input class="qin" value="10"><span class="tot">C$ 10,000.00</span></div><div class="denRow"><span class="den">C$ 50</span><span class="autoB">30</span><input class="qin" value="4"><span class="tot">C$ 1,700.00</span></div><div class="denRow"><span class="den">C$ 20</span><span class="autoB">40</span><input class="qin" value="5"><span class="tot">C$ 900.00</span></div><div class="denRow"><span class="den">C$ 10</span><span class="autoB">25</span><input class="qin" value="5"><span class="tot">C$ 300.00</span></div></div>
+      <div class="denFoot"><span>Total billetes</span><span class="num" style="text-align:center">435</span>
+        <span class="num" style="text-align:center">86</span><span class="tot">C$ 234,900.00</span></div>
+      <div class="panelF"><button class="btnSm btnSmAcc">Nuevo</button>
+        <button class="btnSm">Descartar</button>
+        <span class="spacer"></span>
+        <span class="meta">Total del depósito <b>C$ 283,300.00</b></span>
+        <button class="btn btnPrimary">Guardar depósito</button></div>
+    </div></div><div class="ovl"><div style="display:flex;gap:16px;align-items:stretch;max-width:100%">
+  <div class="dlg dlgNarrow">
+    <div class="dlgH"><div class="dlgIcon icInfo">⇄</div><div><h3>Cambiar la moneda del depósito</h3></div></div>
+    <div class="dlgB"><p>El depósito en curso pasa de <b>NIO</b> a <b>USD</b>. La grilla de denominaciones
+      se rehace y <b>se pierde lo capturado</b>: 86 billetes y 40 monedas.</p>
+      <p>Los cheques ya marcados se desmarcan.</p></div>
+    <div class="dlgF"><button class="btn btnGhost">Cancelar</button>
+      <button class="btn btnPrimary">Cambiar moneda</button></div>
+  </div>
+  <div class="dlg dlgNarrow">
+    <div class="dlgH"><div class="dlgIcon icDanger">🗑</div><div><h3>Eliminar el depósito 100-501-2388</h3></div></div>
+    <div class="dlgB"><p>Se eliminan el desglose de denominaciones, los cheques manuales y el enlace con la
+      declaración. <b>Esta acción no se puede deshacer.</b></p>
+      <dl class="kv"><dt>Efectivo</dt><dd>C$ 24,150.00</dd><dt>Cheques</dt><dd>0</dd></dl></div>
+    <div class="dlgF"><button class="btn btnGhost">Cancelar</button>
+      <button class="btn btnDanger">Eliminar</button></div>
+  </div>
+  <div class="dlg dlgNarrow">
+    <div class="dlgH"><div class="dlgIcon icWarn">↺</div><div><h3>Descartar los cambios del depósito</h3></div></div>
+    <div class="dlgB"><p>El depósito en curso no está guardado. Si lo descarta se pierden
+      <b>86 billetes</b>, <b>40 monedas</b> y <b>3 cheques</b> capturados.</p></div>
+    <div class="dlgF"><button class="btn btnGhost">Seguir capturando</button>
+      <button class="btn btnOutline">Descartar</button></div>
+  </div>
+</div></div>
+</div>
+</section>
+
+<section class="view" id="c4">
+  <div class="viewHead"><span class="vId">C7</span><h2>scrConteo — espera de aprobación</h2><p>Overlay bloqueante sobre la pantalla: Spinner, datos de la solicitud y única salida hacia scrTulas.</p></div>
+  <div class="frame">
+<div class="hdr" style="height:66px">
+    <button class="backBtn">←</button>
+    <div>
+      <div class="hBig">Tula ST000123</div>
+      <div class="hMeta">Planilla <b style="color:var(--ink)">SR000456</b> · Distribuidora La Colonia — Metrocentro
+        <span class="pill pInfo">Asignada a cajero</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="mesaChip"><b>Mesa 03</b> · Bóveda B</div>
+    <button class="btn btnGhost">Cerrar</button>
+    <button class="btn btnPrimary">Terminar tula</button>
+  </div><div class="matStrip"><div class="mat">
+      <h5><span>NIO</span><em>Córdobas</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>4</td><td>C$ 96,300.00</td><td>C$ 482,150.00</td></tr>
+        <tr><td>Declarado</td><td>6</td><td>C$ 113,800.00</td><td>C$ 544,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">−2</td><td class="gBad">−C$ 17,500.00</td><td class="gBad">−C$ 61,850.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>USD</span><em>Dólares</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">U$ 0.00</td><td class="gOk">U$ 0.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>EUR</span><em>Euros</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr><td>Declarado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">€ 0.00</td><td class="gOk">€ 0.00</td></tr>
+      </table>
+    </div></div><div class="body2"><div class="card" style="flex:1.15">
+      <div class="panelH"><h4>Depósitos</h4><small>de la tula</small></div>
+      <div class="tabl">
+        <button class="">Declarado</button>
+        <button class="on">Recontado</button>
+      </div>
+      <div class="ops"><button class="btnSm btnSmAcc">Enlazar</button><button class="btnSm">Desenlazar</button><span class="spacer"></span><button class="btnSm btnSmDan">Eliminar</button></div>
+      <div class="dpHead thead"><span>Cuenta</span><span>Moneda</span><span class="num">Chq</span><span class="num">Monto cheques</span><span class="num">Efectivo</span><span class="num">Total</span><span style="text-align:center">Enlace</span></div>
+      <div class="scrollY"><button class="dpRow dpSel"><b>100-501-2345</b><span style="color:var(--ink2)">NIO</span><span class="num">3</span><span class="num">C$ 48,300.00</span><span class="num">C$ 235,000.00</span><span class="num"><b>C$ 283,300.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2346</b><span style="color:var(--ink2)">NIO</span><span class="num">1</span><span class="num">C$ 48,000.00</span><span class="num">C$ 223,000.00</span><span class="num"><b>C$ 271,000.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>200-778-0091</b><span style="color:var(--ink2)">USD</span><span class="num">2</span><span class="num">U$ 1,250.00</span><span class="num">U$ 12,400.00</span><span class="num"><b>U$ 13,650.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2388</b><span style="color:var(--ink2)">NIO</span><span class="num">0</span><span class="num">C$ 0.00</span><span class="num">C$ 24,150.00</span><span class="num"><b>C$ 24,150.00</b></span><span style="text-align:center"><span class="lnkNo">Sin enlazar</span></span></button></div>
+      <div class="dpFoot"><span>Total recontado</span><span></span><span class="num">4</span><span class="num">C$ 96,300.00</span><span class="num">C$ 482,150.00</span><span class="num">C$ 578,450.00</span><span></span></div>
+    </div><div class="card" style="flex:1">
+      <div class="panelH"><h4>Depósito en curso</h4>
+        <small>enlazado a la cuenta declarada 100-501-2345</small>
+        <div class="spacer"></div><span class="pill pInfo">Sin guardar</span></div>
+      <div class="curRow"><label>Moneda</label>
+        <select class="cin" style="width:150px;min-height:32px"><option>NIO — Córdobas</option>
+          <option>USD — Dólares</option><option>EUR — Euros</option></select>
+        <div class="spacer"></div>
+        <label>Cuenta</label>
+        <input class="cin" style="width:160px;min-height:32px" value="100-501-2345"></div>
+      <div class="depMat">
+      <table class="matT">
+        <tr><th>Depósito 100-501-2345</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>3</td><td>C$ 48,300.00</td><td>C$ 235,000.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>C$ 43,300.00</td><td>C$ 260,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">+1</td><td class="gBad">+C$ 5,000.00</td>
+          <td class="gBad">−C$ 25,000.00</td></tr>
+      </table>
+    </div>
+      <div class="tabl">
+        <button class="on">Billetes</button><button class="">Monedas</button><button class="">Cheques</button>
+      </div>
+      <div class="ops" style="border-bottom:1px solid var(--line-soft)">
+        <span class="meta"><b>Billetes</b> · el conteo automático se reinicia en cada depósito</span>
+        <span class="spacer"></span>
+        <button class="btnSm btnSmAcc">⟳ Leer contadora</button></div>
+      <div class="denHead thead"><span style="text-align:right">Denominación</span>
+        <span style="text-align:center">Auto</span><span style="text-align:center">Cantidad</span>
+        <span style="text-align:right">Total</span></div>
+      <div class="scrollY"><div class="denRow"><span class="den">C$ 1,000</span><span class="autoB">120</span><input class="qin foc" value="45"><span class="tot">C$ 165,000.00</span></div><div class="denRow"><span class="den">C$ 500</span><span class="autoB">80</span><input class="qin" value="12"><span class="tot">C$ 46,000.00</span></div><div class="denRow"><span class="den">C$ 200</span><span class="autoB">50</span><input class="qin" value="5"><span class="tot">C$ 11,000.00</span></div><div class="denRow"><span class="den">C$ 100</span><span class="autoB">90</span><input class="qin" value="10"><span class="tot">C$ 10,000.00</span></div><div class="denRow"><span class="den">C$ 50</span><span class="autoB">30</span><input class="qin" value="4"><span class="tot">C$ 1,700.00</span></div><div class="denRow"><span class="den">C$ 20</span><span class="autoB">40</span><input class="qin" value="5"><span class="tot">C$ 900.00</span></div><div class="denRow"><span class="den">C$ 10</span><span class="autoB">25</span><input class="qin" value="5"><span class="tot">C$ 300.00</span></div></div>
+      <div class="denFoot"><span>Total billetes</span><span class="num" style="text-align:center">435</span>
+        <span class="num" style="text-align:center">86</span><span class="tot">C$ 234,900.00</span></div>
+      <div class="panelF"><button class="btnSm btnSmAcc">Nuevo</button>
+        <button class="btnSm">Descartar</button>
+        <span class="spacer"></span>
+        <span class="meta">Total del depósito <b>C$ 283,300.00</b></span>
+        <button class="btn btnPrimary">Guardar depósito</button></div>
+    </div></div><div class="ovl"><div class="dlg">
+  <div class="dlgH"><div><h3>Esperando aprobación del supervisor</h3>
+    <p>La pantalla queda bloqueada hasta que el supervisor responda.</p></div></div>
+  <div class="dlgB">
+    <div class="waitRow"><div class="spin"></div>
+      <div><b>Solicitud de revisión enviada</b><small>Consultando estado cada 15 segundos · enviada 11:24</small></div></div>
+    <dl class="kv"><dt>Tula</dt><dd>ST000123</dd><dt>Planilla</dt><dd>SR000456</dd>
+      <dt>Hallazgos</dt><dd>5</dd><dt>Supervisor</dt><dd>R. Sequeira</dd></dl>
+  </div>
+  <div class="dlgF"><button class="btn btnGhost">Volver a las tulas</button></div>
+</div></div>
+</div>
+</section>
+
+<section class="view" id="c5">
+  <div class="viewHead"><span class="vId">C8</span><h2>scrConteo — solicitud rechazada</h2><p>El rechazo se muestra como banner de peligro con motivo y devuelve el control al cajero para corregir. En la v1 el rechazo liberaba igual que una aprobación.</p></div>
+  <div class="frame">
+<div class="hdr" style="height:66px">
+    <button class="backBtn">←</button>
+    <div>
+      <div class="hBig">Tula ST000123</div>
+      <div class="hMeta">Planilla <b style="color:var(--ink)">SR000456</b> · Distribuidora La Colonia — Metrocentro
+        <span class="pill pInfo">Asignada a cajero</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="mesaChip"><b>Mesa 03</b> · Bóveda B</div>
+    <button class="btn btnGhost">Cerrar</button>
+    <button class="btn btnPrimary">Terminar tula</button>
+  </div><div class="matStrip"><div class="mat">
+      <h5><span>NIO</span><em>Córdobas</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>4</td><td>C$ 96,300.00</td><td>C$ 482,150.00</td></tr>
+        <tr><td>Declarado</td><td>6</td><td>C$ 113,800.00</td><td>C$ 544,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">−2</td><td class="gBad">−C$ 17,500.00</td><td class="gBad">−C$ 61,850.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>USD</span><em>Dólares</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>U$ 1,250.00</td><td>U$ 12,400.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">U$ 0.00</td><td class="gOk">U$ 0.00</td></tr>
+      </table>
+    </div><div class="mat">
+      <h5><span>EUR</span><em>Euros</em></h5>
+      <table class="matT">
+        <tr><th>&nbsp;</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr><td>Declarado</td><td>0</td><td>€ 0.00</td><td>€ 0.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gOk">0</td><td class="gOk">€ 0.00</td><td class="gOk">€ 0.00</td></tr>
+      </table>
+    </div></div><div class="body2"><div class="card" style="flex:1.15">
+      <div class="panelH"><h4>Depósitos</h4><small>de la tula</small></div>
+      <div class="tabl">
+        <button class="">Declarado</button>
+        <button class="on">Recontado</button>
+      </div>
+      <div class="ops"><button class="btnSm btnSmAcc">Enlazar</button><button class="btnSm">Desenlazar</button><span class="spacer"></span><button class="btnSm btnSmDan">Eliminar</button></div>
+      <div class="dpHead thead"><span>Cuenta</span><span>Moneda</span><span class="num">Chq</span><span class="num">Monto cheques</span><span class="num">Efectivo</span><span class="num">Total</span><span style="text-align:center">Enlace</span></div>
+      <div class="scrollY"><button class="dpRow dpSel"><b>100-501-2345</b><span style="color:var(--ink2)">NIO</span><span class="num">3</span><span class="num">C$ 48,300.00</span><span class="num">C$ 235,000.00</span><span class="num"><b>C$ 283,300.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2346</b><span style="color:var(--ink2)">NIO</span><span class="num">1</span><span class="num">C$ 48,000.00</span><span class="num">C$ 223,000.00</span><span class="num"><b>C$ 271,000.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>200-778-0091</b><span style="color:var(--ink2)">USD</span><span class="num">2</span><span class="num">U$ 1,250.00</span><span class="num">U$ 12,400.00</span><span class="num"><b>U$ 13,650.00</b></span><span style="text-align:center"><span class="lnkOk">Enlazado</span></span></button><button class="dpRow"><b>100-501-2388</b><span style="color:var(--ink2)">NIO</span><span class="num">0</span><span class="num">C$ 0.00</span><span class="num">C$ 24,150.00</span><span class="num"><b>C$ 24,150.00</b></span><span style="text-align:center"><span class="lnkNo">Sin enlazar</span></span></button></div>
+      <div class="dpFoot"><span>Total recontado</span><span></span><span class="num">4</span><span class="num">C$ 96,300.00</span><span class="num">C$ 482,150.00</span><span class="num">C$ 578,450.00</span><span></span></div>
+    </div><div class="card" style="flex:1">
+      <div class="panelH"><h4>Depósito en curso</h4>
+        <small>enlazado a la cuenta declarada 100-501-2345</small>
+        <div class="spacer"></div><span class="pill pInfo">Sin guardar</span></div>
+      <div class="curRow"><label>Moneda</label>
+        <select class="cin" style="width:150px;min-height:32px"><option>NIO — Córdobas</option>
+          <option>USD — Dólares</option><option>EUR — Euros</option></select>
+        <div class="spacer"></div>
+        <label>Cuenta</label>
+        <input class="cin" style="width:160px;min-height:32px" value="100-501-2345"></div>
+      <div class="depMat">
+      <table class="matT">
+        <tr><th>Depósito 100-501-2345</th><th>Cheques</th><th>Monto cheques</th><th>Efectivo</th></tr>
+        <tr><td>Recontado</td><td>3</td><td>C$ 48,300.00</td><td>C$ 235,000.00</td></tr>
+        <tr><td>Declarado</td><td>2</td><td>C$ 43,300.00</td><td>C$ 260,000.00</td></tr>
+        <tr class="dif"><td>Diferencia</td><td class="gBad">+1</td><td class="gBad">+C$ 5,000.00</td>
+          <td class="gBad">−C$ 25,000.00</td></tr>
+      </table>
+    </div>
+      <div class="tabl">
+        <button class="on">Billetes</button><button class="">Monedas</button><button class="">Cheques</button>
+      </div>
+      <div class="ops" style="border-bottom:1px solid var(--line-soft)">
+        <span class="meta"><b>Billetes</b> · el conteo automático se reinicia en cada depósito</span>
+        <span class="spacer"></span>
+        <button class="btnSm btnSmAcc">⟳ Leer contadora</button></div>
+      <div class="denHead thead"><span style="text-align:right">Denominación</span>
+        <span style="text-align:center">Auto</span><span style="text-align:center">Cantidad</span>
+        <span style="text-align:right">Total</span></div>
+      <div class="scrollY"><div class="denRow"><span class="den">C$ 1,000</span><span class="autoB">120</span><input class="qin foc" value="45"><span class="tot">C$ 165,000.00</span></div><div class="denRow"><span class="den">C$ 500</span><span class="autoB">80</span><input class="qin" value="12"><span class="tot">C$ 46,000.00</span></div><div class="denRow"><span class="den">C$ 200</span><span class="autoB">50</span><input class="qin" value="5"><span class="tot">C$ 11,000.00</span></div><div class="denRow"><span class="den">C$ 100</span><span class="autoB">90</span><input class="qin" value="10"><span class="tot">C$ 10,000.00</span></div><div class="denRow"><span class="den">C$ 50</span><span class="autoB">30</span><input class="qin" value="4"><span class="tot">C$ 1,700.00</span></div><div class="denRow"><span class="den">C$ 20</span><span class="autoB">40</span><input class="qin" value="5"><span class="tot">C$ 900.00</span></div><div class="denRow"><span class="den">C$ 10</span><span class="autoB">25</span><input class="qin" value="5"><span class="tot">C$ 300.00</span></div></div>
+      <div class="denFoot"><span>Total billetes</span><span class="num" style="text-align:center">435</span>
+        <span class="num" style="text-align:center">86</span><span class="tot">C$ 234,900.00</span></div>
+      <div class="panelF"><button class="btnSm btnSmAcc">Nuevo</button>
+        <button class="btnSm">Descartar</button>
+        <span class="spacer"></span>
+        <span class="meta">Total del depósito <b>C$ 283,300.00</b></span>
+        <button class="btn btnPrimary">Guardar depósito</button></div>
+    </div></div><div class="ovl"><div class="dlg">
+  <div class="dlgH"><div class="dlgIcon icDanger">⊘</div><div><h3>Solicitud rechazada</h3>
+    <p>El supervisor rechazó la revisión de la tula <b>ST000123</b>.</p></div>
+    <button class="dlgX">✕</button></div>
+  <div class="dlgB">
+    <div class="banner bDanger"><span>⊘</span><div><b>Rechazada por R. Sequeira</b> · 16 ago 2026 11:31<br>
+      Faltó recontar el depósito 100-501-2350. Rehaga el conteo antes de volver a enviar.</div></div>
+    <p>El rechazo <b>no libera</b> la tula: sigue en su mesa y en estado
+      <b>Asignada a cajero</b> hasta que corrija y reenvíe.</p>
+  </div>
+  <div class="dlgF"><button class="btn btnGhost">Volver a las tulas</button>
+    <button class="btn btnPrimary">Corregir el conteo</button></div>
+</div></div>
+</div>
+</section>
+
+<section class="view" id="d1">
+  <div class="viewHead"><span class="vId">D1</span><h2>HTML de approval — revisión de reconteo (640 px)</h2><p>Plantilla nueva, table-based y compatible con el render de Outlook/Approvals. Las 6 secciones condicionales del plan, con diferencia coloreada y zebra sobria.</p></div>
+  <div class="mailPage"><div class="mail">
+  <div class="mailH">
+    <span class="tag">Revisión de reconteo</span>
+    <h3>Tula ST000123 — Planilla SR000456</h3>
+    <small>Distribuidora La Colonia — Metrocentro</small>
+  </div>
+  <div class="mailSec">
+    <h4>Datos de la solicitud</h4>
+    <table class="kvt">
+      <tr><td>Cajero</td><td>Luis Martínez</td></tr>
+      <tr><td>Mesa de conteo</td><td>Mesa 03 — Bóveda B</td></tr>
+      <tr><td>Sesión</td><td>16 ago 2026</td></tr>
+      <tr><td>Fecha de la solicitud</td><td>16 ago 2026 · 11:24</td></tr>
+      <tr><td>Planilla</td><td>SR000456</td></tr>
+      <tr><td>Cliente</td><td>Distribuidora La Colonia — Metrocentro</td></tr>
+    </table>
+  </div>
+
+  <div class="mailSec">
+    <h4>1 · Recontado vs. declarado (global)</h4>
+    <table class="mt">
+      <tr><th>Moneda</th><th>Concepto</th><th style="text-align:right">Cheques</th>
+        <th style="text-align:right">Monto cheques</th><th style="text-align:right">Efectivo</th></tr>
+      <tr><td rowspan="3" class="cur">NIO</td><td>Recontado</td><td class="n">4</td>
+        <td class="n">C$ 96,300.00</td><td class="n">C$ 482,150.00</td></tr>
+      <tr class="zeb"><td>Declarado</td><td class="n">6</td><td class="n">C$ 113,800.00</td>
+        <td class="n">C$ 544,000.00</td></tr>
+      <tr class="sub"><td>Diferencia</td><td class="n" style="color:#B3261E">−2</td>
+        <td class="n" style="color:#B3261E">−C$ 17,500.00</td>
+        <td class="n" style="color:#B3261E">−C$ 61,850.00</td></tr>
+      <tr><td rowspan="3" class="cur">USD</td><td>Recontado</td><td class="n">2</td>
+        <td class="n">U$ 1,250.00</td><td class="n">U$ 12,400.00</td></tr>
+      <tr class="zeb"><td>Declarado</td><td class="n">2</td><td class="n">U$ 1,250.00</td>
+        <td class="n">U$ 12,400.00</td></tr>
+      <tr class="sub"><td>Diferencia</td><td class="n" style="color:#0E7A3C">0</td>
+        <td class="n" style="color:#0E7A3C">U$ 0.00</td><td class="n" style="color:#0E7A3C">U$ 0.00</td></tr>
+      <tr><td rowspan="3" class="cur">EUR</td><td>Recontado</td><td class="n">0</td>
+        <td class="n">€ 0.00</td><td class="n">€ 0.00</td></tr>
+      <tr class="zeb"><td>Declarado</td><td class="n">0</td><td class="n">€ 0.00</td><td class="n">€ 0.00</td></tr>
+      <tr class="sub"><td>Diferencia</td><td class="n" style="color:#0E7A3C">0</td>
+        <td class="n" style="color:#0E7A3C">€ 0.00</td><td class="n" style="color:#0E7A3C">€ 0.00</td></tr>
+    </table>
+  </div>
+
+  <div class="mailSec">
+    <h4>2 · Diferencias por transacción</h4>
+    <table class="mt">
+      <tr><th>Cuenta</th><th>Moneda</th><th style="text-align:right">Dif. cheques</th>
+        <th style="text-align:right">Dif. efectivo</th><th style="text-align:right">Dif. total</th></tr>
+      <tr><td>100-501-2345</td><td>NIO</td><td class="n" style="color:#B3261E">+C$ 5,000.00</td>
+        <td class="n" style="color:#B3261E">−C$ 25,000.00</td>
+        <td class="n" style="color:#B3261E">−C$ 20,000.00</td></tr>
+      <tr class="zeb"><td>100-501-2346</td><td>NIO</td><td class="n">C$ 0.00</td>
+        <td class="n" style="color:#B3261E">−C$ 1,000.00</td>
+        <td class="n" style="color:#B3261E">−C$ 1,000.00</td></tr>
+    </table>
+  </div>
+
+  <div class="mailSec">
+    <h4>3 · Depósitos recontados sin enlazar</h4>
+    <table class="mt">
+      <tr><th>Cuenta</th><th>Moneda</th><th style="text-align:right">Cheques</th>
+        <th style="text-align:right">Efectivo</th><th style="text-align:right">Total</th></tr>
+      <tr><td>100-501-2388</td><td>NIO</td><td class="n">C$ 0.00</td><td class="n">C$ 24,150.00</td>
+        <td class="n">C$ 24,150.00</td></tr>
+    </table>
+  </div>
+
+  <div class="mailSec">
+    <h4>4 · Cheques declarados sin enlazar</h4>
+    <table class="mt">
+      <tr><th>N° de cheque</th><th>Tipo</th><th>Moneda</th><th style="text-align:right">Monto</th>
+        <th>Depósito declarado</th></tr>
+      <tr><td>0045830</td><td>BAC Local</td><td>NIO</td><td class="n">C$ 12,500.00</td><td>100-501-2350</td></tr>
+      <tr class="zeb"><td>0045831</td><td>Otros Local</td><td>NIO</td><td class="n">C$ 6,000.00</td><td>100-501-2350</td></tr>
+      <tr><td>0045832</td><td>BAC Local</td><td>NIO</td><td class="n">C$ 4,000.00</td><td>100-501-2350</td></tr>
+      <tr class="sub"><td colspan="3">Total sin enlazar</td><td class="n">C$ 22,500.00</td><td>3 cheques</td></tr>
+    </table>
+  </div>
+
+  <div class="mailSec">
+    <h4>5 · Cheques agregados manualmente</h4>
+    <table class="mt">
+      <tr><th>N° de cheque</th><th>Tipo</th><th>Moneda</th><th style="text-align:right">Monto</th>
+        <th>Depósito recontado</th></tr>
+      <tr><td>0045915</td><td>BAC Local</td><td>NIO</td><td class="n">C$ 5,000.00</td><td>100-501-2345</td></tr>
+    </table>
+  </div>
+
+  <div class="mailSec">
+    <h4>6 · Depósitos declarados sin enlazar</h4>
+    <table class="mt">
+      <tr><th>Cuenta</th><th>Moneda</th><th style="text-align:right">Cheques</th>
+        <th style="text-align:right">Efectivo</th><th style="text-align:right">Total</th></tr>
+      <tr><td>100-501-2350</td><td>NIO</td><td class="n">C$ 22,500.00</td><td class="n">C$ 60,000.00</td>
+        <td class="n">C$ 82,500.00</td></tr>
+    </table>
+  </div>
+
+  <div class="mailFoot">
+    Solicitud generada por <b>CH-App-Recounting</b> · Luis Martínez · 16 ago 2026 11:24<br>
+    Cada sección se emite solo si tiene filas. Todo dato variable pasa por <b>HtmlEscape()</b>;
+    los GUIDs viajan aparte en <b>RequestResources</b> con <b>JSON()</b>. Formato monetario <b>"#,###.00"</b>.
+  </div>
+</div></div>
+</section>
+
+<section class="view" id="d2">
+  <div class="viewHead"><span class="vId">D2</span><h2>HTML de approval — variantes cortas</h2><p>Solicitud de mesa y tula sin declaración: párrafo con el pedido y tabla de 2 columnas con los datos clave.</p></div>
+  <div class="mailPage">
+  <div class="mail">
+    <div class="mailH"><span class="tag">Solicitud de mesa</span>
+      <h3>Apertura de sesión de reconteo</h3>
+      <small>Mesa 03 — Bóveda B</small></div>
+    <div class="mailSec" style="padding-bottom:0">
+      <p class="mailNote" style="padding:0">El cajero <b>Luis Martínez</b> solicita abrir una sesión de conteo
+        en la <b>Mesa 03 — Bóveda B</b> para el <b>16 de agosto de 2026</b>. Al aprobar, la mesa queda
+        asignada a este cajero por el resto del día.</p>
+      <table class="kvt">
+        <tr><td>Cajero</td><td>Luis Martínez</td></tr>
+        <tr><td>Mesa solicitada</td><td>Mesa 03 — Bóveda B</td></tr>
+        <tr><td>Fecha de la sesión</td><td>16 ago 2026</td></tr>
+        <tr><td>Hora de la solicitud</td><td>07:41</td></tr>
+      </table>
+    </div>
+    <div class="mailFoot">CH-App-Recounting · Si la mesa ya pertenece al cajero, el servidor aprueba
+      automáticamente y este correo no se emite.</div>
+  </div>
+
+  <div class="mail">
+    <div class="mailH"><span class="tag">Tula sin declaración</span>
+      <h3>Tula ST000123 — Planilla SR000456</h3>
+      <small>Distribuidora La Colonia — Metrocentro</small></div>
+    <div class="mailSec" style="padding-bottom:0">
+      <p class="mailNote" style="padding:0">La tula <b>ST000123</b> no tiene declaración registrada del cliente.
+        El cajero solicita autorización para recontarla <b>sin comparación contra lo declarado</b>: todas las
+        diferencias globales quedarán sin base de contraste.</p>
+      <table class="kvt">
+        <tr><td>Tula</td><td>ST000123</td></tr>
+        <tr><td>Planilla</td><td>SR000456</td></tr>
+        <tr><td>Cliente</td><td>Distribuidora La Colonia — Metrocentro</td></tr>
+        <tr><td>Cajero</td><td>Luis Martínez</td></tr>
+        <tr><td>Mesa</td><td>Mesa 03 — Bóveda B</td></tr>
+        <tr><td>Fecha</td><td>16 ago 2026 · 09:12</td></tr>
+      </table>
+    </div>
+    <div class="mailFoot">CH-App-Recounting · Datos escapados con HtmlEscape() · Formato monetario "#,###.00"</div>
+  </div>
+</div>
+</section>
+
+<div class="notes">
+    <h2>Decisiones de diseño del mockup</h2>
+    <ul>
+      <li><b>El rail de scrTulas reemplaza al header.</b> A diferencia de Reception (header en las dos pantallas),
+        scrTulas concentra identidad, cajero, mesa activa y KPIs en el rail de 250 px, y deja el cuerpo entero
+        para el escaneo y la lista. scrConteo y scrSesion sí llevan header, porque son pantallas de foco único.</li>
+      <li><b>La columna «Auto» es un badge gris de solo lectura, no un input.</b> El cajero solo escribe en
+        «Cantidad»; lo persistido es <code>auto + manual</code>, y el pie de la grilla muestra ambas sumas por
+        separado para que el arqueo se reconstruya desde CountedMoneyDetails.</li>
+      <li><b>El panel derecho tiene su propia matriz Rec/Dec/Diff del depósito</b>, además de la franja global.
+        Sin ella el cajero no sabe qué transacción está descuadrando hasta pulsar «Terminar».</li>
+      <li><b>Los cheques manuales se pintan en ámbar</b> (fondo <code>--warn-soft</code>) y los declarados en
+        blanco con chip azul: el origen del cheque se lee sin abrir nada, porque es exactamente lo que el
+        supervisor va a auditar.</li>
+      <li><b>La cuenta del depósito vive en el panel derecho</b>, junto a la moneda, y no en un diálogo aparte.</li>
+      <li><b>«Terminar tula» con discrepancias usa banners de advertencia apilados</b>, uno por familia de
+        hallazgo, en el mismo orden que las 6 secciones del correo — el cajero ve en pantalla lo que verá el
+        supervisor.</li>
+      <li><b>La espera y el rechazo son diálogos, no pantallas.</b> Mantienen el contexto de la tula detrás y
+        evitan una cuarta pantalla.</li>
+      <li><b>El correo no usa border-radius ni sombras</b>: tablas con borde, zebra y encabezados en mayúsculas,
+        para sobrevivir al render de Outlook.</li>
+      <li><b>Datos de utilería coherentes:</b> la tula ST000123 cierra aritméticamente en las 3 vistas de
+        scrConteo, en el diálogo de discrepancias y en el correo (NIO recontado C$ 482,150.00 vs declarado
+        C$ 544,000.00; 3 cheques declarados sin enlazar por C$ 22,500.00; 1 cheque manual por C$ 5,000.00).</li>
+    </ul>
+  </div>
+</div>
