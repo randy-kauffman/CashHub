@@ -23,11 +23,27 @@ namespace CashHub.Validation.Security
     /// </summary>
     public static class CheckMirrors
     {
+        /// <summary>Stage Pre-operation del pipeline (sdkmessageprocessingstep.stage = 20).</summary>
+        public const int PreOperationStage = 20;
+
+        /// <summary>Stage Post-operation del pipeline (sdkmessageprocessingstep.stage = 40).</summary>
+        public const int PostOperationStage = 40;
+
         /// <summary>Instruccion de estampa sobre UN cheque declarado. MatchedCheckId null = limpiar.</summary>
         public sealed class MatchUpdate
         {
             public Guid DeclaredCheckId { get; set; }
             public Guid? MatchedCheckId { get; set; }
+        }
+
+        /// <summary>
+        /// B6/B-9 se escriben EN el Target: solo tienen efecto en Pre-operation, donde
+        /// lo que se escribe todavia viaja con la operacion. En Post-operation la fila
+        /// ya se guardo y tocar el Target no escribe nada.
+        /// </summary>
+        public static bool ShouldStampTargetMirrors(int stage)
+        {
+            return stage == PreOperationStage;
         }
 
         /// <summary>
@@ -47,19 +63,45 @@ namespace CashHub.Validation.Security
         }
 
         /// <summary>
+        /// true si en este mensaje+stage la fila del cheque fisico YA EXISTE y por lo
+        /// tanto se le puede apuntar un lookup desde el declarado. En el Create eso
+        /// recien pasa en Post-operation (40); en el Update pasa siempre.
+        ///
+        /// Existe aparte de <see cref="ResolveMatchUpdates"/> para que el plugin ni
+        /// siquiera lea el declarado cuando el write-back no corresponde.
+        /// </summary>
+        public static bool CanWriteBackMatch(string message, int stage)
+        {
+            return !string.Equals(message, "Create", StringComparison.OrdinalIgnoreCase)
+                || stage >= PostOperationStage;
+        }
+
+        /// <summary>
         /// Instrucciones de MatchedCheck cuando el cheque fisico (des)referencia un
         /// declarado: limpiar el viejo si cambio, estampar el nuevo si hay. Sin
         /// cambio real, cero escrituras (no ensuciar auditoria del declarado).
+        ///
+        /// El STAGE es parte de la decision y NO es decorativo: el write-back escribe
+        /// en OTRA tabla un lookup que apunta AL cheque fisico. En el Create, en
+        /// Pre-operation (20) esa fila TODAVIA NO EXISTE y Dataverse rechaza el lookup
+        /// con 0x80040265 ("Does Not Exist"), tumbando el Create entero. Por eso el
+        /// Create solo estampa desde Post-operation (40). El Update no tiene ese
+        /// problema — la fila ya existe en cualquier stage — y por eso sigue viviendo
+        /// en el mismo paso Pre-operation de siempre.
+        ///
+        /// <paramref name="targetDeclaredMatch"/> es el MatchedCheck que YA tiene el
+        /// declarado destino: si coincide, no se reescribe (idempotencia).
         /// </summary>
         public static IReadOnlyList<MatchUpdate> ResolveMatchUpdates(
-            string message, Guid checkId, bool declaredTouched,
-            Guid? targetDeclared, Guid? preDeclared)
+            string message, int stage, Guid checkId, bool declaredTouched,
+            Guid? targetDeclared, Guid? preDeclared, Guid? targetDeclaredMatch = null)
         {
             var updates = new List<MatchUpdate>(2);
+            var stamp = targetDeclared.HasValue && targetDeclaredMatch != checkId;
 
             if (string.Equals(message, "Create", StringComparison.OrdinalIgnoreCase))
             {
-                if (targetDeclared.HasValue)
+                if (CanWriteBackMatch(message, stage) && stamp)
                 {
                     updates.Add(new MatchUpdate
                     {
@@ -84,7 +126,7 @@ namespace CashHub.Validation.Security
                 });
             }
 
-            if (targetDeclared.HasValue)
+            if (stamp)
             {
                 updates.Add(new MatchUpdate
                 {

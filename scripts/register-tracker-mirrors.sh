@@ -9,10 +9,17 @@
 #      BagReconciliationMirrorPlugin (B5) — Pre-op (20) en sanic_chtblbags:
 #        Create; Update (filtrado en sanic_bagdeclarationid + totales + estado,
 #        PreImage de esas columnas).
-#      CheckMirrorStampPlugin (B3+B6+B-9) — Pre-op (20) en sanic_chtblchecks:
-#        Create; Update (filtrado en deposito + declarado, PreImage declarado).
-#        B-9 (espejo sanic_recountingsession) viaja en ESTOS MISMOS pasos: sale de la
-#        misma cadena deposito -> tula -> sesion, asi que el filtro en
+#      CheckMirrorStampPlugin (B3+B6+B-9) en sanic_chtblchecks — el Create va PARTIDO
+#        en dos pasos:
+#          - Pre-op  (20) Create: B6 + B-9, que se escriben EN el Target (gratis).
+#          - Post-op (40) Create "(post-op B3)": B3 (MatchedCheck en el cheque
+#            DECLARADO). No puede ir en pre-op: el lookup apunta al cheque fisico y
+#            en pre-op esa fila TODAVIA NO EXISTE -> 0x80040265 "Does Not Exist" y
+#            se cae el Create entero (bug del stress de recuento, 05 §7.11).
+#          - Pre-op  (20) Update (filtrado en deposito + declarado, PreImage
+#            declarado): B6 + B-9 + B3 juntos; en Update la fila ya existe.
+#        B-9 (espejo sanic_recountingsession) viaja en los MISMOS pasos que B6: sale
+#        de la misma cadena deposito -> tula -> sesion, asi que el filtro en
 #        sanic_relatedrecounterdepositid ya es su disparador exacto. La CASCADA de
 #        B-9 (Update de sanic_chtblbags filtrado en sanic_recountingsession) se
 #        registra en scripts/register-supervisor-mirrors.sh, no aca.
@@ -86,35 +93,44 @@ asm_id = upsert('pluginassemblies', "name eq 'CashHub.Plugins'", {
 
 msg = {m: one('sdkmessages', f"name eq '{m}'", 'sdkmessageid') for m in ('Create', 'Update', 'Delete')}
 
-# (clase, friendly, entidad, mensaje, stage, filteringattributes, image_attrs, descripcion)
+# (entidad, mensaje, stage, filteringattributes, image_attrs, descripcion, sufijo_nombre)
+# El sufijo desambigua DOS pasos del MISMO mensaje y entidad (el Create partido de
+# los cheques). None = nombre historico, que NO se toca: renombrar un paso ya
+# registrado no lo actualiza, crea uno nuevo y deja el viejo vivo.
 PLUGINS = [
     ('CashHub.Plugins.ReceptionBatchTotalsPlugin', 'CashHub Reception Batch Totals', [
         ('sanic_chtblreceptions', 'Create', 40, None, None,
-         'Recomputa los totales declarados del lote al crear una planilla.'),
+         'Recomputa los totales declarados del lote al crear una planilla.', None),
         ('sanic_chtblreceptions', 'Update', 40,
          'sanic_niocash,sanic_niocheck,sanic_usdcash,sanic_usdcheck,sanic_receptionbatch',
          'sanic_receptionbatch',
-         'Recomputa los totales declarados al cambiar montos o mover la planilla de lote.'),
+         'Recomputa los totales declarados al cambiar montos o mover la planilla de lote.', None),
         ('sanic_chtblreceptions', 'Delete', 40, None, 'sanic_receptionbatch',
-         'Recomputa los totales declarados del lote al borrar una planilla.'),
+         'Recomputa los totales declarados del lote al borrar una planilla.', None),
     ]),
     ('CashHub.Plugins.BagReconciliationMirrorPlugin', 'CashHub Bag Reconciliation Mirror', [
         ('sanic_chtblbags', 'Create', 20, None, None,
-         'Materializa DeclTotal* y HasDifference al crear la tula.'),
+         'Materializa DeclTotal* y HasDifference al crear la tula.', None),
         ('sanic_chtblbags', 'Update', 20,
          'sanic_bagdeclarationid,sanic_totalnio,sanic_totalusd,sanic_totaleur,sanic_bagstatus',
          'sanic_bagdeclarationid,sanic_totalnio,sanic_totalusd,sanic_totaleur,sanic_bagstatus',
-         'Materializa DeclTotal* y HasDifference cuando cambia declaracion, totales o estado.'),
+         'Materializa DeclTotal* y HasDifference cuando cambia declaracion, totales o estado.',
+         None),
     ]),
     ('CashHub.Plugins.CheckMirrorStampPlugin', 'CashHub Check Mirror Stamp', [
         ('sanic_chtblchecks', 'Create', 20, None, None,
-         'Estampa la tula (B6), la sesion de recuento (B-9) y el MatchedCheck del '
-         'declarado (B3) al crear el cheque.'),
+         'Estampa la tula (B6) y la sesion de recuento (B-9) EN el cheque al crearlo. '
+         'El MatchedCheck del declarado (B3) NO va aca: en pre-op el cheque todavia no '
+         'existe y el lookup se rechaza (0x80040265).', None),
+        ('sanic_chtblchecks', 'Create', 40, None, None,
+         'Estampa el MatchedCheck del cheque declarado (B3) una vez creado el cheque '
+         'fisico. Post-operation porque el lookup apunta a la fila recien creada.',
+         '(post-op B3)'),
         ('sanic_chtblchecks', 'Update', 20,
          'sanic_relatedrecounterdepositid,sanic_relateddeclaredcheck',
          'sanic_relateddeclaredcheck',
          'Re-estampa tula, sesion de recuento y MatchedCheck al cambiar deposito o '
-         'cheque declarado.'),
+         'cheque declarado.', None),
     ]),
 ]
 
@@ -124,11 +140,13 @@ for typename, friendly, steps in PLUGINS:
         'pluginassemblyid@odata.bind': f"/pluginassemblies({asm_id})",
     }, f"plugintype {typename.split('.')[-1]}", 'plugintypeid')
 
-    for entity, message, stage, filtering, image_attrs, description in steps:
+    for entity, message, stage, filtering, image_attrs, description, suffix in steps:
         flt = one('sdkmessagefilters',
             f"primaryobjecttypecode eq '{entity}' and _sdkmessageid_value eq {msg[message]}",
             'sdkmessagefilterid')
         name = f"CashHub.{typename.split('.')[-1].replace('Plugin', '')}: {message} de {entity}"
+        if suffix:
+            name = f"{name} {suffix}"
         body = {
             'name': name,
             'description': description,

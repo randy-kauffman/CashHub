@@ -22,14 +22,23 @@ namespace CashHub.Plugins
     ///        materializar filas topa en el limite del cliente (500/2000) SIN error:
     ///        el conteo miente por omision (QA lo probo con 2.074 cheques).
     ///
-    /// Tres pasos SINCRONOS:
-    ///   - Pre-operation  (20) Create de sanic_chtblchecks: estampa B6 + B-9 + B3.
+    /// Cuatro pasos SINCRONOS:
+    ///   - Pre-operation  (20) Create de sanic_chtblchecks: estampa B6 + B-9 (EN el
+    ///     Target). B3 NO: en pre-op la fila del cheque todavia no existe.
+    ///   - Post-operation (40) Create de sanic_chtblchecks: estampa B3, ya con la
+    ///     fila del cheque creada.
     ///   - Pre-operation  (20) Update de sanic_chtblchecks, filtrado en
     ///     sanic_relatedrecounterdepositid + sanic_relateddeclaredcheck, con PreImage
-    ///     (sanic_relateddeclaredcheck): re-estampa al re-colgar el cheque.
+    ///     (sanic_relateddeclaredcheck): re-estampa al re-colgar el cheque (B6+B-9+B3;
+    ///     en Update la fila ya existe, el write-back no necesita post-op).
     ///   - Post-operation (40) Update de sanic_chtblbags, filtrado en
     ///     sanic_recountingsession y con PreImage de esa columna: CASCADA de la
     ///     sesion a TODOS los cheques de la tula, paginada de a 500.
+    ///
+    /// El Create esta PARTIDO en dos pasos por integridad referencial: B3 escribe en
+    /// el cheque DECLARADO un lookup que apunta al cheque fisico, y en Pre-operation
+    /// esa fila no existe — Dataverse responde 0x80040265 y tumba el Create entero
+    /// (bug reproducido con 783 cheques en el stress de recuento).
     ///
     /// Por que la cascada vive ACA y no en BagReceptionMirrorPlugin (que ya despacha
     /// por entidad): la regla es "el plugin que ESCRIBE una columna espejo es el
@@ -72,7 +81,13 @@ namespace CashHub.Plugins
                 }
                 else if (context.PrimaryEntityName == Schema.Check.LogicalName)
                 {
-                    StampBagAndSession(system, tracing, context.MessageName, target);
+                    // B6/B-9 solo tienen sentido en el paso Pre-operation (escriben EN
+                    // el Target); B3 se auto-filtra por mensaje+stage en el dominio.
+                    if (CheckMirrors.ShouldStampTargetMirrors(context.Stage))
+                    {
+                        StampBagAndSession(system, tracing, context.MessageName, target);
+                    }
+
                     StampMatchedCheck(system, tracing, context, target);
                 }
                 else
@@ -148,23 +163,59 @@ namespace CashHub.Plugins
                 sessionRef != null ? sessionRef.Id.ToString() : "null");
         }
 
-        /// <summary>B3: estampa/limpia el espejo inverso en el (los) cheque(s) declarado(s).</summary>
+        /// <summary>
+        /// B3: estampa/limpia el espejo inverso en el (los) cheque(s) declarado(s).
+        ///
+        /// Escribe en OTRA tabla un lookup que apunta AL cheque fisico, asi que exige
+        /// que la fila del cheque exista: en el Create eso recien pasa en
+        /// Post-operation (40) — en Pre-operation Dataverse rechaza el lookup con
+        /// 0x80040265 y se cae el Create entero. En el Update la fila ya existe y el
+        /// write-back sigue viajando en el mismo paso Pre-operation.
+        /// </summary>
         private static void StampMatchedCheck(
             IOrganizationService system, ITracingService tracing,
             IPluginExecutionContext context, Entity target)
         {
+            if (!CheckMirrors.CanWriteBackMatch(context.MessageName, context.Stage))
+            {
+                tracing.Trace(
+                    "CheckMirror: {0} en stage {1} — la fila del cheque todavia no existe; "
+                    + "el MatchedCheck del declarado lo estampa el paso Post-operation (40).",
+                    context.MessageName, context.Stage);
+                return;
+            }
+
             Guid? preDeclared = null;
             if (context.PreEntityImages.TryGetValue(Schema.Check.PreImageName, out var pre))
             {
                 preDeclared = pre.GetAttributeValue<EntityReference>(Schema.Check.RelatedDeclaredCheck)?.Id;
             }
 
+            var declaredTouched = target.Contains(Schema.Check.RelatedDeclaredCheck);
+            var targetDeclared = target
+                .GetAttributeValue<EntityReference>(Schema.Check.RelatedDeclaredCheck)?.Id;
+
+            // Idempotencia: si el declarado ya apunta a este cheque, reescribirlo
+            // ensucia su auditoria y re-dispara sus propios espejos por nada. Una
+            // lectura de UNA columna es mas barata que la escritura que evita.
+            Guid? targetDeclaredMatch = null;
+            if (declaredTouched && targetDeclared.HasValue)
+            {
+                var declared = system.Retrieve(
+                    Schema.DeclaredCheck.LogicalName, targetDeclared.Value,
+                    new ColumnSet(Schema.DeclaredCheck.MatchedCheck));
+                targetDeclaredMatch = declared
+                    .GetAttributeValue<EntityReference>(Schema.DeclaredCheck.MatchedCheck)?.Id;
+            }
+
             var updates = CheckMirrors.ResolveMatchUpdates(
                 context.MessageName,
+                context.Stage,
                 checkId: target.Id != Guid.Empty ? target.Id : context.PrimaryEntityId,
-                declaredTouched: target.Contains(Schema.Check.RelatedDeclaredCheck),
-                targetDeclared: target.GetAttributeValue<EntityReference>(Schema.Check.RelatedDeclaredCheck)?.Id,
-                preDeclared: preDeclared);
+                declaredTouched: declaredTouched,
+                targetDeclared: targetDeclared,
+                preDeclared: preDeclared,
+                targetDeclaredMatch: targetDeclaredMatch);
 
             foreach (var update in updates)
             {

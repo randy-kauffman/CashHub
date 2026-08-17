@@ -267,6 +267,12 @@ namespace CashHub.Plugins
             public const string RequestType = "sanic_requesttype";
             public const string CreatedBy = "createdby";
 
+            /// <summary>Supervisor (o el plugin de auto-aprobacion) que resolvio. Lookup a systemuser.</summary>
+            public const string SolvedBy = "sanic_solvedby";
+
+            /// <summary>Fecha/hora de la resolucion.</summary>
+            public const string ResolutionDatetime = "sanic_resolutiondatetime";
+
             public const string PreImageName = "PreImage";
         }
 
@@ -288,6 +294,12 @@ namespace CashHub.Plugins
             public const string Currency = "sanic_currency";
             public const string TransactionType = "sanic_transactiontype";
             public const string TransactionNumber = "sanic_transactionnumber";
+
+            /// <summary>
+            /// Referencia del deposito DECLARADO enlazado (DeclaredDeposit.DepositReference).
+            /// La copia el asiento al crearse; en blanco en la ruta "tula sin declaracion".
+            /// </summary>
+            public const string TransactionReference = "sanic_transactionreference";
 
             /// <summary>
             /// Total CALCULADO (SourceType 3): ValidForCreateApi/UpdateApi = 0, la
@@ -371,6 +383,109 @@ namespace CashHub.Plugins
         internal static class RecountingSession
         {
             public const string LogicalName = "sanic_chtblrecountingsession";
+            public const string Id = "sanic_chtblrecountingsessionid";
+
+            /// <summary>Cajero dueno de la sesion (lookup a systemuser, requerido).</summary>
+            public const string Cashier = "sanic_cashier";
+
+            /// <summary>Mesa de conteo elegida (lookup a CH-Tbl-CountingDesks, requerido).</summary>
+            public const string CountingDesk = "sanic_countingdesk";
+
+            /// <summary>
+            /// Confirmacion de la sesion. 🚫 La app v2 NUNCA la escribe: la estampa
+            /// RecountingSessionAutoApprovePlugin al auto-aprobar la mesa propia
+            /// (00 §2.2 punto 1). Mata S-1.
+            /// </summary>
+            public const string Confirmed = "sanic_confirmed";
+
+            /// <summary>Quien confirmo la sesion (lookup a systemuser).</summary>
+            public const string ConfirmedBy = "sanic_confirmedby";
+
+            public const string SessionForciblyClosed = "sanic_sessionforciblyclosed";
+
+            /// <summary>PreImage del paso Delete del guard, con sanic_cashier + sanic_confirmed.</summary>
+            public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Mesa de conteo (CH-Tbl-CountingDesks) — solo lectura para las apps.</summary>
+        internal static class CountingDesk
+        {
+            public const string LogicalName = "sanic_chtblcountingdesk";
+
+            /// <summary>Cajero asignado a la mesa (lookup a systemuser). Es el insumo del auto-approve.</summary>
+            public const string Cajero = "sanic_cajero";
+        }
+
+        /// <summary>Detalle de arqueo por denominacion (CH-Tbl-CountedMoneyDetails).</summary>
+        internal static class CountedMoneyDetail
+        {
+            public const string LogicalName = "sanic_chtblcountedmoneydetails";
+            public const string Id = "sanic_chtblcountedmoneydetailsid";
+
+            /// <summary>Deposito de recuento padre (lookup, requerido). Es por donde el gate llega a la tula.</summary>
+            public const string DepositLookup = "sanic_relateddepositrecountingid";
+
+            public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Detalle de sesion de recuento — una tula dentro de la sesion
+        /// (CH-Tbl-RecountingSessionDetails).</summary>
+        internal static class RecountingSessionDetail
+        {
+            public const string LogicalName = "sanic_chtblrecountingsessiondetail";
+            public const string Id = "sanic_chtblrecountingsessiondetailid";
+        }
+
+        /// <summary>Lectura de la contadora (CH-Tbl-XMLReadings).</summary>
+        internal static class XmlReading
+        {
+            public const string LogicalName = "sanic_chtblxmlreading";
+            public const string Id = "sanic_chtblxmlreadingid";
+
+            /// <summary>Sesion-detalle (tula) a la que pertenece la lectura. Origen de E-4.</summary>
+            public const string SessionDetailLookup = "sanic_recountingsessiondetailid";
+
+            /// <summary>
+            /// Bit de lectura vigente. Origen de E-4: cuando llega una lectura nueva,
+            /// la vieja se apaga DESPUES de que sus detalles ya existen — por eso el
+            /// espejo necesita cascada y no alcanza con estampar en el Create del hijo.
+            /// </summary>
+            public const string IsActive = "sanic_isactive";
+
+            /// <summary>
+            /// PreImage del paso de CASCADA (Update Post-op de la LECTURA) con
+            /// sanic_recountingsessiondetailid + sanic_isactive: sin ella no se sabe si
+            /// los valores CAMBIARON y la cascada reescribiria N detalles por un update
+            /// sin cambio real. Ademas aporta el valor EFECTIVO de la columna que no
+            /// vino en el Target (las dos se propagan juntas).
+            /// </summary>
+            public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Detalle de la lectura de la contadora, por denominacion
+        /// (CH-Tbl-XMLReadingDetails).</summary>
+        internal static class XmlReadingDetail
+        {
+            public const string LogicalName = "sanic_chtblxmlreadingdetail";
+            public const string Id = "sanic_chtblxmlreadingdetailid";
+            public const string ReadingLookup = "sanic_xmlreading";
+
+            /// <summary>
+            /// E-4 (lookup): sesion-detalle de la lectura del detalle, derivada por
+            /// XmlReadingDetailMirrorPlugin. Existe para que Q17 ("Leer contadora") sea
+            /// un Filter DELEGABLE de UN salto: la v1 escribia
+            /// Filter(details, XMLReading.Id in Filter(readings, ...).Id) — un "in" con
+            /// subconsulta que JAMAS delega (D-1). "No editar a mano."
+            /// </summary>
+            public const string SessionDetailMirror = "sanic_recountingsessiondetailmirror";
+
+            /// <summary>
+            /// E-4 (bit): espejo de XMLReading.IsActive. Es la SEGUNDA condicion de Q17;
+            /// sin ella habria que volver a CH-Tbl-XMLReadings a preguntar IsActive y
+            /// vuelve el segundo salto que E-4 vino a matar (ledger L-3).
+            /// "No editar a mano."
+            /// </summary>
+            public const string ActiveMirror = "sanic_xmlreadingactiva";
         }
 
         /// <summary>Bolsa declarada (CH-Tbl-DeclaredBags).</summary>
@@ -396,6 +511,19 @@ namespace CashHub.Plugins
             /// recuento. "No editar a mano."
             /// </summary>
             public const string MatchedCheck = "sanic_matchedcheck";
+
+            /// <summary>Deposito declarado padre. Origen del espejo E-3.</summary>
+            public const string DeclaredDepositLookup = "sanic_declareddepositid";
+
+            /// <summary>
+            /// E-3: bolsa declarada del cheque declarado, derivada de
+            /// sanic_declareddepositid.sanic_declaredbag por
+            /// DeclaredCheckBagMirrorPlugin. Existe para que la apertura de tula traiga
+            /// TODOS los cheques declarados de la bolsa en UNA query delegable en vez
+            /// de un Filter remoto por deposito declarado (~82 round-trips medidos).
+            /// "No editar a mano."
+            /// </summary>
+            public const string DeclaredBagMirror = "sanic_declaredbagmirror";
         }
 
         /// <summary>Lote de transacciones (CH-Tbl-TransactionBatches).</summary>
@@ -461,6 +589,21 @@ namespace CashHub.Plugins
             /// guard resuelve por este y, si viene vacio, por el otro.
             /// </summary>
             public const string RelatedDeclaredDeposit = "sanic_relateddeclareddeposit";
+
+            /// <summary>Tula del deposito de recuento. Origen del espejo E-1.</summary>
+            public const string BagLookup = "sanic_bagid";
+
+            /// <summary>
+            /// E-1: sesion de recuento del deposito, derivada de
+            /// sanic_bagid.sanic_recountingsession por DepositSessionMirrorPlugin.
+            /// Existe para que los 12 Sum de dinero de scrTulas sean DELEGADOS: la
+            /// cadena Deposito -> Tula -> Sesion es dot-walk de DOS saltos, NO delega,
+            /// y Power Fx trunca en el tope del cliente (500/2000) SIN error — el rail
+            /// de KPIs mostraba cifras PARCIALES de plata (D-2). "No editar a mano."
+            /// </summary>
+            public const string SessionMirror = "sanic_recountingsessionmirror";
+
+            public const string PreImageName = "PreImage";
         }
 
         /// <summary>Deposito declarado por el cliente (CH-Tbl-DeclaredDeposits).</summary>
@@ -477,8 +620,18 @@ namespace CashHub.Plugins
             public const string Currency = "sanic_currency";
             public const string TransactionNumber = "sanic_transactionno";
 
+            /// <summary>Referencia del deposito declarado (texto 31, field-level security).</summary>
+            public const string DepositReference = "sanic_depositreference";
+
             /// <summary>Lado declarado -> recontado de la relacion (vacio = nadie lo reconto).</summary>
             public const string RelatedRecountedDeposit = "sanic_relatedrecounteddeposit";
+
+            /// <summary>
+            /// Bolsa declarada a la que pertenece el deposito. La escribe
+            /// DeclarationMaterializer en el Create; es el ORIGEN del espejo E-3
+            /// sanic_declaredbagmirror del cheque declarado.
+            /// </summary>
+            public const string DeclaredBagLookup = "sanic_declaredbag";
         }
 
         /// <summary>Custom API de corte de transacciones a lote (CH-App-Digitization).</summary>
