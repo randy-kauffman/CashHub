@@ -330,6 +330,13 @@ namespace CashHub.Plugins
             /// <summary>Espejo del estado del lote, mantenido por TransactionBatchStatusMirrorPlugin.</summary>
             public const string BatchStatusMirror = "sanic_batchstatus";
 
+            /// <summary>
+            /// Motivo por el que el Core rechazo la transaccion al sacarla del lote
+            /// (memo). Lo escribe el Custom API sanic_CHRemoveFromCut; la app lo
+            /// muestra en el historial. Creada por create-digitization-columns.sh.
+            /// </summary>
+            public const string MotivoRechazoCore = "sanic_motivorechazocore";
+
             public const string PreImageName = "PreImage";
         }
 
@@ -347,6 +354,16 @@ namespace CashHub.Plugins
             public const string SentToDigitizationOn = "sanic_senttodigitizationon";
             public const string ReceivedOn = "sanic_receivedon";
             public const string NotReceivedOn = "sanic_notreceivedon";
+
+            /// <summary>
+            /// Autores del handshake (lookup a systemuser), estampados por
+            /// CheckStatusStampPlugin junto a los sellos de fecha: SentToDigitizationBy
+            /// al enviar (el Supervisor), ReceivedBy al (no) recibir (el Digitador).
+            /// scrCheques v2 los muestra como "Enviado por" / "Recibido por".
+            /// Creadas por create-digitization-columns.sh. "No editar a mano."
+            /// </summary>
+            public const string SentToDigitizationBy = "sanic_senttodigitizationby";
+            public const string ReceivedBy = "sanic_receivedby";
 
             public const string RelatedDepositLookup = "sanic_relatedrecounterdepositid";
             public const string RelatedDeclaredCheck = "sanic_relateddeclaredcheck";
@@ -411,6 +428,9 @@ namespace CashHub.Plugins
         internal static class CountingDesk
         {
             public const string LogicalName = "sanic_chtblcountingdesk";
+
+            /// <summary>Nombre de la mesa (CH-Tbl-CountingDesk). Da la mesa del cajero en el rail (B4).</summary>
+            public const string Name = "sanic_name";
 
             /// <summary>Cajero asignado a la mesa (lookup a systemuser). Es el insumo del auto-approve.</summary>
             public const string Cajero = "sanic_cajero";
@@ -645,6 +665,54 @@ namespace CashHub.Plugins
             public const string OutBatchId = "BatchId";
             public const string OutBatchName = "BatchName";
             public const string OutAssignedCount = "AssignedCount";
+        }
+
+        /// <summary>
+        /// Custom API para sacar una transaccion de su lote y devolverla al circuito
+        /// Manual (rechazos del Core / revision antes de subir). Reemplaza el
+        /// Patch client-side + Refresh + LookUp de scrLotes.
+        /// </summary>
+        internal static class RemoveFromCutApi
+        {
+            public const string MessageName = "sanic_CHRemoveFromCut";
+
+            /// <summary>sanic_chtbltransactionsid de la transaccion a desasignar (REQUERIDO).</summary>
+            public const string InTransactionId = "TransactionId";
+
+            /// <summary>Motivo del rechazo del Core (opcional); se persiste en sanic_motivorechazocore.</summary>
+            public const string InMotivo = "Motivo";
+
+            public const string OutBatchId = "BatchId";
+            public const string OutTotalNio = "TotalNIO";
+            public const string OutTotalUsd = "TotalUSD";
+            public const string OutTotalEur = "TotalEUR";
+        }
+
+        /// <summary>
+        /// Custom API de conteo del corte (dry-run): cuenta los elegibles del cajero con
+        /// la MISMA semantica que CreateTransactionCutPlugin, sin crear nada. El dialogo
+        /// de confirmacion de scrCorte lo usa para que el numero que confirma el operador
+        /// y el que ejecuta el corte salgan de la misma fuente (mata D-2).
+        /// </summary>
+        internal static class PreviewCutApi
+        {
+            public const string MessageName = "sanic_CHPreviewTransactionCut";
+            public const string InCajeroId = "CajeroId";
+            public const string OutEligibleCount = "EligibleCount";
+            public const string OutTotalNio = "TotalNIO";
+            public const string OutTotalUsd = "TotalUSD";
+            public const string OutTotalEur = "TotalEUR";
+        }
+
+        /// <summary>
+        /// Custom API que alimenta el rail de cajeros de scrCorte/scrManual/scrLotes:
+        /// agregado por cajero (el GroupBy no delega en canvas). Devuelve un JSON string
+        /// (Workload) con una fila por cajero que tiene trabajo pendiente.
+        /// </summary>
+        internal static class WorkloadApi
+        {
+            public const string MessageName = "sanic_CHWorkloadByCashier";
+            public const string OutWorkload = "Workload";
         }
 
         /// <summary>Team de Dataverse. Los AAD group teams materializan su membresia en teammembership.</summary>

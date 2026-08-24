@@ -417,5 +417,38 @@ namespace CashHub.Validation.Tests
         {
             Assert.True(EvalTx().IsAllowed);
         }
+
+        // ---- Sacar del lote (Custom API sanic_CHRemoveFromCut): Generado o Ingresado ----
+
+        [Theory]
+        [InlineData(BatchGenerado)]  // revisar/quitar antes de subir al Core
+        [InlineData(BatchIngresado)] // rechazos del Core durante la carga
+        public void CanRemoveFromCut_LoteAbierto_True(int currentBatchStatus)
+        {
+            Assert.True(CanRemoveFromCut(currentBatchStatus));
+        }
+
+        [Theory]
+        [InlineData(BatchAplicado)]  // ya cargado y confirmado: intocable
+        [InlineData(BatchAprobado)]  // dead-end prohibido
+        [InlineData(null)]           // sin lote: no hay nada de donde sacarla
+        public void CanRemoveFromCut_LoteCerradoOInexistente_False(int? currentBatchStatus)
+        {
+            Assert.False(CanRemoveFromCut(currentBatchStatus));
+        }
+
+        [Fact]
+        public void CanRemoveFromCut_CoincideConLaDesasignacionDelGuard()
+        {
+            // La regla del Custom API y la que impone el guard en la desasignacion son
+            // la misma fuente: desasignar (batch -> null) de un lote Ingresado se permite,
+            // de un lote Aplicado se bloquea.
+            Assert.True(EvalTx(
+                batchInTarget: true, newBatchIsNull: true, hadBatch: true,
+                currentBatchStatus: BatchIngresado).IsAllowed);
+            Assert.False(EvalTx(
+                batchInTarget: true, newBatchIsNull: true, hadBatch: true,
+                currentBatchStatus: BatchAplicado).IsAllowed);
+        }
     }
 }

@@ -160,6 +160,21 @@ namespace CashHub.Validation.Security
         // ---- Transaccion (CH-Tbl-Transactions) ----
 
         /// <summary>
+        /// true si una transaccion puede SACARSE de su lote (desasignarse y volver al
+        /// circuito Manual): solo mientras el lote esta Generado (revisar/quitar antes de
+        /// subir al Core) o Ingresado (los rechazos del Core ocurren durante la carga, con
+        /// el lote ya Ingresado). Un lote Aplicado — o cualquier otro estado — es intocable.
+        ///
+        /// Es la MISMA condicion que EvaluateTransactionUpdate impone en la desasignacion;
+        /// existe como metodo propio para que el Custom API sanic_CHRemoveFromCut falle
+        /// temprano con un mensaje claro, sin depender solo del rechazo del guard.
+        /// </summary>
+        public static bool CanRemoveFromCut(int? currentBatchStatus)
+        {
+            return currentBatchStatus == BatchGenerado || currentBatchStatus == BatchIngresado;
+        }
+
+        /// <summary>
         /// Update de transaccion. Reglas:
         /// - El espejo sanic_batchstatus (mirror/cascada) pasa siempre: es infraestructura.
         /// - DINERO CONGELADO (H-04): montos y cuenta no se editan una vez que la
@@ -272,9 +287,7 @@ namespace CashHub.Validation.Security
             }
             else if (batchInTarget && newBatchIsNull && hadBatch)
             {
-                var batchIsOpen = currentBatchStatus == BatchGenerado
-                                  || currentBatchStatus == BatchIngresado;
-                if (!batchIsOpen)
+                if (!CanRemoveFromCut(currentBatchStatus))
                 {
                     return TransactionGuardResult.Block(
                         "La transaccion no puede desasignarse: su lote ya esta Aplicado (o fuera " +

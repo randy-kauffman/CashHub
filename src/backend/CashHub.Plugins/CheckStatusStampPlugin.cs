@@ -15,6 +15,13 @@ namespace CashHub.Plugins
     /// Recibido -> sanic_receivedon, 'No Recibido' -> sanic_notreceivedon. Asi el
     /// sello no depende del reloj ni de la honestidad del cliente. Otros estados
     /// (Recontado y los reservados) no estampan nada.
+    ///
+    /// Junto a la fecha estampa el ACTOR (lookup a systemuser) con el
+    /// InitiatingUserId real: 'Enviado a digitacion' -> sanic_senttodigitizationby
+    /// (el Supervisor), Recibido / 'No Recibido' -> sanic_receivedby (el Digitador).
+    /// scrCheques v2 los muestra como "Enviado por" / "Recibido por". La autoria va
+    /// server-side por la misma razon que la fecha: no depende de lo que declare el
+    /// cliente.
     /// </summary>
     public sealed class CheckStatusStampPlugin : IPlugin
     {
@@ -45,8 +52,21 @@ namespace CashHub.Plugins
                 }
 
                 target[stampAttribute] = DateTime.UtcNow;
-                tracing.Trace("CheckStamp: cheque {0}, estado {1} estampa {2} en el Target.",
-                    target.Id, status, stampAttribute);
+
+                // Junto a la fecha, el actor real de la transicion (InitiatingUserId,
+                // no el system user con el que pudiera correr): "Enviado por" es el
+                // Supervisor, "Recibido por" el Digitador.
+                var actorAttribute = ResolveActorAttribute(status);
+                if (actorAttribute != null)
+                {
+                    target[actorAttribute] =
+                        new EntityReference(Schema.SystemUser.LogicalName, context.InitiatingUserId);
+                }
+
+                tracing.Trace("CheckStamp: cheque {0}, estado {1} estampa {2}{3} en el Target (actor {4}).",
+                    target.Id, status, stampAttribute,
+                    actorAttribute != null ? " + " + actorAttribute : string.Empty,
+                    context.InitiatingUserId);
             }
             catch (InvalidPluginExecutionException)
             {
@@ -71,6 +91,25 @@ namespace CashHub.Plugins
                     return Schema.Check.ReceivedOn;
                 case CheckGuard.NoRecibido:
                     return Schema.Check.NotReceivedOn;
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>
+        /// Columna lookup (systemuser) que sella el ACTOR de la transicion, o null si
+        /// el estado no lleva autoria. Recibido y No Recibido comparten
+        /// sanic_receivedby: en ambos el Digitador es quien resolvio la recepcion.
+        /// </summary>
+        private static string ResolveActorAttribute(int? status)
+        {
+            switch (status)
+            {
+                case CheckGuard.EnviadoADigitacion:
+                    return Schema.Check.SentToDigitizationBy;
+                case CheckGuard.Recibido:
+                case CheckGuard.NoRecibido:
+                    return Schema.Check.ReceivedBy;
                 default:
                     return null;
             }
