@@ -1,0 +1,790 @@
+<meta charset="utf-8">
+<title>CashHub · Mockup CH-App-Digitization v2</title>
+<style>
+  :root{
+    --accent:#C8102E; --accent-dark:#A40D26; --accent-soft:#FBEBED;
+    --bg:#F6F5F4; --surface:#FFFFFF; --surface2:#FAF8F7;
+    --ink:#201C1D; --ink2:#66595C; --ink3:#948A8C;
+    --line:#E2DCDD; --line-soft:#EDE8E9;
+    --ok:#0E7A3C; --ok-soft:#E2F2E8;
+    --info:#23557D; --info-soft:#E4EEF6;
+    --warn:#9A5B00; --warn-soft:#FBF0DC; --warn-soft2:#F6E3C0;
+    --danger:#B3261E; --danger-soft:#FCEAE8; --danger-line:#E7B9B5;
+    --sel:#BBD6F2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#DDD9D7;font-family:"Open Sans","Segoe UI",system-ui,sans-serif;color:var(--ink);
+       padding:24px 14px 70px}
+  .wrap{width:min(1560px,100%);margin:0 auto}
+  button{font-family:inherit;cursor:default}
+  input,select{font-family:inherit;color:var(--ink)}
+
+  /* ---- chrome del documento ---- */
+  .docHead{background:#fff;border:1px solid #d8d2d0;border-radius:12px;padding:22px 28px}
+  .docHead h1{font-size:19px;margin-bottom:6px}
+  .docHead p{font-size:13px;color:#5c5254;line-height:1.6;max-width:1000px}
+  .docHead code{background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:12px}
+  .idx{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .idx a{font-size:11.5px;text-decoration:none;color:var(--ink2);background:var(--surface2);
+         border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+  .idx a b{color:var(--accent)}
+  .viewHead{margin:34px 0 10px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .vId{background:var(--accent);color:#fff;border-radius:7px;font-size:11px;font-weight:700;
+       padding:4px 10px;letter-spacing:.5px;flex:0 0 auto}
+  .viewHead h2{font-size:16px}
+  .viewHead p{font-size:12.5px;color:#5c5254;flex-basis:100%;line-height:1.5}
+  .notes{background:#fff;border:1px solid #d8d2d0;border-radius:12px;padding:22px 28px;margin-top:34px}
+  .notes h2{font-size:16px;margin-bottom:10px}
+  .notes li{font-size:13px;color:#4a4143;margin:7px 0 7px 18px;line-height:1.55}
+  .notes code{background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:12px}
+
+  /* ---- marco de la app: RESPONSIVE horizontal (ancho fluido, alto de viewport) ---- */
+  .frame{background:var(--bg);border:1px solid #c9c3c1;border-radius:14px;overflow:hidden;
+         box-shadow:0 12px 30px rgba(40,30,32,.16);display:flex;flex-direction:column;
+         width:100%;height:720px;position:relative}
+  .frameWrap{width:100%}
+  .frameWrap.narrow{max-width:1080px}
+  .frameWrap.mini{max-width:840px}
+  .sizeTag{font-size:11px;color:var(--ink3);margin:0 0 6px;font-weight:600}
+
+  /* ---- header ---- */
+  .hdr{height:60px;background:var(--surface);border-bottom:1px solid var(--line);flex:0 0 auto;
+       display:flex;align-items:center;gap:14px;padding:0 20px}
+  .brandTile{width:34px;height:34px;border-radius:9px;background:var(--accent);color:#fff;
+             display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex:0 0 auto}
+  .hTitle{font-size:14px;font-weight:600;line-height:1.15;flex:0 0 auto}
+  .hTitle small{display:block;font-size:11px;color:var(--ink3);font-weight:400}
+  .navSeg{display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:999px;
+          padding:3px;gap:3px;margin-left:10px;flex:0 0 auto}
+  .navSeg button{font-size:12px;padding:6px 17px;border-radius:999px;border:none;background:transparent;color:var(--ink2)}
+  .navSeg button.on{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(40,30,32,.14)}
+  .spacer{flex:1}
+  .userChip{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--line);
+            border-radius:999px;padding:4px 12px 4px 5px;font-size:11.5px;color:var(--ink2);white-space:nowrap;flex:0 0 auto}
+  .avatar{width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+          display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex:0 0 auto}
+
+  /* ---- atomos ---- */
+  .pill{font-size:10.5px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap;display:inline-block}
+  .pInfo{color:var(--info);background:var(--info-soft)} .pOk{color:var(--ok);background:var(--ok-soft)}
+  .pWarn{color:var(--warn);background:var(--warn-soft)} .pMuted{color:var(--ink3);background:var(--line-soft)}
+  .pDanger{color:var(--danger);background:var(--danger-soft)} .pAccent{color:var(--accent);background:var(--accent-soft)}
+  .btn{font-size:12px;font-weight:600;border-radius:8px;padding:9px 18px;border:1px solid transparent;white-space:nowrap}
+  .btnPrimary{background:var(--accent);color:#fff}
+  .btnOutline{background:var(--surface);color:var(--accent);border-color:var(--accent)}
+  .btnGhost{background:transparent;color:var(--ink2);border-color:var(--line)}
+  .btnDanger{background:var(--danger);color:#fff}
+  .btn:disabled{background:var(--line-soft);color:var(--ink3);border-color:transparent}
+  .btnSm{font-size:11px;font-weight:600;border-radius:7px;padding:6px 11px;border:1px solid var(--line);
+         background:var(--surface);color:var(--ink2)}
+  .btnSmAcc{color:var(--accent);border-color:var(--accent)}
+  .btnSmDan{color:var(--danger);border-color:var(--danger-line)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:13px;display:flex;
+        flex-direction:column;min-height:0;overflow:hidden}
+  .scrollY{overflow-y:auto;flex:1;min-height:0}
+  .meta{font-size:12px;color:var(--ink2)} .meta b{color:var(--ink)}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .in{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;background:#fff}
+  .banner{display:flex;gap:9px;font-size:12px;border-radius:9px;padding:9px 13px;line-height:1.45;align-items:flex-start}
+  .bInfo{background:var(--info-soft);color:var(--info)} .bWarn{background:var(--warn-soft);color:var(--warn)}
+  .bDanger{background:var(--danger-soft);color:var(--danger)} .bOk{background:var(--ok-soft);color:var(--ok)}
+  .emptyMsg{padding:40px 30px;text-align:center;color:var(--ink3);font-size:12.5px;line-height:1.6;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1}
+  .emptyMsg .big{font-size:30px;display:block;margin-bottom:10px}
+  .listHead{background:var(--surface2);font-size:10.5px;font-weight:600;text-transform:uppercase;
+            letter-spacing:.5px;color:var(--ink2);padding:9px 14px;border-bottom:1px solid var(--line)}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:7px 18px;font-size:12.5px;align-content:start}
+  .kv dt{color:var(--ink3)} .kv dd{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+
+  /* ---- rail de cajeros (soluciona el problema de los 40 cajeros) ---- */
+  .rail{width:clamp(210px,17%,250px);flex:0 0 auto;background:var(--surface);border-right:1px solid var(--line);
+        display:flex;flex-direction:column;min-height:0}
+  .railHead{padding:11px 13px 8px;border-bottom:1px solid var(--line-soft);flex:0 0 auto}
+  .railHead .t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink2)}
+  .railHead .ord{display:flex;gap:6px;margin-top:8px}
+  .railHead .ord button{font-size:10.5px;border-radius:6px;padding:4px 8px;border:1px solid var(--line);
+                        background:var(--surface);color:var(--ink2)}
+  .railHead .ord button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .cjRow{display:flex;align-items:center;gap:10px;padding:10px 13px;border-bottom:1px solid var(--line-soft);
+         width:100%;text-align:left;background:none;border-left:none;border-right:none;border-top:none}
+  .cjRow .m{flex:1;min-width:0}
+  .cjRow .m b{font-size:12.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cjRow .m small{font-size:10.5px;color:var(--ink3)}
+  .cjBadge{font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:999px;
+           padding:2px 10px;font-variant-numeric:tabular-nums;flex:0 0 auto}
+  .cjSel,.cjSel:hover{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+  .cjSel .cjBadge{background:#fff}
+
+  /* ---- toolbar / segmentado ---- */
+  .toolbar{display:flex;align-items:center;gap:10px;padding:12px 18px 0;flex-wrap:wrap;flex:0 0 auto}
+  .seg{display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .seg button{font-size:12px;padding:6px 15px;border-radius:7px;color:var(--ink2);border:none;background:transparent}
+  .seg button.on{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(40,30,32,.12)}
+  .body2{flex:1;display:flex;gap:14px;padding:14px 18px 16px;min-height:0}
+  .bodyRail{flex:1;display:flex;min-height:0}
+  .bodyCol{flex:1;display:flex;gap:14px;padding:14px 18px 16px;min-height:0}
+
+  /* ---- fila de KPIs por moneda ---- */
+  .kpiRow{display:flex;gap:12px;flex:0 0 auto}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 15px;flex:1;min-width:0}
+  .kpi .lab{font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px}
+  .kpi .val{font-size:clamp(16px,1.6vw,22px);font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px;line-height:1.1}
+  .kpi .val small{font-size:.62em;color:var(--ink3);font-weight:600}
+  .kpi .sub{font-size:11px;color:var(--ink2);margin-top:2px}
+
+  /* ---- grillas fluidas (columnas con fr, se adaptan al ancho) ---- */
+  .gHead{background:var(--surface2);color:var(--ink2);font-size:10px;font-weight:700;text-transform:uppercase;
+         letter-spacing:.5px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .gRow{border-bottom:1px solid var(--line-soft);background:none;text-align:left;width:100%;
+        border-left:none;border-right:none;border-top:none}
+  .gSel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+  .gRow b{font-variant-numeric:tabular-nums}
+  .coHead,.coRow{display:grid;grid-template-columns:1.1fr 2fr 1fr .9fr .6fr .8fr;align-items:center;gap:10px;
+                 padding:10px 16px;font-size:12.5px}
+  .maHead,.maRow{display:grid;grid-template-columns:1.1fr 2fr 1fr .9fr 1fr 1fr;align-items:center;gap:10px;
+                 padding:10px 16px;font-size:12.5px}
+  .ltxHead,.ltxRow{display:grid;grid-template-columns:1.1fr 2fr 1fr .9fr .6fr;align-items:center;gap:9px;
+                   padding:9px 16px;font-size:12px}
+  .chHead,.chRow{display:grid;grid-template-columns:1fr 1.8fr 1fr .9fr 1.2fr 1fr;align-items:center;gap:10px;
+                 padding:10px 16px;font-size:12.5px}
+  .foot{background:var(--surface2);border-top:1px solid var(--line);font-weight:700;font-size:12.5px}
+  .sortable{cursor:default} .sortable .arr{color:var(--accent);font-size:9px}
+
+  /* ---- panel de detalle ---- */
+  .detH{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex:0 0 auto}
+  .detH .t b{font-size:14px;display:block}
+  .detH .t small{font-size:11.5px;color:var(--ink3)}
+  .ops{display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap;
+       align-items:center;flex:0 0 auto}
+  .detBody{padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1}
+  .secLab{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);padding-top:2px}
+
+  /* ---- flujo teclado (scrManual): campos copiables con orden de tab ---- */
+  .kbHint{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--info);background:var(--info-soft);
+          border-radius:9px;padding:8px 12px;line-height:1.4}
+  .kbHint b{color:var(--info)}
+  .kbField{display:flex;flex-direction:column;gap:4px}
+  .kbField label{font-size:11px;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:7px}
+  .tabno{font-size:9px;font-weight:700;color:var(--ink3);background:var(--surface2);border:1px solid var(--line);
+         border-radius:5px;padding:1px 6px;letter-spacing:.3px}
+  .kbInput{border:1px solid var(--line);border-radius:7px;padding:8px 11px;font-size:13.5px;background:var(--surface2);
+           font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600;display:flex;align-items:center;gap:8px}
+  .kbInput .lock{font-size:11px;color:var(--ink3);margin-left:auto}
+  .kbInput.foc{border:2px solid var(--accent);padding:7px 10px;background:#fff}
+  .kbInput.foc .selhi{background:var(--sel);border-radius:3px;padding:0 2px}
+  .kbInput.empty{color:var(--ink3);font-weight:400}
+  .kbBtn{border:2px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:10px;
+         font-size:13px;font-weight:700;text-align:center;box-shadow:0 0 0 3px var(--accent-soft)}
+
+  /* ---- overlay / dialogos ---- */
+  .ovl{position:absolute;inset:0;background:rgba(40,30,32,.45);display:flex;align-items:center;
+       justify-content:center;z-index:20;padding:26px}
+  .dlg{background:var(--surface);border-radius:13px;box-shadow:0 18px 40px rgba(30,20,22,.35);width:100%;
+       max-width:420px;max-height:100%;display:flex;flex-direction:column}
+  .dlgH{padding:17px 22px 4px;display:flex;align-items:flex-start;gap:10px}
+  .dlgH .dlgIcon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+                 font-size:16px;flex:0 0 auto}
+  .icOk{background:var(--ok-soft);color:var(--ok)} .icWarn{background:var(--warn-soft);color:var(--warn)}
+  .icDanger{background:var(--danger-soft);color:var(--danger)} .icInfo{background:var(--info-soft);color:var(--info)}
+  .dlgH h3{font-size:14.5px;flex:1;line-height:1.3}
+  .dlgH p{font-size:12px;color:var(--ink2);margin-top:4px;line-height:1.45}
+  .dlgX{background:none;border:none;color:var(--ink3);font-size:15px;border-radius:6px;padding:2px 7px}
+  .dlgB{padding:13px 22px 4px;display:flex;flex-direction:column;gap:11px;overflow-y:auto}
+  .dlgB p{font-size:12px;color:var(--ink2);line-height:1.5}
+  .dlgB p b{color:var(--ink)}
+  .dlgF{display:flex;justify-content:flex-end;gap:8px;padding:16px 22px 20px}
+  .field label{display:block;font-size:11px;font-weight:600;color:var(--ink2);margin-bottom:5px}
+  .cin{border:1px solid var(--line);border-radius:7px;padding:7px 10px;background:#fff;font-size:12px;width:100%}
+  .prog{height:7px;border-radius:999px;background:var(--line-soft);overflow:hidden}
+  .prog i{display:block;height:100%;background:var(--accent)}
+
+  /* ---- historial / timeline ---- */
+  .tl{display:flex;flex-direction:column;gap:0}
+  .tlItem{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
+  .tlDot{width:9px;height:9px;border-radius:50%;background:var(--accent);margin-top:4px;flex:0 0 auto}
+  .tlItem .c b{font-size:12.5px} .tlItem .c small{font-size:11px;color:var(--ink3);display:block}
+  .tlItem .c p{font-size:12px;color:var(--ink2);margin-top:3px;line-height:1.4}
+</style>
+
+<div class="wrap">
+<div class="docHead">
+  <h1>CashHub · Mockup CH-App-Digitization v2 · rev. 2</h1>
+  <p><b>Diseño responsive horizontal</b> — los marcos ocupan el 100% del ancho disponible y el layout se adapta a
+    cualquier ancho de pantalla (el sentido vertical queda fuera de alcance). En canvas esto se logra con
+    <b>Escalar-para-ajustar OFF</b>, contenedores de auto-layout con <code>FillPortions</code> y tamaños relativos a
+    <code>Parent.Width</code> — nada de coordenadas fijas. Abajo, algunas vistas se muestran también a anchos
+    reducidos para evidenciar la adaptación.</p>
+  <p style="margin-top:8px">4 pantallas: <b>scrCorte</b>, <b>scrManual</b>, <b>scrLotes</b>, <b>scrCheques</b>.
+    Mismo sistema de diseño que Reception/Recounting v2 (Open Sans, rojo BAC <code>#C8102E</code>, tokens en
+    <code>App.Formulas</code>). <b>100% controles clásicos</b> + TabList/Spinner modernos donde haga falta; cero PCF,
+    cero Forms/dataCards, cero terceros.</p>
+  <div class="idx">
+    <a href="#co1"><b>CO1</b> · scrCorte — rail de cajeros</a>
+    <a href="#co2"><b>CO2</b> · scrCorte — confirmar corte</a>
+    <a href="#ma1"><b>MA1</b> · scrManual — flujo teclado</a>
+    <a href="#ma2"><b>MA2</b> · scrManual — ya aplicadas</a>
+    <a href="#ma3"><b>MA3</b> · scrManual — rechazo del guard</a>
+    <a href="#lo1"><b>LO1</b> · scrLotes — lote Generado</a>
+    <a href="#lo2"><b>LO2</b> · scrLotes — sacar del lote</a>
+    <a href="#lo3"><b>LO3</b> · scrLotes — historial del motivo</a>
+    <a href="#ch1"><b>CH1</b> · scrCheques — recepción</a>
+    <a href="#ch2"><b>CH2</b> · scrCheques — ya recibido</a>
+    <a href="#rsp"><b>RSP</b> · responsive (anchos)</a>
+  </div>
+</div>
+
+<!-- ============================================================ CO1 -->
+<section id="co1">
+  <div class="viewHead"><span class="vId">CO1</span><h2>scrCorte — rail de cajeros con carga pendiente</h2>
+    <p>El <b>rail izquierdo</b> resuelve el problema de los 40 cajeros: lista <b>solo</b> los cajeros que tienen
+      transacciones por cortar, con el conteo en un badge y ordenables por cantidad o nombre. De un vistazo se ve
+      quién tiene trabajo. Al elegir uno, a la derecha aparecen sus KPIs y su grid. El conteo por cajero viene de un
+      agregado server-side (no dot-walk).</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Digitación<small>Corte de transacciones</small></div>
+      <div class="navSeg"><button class="on">Corte</button><button>Manual</button><button>Lotes</button><button>Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RC</span>Rosa Castro · Digitadora</div>
+    </div>
+    <div class="bodyRail">
+      <div class="rail">
+        <div class="railHead"><div class="t">Cajeros con corte pendiente</div>
+          <div class="ord"><button class="on">Más pendientes</button><button>A–Z</button></div></div>
+        <div class="scrollY">
+          <button class="cjRow cjSel"><div class="m"><b>Luis Martínez</b><small>Mesa 01</small></div><span class="cjBadge">137</span></button>
+          <button class="cjRow"><div class="m"><b>Ana Rueda</b><small>Mesa 03</small></div><span class="cjBadge">88</span></button>
+          <button class="cjRow"><div class="m"><b>Carlos Vega</b><small>Mesa 05</small></div><span class="cjBadge">54</span></button>
+          <button class="cjRow"><div class="m"><b>Marta Solís</b><small>Mesa 02</small></div><span class="cjBadge">31</span></button>
+          <button class="cjRow"><div class="m"><b>Jorge Páez</b><small>Mesa 07</small></div><span class="cjBadge">12</span></button>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+        <div class="toolbar"><span class="meta"><b>Luis Martínez</b> · Mesa 01 — 137 transacciones de efectivo pendientes</span>
+          <div class="spacer"></div><button class="btn btnPrimary">Realizar corte</button></div>
+        <div class="body2" style="flex-direction:column;gap:12px">
+          <div class="kpiRow">
+            <div class="kpi"><div class="lab">Pendientes</div><div class="val">137</div></div>
+            <div class="kpi"><div class="lab">Total C$</div><div class="val"><small>C$</small> 4.812.300,00</div></div>
+            <div class="kpi"><div class="lab">Total US$</div><div class="val"><small>US$</small> 68.240,00</div></div>
+            <div class="kpi"><div class="lab">Total €</div><div class="val"><small>€</small> 0,00</div></div>
+          </div>
+          <div class="card" style="flex:1">
+            <div class="coHead gHead"><span>Referencia</span><span>Depósito / cliente</span><span>Cuenta</span><span class="num">Monto</span><span class="num">Mon.</span><span class="num">Creada</span></div>
+            <div class="scrollY">
+              <div class="coRow gRow"><b>TRX-0098231</b><span>DR-4460 · Distribuidora La Colonia</span><span class="num">1042003311</span><b class="num">125.300,00</b><span class="num">C$</span><span class="num">08:14</span></div>
+              <div class="coRow gRow"><b>TRX-0098232</b><span>DR-4460 · Distribuidora La Colonia</span><span class="num">1042003311</span><b class="num">89.000,00</b><span class="num">C$</span><span class="num">08:15</span></div>
+              <div class="coRow gRow"><b>TRX-0098233</b><span>DR-4461 · Ferretería SINSA</span><span class="num">1042009920</span><b class="num">312.750,00</b><span class="num">C$</span><span class="num">08:22</span></div>
+              <div class="coRow gRow"><b>TRX-0098234</b><span>DR-4462 · Casa Pellas</span><span class="num">3300771145</span><b class="num">12.400,00</b><span class="num">US$</span><span class="num">08:31</span></div>
+              <div class="coRow gRow"><b>TRX-0098235</b><span>DR-4463 · Supermercados La Unión</span><span class="num">1042118834</span><b class="num">205.600,00</b><span class="num">C$</span><span class="num">08:39</span></div>
+            </div>
+            <div class="coRow foot"><span>137 transacciones</span><span></span><span></span><span class="num">C$ 4.812.300,00</span><span class="num">US$ 68.240,00</span><span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ CO2 -->
+<section id="co2">
+  <div class="viewHead"><span class="vId">CO2</span><h2>scrCorte — confirmación (conteo server-side)</h2>
+    <p>El conteo <b>“137 transacciones”</b> lo devuelve el servidor, no un <code>CountRows</code> client-side. ✕ y
+      Cancelar descartan; el corte solo se dispara desde “Sí, generar corte”, que se deshabilita mientras corre
+      (anti-doble-click) y cierra el overlay al terminar.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Digitación<small>Corte de transacciones</small></div>
+      <div class="navSeg"><button class="on">Corte</button><button>Manual</button><button>Lotes</button><button>Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RC</span>Rosa Castro · Digitadora</div>
+    </div>
+    <div class="bodyRail" style="opacity:.55">
+      <div class="rail"><div class="railHead"><div class="t">Cajeros con corte pendiente</div></div></div>
+      <div style="flex:1"></div>
+    </div>
+    <div class="ovl">
+      <div class="dlg">
+        <div class="dlgH"><div class="dlgIcon icWarn">⛁</div>
+          <div style="flex:1"><h3>¿Generar el corte de Luis Martínez?</h3>
+            <p>Se creará un lote en estado <b>Generado</b> con las <b>137 transacciones</b> de efectivo pendientes del cajero (<b>C$ 4.812.300,00</b> · <b>US$ 68.240,00</b>). El lote queda a su nombre.</p></div>
+          <button class="dlgX">✕</button></div>
+        <div class="dlgB"><div class="banner bInfo">El conteo lo confirma el servidor en el momento del corte. Las transacciones creadas después de este instante entran en el próximo corte.</div></div>
+        <div class="dlgF"><button class="btn btnGhost">Cancelar</button><button class="btn btnPrimary">Sí, generar corte</button></div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ MA1 -->
+<section id="ma1">
+  <div class="viewHead"><span class="vId">MA1</span><h2>scrManual — flujo de teclado para grabación rápida</h2>
+    <p>Rail de cajeros con manuales pendientes · segmentado <b>Pendientes / Aplicadas</b> · grid <b>ordenable por
+      motivo</b> · panel de captura <b>keyboard-first</b>. Al seleccionar un registro el foco cae en <b>Número de
+      cuenta</b> (borde de acento, texto pre-seleccionado); el operador copia, va al Core, vuelve, <b>Tab</b> al
+      siguiente campo, y así hasta Referencia → <b>Tab</b> al botón → <b>Enter</b> aplica y salta al siguiente
+      registro, de nuevo sobre Cuenta. Los campos son de <b>solo lectura</b> (los datos del cliente no se modifican):
+      solo se copian. Abajo del botón, los <b>cheques de la transacción</b> para cotejar contra los que se tienen en
+      mano.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Digitación<small>Aplicación manual</small></div>
+      <div class="navSeg"><button>Corte</button><button class="on">Manual</button><button>Lotes</button><button>Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RC</span>Rosa Castro · Digitadora</div>
+    </div>
+    <div class="bodyRail">
+      <div class="rail">
+        <div class="railHead"><div class="t">Cajeros con manuales</div>
+          <div class="ord"><button class="on">Más pendientes</button><button>A–Z</button></div></div>
+        <div class="scrollY">
+          <button class="cjRow cjSel"><div class="m"><b>Luis Martínez</b><small>Mesa 01</small></div><span class="cjBadge">18</span></button>
+          <button class="cjRow"><div class="m"><b>Carlos Vega</b><small>Mesa 05</small></div><span class="cjBadge">9</span></button>
+          <button class="cjRow"><div class="m"><b>Marta Solís</b><small>Mesa 02</small></div><span class="cjBadge">4</span></button>
+        </div>
+      </div>
+      <div class="bodyCol">
+        <div class="card" style="flex:1.5">
+          <div class="toolbar" style="padding:11px 14px">
+            <div class="seg"><button class="on">Pendientes (18)</button><button>Aplicadas (206)</button></div>
+            <div class="spacer"></div><span class="meta">Orden: <b>Motivo</b></span>
+          </div>
+          <div class="maHead gHead"><span>Referencia</span><span>Depósito / cliente</span><span>Cuenta</span><span class="num">Monto</span><span class="sortable">Motivo <span class="arr">▼</span></span><span>Estado</span></div>
+          <div class="scrollY">
+            <button class="maRow gRow"><b>TRX-0098311</b><span>DR-4481 · Tip Top Industrial</span><span class="num" style="color:var(--ink3)">— sin cuenta —</span><b class="num">7.850,00</b><span><span class="pill pWarn">Sin cuenta</span></span><span><span class="pill pMuted">Pendiente</span></span></button>
+            <button class="maRow gRow"><b>TRX-0098318</b><span>DR-4488 · Café Soluble</span><span class="num" style="color:var(--ink3)">— sin cuenta —</span><b class="num">3.200,00</b><span><span class="pill pWarn">Sin cuenta</span></span><span><span class="pill pMuted">Pendiente</span></span></button>
+            <button class="maRow gRow gSel"><b>TRX-0098310</b><span>DR-4480 · Farmacias Kielsa</span><span class="num">3300556677</span><b class="num">42.100,00</b><span><span class="pill pInfo">Con cheques</span></span><span><span class="pill pMuted">Pendiente</span></span></button>
+            <button class="maRow gRow"><b>TRX-0098312</b><span>DR-4482 · Casa Pellas</span><span class="num">3300771145</span><b class="num">15.200,00</b><span><span class="pill pInfo">Con cheques</span></span><span><span class="pill pMuted">Pendiente</span></span></button>
+            <button class="maRow gRow"><b>TRX-0098319</b><span>DR-4489 · Ferretería SINSA</span><span class="num">1042009920</span><b class="num">61.400,00</b><span><span class="pill pDanger">Rechazo core</span></span><span><span class="pill pMuted">Pendiente</span></span></button>
+          </div>
+        </div>
+        <div class="card" style="flex:1">
+          <div class="detH"><div class="t"><b>TRX-0098310</b><small>Farmacias Kielsa · DR-4480</small></div><div class="spacer"></div><span class="pill pInfo">Con cheques</span></div>
+          <div class="detBody">
+            <div class="kbHint">⌨ <span><b>Copiá y tabulá:</b> Cuenta → Tab → Moneda → … → Referencia → Tab → <b>Enter</b> aplica y pasa al siguiente.</span></div>
+            <div class="kbField"><label><span class="tabno">TAB 1</span> Número de cuenta</label>
+              <div class="kbInput foc"><span class="selhi">3300556677</span><span class="lock">🔒 solo copia</span></div></div>
+            <div class="kbField"><label><span class="tabno">TAB 2</span> Moneda</label>
+              <div class="kbInput">C$ <span class="lock">🔒 solo copia</span></div></div>
+            <div class="kbField"><label><span class="tabno">TAB 3</span> Monto total</label>
+              <div class="kbInput">42.100,00 <span class="lock">🔒 solo copia</span></div></div>
+            <div class="kbField"><label><span class="tabno">TAB 4</span> Referencia</label>
+              <div class="kbInput">REF-4480-03 <span class="lock">🔒 solo copia</span></div></div>
+            <div class="kbBtn">↵ &nbsp; TAB 5 — Marcar como aplicada (Enter)</div>
+            <div class="secLab">Cheques de la transacción (2)</div>
+            <div class="banner bInfo" style="padding:7px 11px">Cotejá contra los cheques que tenés en mano antes de aplicar.</div>
+            <div class="card" style="border-radius:9px">
+              <div style="display:grid;grid-template-columns:1fr 90px 54px;gap:8px;padding:7px 12px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);background:var(--surface2);border-bottom:1px solid var(--line)"><span>N° cheque</span><span class="num">Monto</span><span class="num">Mon.</span></div>
+              <div style="display:grid;grid-template-columns:1fr 90px 54px;gap:8px;padding:8px 12px;font-size:12px;border-bottom:1px solid var(--line-soft)"><b>4471-0091</b><b class="num">25.600,00</b><span class="num">C$</span></div>
+              <div style="display:grid;grid-template-columns:1fr 90px 54px;gap:8px;padding:8px 12px;font-size:12px"><b>4471-0092</b><b class="num">16.500,00</b><span class="num">C$</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ MA2 -->
+<section id="ma2">
+  <div class="viewHead"><span class="vId">MA2</span><h2>scrManual — segmento “Aplicadas”</h2>
+    <p>El toggle <b>Aplicadas</b> muestra las que ya se procesaron (hoy invisibles). El detalle de una que <b>vino
+      rechazada de un lote</b> muestra el <b>motivo del rechazo del core</b> y quién la aplicó — trazabilidad que la
+      v1 no tenía.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Digitación<small>Aplicación manual</small></div>
+      <div class="navSeg"><button>Corte</button><button class="on">Manual</button><button>Lotes</button><button>Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RC</span>Rosa Castro · Digitadora</div>
+    </div>
+    <div class="bodyRail">
+      <div class="rail">
+        <div class="railHead"><div class="t">Cajeros con manuales</div>
+          <div class="ord"><button class="on">Más pendientes</button><button>A–Z</button></div></div>
+        <div class="scrollY">
+          <button class="cjRow cjSel"><div class="m"><b>Luis Martínez</b><small>Mesa 01</small></div><span class="cjBadge">18</span></button>
+          <button class="cjRow"><div class="m"><b>Carlos Vega</b><small>Mesa 05</small></div><span class="cjBadge">9</span></button>
+        </div>
+      </div>
+      <div class="bodyCol">
+        <div class="card" style="flex:1.5">
+          <div class="toolbar" style="padding:11px 14px">
+            <div class="seg"><button>Pendientes (18)</button><button class="on">Aplicadas (206)</button></div>
+            <div class="spacer"></div><span class="meta">Orden: <b>Aplicada ↓</b></span>
+          </div>
+          <div class="maHead gHead"><span>Referencia</span><span>Depósito / cliente</span><span>Cuenta</span><span class="num">Monto</span><span class="sortable">Motivo</span><span>Aplicada</span></div>
+          <div class="scrollY">
+            <button class="maRow gRow gSel"><b>TRX-0098207</b><span>DR-4459 · Ferretería SINSA</span><span class="num">1042009920</span><b class="num">61.400,00</b><span><span class="pill pDanger">Rechazo core</span></span><span>09:52</span></button>
+            <button class="maRow gRow"><b>TRX-0098188</b><span>DR-4450 · Casa Pellas</span><span class="num">3300771145</span><b class="num">15.200,00</b><span><span class="pill pInfo">Con cheques</span></span><span>09:31</span></button>
+            <button class="maRow gRow"><b>TRX-0098175</b><span>DR-4448 · Tip Top Industrial</span><span class="num" style="color:var(--ink3)">— sin cuenta —</span><b class="num">7.850,00</b><span><span class="pill pWarn">Sin cuenta</span></span><span>09:12</span></button>
+          </div>
+        </div>
+        <div class="card" style="flex:1">
+          <div class="detH"><div class="t"><b>TRX-0098207</b><small>Ferretería SINSA · DR-4459</small></div><div class="spacer"></div><span class="pill pOk">Aplicada</span></div>
+          <div class="detBody">
+            <div class="banner bInfo">Esta transacción fue <b>sacada del lote TB-1038</b> por rechazo del core y aplicada manualmente después.</div>
+            <div class="secLab">Datos</div>
+            <div class="kv"><dt>Cuenta</dt><dd>1042009920</dd><dt>Moneda</dt><dd>C$</dd><dt>Total</dt><dd>61.400,00</dd><dt>Aplicada por</dt><dd>Rosa Castro</dd><dt>Aplicada</dt><dd>hoy 09:52</dd></div>
+            <div class="secLab">Motivo del rechazo del core</div>
+            <div class="banner bWarn">Cuenta rechazada por IBS Branch: moneda no habilitada para la cuenta destino. Reprocesada contra la cuenta declarada.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ MA3 -->
+<section id="ma3">
+  <div class="viewHead"><span class="vId">MA3</span><h2>scrManual — el guard rechaza (feedback visible)</h2>
+    <p>Corrige el bug mudo (C-2). Ejemplo <b>realista</b>: la transacción ya fue aplicada por otra sesión (doble
+      trabajo / doble clic). El operador ve el motivo en un banner de peligro en vez de creer que aplicó. <i>(Una tx
+      en un lote nunca aparece en Manual — o está en lote o está en manual, jamás en ambos.)</i></p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Digitación<small>Aplicación manual</small></div>
+      <div class="navSeg"><button>Corte</button><button class="on">Manual</button><button>Lotes</button><button>Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RC</span>Rosa Castro · Digitadora</div>
+    </div>
+    <div class="bodyRail">
+      <div class="rail"><div class="railHead"><div class="t">Cajeros con manuales</div></div>
+        <div class="scrollY"><button class="cjRow cjSel"><div class="m"><b>Luis Martínez</b><small>Mesa 01</small></div><span class="cjBadge">17</span></button></div></div>
+      <div class="bodyCol">
+        <div class="card" style="flex:1.5">
+          <div class="maHead gHead"><span>Referencia</span><span>Depósito / cliente</span><span>Cuenta</span><span class="num">Monto</span><span>Motivo</span><span>Estado</span></div>
+          <div class="scrollY"><button class="maRow gRow gSel"><b>TRX-0098312</b><span>DR-4482 · Casa Pellas</span><span class="num">3300771145</span><b class="num">15.200,00</b><span><span class="pill pInfo">Con cheques</span></span><span><span class="pill pMuted">Pendiente</span></span></button></div>
+        </div>
+        <div class="card" style="flex:1">
+          <div class="detH"><div class="t"><b>TRX-0098312</b><small>Casa Pellas · DR-4482</small></div><div class="spacer"></div><span class="pill pInfo">Con cheques</span></div>
+          <div class="detBody">
+            <div class="banner bDanger">No se pudo aplicar: la transacción ya fue marcada como <b>Aplicada</b> por otra sesión hace instantes. Actualizá la lista — ya no está pendiente.</div>
+            <div class="secLab">Datos</div>
+            <div class="kv"><dt>Cuenta</dt><dd>3300771145</dd><dt>Moneda</dt><dd>C$</dd><dt>Total</dt><dd>15.200,00</dd></div>
+            <div class="ops" style="border:none;padding:0"><button class="btn btnOutline">↻ Actualizar lista</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ LO1 -->
+<section id="lo1">
+  <div class="viewHead"><span class="vId">LO1</span><h2>scrLotes — lote Generado (rail de cajeros)</h2>
+    <p>Rail de cajeros con <b>lotes por aplicar</b> (mismo patrón). La lista se puede filtrar por estado
+      (<b>Por aplicar / Aplicados / Todos</b>), buscar por número y acotar por fecha — así se llega a los
+      <b>lotes antiguos</b>. Detalle con KPI cards y grid <b>delegable</b>. “Sacar del lote” <b>solo aparece en
+      estado Generado o Ingresado</b> (los rechazos del Core ocurren con el lote ya Ingresado) y se habilita al
+      seleccionar una transacción — al sacarla, vuelve a Manual.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Digitación<small>Lotes</small></div>
+      <div class="navSeg"><button>Corte</button><button>Manual</button><button class="on">Lotes</button><button>Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RC</span>Rosa Castro · Digitadora</div>
+    </div>
+    <div class="bodyRail">
+      <div class="rail">
+        <div class="railHead"><div class="t">Cajeros con lotes</div>
+          <div class="ord"><button class="on">Por aplicar</button><button>A–Z</button></div></div>
+        <div class="scrollY">
+          <button class="cjRow cjSel"><div class="m"><b>Luis Martínez</b><small>Mesa 01</small></div><span class="cjBadge">2</span></button>
+          <button class="cjRow"><div class="m"><b>Ana Rueda</b><small>Mesa 03</small></div><span class="cjBadge">1</span></button>
+          <button class="cjRow"><div class="m"><b>Carlos Vega</b><small>Mesa 05</small></div><span class="cjBadge">1</span></button>
+        </div>
+      </div>
+      <div class="bodyCol">
+        <div class="card" style="flex:1">
+          <div class="toolbar" style="padding:10px 12px 0">
+            <div class="seg"><button class="on">Por aplicar</button><button>Aplicados</button><button>Todos</button></div>
+          </div>
+          <div class="toolbar" style="padding:8px 12px 10px">
+            <input class="in" style="flex:1" placeholder="⌕ N° de lote…">
+            <select class="in"><option>Cualquier fecha</option><option>Hoy</option><option>Últimos 7 días</option><option>Este mes</option></select>
+          </div>
+          <div class="listHead">Lotes de Luis Martínez</div>
+          <div class="scrollY">
+            <button class="cjRow cjSel" style="border-left:none"><div class="m"><b>TB-1042</b><small>hoy 09:12 · 142 tx</small></div><span class="pill pInfo">Generado</span></button>
+            <button class="cjRow"><div class="m"><b>TB-1039</b><small>ayer 17:20 · 120 tx</small></div><span class="pill pWarn">Ingresado</span></button>
+            <button class="cjRow"><div class="m"><b>TB-1021</b><small>20 ago · 98 tx</small></div><span class="pill pOk">Aplicado</span></button>
+            <button class="cjRow"><div class="m"><b>TB-1014</b><small>18 ago · 110 tx</small></div><span class="pill pOk">Aplicado</span></button>
+          </div>
+        </div>
+        <div class="card" style="flex:1.6">
+          <div class="detH"><div class="t"><b>Lote TB-1042</b><small>Luis Martínez · generado hoy 09:12</small></div><div class="spacer"></div><span class="pill pInfo">Generado</span></div>
+          <div class="ops">
+            <button class="btn btnOutline btnSm">Marcar como Ingresado</button>
+            <span class="spacer"></span>
+            <button class="btnSm btnSmAcc">Descargar CSV</button>
+            <button class="btnSm btnSmDan">Sacar del lote</button>
+          </div>
+          <div class="body2" style="flex-direction:column;gap:12px;padding:12px 16px 14px">
+            <div class="kpiRow">
+              <div class="kpi"><div class="lab">Total C$</div><div class="val"><small>C$</small> 5.204.100,00</div></div>
+              <div class="kpi"><div class="lab">Total US$</div><div class="val"><small>US$</small> 71.900,00</div></div>
+              <div class="kpi"><div class="lab">Total €</div><div class="val"><small>€</small> 0,00</div></div>
+            </div>
+            <div class="card" style="flex:1">
+              <div class="ltxHead gHead"><span>Referencia</span><span>Depósito / cliente</span><span>Cuenta</span><span class="num">Monto</span><span class="num">Mon.</span></div>
+              <div class="scrollY">
+                <button class="ltxRow gRow gSel"><b>TRX-0098203</b><span>DR-4462 · Casa Pellas</span><span class="num">3300771145</span><b class="num">12.400,00</b><span class="num">US$</span></button>
+                <button class="ltxRow gRow"><b>TRX-0098201</b><span>DR-4460 · Distribuidora La Colonia</span><span class="num">1042003311</span><b class="num">125.300,00</b><span class="num">C$</span></button>
+                <button class="ltxRow gRow"><b>TRX-0098202</b><span>DR-4461 · Ferretería SINSA</span><span class="num">1042009920</span><b class="num">312.750,00</b><span class="num">C$</span></button>
+              </div>
+              <div class="ltxRow foot"><span>142 transacciones</span><span></span><span></span><span class="num">C$ 5.204.100,00</span><span class="num">US$ 71.900,00</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ LO2 -->
+<section id="lo2">
+  <div class="viewHead"><span class="vId">LO2</span><h2>scrLotes — sacar del lote (con motivo)</h2>
+    <p>Solo disponible en <b>Generado</b>. Captura el <b>motivo del rechazo del core</b>, que queda persistido para
+      auditoría (se ve luego en el historial de la transacción, LO3, y en Manual → Aplicadas, MA2). La Custom API
+      valida, desasigna, recalcula totales y los devuelve — sin <code>Refresh</code> ni carreras.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Digitación<small>Lotes</small></div>
+      <div class="navSeg"><button>Corte</button><button>Manual</button><button class="on">Lotes</button><button>Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RC</span>Rosa Castro · Digitadora</div>
+    </div>
+    <div class="bodyRail" style="opacity:.55"><div class="rail"><div class="railHead"><div class="t">Cajeros con lotes</div></div></div><div style="flex:1"></div></div>
+    <div class="ovl">
+      <div class="dlg">
+        <div class="dlgH"><div class="dlgIcon icDanger">↩</div>
+          <div style="flex:1"><h3>¿Sacar TRX-0098203 del lote TB-1042?</h3>
+            <p>La transacción (<b>US$ 12.400,00</b> · Casa Pellas) se desasigna del lote <b>Generado</b> y vuelve al <b>circuito manual</b>. Los totales del lote se recalculan.</p></div>
+          <button class="dlgX">✕</button></div>
+        <div class="dlgB">
+          <div class="field"><label>Motivo del rechazo del core</label>
+            <textarea class="cin" style="min-height:64px;resize:none" placeholder="Ej: cuenta inexistente en IBS Branch, moneda no habilitada…"></textarea></div>
+          <div class="banner bWarn">El motivo queda registrado en la transacción para auditoría. Fuera del lote, la transacción no vuelve sola a un corte automático.</div>
+        </div>
+        <div class="dlgF"><button class="btn btnGhost">Cancelar</button><button class="btn btnDanger">Sacar del lote</button></div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ LO3 -->
+<section id="lo3">
+  <div class="viewHead"><span class="vId">LO3</span><h2>scrLotes — historial de la transacción</h2>
+    <p>Al abrir una transacción se ve su <b>línea de tiempo</b>: cuándo entró al lote, cuándo y por qué salió a
+      manual, y cuándo se aplicó. El motivo del rechazo del core queda <b>visible después</b>, no solo se captura.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Digitación<small>Lotes</small></div>
+      <div class="navSeg"><button>Corte</button><button>Manual</button><button class="on">Lotes</button><button>Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RC</span>Rosa Castro · Digitadora</div>
+    </div>
+    <div class="bodyRail">
+      <div class="rail"><div class="railHead"><div class="t">Cajeros con lotes</div></div>
+        <div class="scrollY"><button class="cjRow cjSel"><div class="m"><b>Luis Martínez</b><small>Mesa 01</small></div><span class="cjBadge">2</span></button></div></div>
+      <div class="bodyCol">
+        <div class="card" style="flex:1.4">
+          <div class="detH"><div class="t"><b>Lote TB-1039</b><small>Luis Martínez · Ingresado</small></div><div class="spacer"></div><span class="pill pWarn">Ingresado</span></div>
+          <div class="ltxHead gHead"><span>Referencia</span><span>Depósito / cliente</span><span>Cuenta</span><span class="num">Monto</span><span class="num">Mon.</span></div>
+          <div class="scrollY">
+            <button class="ltxRow gRow gSel"><b>TRX-0098150</b><span>DR-4440 · Casa Pellas</span><span class="num">3300771145</span><b class="num">18.900,00</b><span class="num">US$</span></button>
+            <button class="ltxRow gRow"><b>TRX-0098151</b><span>DR-4441 · Café Soluble</span><span class="num">3300881190</span><b class="num">9.400,00</b><span class="num">US$</span></button>
+          </div>
+        </div>
+        <div class="card" style="flex:1">
+          <div class="detH"><div class="t"><b>TRX-0098150</b><small>Casa Pellas · DR-4440</small></div></div>
+          <div class="detBody">
+            <div class="secLab">Historial</div>
+            <div class="tl">
+              <div class="tlItem"><span class="tlDot"></span><div class="c"><b>Aplicada en el lote</b><small>hoy 10:05 · pendiente de ingreso al core</small></div></div>
+              <div class="tlItem"><span class="tlDot" style="background:var(--danger)"></span><div class="c"><b>Reincorporada al lote</b><small>ayer 16:40 · Rosa Castro</small><p>Cuenta corregida por el cliente; reingresada al corte.</p></div></div>
+              <div class="tlItem"><span class="tlDot" style="background:var(--warn)"></span><div class="c"><b>Sacada del lote TB-1030 → Manual</b><small>ayer 15:10 · Rosa Castro</small><p>Motivo: cuenta inexistente en IBS Branch.</p></div></div>
+              <div class="tlItem"><span class="tlDot" style="background:var(--ink3)"></span><div class="c"><b>Incluida en el corte TB-1030</b><small>ayer 09:12 · Luis Martínez</small></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ CH1 -->
+<section id="ch1">
+  <div class="viewHead"><span class="vId">CH1</span><h2>scrCheques — recepción</h2>
+    <p>Los cheques que el Supervisor envía (<span class="pill pInfo">Enviado a digitación</span>). La lista muestra
+      cliente, depósito y <b>quién lo envió</b>. Acciones: <b>Recibido</b> / <b>No recibido</b>. <i>No hay Digitado
+      ni Rebotado — esas acciones no se hacen en digitación.</i></p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Digitación<small>Cheques</small></div>
+      <div class="navSeg"><button>Corte</button><button>Manual</button><button>Lotes</button><button class="on">Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RC</span>Rosa Castro · Digitadora</div>
+    </div>
+    <div class="toolbar">
+      <div class="seg"><button class="on">Enviados (24)</button><button>Recibidos (11)</button><button>No recibidos (2)</button></div>
+      <input class="in" style="flex:1;max-width:280px" placeholder="⌕ N° de cheque o cliente…">
+    </div>
+    <div class="body2">
+      <div class="card" style="flex:1.5">
+        <div class="chHead gHead"><span>N° cheque</span><span>Cliente / depósito</span><span>Enviado por</span><span class="num">Monto</span><span class="num">Enviado</span><span>Estado</span></div>
+        <div class="scrollY">
+          <button class="chRow gRow gSel"><b>4471-0091</b><span>Distribuidora La Colonia · DR-4460</span><span>M. Gómez</span><b class="num">25.600,00</b><span class="num">08:20</span><span><span class="pill pInfo">Enviado</span></span></button>
+          <button class="chRow gRow"><b>4471-0092</b><span>Distribuidora La Colonia · DR-4460</span><span>M. Gómez</span><b class="num">16.500,00</b><span class="num">08:20</span><span><span class="pill pInfo">Enviado</span></span></button>
+          <button class="chRow gRow"><b>4472-0110</b><span>Ferretería SINSA · DR-4461</span><span>J. Báez</span><b class="num">44.200,00</b><span class="num">08:44</span><span><span class="pill pInfo">Enviado</span></span></button>
+          <button class="chRow gRow"><b>4473-0055</b><span>Casa Pellas · DR-4462</span><span>M. Gómez</span><b class="num">3.100,00</b><span class="num">09:01</span><span><span class="pill pInfo">Enviado</span></span></button>
+        </div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="detH"><div class="t"><b>Cheque 4471-0091</b><small>Distribuidora La Colonia · DR-4460</small></div><div class="spacer"></div><span class="pill pInfo">Enviado</span></div>
+        <div class="ops"><button class="btn btnPrimary" style="flex:1">Recibido</button><button class="btn btnGhost" style="flex:1">No recibido</button></div>
+        <div class="detBody">
+          <div class="secLab">Datos del cheque</div>
+          <div class="kv"><dt>Número</dt><dd>4471-0091</dd><dt>Monto</dt><dd>25.600,00</dd><dt>Moneda</dt><dd>C$</dd><dt>Tipo</dt><dd>BAC Local</dd><dt>Cliente</dt><dd>Distribuidora La Colonia</dd><dt>Depósito</dt><dd>DR-4460</dd></div>
+          <div class="secLab">Trazabilidad</div>
+          <div class="kv"><dt>Enviado por</dt><dd>María Gómez</dd><dt>Enviado a digitación</dt><dd>hoy 08:20</dd></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ CH2 -->
+<section id="ch2">
+  <div class="viewHead"><span class="vId">CH2</span><h2>scrCheques — cheque ya recibido (autoría)</h2>
+    <p>Un cheque en estado <span class="pill pOk">Recibido</span> muestra <b>quién lo envió</b> y <b>quién lo
+      recibió</b>, con sus marcas de tiempo. Estado final de la app: la digitación al core ocurre por fuera.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Digitación<small>Cheques</small></div>
+      <div class="navSeg"><button>Corte</button><button>Manual</button><button>Lotes</button><button class="on">Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RC</span>Rosa Castro · Digitadora</div>
+    </div>
+    <div class="toolbar">
+      <div class="seg"><button>Enviados (24)</button><button class="on">Recibidos (11)</button><button>No recibidos (2)</button></div>
+      <input class="in" style="flex:1;max-width:280px" placeholder="⌕ N° de cheque o cliente…">
+    </div>
+    <div class="body2">
+      <div class="card" style="flex:1.5">
+        <div class="chHead gHead"><span>N° cheque</span><span>Cliente / depósito</span><span>Recibido por</span><span class="num">Monto</span><span class="num">Recibido</span><span>Estado</span></div>
+        <div class="scrollY">
+          <button class="chRow gRow gSel"><b>4470-0088</b><span>Casa Pellas · DR-4455</span><span>R. Castro</span><b class="num">33.900,00</b><span class="num">08:05</span><span><span class="pill pOk">Recibido</span></span></button>
+          <button class="chRow gRow"><b>4470-0089</b><span>Café Soluble · DR-4456</span><span>R. Castro</span><b class="num">7.200,00</b><span class="num">08:07</span><span><span class="pill pOk">Recibido</span></span></button>
+        </div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="detH"><div class="t"><b>Cheque 4470-0088</b><small>Casa Pellas · DR-4455</small></div><div class="spacer"></div><span class="pill pOk">Recibido</span></div>
+        <div class="detBody">
+          <div class="secLab">Datos del cheque</div>
+          <div class="kv"><dt>Número</dt><dd>4470-0088</dd><dt>Monto</dt><dd>33.900,00</dd><dt>Moneda</dt><dd>C$</dd><dt>Tipo</dt><dd>BAC Local</dd></div>
+          <div class="secLab">Trazabilidad</div>
+          <div class="kv"><dt>Enviado por</dt><dd>María Gómez</dd><dt>Enviado</dt><dd>hoy 07:48</dd><dt>Recibido por</dt><dd>Rosa Castro</dd><dt>Recibido</dt><dd>hoy 08:05</dd></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ RSP -->
+<section id="rsp">
+  <div class="viewHead"><span class="vId">RSP</span><h2>Responsive — la misma pantalla a distintos anchos</h2>
+    <p>El layout no depende de 1366×768: el rail mantiene un ancho acotado (<code>clamp</code>), las columnas de la
+      grilla usan fracciones (<code>fr</code>/<code>FillPortions</code>) y los KPIs se reparten el espacio. Abajo,
+      <b>scrManual</b> a ~1080 px y ~840 px — todo sigue legible y funcional, solo se comprime.</p></div>
+  <div class="frameWrap narrow"><div class="sizeTag">≈ 1080 px</div>
+  <div class="frame" style="height:600px">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Digitación<small>Aplicación manual</small></div>
+      <div class="navSeg"><button>Corte</button><button class="on">Manual</button><button>Lotes</button><button>Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RC</span>Rosa Castro</div>
+    </div>
+    <div class="bodyRail">
+      <div class="rail"><div class="railHead"><div class="t">Cajeros</div></div>
+        <div class="scrollY"><button class="cjRow cjSel"><div class="m"><b>Luis Martínez</b><small>Mesa 01</small></div><span class="cjBadge">18</span></button>
+          <button class="cjRow"><div class="m"><b>Carlos Vega</b><small>Mesa 05</small></div><span class="cjBadge">9</span></button></div></div>
+      <div class="bodyCol">
+        <div class="card" style="flex:1.4">
+          <div class="maHead gHead"><span>Ref.</span><span>Depósito / cliente</span><span>Cuenta</span><span class="num">Monto</span><span>Motivo</span><span>Estado</span></div>
+          <div class="scrollY"><button class="maRow gRow gSel"><b>TRX-0098310</b><span>DR-4480 · Farmacias Kielsa</span><span class="num">3300556677</span><b class="num">42.100,00</b><span><span class="pill pInfo">Con cheques</span></span><span><span class="pill pMuted">Pend.</span></span></button></div>
+        </div>
+        <div class="card" style="flex:1">
+          <div class="detH"><div class="t"><b>TRX-0098310</b><small>Farmacias Kielsa</small></div></div>
+          <div class="detBody"><div class="kbField"><label><span class="tabno">TAB 1</span> Cuenta</label><div class="kbInput foc"><span class="selhi">3300556677</span></div></div>
+            <div class="kbField"><label><span class="tabno">TAB 2</span> Moneda</label><div class="kbInput">C$</div></div>
+            <div class="kbBtn">↵ Marcar aplicada</div></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="frameWrap mini" style="margin-top:16px"><div class="sizeTag">≈ 840 px</div>
+  <div class="frame" style="height:560px">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle" style="font-size:13px">Digitación</div>
+      <div class="navSeg"><button>Corte</button><button class="on">Manual</button><button>Lotes</button><button>Cheques</button></div>
+      <div class="spacer"></div>
+      <div class="avatar">RC</div>
+    </div>
+    <div class="bodyRail">
+      <div class="rail" style="width:180px"><div class="railHead"><div class="t">Cajeros</div></div>
+        <div class="scrollY"><button class="cjRow cjSel"><div class="m"><b>L. Martínez</b><small>Mesa 01</small></div><span class="cjBadge">18</span></button></div></div>
+      <div class="bodyCol" style="padding:12px">
+        <div class="card" style="flex:1.2">
+          <div class="maHead gHead" style="grid-template-columns:1fr 1.6fr .9fr 1fr;font-size:9px"><span>Ref.</span><span>Cliente</span><span class="num">Monto</span><span>Motivo</span></div>
+          <div class="scrollY"><button class="maRow gRow gSel" style="grid-template-columns:1fr 1.6fr .9fr 1fr"><b>0098310</b><span>Farmacias Kielsa</span><b class="num">42.100</b><span><span class="pill pInfo">Cheques</span></span></button></div>
+        </div>
+        <div class="card" style="flex:1">
+          <div class="detBody" style="padding:12px"><div class="kbField"><label><span class="tabno">1</span> Cuenta</label><div class="kbInput foc"><span class="selhi">3300556677</span></div></div>
+            <div class="kbBtn">↵ Aplicar</div></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div class="notes">
+  <h2>Decisiones del rediseño (rev. 2)</h2>
+  <ul>
+    <li><b>Responsive horizontal:</b> nada de 1366×768 fijo. Escalar-para-ajustar OFF, auto-layout con <code>FillPortions</code>, tamaños relativos a <code>Parent.Width</code>. El rail usa un ancho acotado, las grillas reparten columnas por fracción, los KPIs se distribuyen. Se adapta a cualquier ancho; el vertical queda fuera de alcance.</li>
+    <li><b>Rail de cajeros</b> en Corte, Manual y Lotes: muestra <b>solo</b> los cajeros con trabajo pendiente, con badge de conteo, ordenables. Resuelve el recorrer 40 cajeros. Requiere un agregado por cajero server-side (Custom API tipo <code>sanic_CHWorkloadByCashier</code>; el <code>GroupBy</code> no delega en canvas).</li>
+    <li><b>scrManual keyboard-first:</b> foco automático en Cuenta al seleccionar, orden de Tab por campo, Enter en el botón aplica y salta al siguiente registro. Los campos son <b>solo lectura</b> (los datos del cliente no se modifican: <b>no</b> hay captura de cuenta). El copiado es <code>Ctrl+C</code> del navegador — Power Fx no tiene función de portapapeles; el auto-seleccionar el texto al enfocar se valida en construcción.</li>
+    <li><b>Manual — Pendientes / Aplicadas</b> como segmentado, y orden por Motivo. Las aplicadas dejan de ser invisibles.</li>
+    <li><b>Manual — cheques de la transacción</b> visibles en el panel de detalle, para cotejar contra los cheques físicos que el operador tiene en mano. Delegable (igualdad de lookup, mata D-5).</li>
+    <li><b>Lotes — filtro por estado + históricos:</b> segmentado Por aplicar / Aplicados / Todos, buscador por número y filtro de fecha para llegar a lotes antiguos.</li>
+    <li><b>Una tx nunca está en Manual y en un lote a la vez.</b> El rechazo del guard (MA3) se muestra con un ejemplo real (ya aplicada por otra sesión), no “está en un lote”.</li>
+    <li><b>scrLotes:</b> “Sacar del lote” en <b>Generado o Ingresado</b> (los rechazos del Core ocurren con el lote ya Ingresado), habilitado con transacción seleccionada; al sacar, vuelve a Manual. El <b>motivo</b> del rechazo del core se captura y queda <b>visible en el historial</b> de la transacción (LO3) y en Manual → Aplicadas (MA2).</li>
+    <li><b>scrCheques:</b> solo <b>Recibido / No recibido</b> — sin Digitado/Rebotado (no se digita en esta área). Se muestra <b>quién envió</b> y <b>quién recibió</b> el cheque. Requiere agregar dos lookups estampados server-side (<code>sanic_senttodigitizationby</code>, <code>sanic_receivedby</code>), alineados con los sellos de fecha ya existentes.</li>
+    <li><b>Constantes del suite:</b> Open Sans, rojo BAC, Botón clásico como superficie redondeada, todo rechazo del guard visible, todo destructivo confirma, la ✕ siempre cancela, sin spinner animado durante <code>Patch</code>.</li>
+  </ul>
+</div>
+</div>
