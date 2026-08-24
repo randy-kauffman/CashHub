@@ -97,6 +97,13 @@ api_id = upsert('customapis', "uniquename eq 'sanic_CHCreateTransactionCut'", {
     'description': 'Corta las transacciones Batch pendientes sin lote a un lote nuevo (atomico, server-side).',
     'bindingtype': 0, 'isfunction': False, 'isprivate': False,
     'allowedcustomprocessingsteptype': 0,
+    # SEGURIDAD (fix V-1): sin executeprivilegename cualquier usuario del entorno
+    # invocaba el corte por Web API con un CajeroId arbitrario. Este privilegio lo
+    # tiene el rol CH-SR-Digitizer y es el que la operacion usa (crea el lote):
+    # restringe la invocacion a los digitadores. NO se valida CajeroId ==
+    # InitiatingUserId: el digitador corta a nombre de OTROS cajeros (flujo correcto);
+    # la autorizacion va por privilegio de ejecucion, no por igualdad de identidad.
+    'executeprivilegename': 'prvCreatesanic_TransactionBatches',
     'PluginTypeId@odata.bind': f"/plugintypes({type_id})",
 }, 'customapi sanic_CHCreateTransactionCut', 'customapiid')
 
