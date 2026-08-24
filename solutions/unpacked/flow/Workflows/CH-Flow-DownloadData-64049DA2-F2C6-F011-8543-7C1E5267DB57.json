@@ -1,19 +1,21 @@
 {
   "properties": {
     "connectionReferences": {
-      "shared_onedriveforbusiness": {
-        "runtimeSource": "invoker",
-        "connection": {
-          "connectionReferenceLogicalName": "sanic_AEDDConnOneDrive"
-        },
-        "api": {
-          "name": "shared_onedriveforbusiness"
-        }
-      },
-      "shared_commondataserviceforapps_1": {
+      "shared_commondataserviceforapps": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
+          "name": "bc82127e63bf4d80aa1b92a6fad0b587",
+          "connectionReferenceLogicalName": "sanic_hb_conr_dataverse"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      },
+      "shared_commondataserviceforapps-1": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "name": "shared-commondataser-74e1231e-fed9-49cf-8cce-6d370fb85b2f",
+          "connectionReferenceLogicalName": "wf_sharedcommondataserviceforapps_3bc81"
         },
         "api": {
           "name": "shared_commondataserviceforapps"
@@ -68,8 +70,94 @@
         }
       },
       "actions": {
-        "Listar_transacciones_del_lote": {
+        "Validar_LoteId": {
+          "actions": {},
           "runAfter": {},
+          "else": {
+            "actions": {
+              "Terminate_lote_invalido": {
+                "metadata": {
+                  "operationMetadataId": "f38223ab-d28b-4e51-9455-a0ed010ec2ac"
+                },
+                "type": "Terminate",
+                "inputs": {
+                  "runStatus": "Failed",
+                  "runError": {
+                    "code": "LoteIdInvalido",
+                    "message": "El identificador del lote no es un GUID valido; se rechaza la exportacion."
+                  }
+                }
+              }
+            }
+          },
+          "expression": {
+            "and": [
+              {
+                "equals": [
+                  "@length(triggerBody()['text'])",
+                  36
+                ]
+              },
+              {
+                "equals": [
+                  "@empty(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(toLower(triggerBody()['text']),'0',''),'1',''),'2',''),'3',''),'4',''),'5',''),'6',''),'7',''),'8',''),'9',''),'a',''),'b',''),'c',''),'d',''),'e',''),'f',''),'-',''))",
+                  true
+                ]
+              }
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b2f0a1c4-0001-4a10-9d21-0e5c7a9f1001"
+          },
+          "type": "If"
+        },
+        "Obtener_identidad": {
+          "runAfter": {
+            "Validar_LoteId": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "13f8ccc9-cf86-40cc-acd7-3fe1caecb62b"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "sanic_chtblparameters",
+              "$select": "sanic_value",
+              "$filter": "sanic_name eq 'Export.Core.Identidad'",
+              "$top": 1
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps"
+            },
+            "retryPolicy": {
+              "type": "exponential",
+              "count": 4,
+              "interval": "PT10S"
+            }
+          }
+        },
+        "Identidad": {
+          "runAfter": {
+            "Obtener_identidad": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d6d2bd7d-d1ad-4501-a9ad-a5e4d1d179a9"
+          },
+          "type": "Compose",
+          "inputs": "@json(first(outputs('Obtener_identidad')?['body/value'])?['sanic_value'])"
+        },
+        "Listar_transacciones_del_lote": {
+          "runAfter": {
+            "Validar_LoteId": [
+              "Succeeded"
+            ]
+          },
           "metadata": {
             "operationMetadataId": "4c1a9d0e-77b2-4d5a-9f3c-2b8e6a1d5c40"
           },
@@ -83,7 +171,7 @@
             "host": {
               "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
               "operationId": "ListRecords",
-              "connectionName": "shared_commondataserviceforapps_1"
+              "connectionName": "shared_commondataserviceforapps"
             },
             "retryPolicy": {
               "type": "exponential",
@@ -105,6 +193,9 @@
             "Identidad": [
               "Succeeded"
             ]
+          },
+          "metadata": {
+            "operationMetadataId": "e43aed9b-5305-45d5-a9ac-93ebdaaf4951"
           },
           "type": "Select",
           "inputs": {
@@ -142,60 +233,9 @@
             "format": "CSV"
           }
         },
-        "Create_file": {
-          "runAfter": {
-            "Create_CSV_table": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "46664ef1-c668-479d-bd14-5ce7ab600f59"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "folderPath": "/tesoreria/",
-              "name": "@{triggerBody()['text_1']}_@{convertFromUtc(utcNow(),'Central America Standard Time','yyyy-MM-dd_HHmm')}.csv",
-              "body": "@body('Create_CSV_table')"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
-              "operationId": "CreateFile",
-              "connectionName": "shared_onedriveforbusiness"
-            }
-          },
-          "runtimeConfiguration": {
-            "contentTransfer": {
-              "transferMode": "Chunked"
-            }
-          }
-        },
-        "Create_share_link": {
-          "runAfter": {
-            "Create_file": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "00f09fea-2a1f-4c66-b9f4-0f80a4279c2b"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "id": "@outputs('Create_file')?['body/Id']",
-              "type": "View",
-              "scope": "Organization"
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness",
-              "operationId": "CreateShareLinkV2",
-              "connectionName": "shared_onedriveforbusiness"
-            }
-          }
-        },
         "Respond_to_a_Power_App_or_flow": {
           "runAfter": {
-            "Create_share_link": [
+            "Upload_a_file_or_an_image": [
               "Succeeded"
             ]
           },
@@ -208,55 +248,69 @@
             "schema": {
               "type": "object",
               "properties": {
-                "archivosalida": {
-                  "title": "ArchivoSalida",
-                  "x-ms-dynamically-added": true,
-                  "type": "string"
+                "notaid": {
+                  "title": "NotaId",
+                  "type": "string",
+                  "x-ms-content-hint": "TEXT",
+                  "x-ms-dynamically-added": true
                 }
               },
               "additionalProperties": {}
             },
             "statusCode": 200,
             "body": {
-              "archivosalida": "@{\r\nconcat(\r\n  outputs('Create_share_link')?['body/WebUrl'],\r\n  if(\r\n    equals(indexOf(outputs('Create_share_link')?['body/WebUrl'],'?'), -1),\r\n    '?download=1',\r\n    '&download=1'\r\n  )\r\n)\r\n}"
+              "notaid": "@{outputs('Lote_CSV')?['body/annotationid']}"
             }
           }
         },
-        "Obtener_identidad": {
-          "runAfter": {},
-          "type": "OpenApiConnection",
-          "inputs": {
-            "parameters": {
-              "entityName": "sanic_chtblparameters",
-              "$select": "sanic_value",
-              "$filter": "sanic_name eq 'Export.Core.Identidad'",
-              "$top": 1
-            },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "ListRecords",
-              "connectionName": "shared_commondataserviceforapps_1"
-            },
-            "retryPolicy": {
-              "type": "exponential",
-              "count": 4,
-              "interval": "PT10S"
-            }
-          }
-        },
-        "Identidad": {
+        "Lote_CSV": {
           "runAfter": {
-            "Obtener_identidad": [
+            "Create_CSV_table": [
               "Succeeded"
             ]
           },
-          "type": "Compose",
-          "inputs": "@json(first(outputs('Obtener_identidad')?['body/value'])?['sanic_value'])"
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "annotations",
+              "item/subject": "Lote CSV",
+              "item/documentbody": "@base64(body('Create_CSV_table'))",
+              "item/filename": "@{triggerBody()?['text_1']}.csv",
+              "item/mimetype": "text/csv",
+              "item/objectid_sanic_transactionbatches@odata.bind": "/sanic_transactionbatcheses(@{triggerBody()?['text']})"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "CreateRecord",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        },
+        "Upload_a_file_or_an_image": {
+          "runAfter": {
+            "Lote_CSV": [
+              "Succeeded"
+            ]
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "x-ms-file-name": "@{triggerBody()?['text_1']}.csv",
+              "entityName": "sanic_transactionbatcheses",
+              "recordId": "@triggerBody()?['text']",
+              "fileImageFieldName": "sanic_csvcore",
+              "item": "@base64ToBinary(base64(body('Create_CSV_table')))"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "UpdateEntityFileImageFieldContent",
+              "connectionName": "shared_commondataserviceforapps-1"
+            }
+          }
         }
       },
       "outputs": {}
-    },
-    "templateName": null
+    }
   },
   "schemaVersion": "1.0.0.0"
 }

@@ -1,0 +1,1139 @@
+scrCheques As screen:
+    ContentLanguage: =""
+    Fill: =ThemeBg
+    LoadingSpinnerColor: =ThemeAccent
+    OnVisible: |-
+        =UpdateContext({
+            ctxSegChq: "Enviados",
+            ctxEstadoChq: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',
+            ctxFeedbackChq: "",
+            ctxFeedbackMsgChq: "",
+            ctxBusyChq: false
+        });
+        Reset(inpBuscarChq);
+        Set(gvarChq,
+            First(Filter('CH-Tbl-Checks',
+                CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'))
+        )
+
+    cmpHeaderChq As cmpHeader:
+        Activo: ="Cheques"
+        Height: =LayHeaderH
+        OnCheques: =Navigate(scrCheques, ScreenTransition.None)
+        OnCorte: =Navigate(scrCorte, ScreenTransition.None)
+        OnLotes: =Navigate(scrLotes, ScreenTransition.None)
+        OnManual: =Navigate(scrManual, ScreenTransition.None)
+        Subtitulo: ="Cheques"
+        Width: =Parent.Width
+        ZIndex: =1
+
+    cntBodyChq As groupContainer.manualLayoutContainer:
+        DropShadow: =DropShadow.Light
+        Fill: =ThemeBg
+        Height: =Parent.Height - LayHeaderH
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
+        Width: =Parent.Width
+        Y: =LayHeaderH
+        ZIndex: =2
+
+        cntMainChq As groupContainer.manualLayoutContainer:
+            DropShadow: =DropShadow.Light
+            Fill: =Color.Transparent
+            Height: =Parent.Height
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            Width: =Parent.Width
+            ZIndex: =1
+
+            cntToolbarChq As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =Color.Transparent
+                Height: =52
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Width: =Parent.Width
+                ZIndex: =1
+
+                cntSegChq As groupContainer.manualLayoutContainer:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =1
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeSurface2
+                    Height: =34
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Width: =360
+                    X: =LayGutter
+                    Y: =(Parent.Height - Self.Height) / 2
+                    ZIndex: =1
+
+                    btnSegEnvChq As button:
+                        BorderColor: =App.Theme.Colors.Primary
+                        BorderThickness: =0
+                        Color: =If(ctxSegChq="Enviados", ThemeAccent, ThemeInk2)
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        Fill: =If(ctxSegChq="Enviados", ThemeSurface, Color.Transparent)
+                        FontWeight: =If(ctxSegChq="Enviados", FontWeight.Semibold, FontWeight.Normal)
+                        Height: =Parent.Height - 6
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =App.Theme.Colors.Darker10
+                        OnSelect: |-
+                            =UpdateContext({
+                                ctxSegChq: "Enviados",
+                                ctxEstadoChq: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',
+                                ctxFeedbackChq: ""
+                            });
+                            Reset(inpBuscarChq);
+                            Set(gvarChq, First(Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq)))
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9
+                        Text: =$"Enviados ({CountRows(Filter('CH-Tbl-Checks', CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'))})"
+                        Width: =(Parent.Width - 12) / 3
+                        X: =3
+                        Y: =3
+                        ZIndex: =1
+
+                    btnSegRecChq As button:
+                        BorderColor: =App.Theme.Colors.Primary
+                        BorderThickness: =0
+                        Color: =If(ctxSegChq="Recibidos", ThemeAccent, ThemeInk2)
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        Fill: =If(ctxSegChq="Recibidos", ThemeSurface, Color.Transparent)
+                        FontWeight: =If(ctxSegChq="Recibidos", FontWeight.Semibold, FontWeight.Normal)
+                        Height: =Parent.Height - 6
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =App.Theme.Colors.Darker10
+                        OnSelect: |-
+                            =UpdateContext({
+                                ctxSegChq: "Recibidos",
+                                ctxEstadoChq: 'CheckStatus (CH-Tbl-Checks)'.Recibido,
+                                ctxFeedbackChq: ""
+                            });
+                            Reset(inpBuscarChq);
+                            Set(gvarChq, First(Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq)))
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9
+                        Text: =$"Recibidos ({CountRows(Filter('CH-Tbl-Checks', CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recibido))})"
+                        Width: =(Parent.Width - 12) / 3
+                        X: =btnSegEnvChq.X + btnSegEnvChq.Width + 3
+                        Y: =3
+                        ZIndex: =2
+
+                    btnSegNoRecChq As button:
+                        BorderColor: =App.Theme.Colors.Primary
+                        BorderThickness: =0
+                        Color: =If(ctxSegChq="No recibidos", ThemeAccent, ThemeInk2)
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        Fill: =If(ctxSegChq="No recibidos", ThemeSurface, Color.Transparent)
+                        FontWeight: =If(ctxSegChq="No recibidos", FontWeight.Semibold, FontWeight.Normal)
+                        Height: =Parent.Height - 6
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =App.Theme.Colors.Darker10
+                        OnSelect: |-
+                            =UpdateContext({
+                                ctxSegChq: "No recibidos",
+                                ctxEstadoChq: 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
+                                ctxFeedbackChq: ""
+                            });
+                            Reset(inpBuscarChq);
+                            Set(gvarChq, First(Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq)))
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9
+                        Text: =$"No recibidos ({CountRows(Filter('CH-Tbl-Checks', CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'))})"
+                        Width: =(Parent.Width - 12) / 3
+                        X: =btnSegRecChq.X + btnSegRecChq.Width + 3
+                        Y: =3
+                        ZIndex: =3
+
+                inpBuscarChq As text:
+                    AccessibleLabel: ="Buscar cheque por número o cliente"
+                    BorderColor: =ThemeLine
+                    BorderThickness: =2
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: ="Text input"
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    FocusedBorderThickness: =4
+                    Height: =34
+                    HintText: ="⌕ N° de cheque o cliente…"
+                    HoverBorderColor: =App.Theme.Colors.Darker40
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =App.Theme.Colors.Lighter70
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    Width: =280
+                    X: =cntSegChq.X + cntSegChq.Width + 10
+                    Y: =(Parent.Height - Self.Height) / 2
+                    ZIndex: =2
+
+            cntListaChq As groupContainer.manualLayoutContainer:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                DropShadow: =DropShadow.Light
+                Fill: =ThemeSurface
+                Height: =Parent.Height - Self.Y - LayGap
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =LayCardR
+                RadiusBottomRight: =LayCardR
+                RadiusTopLeft: =LayCardR
+                RadiusTopRight: =LayCardR
+                Width: =(Parent.Width - 2*LayGutter - LayGap) * 0.6
+                X: =LayGutter
+                Y: =cntToolbarChq.Y + cntToolbarChq.Height
+                ZIndex: =2
+
+                cntGridHeadChq As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeSurface2
+                    Height: =34
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusTopLeft: =LayCardR
+                    RadiusTopRight: =LayCardR
+                    Width: =Parent.Width
+                    ZIndex: =1
+
+                    lblColNumChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: ="N° CHEQUE"
+                        Width: =0.15*(Parent.Width - 32)
+                        X: =16
+                        ZIndex: =1
+
+                    lblColClienteChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: ="CLIENTE / DEPÓSITO"
+                        Width: =0.26*(Parent.Width - 32)
+                        X: =16 + 0.15*(Parent.Width - 32)
+                        ZIndex: =2
+
+                    lblColPorChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: =Switch(ctxSegChq, "Enviados", "ENVIADO POR", "Recibidos", "RECIBIDO POR", "No recibidos", "NO RECIBIDO POR")
+                        Width: =0.15*(Parent.Width - 32)
+                        X: =16 + 0.41*(Parent.Width - 32)
+                        ZIndex: =3
+
+                    lblColMontoChq As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: ="MONTO"
+                        Width: =0.13*(Parent.Width - 32)
+                        X: =16 + 0.56*(Parent.Width - 32)
+                        ZIndex: =4
+
+                    lblColFechaChq As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: =Switch(ctxSegChq, "Enviados", "ENVIADO", "Recibidos", "RECIBIDO", "No recibidos", "NO RECIBIDO")
+                        Width: =0.16*(Parent.Width - 32)
+                        X: =16 + 0.69*(Parent.Width - 32)
+                        ZIndex: =5
+
+                    lblColEstadoChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: ="ESTADO"
+                        Width: =0.15*(Parent.Width - 32)
+                        X: =16 + 0.85*(Parent.Width - 32)
+                        ZIndex: =6
+
+                    shpGridHeadLineaChq As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLine
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =Parent.Height - 1
+                        ZIndex: =7
+
+                galChequesChq As gallery.galleryVertical:
+                    '#CopilotOverlayLabel': ="Filtered"
+                    BorderColor: =App.Theme.Colors.Darker40
+                    DelayItemLoading: =true
+                    Height: =Parent.Height - Self.Y
+                    Items: |-
+                        =With({_q: Trim(inpBuscarChq.Text)},
+                            Filter(
+                                Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq),
+                                CheckNumber = _q
+                            )
+                        )
+                    Layout: =Layout.Vertical
+                    LoadingSpinner: =LoadingSpinner.Data
+                    OnSelect: |-
+                        =Set(gvarChq, ThisItem); UpdateContext({ctxFeedbackChq: ""})
+                    TemplatePadding: =0
+                    TemplateSize: =LayRowH
+                    Width: =Parent.Width
+                    Y: =cntGridHeadChq.Y + cntGridHeadChq.Height
+                    ZIndex: =2
+
+                    shpFilaSelChq As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =If(!IsBlank(gvarChq) && ThisItem.'CH-Tbl-Checks' = gvarChq.'CH-Tbl-Checks', ThemeAccentSoft, Color.Transparent)
+                        Height: =Parent.TemplateHeight
+                        Width: =Parent.TemplateWidth
+                        ZIndex: =1
+
+                    shpFilaSelBarraChq As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeAccent
+                        Height: =Parent.TemplateHeight
+                        Visible: =!IsBlank(gvarChq) && ThisItem.'CH-Tbl-Checks' = gvarChq.'CH-Tbl-Checks'
+                        Width: =3
+                        ZIndex: =2
+
+                    btnFilaChq As button:
+                        BorderColor: =App.Theme.Colors.Primary
+                        BorderThickness: =0
+                        Color: =App.Theme.Colors.PrimaryForeground
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        Fill: =Color.Transparent
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =ThemeSurface2
+                        OnSelect: =Select(Parent)
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =ThemeAccentSoft
+                        Size: =15
+                        Text: =""
+                        Width: =Parent.TemplateWidth
+                        ZIndex: =3
+
+                    lblFilaNumChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =13
+                        Text: =ThisItem.CheckNumber
+                        Width: =0.15*(Parent.TemplateWidth - 32)
+                        X: =16
+                        ZIndex: =4
+
+                    lblFilaClienteChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =13
+                        Text: =Coalesce(ThisItem.RelatedReCounterDepositID.BagID.ReceptionID.RemitentName, "—") & " · " & Coalesce(ThisItem.RelatedReCounterDepositID.Name, "—")
+                        Width: =0.26*(Parent.TemplateWidth - 32)
+                        X: =16 + 0.15*(Parent.TemplateWidth - 32)
+                        ZIndex: =5
+
+                    lblFilaPorChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =13
+                        Text: =Switch(ctxSegChq, "Enviados", Coalesce(ThisItem.SentToDigitizationBy.'Full Name', "—"), Coalesce(ThisItem.ReceivedBy.'Full Name', "—"))
+                        Width: =0.15*(Parent.TemplateWidth - 32)
+                        X: =16 + 0.41*(Parent.TemplateWidth - 32)
+                        ZIndex: =6
+
+                    lblFilaMontoChq As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =13
+                        Text: =Text(ThisItem.CheckAmount, FmtMoney)
+                        Width: =0.13*(Parent.TemplateWidth - 32)
+                        X: =16 + 0.56*(Parent.TemplateWidth - 32)
+                        ZIndex: =7
+
+                    lblFilaFechaChq As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =13
+                        Text: =Switch(ctxSegChq, "Enviados", Text(ThisItem.'Enviado el', FmtHora), "Recibidos", Text(ThisItem.'Recibido el', FmtFecha), "No recibidos", Text(ThisItem.'No recibido el', FmtFecha))
+                        Width: =0.16*(Parent.TemplateWidth - 32)
+                        X: =16 + 0.69*(Parent.TemplateWidth - 32)
+                        ZIndex: =8
+
+                    pilFilaEstadoChq As button:
+                        BorderColor: =App.Theme.Colors.Primary
+                        BorderThickness: =0
+                        Color: |-
+                            =With({s: ThisItem.CheckStatus}, Switch(s, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', ThemeInfo, 'CheckStatus (CH-Tbl-Checks)'.Recibido, ThemeOk, 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', ThemeDanger, ThemeInk3))
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        DisplayMode: =DisplayMode.View
+                        Fill: |-
+                            =With({s: ThisItem.CheckStatus}, Switch(s, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', ThemeInfoSoft, 'CheckStatus (CH-Tbl-Checks)'.Recibido, ThemeOkSoft, 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', ThemeDangerSoft, ThemeLineSoft))
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =App.Theme.Colors.Darker10
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: =Switch(ThisItem.CheckStatus, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', "Enviado", 'CheckStatus (CH-Tbl-Checks)'.Recibido, "Recibido", 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', "No recibido", "—")
+                        Width: =82
+                        X: =16 + 0.85*(Parent.TemplateWidth - 32)
+                        Y: =(Parent.TemplateHeight - 22) / 2
+                        ZIndex: =9
+
+                    shpFilaSepChq As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLineSoft
+                        Height: =1
+                        Width: =Parent.TemplateWidth
+                        Y: =Parent.TemplateHeight - 1
+                        ZIndex: =10
+
+                cmpVacioChq As cmpEmpty:
+                    Glifo: ="✓"
+                    Height: =Parent.Height - galChequesChq.Y
+                    Mensaje: =Switch(ctxSegChq, "Enviados", If(Trim(inpBuscarChq.Text) <> "", "Ningún cheque enviado coincide con la búsqueda.", "No hay cheques esperando recepción. Cuando el Supervisor envíe cheques a digitación, aparecen acá."), "Recibidos", "Todavía no marcaste cheques como recibidos en este filtro.", "No recibidos", "No hay cheques marcados como no recibidos.")
+                    Visible: =IsEmpty(galChequesChq.AllItems)
+                    Width: =Parent.Width
+                    Y: =galChequesChq.Y
+                    ZIndex: =3
+
+            cntDetalleChq As groupContainer.manualLayoutContainer:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                DropShadow: =DropShadow.Light
+                Fill: =ThemeSurface
+                Height: =cntListaChq.Height
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =LayCardR
+                RadiusBottomRight: =LayCardR
+                RadiusTopLeft: =LayCardR
+                RadiusTopRight: =LayCardR
+                Width: =(Parent.Width - 2*LayGutter - LayGap) * 0.4
+                X: =cntListaChq.X + cntListaChq.Width + LayGap
+                Y: =cntListaChq.Y
+                ZIndex: =3
+
+                cntDetHeaderChq As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =Color.Transparent
+                    Height: =56
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =4
+                    RadiusBottomRight: =4
+                    RadiusTopLeft: =4
+                    RadiusTopRight: =4
+                    Visible: =!IsBlank(gvarChq)
+                    Width: =Parent.Width
+                    ZIndex: =1
+
+                    lblDetTituloChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =22
+                        Size: =12
+                        Text: =$"Cheque {Coalesce(gvarChq.CheckNumber, "—")}"
+                        Width: =Parent.Width - 16 - 92 - 20
+                        X: =16
+                        Y: =9
+                        ZIndex: =1
+
+                    lblDetSubChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =16
+                        Size: =8.25
+                        Text: =Coalesce(gvarChq.RelatedReCounterDepositID.BagID.ReceptionID.RemitentName , "—") & " · " & Coalesce(gvarChq.RelatedReCounterDepositID.Name, "—")
+                        Width: =Parent.Width - 16 - 92 - 20
+                        X: =16
+                        Y: =31
+                        ZIndex: =2
+
+                    pilDetEstadoChq As cmpPildora:
+                        Height: =22
+                        Texto: =Switch(gvarChq.CheckStatus, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', "Enviado", 'CheckStatus (CH-Tbl-Checks)'.Recibido, "Recibido", 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', "No recibido", "—")
+                        Tono: =Switch(gvarChq.CheckStatus, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', "info", 'CheckStatus (CH-Tbl-Checks)'.Recibido, "ok", 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', "danger", "neutro")
+                        Width: =92
+                        X: =Parent.Width - 16 - 92
+                        Y: =(Parent.Height - 22) / 2
+                        ZIndex: =3
+
+                    shpDetHeaderLineaChq As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLine
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =Parent.Height - 1
+                        ZIndex: =4
+
+                cntDetOpsChq As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =Color.Transparent
+                    Height: =52
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =4
+                    RadiusBottomRight: =4
+                    RadiusTopLeft: =4
+                    RadiusTopRight: =4
+                    Visible: =!IsBlank(gvarChq) && gvarChq.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'
+                    Width: =Parent.Width
+                    Y: =cntDetHeaderChq.Y + cntDetHeaderChq.Height
+                    ZIndex: =2
+
+                    btnRecibidoChq As button:
+                        BorderColor: =App.Theme.Colors.Primary
+                        Color: =ThemeSurface
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =If(ctxBusyChq, DisplayMode.Disabled, DisplayMode.Edit)
+                        Fill: =ThemeAccent
+                        FontWeight: =FontWeight.Semibold
+                        Height: =32
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =ThemeAccentDark
+                        OnSelect: |-
+                            =UpdateContext({ctxBusyChq: true, ctxFeedbackChq: ""});
+                            IfError(
+                                Patch('CH-Tbl-Checks', gvarChq,
+                                    {CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.Recibido});
+                                UpdateContext({ctxFeedbackChq: "ok",
+                                    ctxFeedbackMsgChq: $"Cheque {gvarChq.CheckNumber} marcado como Recibido."});
+                                Set(gvarChq, First(Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq))),
+                                UpdateContext({ctxFeedbackChq: "error",
+                                    ctxFeedbackMsgChq: $"No se pudo marcar como Recibido. {FirstError.Message}"})
+                            );
+                            UpdateContext({ctxBusyChq: false})
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Recibido"
+                        Width: =(Parent.Width - 32 - 8) / 2
+                        X: =16
+                        Y: =10
+                        ZIndex: =1
+
+                    btnNoRecibidoChq As button:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =If(ctxBusyChq, DisplayMode.Disabled, DisplayMode.Edit)
+                        Fill: =Color.Transparent
+                        FontWeight: =FontWeight.Semibold
+                        Height: =32
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                            =UpdateContext({ctxBusyChq: true, ctxFeedbackChq: ""});
+                            IfError(
+                                Patch('CH-Tbl-Checks', gvarChq,
+                                    {CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'});
+                                UpdateContext({ctxFeedbackChq: "ok",
+                                    ctxFeedbackMsgChq: $"Cheque {gvarChq.CheckNumber} marcado como No recibido."});
+                                Set(gvarChq, First(Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq))),
+                                UpdateContext({ctxFeedbackChq: "error",
+                                    ctxFeedbackMsgChq: $"No se pudo marcar como No recibido. {FirstError.Message}"})
+                            );
+                            UpdateContext({ctxBusyChq: false})
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="No recibido"
+                        Width: =(Parent.Width - 32 - 8) / 2
+                        X: =btnRecibidoChq.X + btnRecibidoChq.Width + 8
+                        Y: =10
+                        ZIndex: =2
+
+                    shpDetOpsLineaChq As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLineSoft
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =Parent.Height - 1
+                        ZIndex: =3
+
+                cntDetBodyChq As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =Color.Transparent
+                    Height: =Parent.Height - Self.Y
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =4
+                    RadiusBottomRight: =4
+                    RadiusTopLeft: =4
+                    RadiusTopRight: =4
+                    Visible: =!IsBlank(gvarChq)
+                    Width: =Parent.Width
+                    Y: =If(cntDetOpsChq.Visible, cntDetOpsChq.Y + cntDetOpsChq.Height, cntDetHeaderChq.Y + cntDetHeaderChq.Height)
+                    ZIndex: =3
+
+                    lblFeedbackChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =If(ctxFeedbackChq = "ok", ThemeOk, ThemeDanger)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Fill: =If(ctxFeedbackChq = "ok", ThemeOkSoft, ThemeDangerSoft)
+                        PaddingBottom: =9
+                        PaddingLeft: =12
+                        PaddingRight: =12
+                        PaddingTop: =9
+                        Size: =9
+                        Text: =ctxFeedbackMsgChq
+                        Visible: =ctxFeedbackChq <> ""
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =14
+                        ZIndex: =1
+
+                    lblSecDatosChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =7.88
+                        Text: ="DATOS DEL CHEQUE"
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =14 + If(ctxFeedbackChq <> "", 52, 0)
+                        ZIndex: =2
+
+                    cntKvNumChq As groupContainer.manualLayoutContainer:
+                        Height: =20
+                        LayoutGridColumnMinWidth: =0
+                        LayoutGridColumns: =6
+                        LayoutGridRowMinHeight: =0
+                        LayoutGridRows: =6
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =lblSecDatosChq.Y + lblSecDatosChq.Height + 8
+                        ZIndex: =3
+
+                        lblVNumChq As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =Coalesce(gvarChq.CheckNumber, "—")
+                            Width: =Parent.Width - 128
+                            X: =128
+                            ZIndex: =1
+
+                        lblKNumChq As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: ="Número"
+                            Width: =120
+                            ZIndex: =2
+
+                    cntKvMontoChq As groupContainer.manualLayoutContainer:
+                        Height: =20
+                        LayoutGridColumnMinWidth: =0
+                        LayoutGridColumns: =6
+                        LayoutGridRowMinHeight: =0
+                        LayoutGridRows: =6
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =cntKvNumChq.Y + cntKvNumChq.Height + 2
+                        ZIndex: =4
+
+                        lblVMontoChq As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =Text(gvarChq.CheckAmount, FmtMoney)
+                            Width: =Parent.Width - 128
+                            X: =128
+                            ZIndex: =1
+
+                        lblKMontoChq As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: ="Monto"
+                            Width: =120
+                            ZIndex: =2
+
+                    cntKvMonedaChq As groupContainer.manualLayoutContainer:
+                        Height: =20
+                        LayoutGridColumnMinWidth: =0
+                        LayoutGridColumns: =6
+                        LayoutGridRowMinHeight: =0
+                        LayoutGridRows: =6
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =cntKvMontoChq.Y + 22
+                        ZIndex: =5
+
+                        lblVMonedaChq As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =Coalesce(Text(gvarChq.CheckCurrency), "—")
+                            Width: =Parent.Width - 128
+                            X: =128
+                            ZIndex: =1
+
+                        lblKMonedaChq As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: ="Moneda"
+                            Width: =120
+                            ZIndex: =2
+
+                    cntKvTipoChq As groupContainer.manualLayoutContainer:
+                        Height: =20
+                        LayoutGridColumnMinWidth: =0
+                        LayoutGridColumns: =6
+                        LayoutGridRowMinHeight: =0
+                        LayoutGridRows: =6
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =cntKvMonedaChq.Y + 22
+                        ZIndex: =6
+
+                        lblVTipoChq As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =Coalesce(Text(gvarChq.CheckTypes), "—")
+                            Width: =Parent.Width - 128
+                            X: =128
+                            ZIndex: =1
+
+                        lblKTipoChq As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: ="Tipo"
+                            Width: =120
+                            ZIndex: =2
+
+                    cntKvClienteChq As groupContainer.manualLayoutContainer:
+                        Height: =20
+                        LayoutGridColumnMinWidth: =0
+                        LayoutGridColumns: =6
+                        LayoutGridRowMinHeight: =0
+                        LayoutGridRows: =6
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =cntKvTipoChq.Y + 22
+                        ZIndex: =7
+
+                        lblVClienteChq As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =Coalesce(gvarChq.RelatedReCounterDepositID.BagID.ReceptionID.RemitentName, "—")
+                            Width: =Parent.Width - 128
+                            X: =128
+                            ZIndex: =1
+
+                        lblKClienteChq As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: ="Cliente"
+                            Width: =120
+                            ZIndex: =2
+
+                    cntKvDepositoChq As groupContainer.manualLayoutContainer:
+                        Height: =20
+                        LayoutGridColumnMinWidth: =0
+                        LayoutGridColumns: =6
+                        LayoutGridRowMinHeight: =0
+                        LayoutGridRows: =6
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =cntKvClienteChq.Y + 22
+                        ZIndex: =8
+
+                        lblVDepositoChq As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =Coalesce(gvarChq.RelatedReCounterDepositID.Name, "—")
+                            Width: =Parent.Width - 128
+                            X: =128
+                            ZIndex: =1
+
+                        lblKDepositoChq As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: ="Depósito"
+                            Width: =120
+                            ZIndex: =2
+
+                    lblSecTrazaChq As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =7.88
+                        Text: ="TRAZABILIDAD"
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =cntKvDepositoChq.Y + cntKvDepositoChq.Height + 14
+                        ZIndex: =9
+
+                    cntKvEnvPorChq As groupContainer.manualLayoutContainer:
+                        Height: =20
+                        LayoutGridColumnMinWidth: =0
+                        LayoutGridColumns: =6
+                        LayoutGridRowMinHeight: =0
+                        LayoutGridRows: =6
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =lblSecTrazaChq.Y + lblSecTrazaChq.Height + 8
+                        ZIndex: =10
+
+                        lblVEnvPorChq As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =Coalesce(gvarChq.SentToDigitizationBy.'Full Name', "—")
+                            Width: =Parent.Width - 128
+                            X: =128
+                            ZIndex: =1
+
+                        lblKEnvPorChq As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: ="Enviado por"
+                            Width: =120
+                            ZIndex: =2
+
+                    cntKvEnvElChq As groupContainer.manualLayoutContainer:
+                        Height: =20
+                        LayoutGridColumnMinWidth: =0
+                        LayoutGridColumns: =6
+                        LayoutGridRowMinHeight: =0
+                        LayoutGridRows: =6
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =cntKvEnvPorChq.Y + 22
+                        ZIndex: =11
+
+                        lblVEnvElChq As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =Text(gvarChq.'Enviado el', FmtFecha)
+                            Width: =Parent.Width - 128
+                            X: =128
+                            ZIndex: =1
+
+                        lblKEnvElChq As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: ="Enviado a digitación"
+                            Width: =180
+                            ZIndex: =2
+
+                    cntKvRecPorChq As groupContainer.manualLayoutContainer:
+                        Height: =20
+                        LayoutGridColumnMinWidth: =0
+                        LayoutGridColumns: =6
+                        LayoutGridRowMinHeight: =0
+                        LayoutGridRows: =6
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Visible: =gvarChq.CheckStatus <> 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =cntKvEnvElChq.Y + 22
+                        ZIndex: =12
+
+                        lblVRecPorChq As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =Coalesce(gvarChq.ReceivedBy.'Full Name', "—")
+                            Width: =Parent.Width - 128
+                            X: =128
+                            ZIndex: =1
+
+                        lblKRecPorChq As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =If(gvarChq.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', "No recibido por", "Recibido por")
+                            Width: =220
+                            ZIndex: =2
+
+                    cntKvRecElChq As groupContainer.manualLayoutContainer:
+                        Height: =20
+                        LayoutGridColumnMinWidth: =0
+                        LayoutGridColumns: =6
+                        LayoutGridRowMinHeight: =0
+                        LayoutGridRows: =6
+                        RadiusBottomLeft: =4
+                        RadiusBottomRight: =4
+                        RadiusTopLeft: =4
+                        RadiusTopRight: =4
+                        Visible: =gvarChq.CheckStatus <> 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =cntKvRecPorChq.Y + 22
+                        ZIndex: =13
+
+                        lblVRecElChq As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =Text(If(gvarChq.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recibido, gvarChq.'Recibido el', gvarChq.'No recibido el'), FmtFecha)
+                            Width: =Parent.Width - 128
+                            X: =128
+                            ZIndex: =1
+
+                        lblKRecElChq As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.Height
+                            Size: =13
+                            Text: =If(gvarChq.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', "No recibido el", "Recibido el")
+                            Width: =220
+                            ZIndex: =2
+
+                cmpDetVacioChq As cmpEmpty:
+                    Glifo: ="🧾"
+                    Height: =Parent.Height
+                    Mensaje: ="Seleccioná un cheque de la lista para ver su detalle y su trazabilidad."
+                    Visible: =IsBlank(gvarChq)
+                    Width: =Parent.Width
+                    ZIndex: =4
+

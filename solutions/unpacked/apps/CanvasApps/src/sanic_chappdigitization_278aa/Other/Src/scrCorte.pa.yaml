@@ -1,0 +1,437 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrCorte:
+    Properties:
+      Fill: =ThemeBg
+      LoadingSpinnerColor: =ThemeAccent
+      OnVisible: |-
+        =UpdateContext({ctxDlgCorteCor: false, ctxCorriendoCor: false});
+        ClearCollect(
+            colCajerosCor,
+            ForAll(
+                Table(ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload)),
+                {
+                    cajero:          GUID(Text(ThisRecord.Value.cajero)),
+                    cajeroNombre:    Text(ThisRecord.Value.cajeroNombre),
+                    mesa:            Text(ThisRecord.Value.mesa),
+                    pendientesCorte: Value(ThisRecord.Value.pendientesCorte),
+                    totalNio:        Value(ThisRecord.Value.totalNio),
+                    totalUsd:        Value(ThisRecord.Value.totalUsd),
+                    totalEur:        Value(ThisRecord.Value.totalEur)
+                }
+            )
+        )
+    Children:
+      - cmpHeaderCor:
+          Control: CanvasComponent
+          ComponentName: cmpHeader
+          Properties:
+            Activo: ="Corte"
+            Height: =LayHeaderH
+            OnCheques: =Navigate(scrCheques, ScreenTransition.None)
+            OnCorte: =Navigate(scrCorte, ScreenTransition.None)
+            OnLotes: =Navigate(scrLotes, ScreenTransition.None)
+            OnManual: =Navigate(scrManual, ScreenTransition.None)
+            Subtitulo: ="Corte de transacciones"
+            Titulo: ="Digitación"
+            Width: =Parent.Width
+      - cntBodyCor:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Fill: =Color.Transparent
+            Height: =Parent.Height - LayHeaderH
+            Width: =Parent.Width
+            Y: =LayHeaderH
+          Children:
+            - cmpRailCor:
+                Control: CanvasComponent
+                ComponentName: cmpRailCajeros
+                Properties:
+                  Datos: =AddColumns(Filter(colCajerosCor, pendientesCorte > 0), badge, pendientesCorte)
+                  Height: =Parent.Height
+                  OnSeleccion: =Set(gvarCajeroCor, cmpRailCor.CajeroSel)
+                  Titulo: ="CAJEROS CON CORTE PENDIENTE"
+                  Width: =LayRailW
+            - cntMainCor:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Fill: =Color.Transparent
+                  Height: =Parent.Height
+                  Width: =Parent.Width - LayRailW
+                  X: =LayRailW
+                Children:
+                  - cntToolbarCor:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Fill: =Color.Transparent
+                        Height: =40
+                        Visible: =!IsBlank(gvarCajeroCor)
+                        Width: =Parent.Width - 2*LayGutter
+                        X: =LayGutter
+                        Y: =LayGutter
+                      Children:
+                        - lblMetaCor:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              Height: =Parent.Height
+                              Size: =9
+                              Text: =$"{gvarCajeroCor.cajeroNombre} · {gvarCajeroCor.mesa} — {gvarCajeroCor.pendientesCorte} transacciones de efectivo pendientes"
+                              Width: =Parent.Width - 160
+                        - btnCorteCor:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderStyle: =BorderStyle.None
+                              Color: =ThemeSurface
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              DisplayMode: =If(IsBlank(gvarCajeroCor), DisplayMode.Disabled, DisplayMode.Edit)
+                              Fill: =ThemeAccent
+                              Font: =Font.'Open Sans'
+                              Height: =32
+                              HoverFill: =ThemeAccentDark
+                              OnSelect: |-
+                                =UpdateContext({ctxCortePreviewCor: Environment.sanic_CHPreviewTransactionCut({CajeroId: gvarCajeroCor.cajero}), ctxCorriendoCor: false, ctxDlgCorteCor: true})
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              Size: =9
+                              Text: ="Realizar corte"
+                              Width: =150
+                              X: =Parent.Width - Self.Width
+                              Y: =(Parent.Height - Self.Height)/2
+                  - cmpKpiPendCor:
+                      Control: CanvasComponent
+                      ComponentName: cmpKpi
+                      Properties:
+                        Etiqueta: ="PENDIENTES"
+                        Height: =LayKpiH
+                        Valor: =Text(gvarCajeroCor.pendientesCorte)
+                        Visible: =!IsBlank(gvarCajeroCor)
+                        Width: =(Parent.Width - 2*LayGutter - 3*LayGap)/4
+                        X: =LayGutter
+                        Y: =cntToolbarCor.Y + cntToolbarCor.Height + LayGap
+                  - cmpKpiNioCor:
+                      Control: CanvasComponent
+                      ComponentName: cmpKpi
+                      Properties:
+                        Etiqueta: ="TOTAL C$"
+                        Height: =LayKpiH
+                        Valor: =SimboloNIO & " " & Text(gvarCajeroCor.totalNio, FmtMoney)
+                        Visible: =!IsBlank(gvarCajeroCor)
+                        Width: =(Parent.Width - 2*LayGutter - 3*LayGap)/4
+                        X: =cmpKpiPendCor.X + cmpKpiPendCor.Width + LayGap
+                        Y: =cntToolbarCor.Y + cntToolbarCor.Height + LayGap
+                  - cmpKpiUsdCor:
+                      Control: CanvasComponent
+                      ComponentName: cmpKpi
+                      Properties:
+                        Etiqueta: ="TOTAL US$"
+                        Height: =LayKpiH
+                        Valor: =SimboloUSD & " " & Text(gvarCajeroCor.totalUsd, FmtMoney)
+                        Visible: =!IsBlank(gvarCajeroCor)
+                        Width: =(Parent.Width - 2*LayGutter - 3*LayGap)/4
+                        X: =cmpKpiNioCor.X + cmpKpiNioCor.Width + LayGap
+                        Y: =cntToolbarCor.Y + cntToolbarCor.Height + LayGap
+                  - cmpKpiEurCor:
+                      Control: CanvasComponent
+                      ComponentName: cmpKpi
+                      Properties:
+                        Etiqueta: ="TOTAL €"
+                        Height: =LayKpiH
+                        Valor: =SimboloEUR & " " & Text(gvarCajeroCor.totalEur, FmtMoney)
+                        Visible: =!IsBlank(gvarCajeroCor)
+                        Width: =(Parent.Width - 2*LayGutter - 3*LayGap)/4
+                        X: =cmpKpiUsdCor.X + cmpKpiUsdCor.Width + LayGap
+                        Y: =cntToolbarCor.Y + cntToolbarCor.Height + LayGap
+                  - cntGridCardCor:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Fill: =ThemeSurface
+                        Height: =Parent.Height - Self.Y - LayGutter
+                        RadiusBottomLeft: =LayCardR
+                        RadiusBottomRight: =LayCardR
+                        RadiusTopLeft: =LayCardR
+                        RadiusTopRight: =LayCardR
+                        Visible: =!IsBlank(gvarCajeroCor)
+                        Width: =Parent.Width - 2*LayGutter
+                        X: =LayGutter
+                        Y: =cmpKpiPendCor.Y + cmpKpiPendCor.Height + LayGap
+                      Children:
+                        - lblColRefCor:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =22
+                              Size: =7.5
+                              Text: ="REFERENCIA"
+                              Width: =With({U:(galTxCor.Width-50)/6.4}, 1.1*U)
+                              X: =14
+                              Y: =12
+                        - lblColDepCor:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =22
+                              Size: =7.5
+                              Text: ="DEPÓSITO / CLIENTE"
+                              Width: =With({U:(galTxCor.Width-50)/6.4}, 2*U)
+                              X: =14 + With({U:(galTxCor.Width-50)/6.4}, 1.1*U + 10)
+                              Y: =12
+                        - lblColCtaCor:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =22
+                              Size: =7.5
+                              Text: ="CUENTA"
+                              Width: =With({U:(galTxCor.Width-50)/6.4}, 1*U)
+                              X: =14 + With({U:(galTxCor.Width-50)/6.4}, 3.1*U + 20)
+                              Y: =12
+                        - lblColMontoCor:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =22
+                              Size: =7.5
+                              Text: ="MONTO"
+                              Width: =With({U:(galTxCor.Width-50)/6.4}, 0.9*U)
+                              X: =14 + With({U:(galTxCor.Width-50)/6.4}, 4.1*U + 30)
+                              Y: =12
+                        - lblColMonCor:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =22
+                              Size: =7.5
+                              Text: ="MON."
+                              Width: =With({U:(galTxCor.Width-50)/6.4}, 0.6*U)
+                              X: =14 + With({U:(galTxCor.Width-50)/6.4}, 5*U + 40)
+                              Y: =12
+                        - lblColCreadaCor:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =22
+                              Size: =7.5
+                              Text: ="CREADA"
+                              Width: =With({U:(galTxCor.Width-50)/6.4}, 0.8*U)
+                              X: =14 + With({U:(galTxCor.Width-50)/6.4}, 5.6*U + 50)
+                              Y: =12
+                        - shpGridLineaCor:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =ThemeLine
+                              Height: =1
+                              Width: =Parent.Width - 2*14
+                              X: =14
+                              Y: =lblColRefCor.Y + lblColRefCor.Height
+                        - galTxCor:
+                            Control: Gallery@2.15.0
+                            Variant: Vertical
+                            Properties:
+                              Height: =cntGridFootCor.Y - Self.Y
+                              Items: |-
+                                =Sort(
+                                    Filter(
+                                        'CH-Tbl-Transactions',
+                                        TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Batch
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = Blank()
+                                            && 'Created By'.User = gvarCajeroCor.cajero
+                                    ),
+                                    'Created On',
+                                    SortOrder.Ascending
+                                )
+                              TemplatePadding: =0
+                              TemplateSize: =LayRowH
+                              Width: =Parent.Width - 2*14
+                              X: =14
+                              Y: =shpGridLineaCor.Y + 6
+                            Children:
+                              - lblTxRefCor:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =LayRowH
+                                    Size: =9
+                                    Text: =ThisItem.Name
+                                    Width: =With({U:(Parent.TemplateWidth-50)/6.4}, 1.1*U)
+                              - lblTxDepCor:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    Height: =LayRowH
+                                    Size: =9
+                                    Text: =ThisItem.'Created On'
+                                    Width: =With({U:(Parent.TemplateWidth-50)/6.4}, 2*U)
+                                    X: =With({U:(Parent.TemplateWidth-50)/6.4}, 1.1*U + 10)
+                              - lblTxCtaCor:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    Height: =LayRowH
+                                    Size: =9
+                                    Text: =ThisItem.'Import Sequence Number'
+                                    Width: =With({U:(Parent.TemplateWidth-50)/6.4}, 1*U)
+                                    X: =With({U:(Parent.TemplateWidth-50)/6.4}, 3.1*U + 20)
+                              - lblTxMontoCor:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =LayRowH
+                                    Size: =9
+                                    Text: =ThisItem.'Modified On'
+                                    Width: =With({U:(Parent.TemplateWidth-50)/6.4}, 0.9*U)
+                                    X: =With({U:(Parent.TemplateWidth-50)/6.4}, 4.1*U + 30)
+                              - lblTxMonCor:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    Height: =LayRowH
+                                    Size: =9
+                                    Text: =Switch(ThisItem.Currency, 'CH-Ch-Currency'.NIO, SimboloNIO, 'CH-Ch-Currency'.USD, SimboloUSD, 'CH-Ch-Currency'.EUR, SimboloEUR, "—")
+                                    Width: =With({U:(Parent.TemplateWidth-50)/6.4}, 0.6*U)
+                                    X: =With({U:(Parent.TemplateWidth-50)/6.4}, 5*U + 40)
+                              - lblTxCreadaCor:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    Height: =LayRowH
+                                    Size: =9
+                                    Text: =ThisItem.'Record Created On'
+                                    Width: =With({U:(Parent.TemplateWidth-50)/6.4}, 0.8*U)
+                                    X: =With({U:(Parent.TemplateWidth-50)/6.4}, 5.6*U + 50)
+                              - shpTxSepCor:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeLineSoft
+                                    Height: =1
+                                    Width: =Parent.TemplateWidth
+                                    Y: =LayRowH - 1
+                        - shpGridFootLinCor:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =ThemeLine
+                              Height: =1
+                              Width: =Parent.Width - 2*14
+                              X: =14
+                              Y: =cntGridFootCor.Y
+                        - cntGridFootCor:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =ThemeSurface2
+                              Height: =36
+                              Width: =Parent.Width - 2*14
+                              X: =14
+                              Y: =Parent.Height - 14 - 36
+                            Children:
+                              - lblFootCntCor:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =Parent.Height
+                                    Size: =9
+                                    Text: =$"{gvarCajeroCor.pendientesCorte} transacciones"
+                                    Width: =With({U:(cntGridFootCor.Width-50)/6.4}, 3.1*U + 20 + 1*U)
+                              - lblFootNioCor:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =Parent.Height
+                                    Size: =9
+                                    Text: =SimboloNIO & " " & Text(gvarCajeroCor.totalNio, FmtMoney)
+                                    Visible: =false
+                                    Width: =With({U:(cntGridFootCor.Width-50)/6.4}, 0.9*U)
+                                    X: =With({U:(cntGridFootCor.Width-50)/6.4}, 4.1*U + 30)
+                              - lblFootUsdCor:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =Parent.Height
+                                    Size: =9
+                                    Text: =SimboloUSD & " " & Text(gvarCajeroCor.totalUsd, FmtMoney)
+                                    Visible: =false
+                                    Width: =With({U:(cntGridFootCor.Width-50)/6.4}, 0.9*U)
+                                    X: =With({U:(cntGridFootCor.Width-50)/6.4}, 5*U + 40)
+                  - cmpEmptyCor:
+                      Control: CanvasComponent
+                      ComponentName: cmpEmpty
+                      Properties:
+                        Glifo: ="⛁"
+                        Height: =Parent.Height - 2*LayGutter
+                        Mensaje: ="Elegí un cajero del panel izquierdo para ver sus transacciones pendientes y realizar el corte."
+                        Visible: =IsBlank(gvarCajeroCor)
+                        Width: =Parent.Width - 2*LayGutter
+                        X: =LayGutter
+                        Y: =LayGutter
+      - cmpDlgCorteCor:
+          Control: CanvasComponent
+          ComponentName: cmpDialogo
+          Properties:
+            AnchoCard: =440
+            Height: =App.Height
+            Mostrar: =ctxDlgCorteCor
+            OkHabilitado: =!ctxCorriendoCor
+            OnCancelar: |-
+              =UpdateContext({ctxDlgCorteCor: false})
+            OnOk: |-
+              =UpdateContext({ctxCorriendoCor: true});
+              'CH-Flow-CreateCut'.Run(gvarCajeroCor.cajero);
+              UpdateContext({ctxCorriendoCor: false, ctxDlgCorteCor: false});
+              Set(gvarCajeroCor, Blank());
+              Notify("Corte generado. El lote quedó en estado Generado.", NotificationType.Success)
+            Texto: |-
+              =$"Se creará un lote en estado Generado con las {ctxCortePreviewCor.EligibleCount} transacciones de efectivo pendientes del cajero (" &
+              SimboloNIO & " " & Text(ctxCortePreviewCor.TotalNIO, FmtMoney) & " · " &
+              SimboloUSD & " " & Text(ctxCortePreviewCor.TotalUSD, FmtMoney) &
+              "). El lote queda a su nombre. El conteo lo confirma el servidor en el momento del corte: las transacciones creadas después entran en el próximo corte."
+            TextoCancelar: ="Cancelar"
+            TextoOk: ="Sí, generar corte"
+            Titulo: =$"¿Generar el corte de {gvarCajeroCor.cajeroNombre}?"
+            Tono: ="warn"
+            Visible: =ctxDlgCorteCor
+            Width: =App.Width

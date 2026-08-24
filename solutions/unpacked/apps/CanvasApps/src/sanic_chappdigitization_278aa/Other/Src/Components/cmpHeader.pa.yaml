@@ -1,0 +1,251 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpHeader:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      Activo:
+        PropertyKind: Input
+        DisplayName: Activo
+        Description: A custom property
+        DataType: Text
+        Default: ="Corte"
+      OnCheques:
+        PropertyKind: Event
+        DisplayName: OnCheques
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      OnCorte:
+        PropertyKind: Event
+        DisplayName: OnCorte
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      OnLotes:
+        PropertyKind: Event
+        DisplayName: OnLotes
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      OnManual:
+        PropertyKind: Event
+        DisplayName: OnManual
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      Subtitulo:
+        PropertyKind: Input
+        DisplayName: Subtitulo
+        Description: A custom property
+        DataType: Text
+        Default: ="Corte de transacciones"
+      Titulo:
+        PropertyKind: Input
+        DisplayName: Titulo
+        Description: A custom property
+        DataType: Text
+        Default: ="Digitación"
+    Children:
+      - shpFondoHdr:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =ThemeSurface
+            Height: =Parent.Height
+            Width: =Parent.Width
+      - shpLineaHdr:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Width: =Parent.Width
+            Y: =Parent.Height-1
+      - btnMarcaHdr:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =ThemeSurface
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =34
+            RadiusBottomLeft: =9
+            RadiusBottomRight: =9
+            RadiusTopLeft: =9
+            RadiusTopRight: =9
+            Size: =11
+            Text: ="C$"
+            Width: =34
+            X: =LayGutter
+            Y: =(Parent.Height-34)/2
+      - lblTituloHdr:
+          Control: Label@2.5.1
+          Properties:
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            Size: =10.5
+            Text: =cmpHeader.Titulo
+            Width: =160
+            X: =btnMarcaHdr.X + btnMarcaHdr.Width + 12
+            Y: =11
+      - lblSubHdr:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ThemeInk3
+            Font: =Font.'Open Sans'
+            Height: =16
+            Size: =8.25
+            Text: =cmpHeader.Subtitulo
+            Width: =240
+            X: =lblTituloHdr.X
+            Y: =lblTituloHdr.Y + 18
+      - cntNavHdr:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface2
+            Height: =32
+            RadiusBottomLeft: =16
+            RadiusBottomRight: =16
+            RadiusTopLeft: =16
+            RadiusTopRight: =16
+            Width: =360
+            X: =lblTituloHdr.X + 190
+            Y: =(Parent.Height-32)/2
+          Children:
+            - btnNavCorteHdr:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =If(cmpHeader.Activo = "Corte", ThemeAccent, ThemeInk2)
+                  Fill: =If(cmpHeader.Activo = "Corte", ThemeSurface, Color.Transparent)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =If(cmpHeader.Activo = "Corte", FontWeight.Semibold, FontWeight.Normal)
+                  Height: =26
+                  HoverFill: =If(cmpHeader.Activo = "Corte", ThemeSurface, ThemeSurface2)
+                  OnSelect: =cmpHeader.OnCorte()
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =9
+                  Text: ="Corte"
+                  Width: =(Parent.Width - 6)/4
+                  X: =3
+                  Y: =3
+            - btnNavManualHdr:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =If(cmpHeader.Activo = "Manual", ThemeAccent, ThemeInk2)
+                  Fill: =If(cmpHeader.Activo = "Manual", ThemeSurface, Color.Transparent)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =If(cmpHeader.Activo = "Manual", FontWeight.Semibold, FontWeight.Normal)
+                  Height: =26
+                  HoverFill: =If(cmpHeader.Activo = "Manual", ThemeSurface, ThemeSurface2)
+                  OnSelect: =cmpHeader.OnManual()
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =9
+                  Text: ="Manual"
+                  Width: =(Parent.Width - 6)/4
+                  X: =btnNavCorteHdr.X + btnNavCorteHdr.Width
+                  Y: =3
+            - btnNavLotesHdr:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =If(cmpHeader.Activo = "Lotes", ThemeAccent, ThemeInk2)
+                  Fill: =If(cmpHeader.Activo = "Lotes", ThemeSurface, Color.Transparent)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =If(cmpHeader.Activo = "Lotes", FontWeight.Semibold, FontWeight.Normal)
+                  Height: =26
+                  HoverFill: =If(cmpHeader.Activo = "Lotes", ThemeSurface, ThemeSurface2)
+                  OnSelect: =cmpHeader.OnLotes()
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =9
+                  Text: ="Lotes"
+                  Width: =(Parent.Width - 6)/4
+                  X: =btnNavManualHdr.X + btnNavManualHdr.Width
+                  Y: =3
+            - btnNavChequesHdr:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =If(cmpHeader.Activo = "Cheques", ThemeAccent, ThemeInk2)
+                  Fill: =If(cmpHeader.Activo = "Cheques", ThemeSurface, Color.Transparent)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =If(cmpHeader.Activo = "Cheques", FontWeight.Semibold, FontWeight.Normal)
+                  Height: =26
+                  HoverFill: =If(cmpHeader.Activo = "Cheques", ThemeSurface, ThemeSurface2)
+                  OnSelect: =cmpHeader.OnCheques()
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =9
+                  Text: ="Cheques"
+                  Width: =(Parent.Width - 6)/4
+                  X: =btnNavLotesHdr.X + btnNavLotesHdr.Width
+                  Y: =3
+      - cntUserHdr:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface2
+            Height: =34
+            RadiusBottomLeft: =17
+            RadiusBottomRight: =17
+            RadiusTopLeft: =17
+            RadiusTopRight: =17
+            Width: =lblUsuarioHdr.X + lblUsuarioHdr.Width + 12
+            X: =Parent.Width - LayGutter - Self.Width
+            Y: =(Parent.Height-34)/2
+          Children:
+            - btnAvatarHdr:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =ThemeAccent
+                  DisplayMode: =DisplayMode.View
+                  Fill: =ThemeAccentSoft
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Bold
+                  Height: =26
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =7.88
+                  Text: =UsuarioIniciales
+                  Width: =26
+                  X: =4
+                  Y: =4
+            - lblUsuarioHdr:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk2
+                  Font: =Font.'Open Sans'
+                  Height: =Parent.Height
+                  Size: =8.63
+                  Text: =UsuarioNombre
+                  Width: =Min(160, Len(UsuarioNombre)*6 + 20)
+                  X: =btnAvatarHdr.X + btnAvatarHdr.Width + 8

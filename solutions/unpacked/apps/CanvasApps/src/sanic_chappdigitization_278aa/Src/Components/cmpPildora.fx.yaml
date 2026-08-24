@@ -1,0 +1,51 @@
+cmpPildora As CanvasComponent:
+    ChildTabPriority: =true
+    ContentLanguage: =""
+    EnableChildFocus: =true
+    Fill: =RGBA(0, 0, 0, 0)
+    Height: =640
+    Texto: ="Text"
+    Tono: ="Text"
+    Visible: =true
+    Width: =640
+    X: =0
+    Y: =0
+
+    btnPilPil As button:
+        BorderColor: =ThemeLineSoft
+        BorderThickness: =If(cmpPildora.Tono="neutro",1,0)
+        Color: |-
+            =Switch(cmpPildora.Tono,
+              "ok", ThemeOk,
+              "warn", ThemeWarn,
+              "danger", ThemeDanger,
+              "info", ThemeInfo,
+              ThemeInk3)
+        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        DisabledFill: =RGBA(244, 244, 244, 1)
+        DisplayMode: =DisplayMode.View
+        Fill: |-
+            =Switch(cmpPildora.Tono,
+              "ok", ThemeOkSoft,
+              "warn", ThemeWarnSoft,
+              "danger", ThemeDangerSoft,
+              "info", ThemeInfoSoft,
+              ThemeLineSoft)
+        FontWeight: =FontWeight.Semibold
+        Height: =Parent.Height
+        HoverBorderColor: =App.Theme.Colors.Darker10
+        HoverColor: =App.Theme.Colors.PrimaryForeground
+        HoverFill: =App.Theme.Colors.Darker10
+        PressedBorderColor: =App.Theme.Colors.Darker40
+        PressedColor: =Self.Color
+        PressedFill: =App.Theme.Colors.Darker40
+        RadiusBottomLeft: =12
+        RadiusBottomRight: =12
+        RadiusTopLeft: =12
+        RadiusTopRight: =12
+        Size: =7.88
+        Text: =cmpPildora.Texto
+        Width: =Parent.Width
+        ZIndex: =1
+

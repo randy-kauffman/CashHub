@@ -1,0 +1,1524 @@
+scrManual As screen:
+    ContentLanguage: =""
+    Fill: =ThemeBg
+    LoadingSpinnerColor: =App.Theme.Colors.Primary
+    OnVisible: |-
+        =UpdateContext({
+            ctxSegManual: "Pendientes",
+            ctxOrdenMan: "Fecha",
+            ctxErrorMan: Blank()
+        });
+        ClearCollect(
+            colCajerosMan,
+            Filter(
+                ForAll(
+                    Table(ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload)),
+                    {
+                        cajero:           GUID(Text(ThisRecord.Value.cajero)),
+                        cajeroNombre:     Text(ThisRecord.Value.cajeroNombre),
+                        mesa:             Text(ThisRecord.Value.mesa),
+                        pendientesManual: Value(ThisRecord.Value.pendientesManual),
+                        badge:            Text(Value(ThisRecord.Value.pendientesManual))
+                    }
+                ),
+                pendientesManual > 0
+            )
+        );
+        Set(gvarCajeroMan, cmpRailMan.CajeroSel);
+        Set(
+            gvarTxMan,
+            First(
+                Sort(
+                Filter(
+                    'CH-Tbl-Transactions',
+                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                        && BatchStatus = Blank()
+                        && TransactionStatus = Blank()
+                        && 'Created By'.User = gvarCajeroMan.cajero
+                ),
+                'Created On', SortOrder.Ascending
+            )
+            )
+        );
+        Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan);
+        Reset(inpCampoMontoMan);  Reset(inpCampoRefMan);
+        SetFocus(inpCampoCuentaMan);
+        Environment.sanic_CHWorkloadByCashier().Workload
+
+    cmpHeaderMan As cmpHeader:
+        Activo: ="Manual"
+        Height: =LayHeaderH
+        OnCheques: =Navigate(scrCheques)
+        OnCorte: =Navigate(scrCorte)
+        OnLotes: =Navigate(scrLotes)
+        OnManual: =false
+        Subtitulo: ="Aplicación manual"
+        Width: =Parent.Width
+        ZIndex: =1
+
+    cntBodyMan As groupContainer.manualLayoutContainer:
+        DropShadow: =DropShadow.Light
+        Fill: =Color.Transparent
+        Height: =Parent.Height - LayHeaderH
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
+        Width: =Parent.Width
+        Y: =LayHeaderH
+        ZIndex: =2
+
+        cmpRailMan As cmpRailCajeros:
+            Datos: =AddColumns(DropColumns(colCajerosMan, pendientesManual), pendientesCorte, 0, totalNio, 0, totalUsd, 0, totalEur, 0)
+            Height: =Parent.Height
+            OnSeleccion: |-
+                =Set(gvarCajeroMan, cmpRailMan.CajeroSel);
+                UpdateContext({ctxSegManual: "Pendientes", ctxErrorMan: Blank()});
+                Set(
+                    gvarTxMan,
+                    First(
+                        Sort(
+                        Filter(
+                            'CH-Tbl-Transactions',
+                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                && BatchStatus = Blank()
+                                && TransactionStatus = Blank()
+                                && 'Created By'.User = gvarCajeroMan.cajero
+                        ),
+                        'Created On', SortOrder.Ascending
+                    )
+                    )
+                );
+                Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan);
+                Reset(inpCampoMontoMan);  Reset(inpCampoRefMan);
+                SetFocus(inpCampoCuentaMan)
+            Titulo: ="CAJEROS CON MANUALES"
+            Width: =LayRailW
+            ZIndex: =1
+
+        cntMainMan As groupContainer.manualLayoutContainer:
+            DropShadow: =DropShadow.Light
+            Fill: =Color.Transparent
+            Height: =Parent.Height
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            Width: =Parent.Width - LayRailW
+            X: =LayRailW
+            ZIndex: =2
+
+            cntListaCardMan As groupContainer.manualLayoutContainer:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                DropShadow: =DropShadow.Light
+                Fill: =ThemeSurface
+                Height: =Parent.Height - LayGutter*2
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =LayCardR
+                RadiusBottomRight: =LayCardR
+                RadiusTopLeft: =LayCardR
+                RadiusTopRight: =LayCardR
+                Width: =(Parent.Width - LayGutter*2 - LayGap) * 0.6
+                X: =LayGutter
+                Y: =LayGutter
+                ZIndex: =1
+
+                cntSegMan As groupContainer.manualLayoutContainer:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =1
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeSurface2
+                    Height: =30
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Width: =210
+                    X: =16
+                    Y: =12
+                    ZIndex: =1
+
+                    btnSegAplicadasMan As button:
+                        BorderColor: =App.Theme.Colors.Primary
+                        BorderStyle: =BorderStyle.None
+                        Color: =If(ctxSegManual = "Aplicadas", ThemeAccent, ThemeInk2)
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        Fill: =If(ctxSegManual = "Aplicadas", ThemeSurface, Color.Transparent)
+                        FontWeight: =If(ctxSegManual = "Aplicadas", FontWeight.Semibold, FontWeight.Normal)
+                        Height: =Parent.Height - 6
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =App.Theme.Colors.Darker10
+                        OnSelect: |-
+                            =UpdateContext({ctxSegManual: "Aplicadas", ctxErrorMan: Blank()});
+                            Set(
+                                gvarTxMan,
+                                First(
+                                    Sort(
+                                        Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                                && BatchStatus = Blank()
+                                                && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                                && 'Created By'.User = gvarCajeroMan.cajero
+                                        ),
+                                        'Created On', SortOrder.Descending
+                                    )
+                                )
+                            )
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9
+                        Text: ="Aplicadas" & If(ctxSegManual = "Aplicadas", " (" & CountRows(galTxMan.AllItems) & ")", "")
+                        Width: =(Parent.Width - 6) / 2
+                        X: =btnSegPendientesMan.X + btnSegPendientesMan.Width
+                        Y: =3
+                        ZIndex: =1
+
+                    btnSegPendientesMan As button:
+                        BorderColor: =App.Theme.Colors.Primary
+                        BorderStyle: =BorderStyle.None
+                        Color: =If(ctxSegManual = "Pendientes", ThemeAccent, ThemeInk2)
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        Fill: =If(ctxSegManual = "Pendientes", ThemeSurface, Color.Transparent)
+                        FontWeight: =If(ctxSegManual = "Pendientes", FontWeight.Semibold, FontWeight.Normal)
+                        Height: =Parent.Height - 6
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =App.Theme.Colors.Darker10
+                        OnSelect: |-
+                            =UpdateContext({ctxSegManual: "Pendientes", ctxErrorMan: Blank()});
+                            Set(
+                                gvarTxMan,
+                                First(
+                                    Sort(
+                                    Filter(
+                                        'CH-Tbl-Transactions',
+                                        TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = Blank()
+                                            && 'Created By'.User = gvarCajeroMan.cajero
+                                    ),
+                                    'Created On', SortOrder.Ascending
+                                )
+                                )
+                            );
+                            Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan);
+                            Reset(inpCampoMontoMan);  Reset(inpCampoRefMan);
+                            SetFocus(inpCampoCuentaMan)
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9
+                        Text: ="Pendientes" & If(ctxSegManual = "Pendientes", " (" & CountRows(galTxMan.AllItems) & ")", "")
+                        Width: =(Parent.Width - 6) / 2
+                        X: =3
+                        Y: =3
+                        ZIndex: =2
+
+                lblOrdenMan As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =18
+                    Size: =13
+                    Text: |-
+                        ="Orden: " & If(ctxSegManual = "Aplicadas", "Aplicada ↓", If(ctxOrdenMan = "Motivo", "Motivo", "Fecha"))
+                    Width: =170
+                    X: =Parent.Width - 16 - Self.Width
+                    Y: =18
+                    ZIndex: =2
+
+                shpGridHeadBgMan As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeSurface2
+                    Height: =30
+                    Width: =Parent.Width
+                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    ZIndex: =3
+
+                lblHdrRefMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =30
+                    Size: =7.5
+                    Text: ="REFERENCIA"
+                    Width: =Parent.Width*0.13
+                    X: =Parent.Width*0.03
+                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    ZIndex: =4
+
+                lblHdrDepMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =30
+                    Size: =7.5
+                    Text: ="DEPÓSITO / CLIENTE"
+                    Width: =Parent.Width*0.26
+                    X: =Parent.Width*0.16
+                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    ZIndex: =5
+
+                lblHdrCtaMan As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =30
+                    Size: =7.5
+                    Text: ="CUENTA"
+                    Width: =Parent.Width*0.13
+                    X: =Parent.Width*0.43
+                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    ZIndex: =6
+
+                lblHdrMontoMan As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =30
+                    Size: =7.5
+                    Text: ="MONTO"
+                    Width: =Parent.Width*0.12
+                    X: =Parent.Width*0.57
+                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    ZIndex: =7
+
+                btnHdrMotivoMan As button:
+                    Align: =Align.Left
+                    BorderColor: =App.Theme.Colors.Primary
+                    BorderThickness: =0
+                    Color: =If(ctxOrdenMan = "Motivo", ThemeAccent, ThemeInk2)
+                    DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    Fill: =Color.Transparent
+                    FontWeight: =FontWeight.Bold
+                    Height: =30
+                    HoverBorderColor: =App.Theme.Colors.Darker10
+                    HoverColor: =App.Theme.Colors.PrimaryForeground
+                    HoverFill: =App.Theme.Colors.Darker10
+                    OnSelect: |-
+                        =UpdateContext({ctxOrdenMan: If(ctxOrdenMan = "Motivo", "Fecha", "Motivo")})
+                    PaddingLeft: =0
+                    PressedBorderColor: =App.Theme.Colors.Darker40
+                    PressedColor: =Self.Color
+                    PressedFill: =App.Theme.Colors.Darker40
+                    Size: =7.5
+                    Text: ="MOTIVO " & If(ctxOrdenMan = "Motivo", "▼", "")
+                    Width: =Parent.Width*0.14
+                    X: =Parent.Width*0.70
+                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    ZIndex: =8
+
+                lblHdrEstadoMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =30
+                    Size: =7.5
+                    Text: =If(ctxSegManual = "Aplicadas", "APLICADA", "ESTADO")
+                    Width: =Parent.Width*0.14
+                    X: =Parent.Width*0.84
+                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    ZIndex: =9
+
+                shpGridLineaMan As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    Width: =Parent.Width
+                    Y: =cntSegMan.Y + cntSegMan.Height + 12 + 30
+                    ZIndex: =10
+
+                cmpEmptyListaMan As cmpEmpty:
+                    Glifo: ="⛁"
+                    Height: =galTxMan.Height
+                    Mensaje: =If(ctxSegManual = "Aplicadas", "Sin transacciones aplicadas para este cajero.", "Sin manuales pendientes para este cajero.")
+                    Visible: =CountRows(galTxMan.AllItems) = 0
+                    Width: =Parent.Width
+                    Y: =galTxMan.Y
+                    ZIndex: =11
+
+                galTxMan As gallery.galleryVertical:
+                    '#CopilotOverlayLabel': ="Filtered"
+                    BorderColor: =App.Theme.Colors.Darker40
+                    DelayItemLoading: =true
+                    Height: =Parent.Height - (shpGridLineaMan.Y + 1)
+                    Items: |-
+                        =If(
+                            ctxSegManual = "Aplicadas",
+                            // --- APLICADAS: más recientes primero ---
+                            Sort(
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                        && BatchStatus = Blank()
+                                        && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                        && 'Created By'.User = gvarCajeroMan.cajero
+                                ),
+                                'Created On', SortOrder.Descending
+                            ),
+                            // --- PENDIENTES ---
+                            If(
+                                ctxOrdenMan = "Motivo",
+                                Sort(
+                                    Filter(
+                                        'CH-Tbl-Transactions',
+                                        TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank() && TransactionStatus = Blank()
+                                            && 'Created By'.User = gvarCajeroMan.cajero
+                                    ),
+                                    // rango de motivo (Rechazo core > Sin cuenta > Con cheques > —)
+                                    Switch(
+                                        true,
+                                        !IsBlank(MotivoRechazoCore), 3,
+                                        IsBlank(AccountNumber), 2,
+                                        !IsBlank(RelatedDepositRecounting), 1,
+                                        0
+                                    ),
+                                    SortOrder.Descending
+                                ),
+                                Sort(
+                                    Filter(
+                                        'CH-Tbl-Transactions',
+                                        TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank() && TransactionStatus = Blank()
+                                            && 'Created By'.User = gvarCajeroMan.cajero
+                                    ),
+                                    'Created On', SortOrder.Ascending
+                                )
+                            )
+                        )
+                    Layout: =Layout.Vertical
+                    LoadingSpinner: =LoadingSpinner.Data
+                    OnSelect: |-
+                        =Set(gvarTxMan, galTxMan.Selected);
+                        UpdateContext({ctxErrorMan: Blank()});
+                        Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan);
+                        Reset(inpCampoMontoMan);  Reset(inpCampoRefMan);
+                        If(ctxSegManual = "Pendientes", SetFocus(inpCampoCuentaMan))
+                    TemplatePadding: =0
+                    TemplateSize: =LayRowH
+                    Width: =Parent.Width
+                    Y: =shpGridLineaMan.Y + 1
+                    ZIndex: =12
+
+                    shpTxSelMan As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =If(!IsBlank(gvarTxMan) && ThisItem.'CH-Tbl-Transactions' = gvarTxMan.'CH-Tbl-Transactions', ThemeAccentSoft, Color.Transparent)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Width: =Parent.TemplateWidth
+                        ZIndex: =1
+
+                    shpTxSelBarraMan As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeAccent
+                        Height: =Parent.TemplateHeight
+                        Visible: =!IsBlank(gvarTxMan) && ThisItem.'CH-Tbl-Transactions' = gvarTxMan.'CH-Tbl-Transactions'
+                        Width: =3
+                        ZIndex: =2
+
+                    btnTxFilaMan As button:
+                        BorderColor: =App.Theme.Colors.Primary
+                        BorderThickness: =0
+                        Color: =App.Theme.Colors.PrimaryForeground
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        Fill: =Color.Transparent
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =ThemeSurface2
+                        OnSelect: =Select(Parent)
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =ThemeAccentSoft
+                        Size: =15
+                        Text: =""
+                        Width: =Parent.TemplateWidth
+                        ZIndex: =3
+
+                    lblTxRefMan As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =13
+                        Text: =ThisItem.Name
+                        Width: =Parent.TemplateWidth*0.13
+                        X: =Parent.TemplateWidth*0.03
+                        ZIndex: =4
+
+                    lblTxDepMan As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =13
+                        Text: =Coalesce(ThisItem.RelatedDepositRecounting.Name, "—")
+                        Width: =Parent.TemplateWidth*0.26
+                        X: =Parent.TemplateWidth*0.16
+                        ZIndex: =5
+
+                    lblTxCtaMan As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =If(IsBlank(ThisItem.AccountNumber), ThemeInk3, ThemeInk)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =13
+                        Text: =If(IsBlank(ThisItem.AccountNumber), "— sin cuenta —", Text(ThisItem.AccountNumber, "[$-en-US]0"))
+                        Width: =Parent.TemplateWidth*0.13
+                        X: =Parent.TemplateWidth*0.43
+                        ZIndex: =6
+
+                    lblTxMontoMan As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =13
+                        Text: =Text(ThisItem.Total, FmtMoney)
+                        Width: =Parent.TemplateWidth*0.12
+                        X: =Parent.TemplateWidth*0.57
+                        ZIndex: =7
+
+                    lblTxAplicadaMan As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =13
+                        Text: =Text(ThisItem.'Modified On', FmtHora)
+                        Visible: =ctxSegManual = "Aplicadas"
+                        Width: =Parent.TemplateWidth*0.14
+                        X: =Parent.TemplateWidth*0.84
+                        ZIndex: =8
+
+                    shpTxFilaSepMan As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLineSoft
+                        Height: =1
+                        Width: =Parent.TemplateWidth
+                        Y: =Parent.TemplateHeight - 1
+                        ZIndex: =9
+
+                    pilTxEstadoMan As button:
+                        BorderColor: =ThemeLineSoft
+                        BorderThickness: =1
+                        Color: =ThemeInk3
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        DisplayMode: =DisplayMode.View
+                        Fill: =ThemeLineSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =App.Theme.Colors.Darker10
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: ="Pendiente"
+                        Visible: =ctxSegManual = "Pendientes"
+                        Width: =78
+                        X: =Parent.TemplateWidth*0.84
+                        Y: =(Parent.TemplateHeight-22)/2
+                        ZIndex: =10
+
+                    pilTxMotivoMan As button:
+                        BorderColor: =App.Theme.Colors.Primary
+                        BorderThickness: =0
+                        Color: |-
+                            =With(
+                                { m: Switch(true,
+                                    !IsBlank(ThisItem.MotivoRechazoCore), "Rechazo core",
+                                    IsBlank(ThisItem.AccountNumber),            "Sin cuenta",
+                                    !IsBlank(ThisItem.RelatedDepositRecounting),"Con cheques",
+                                    "—") },
+                                Switch(m,
+                                    "Rechazo core", ThemeDanger,
+                                    "Sin cuenta",   ThemeWarn,
+                                    "Con cheques",  ThemeInfo,
+                                    ThemeInk3)
+                            )
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        DisplayMode: =DisplayMode.View
+                        Fill: |-
+                            =With(
+                                { m: Switch(true,
+                                    !IsBlank(ThisItem.MotivoRechazoCore), "Rechazo core",
+                                    IsBlank(ThisItem.AccountNumber),            "Sin cuenta",
+                                    !IsBlank(ThisItem.RelatedDepositRecounting),"Con cheques",
+                                    "—") },
+                                Switch(m,
+                                    "Rechazo core", ThemeDangerSoft,
+                                    "Sin cuenta",   ThemeWarnSoft,
+                                    "Con cheques",  ThemeInfoSoft,
+                                    ThemeLineSoft)
+                            )
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =App.Theme.Colors.Darker10
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: |-
+                            =Switch(
+                                true,
+                                !IsBlank(ThisItem.MotivoRechazoCore), "Rechazo core",
+                                IsBlank(ThisItem.AccountNumber),            "Sin cuenta",
+                                !IsBlank(ThisItem.RelatedDepositRecounting),"Con cheques",
+                                "—"
+                            )
+                        Width: =40 + 7*Len(Self.Text)
+                        X: =Parent.TemplateWidth*0.70
+                        Y: =(Parent.TemplateHeight-22)/2
+                        ZIndex: =11
+
+            cntDetalleCardMan As groupContainer.manualLayoutContainer:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                DropShadow: =DropShadow.Light
+                Fill: =ThemeSurface
+                Height: =Parent.Height - LayGutter*2
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =LayCardR
+                RadiusBottomRight: =LayCardR
+                RadiusTopLeft: =LayCardR
+                RadiusTopRight: =LayCardR
+                Width: =Parent.Width - cntDetalleCardMan.X - LayGutter
+                X: =cntListaCardMan.X + cntListaCardMan.Width + LayGap
+                Y: =LayGutter
+                ZIndex: =2
+
+                cntKbHintMan As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeInfoSoft
+                    Height: =lblKbHintMan.Y + lblKbHintMan.Height + 9
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =shpDetLineaMan.Y + 14
+                    ZIndex: =1
+
+                    icoKbHintMan As icon:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInfo
+                        DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                        DisabledColor: =RGBA(244, 244, 244, 1)
+                        Height: =16
+                        Icon: =Icon.Laptop
+                        Width: =16
+                        X: =13
+                        Y: =11
+                        ZIndex: =1
+
+                    lblKbHintMan As label:
+                        AutoHeight: =true
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInfo
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Size: =9
+                        Text: |-
+                            ="Copiá y tabulá: Cuenta → Tab → Moneda → … → Referencia → Tab → Enter aplica y pasa al siguiente."
+                        Width: =Parent.Width - 51
+                        X: =38
+                        Y: =9
+                        ZIndex: =2
+
+                cntChequesHintMan As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeInfoSoft
+                    Height: =lblChequesHintMan.Y + lblChequesHintMan.Height + 9
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =lblChequesSecMan.Y + lblChequesSecMan.Height + 8
+                    ZIndex: =2
+
+                    lblChequesHintMan As label:
+                        AutoHeight: =true
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInfo
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Size: =9
+                        Text: ="Cotejá contra los cheques que tenés en mano antes de aplicar."
+                        Width: =Parent.Width - 51
+                        X: =38
+                        Y: =9
+                        ZIndex: =1
+
+                    icoChequesHintMan As icon:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInfo
+                        DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                        DisabledColor: =RGBA(244, 244, 244, 1)
+                        Height: =16
+                        Icon: =Icon.Information
+                        Width: =16
+                        X: =13
+                        Y: =11
+                        ZIndex: =2
+
+                cmpEmptyChequesMan As cmpEmpty:
+                    Glifo: ="—"
+                    Height: =70
+                    Mensaje: ="Esta transacción no tiene cheques asociados."
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan) && CountRows(galChequesMan.AllItems) = 0
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =cntChequesHintMan.Y + cntChequesHintMan.Height + 8
+                    ZIndex: =3
+
+                cntChequesGridMan As groupContainer.manualLayoutContainer:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =1
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeSurface
+                    Height: =26 + Min(CountRows(galChequesMan.AllItems), 4) * 34 + 2
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan) && CountRows(galChequesMan.AllItems) > 0
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =cntChequesHintMan.Y + cntChequesHintMan.Height + 8
+                    ZIndex: =4
+
+                    galChequesMan As gallery.galleryVertical:
+                        '#CopilotOverlayLabel': ="Filtered"
+                        BorderColor: =App.Theme.Colors.Darker40
+                        DelayItemLoading: =true
+                        Height: =Parent.Height - 27
+                        Items: |-
+                            =If(
+                                !IsBlank(gvarTxMan.RelatedDepositRecounting),
+                                Filter(
+                                    'CH-Tbl-Checks',
+                                    RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting'
+                                        = gvarTxMan.RelatedDepositRecounting.'CH-Tbl-DepositsRecounting'
+                                ),
+                                // else explícito (nunca Blank como fuente → evita ErrorKind.Internal)
+                                FirstN('CH-Tbl-Checks', 0)
+                            )
+                        Layout: =Layout.Vertical
+                        LoadingSpinner: =LoadingSpinner.Data
+                        TemplateSize: =34
+                        Width: =Parent.Width
+                        Y: =27
+                        ZIndex: =1
+
+                        lblChqNumMan As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.TemplateHeight
+                            Size: =13
+                            Text: =ThisItem.CheckNumber
+                            Width: =Parent.TemplateWidth*0.50
+                            X: =Parent.TemplateWidth*0.04
+                            ZIndex: =1
+
+                        lblChqMontoMan As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.TemplateHeight
+                            Size: =13
+                            Text: =Text(ThisItem.CheckAmount, FmtMoney)
+                            Width: =Parent.TemplateWidth*0.28
+                            X: =Parent.TemplateWidth*0.54
+                            ZIndex: =2
+
+                        lblChqMonMan As label:
+                            Align: =Align.Right
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.TemplateHeight
+                            Size: =13
+                            Text: =ThisItem.CheckCurrency
+                            Width: =Parent.TemplateWidth*0.14
+                            X: =Parent.TemplateWidth*0.82
+                            ZIndex: =3
+
+                        shpChqSepMan As rectangle:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Fill: =ThemeLineSoft
+                            Height: =1
+                            Width: =Parent.TemplateWidth
+                            Y: =Parent.TemplateHeight - 1
+                            ZIndex: =4
+
+                    shpChqHeadLineaMan As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLine
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =26
+                        ZIndex: =2
+
+                    lblChqHdrMonMan As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =26
+                        Size: =7.5
+                        Text: ="MON."
+                        Width: =Parent.Width*0.14
+                        X: =Parent.Width*0.82
+                        ZIndex: =3
+
+                    lblChqHdrMontoMan As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =26
+                        Size: =7.5
+                        Text: ="MONTO"
+                        Width: =Parent.Width*0.28
+                        X: =Parent.Width*0.54
+                        ZIndex: =4
+
+                    lblChqHdrNumMan As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =26
+                        Size: =7.5
+                        Text: ="N° CHEQUE"
+                        Width: =Parent.Width*0.50
+                        X: =Parent.Width*0.04
+                        ZIndex: =5
+
+                    shpChqHeadBgMan As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeSurface2
+                        Height: =26
+                        Width: =Parent.Width
+                        ZIndex: =6
+
+                cntDangerMan As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeDangerSoft
+                    Height: =lblDangerMan.Y + lblDangerMan.Height + 9
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Visible: =ctxSegManual = "Pendientes" && !IsBlank(ctxErrorMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =shpDetLineaMan.Y + 14
+                    ZIndex: =5
+
+                    icoDangerMan As icon:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeDanger
+                        DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                        DisabledColor: =RGBA(244, 244, 244, 1)
+                        Height: =16
+                        Icon: =Icon.Error
+                        Width: =16
+                        X: =13
+                        Y: =11
+                        ZIndex: =1
+
+                    lblDangerMan As label:
+                        AutoHeight: =true
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeDanger
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Size: =9
+                        Text: =ctxErrorMan
+                        Width: =Parent.Width - 51
+                        X: =38
+                        Y: =9
+                        ZIndex: =2
+
+                btnActualizarMan As button:
+                    BorderColor: =ThemeAccent
+                    BorderThickness: =1
+                    Color: =ThemeAccent
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =ThemeSurface
+                    FontWeight: =FontWeight.Semibold
+                    Height: =32
+                    HoverBorderColor: =App.Theme.Colors.Darker10
+                    HoverColor: =App.Theme.Colors.PrimaryForeground
+                    HoverFill: =ThemeAccentSoft
+                    OnSelect: |-
+                        =Refresh('CH-Tbl-Transactions');   // Refresh DELIBERADO iniciado por el usuario (≠ P-1: no es por-registro)
+                        UpdateContext({ctxErrorMan: Blank()});
+                        Set(
+                            gvarTxMan,
+                            First(
+                                Sort(
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                        && BatchStatus = Blank()
+                                        && TransactionStatus = Blank()
+                                        && 'Created By'.User = gvarCajeroMan.cajero
+                                ),
+                                'Created On', SortOrder.Ascending
+                            )
+                            )
+                        );
+                        Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan);
+                        Reset(inpCampoMontoMan);  Reset(inpCampoRefMan);
+                        SetFocus(inpCampoCuentaMan)
+                    PressedBorderColor: =App.Theme.Colors.Darker40
+                    PressedColor: =Self.Color
+                    PressedFill: =App.Theme.Colors.Darker40
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    Text: ="↻ Actualizar lista"
+                    Visible: =ctxSegManual = "Pendientes" && !IsBlank(ctxErrorMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =cntDangerMan.Y + cntDangerMan.Height + 14
+                    ZIndex: =6
+
+                cntInfoAplicadaMan As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeInfoSoft
+                    Height: =lblInfoAplicadaMan.Y + lblInfoAplicadaMan.Height + 9
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Visible: =ctxSegManual = "Aplicadas" && !IsBlank(gvarTxMan) && !IsBlank(gvarTxMan.MotivoRechazoCore)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =shpDetLineaMan.Y + 14
+                    ZIndex: =7
+
+                    lblInfoAplicadaMan As label:
+                        AutoHeight: =true
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInfo
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Size: =9
+                        Text: ="Esta transacción fue sacada de un lote por rechazo del core y aplicada manualmente después."
+                        Width: =Parent.Width - 51
+                        X: =38
+                        Y: =9
+                        ZIndex: =1
+
+                    icoInfoAplicadaMan As icon:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInfo
+                        DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                        DisabledColor: =RGBA(244, 244, 244, 1)
+                        Height: =16
+                        Icon: =Icon.Information
+                        Width: =16
+                        X: =13
+                        Y: =11
+                        ZIndex: =2
+
+                lblDatosSecMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =7.88
+                    Text: ="DATOS"
+                    Visible: =ctxSegManual = "Aplicadas" && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =shpDetLineaMan.Y + 14 + If(!IsBlank(gvarTxMan.MotivoRechazoCore), cntInfoAplicadaMan.Height + 12, 0)
+                    ZIndex: =8
+
+                cntKvAplicadaMan As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Height: =5 * 24
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =4
+                    RadiusBottomRight: =4
+                    RadiusTopLeft: =4
+                    RadiusTopRight: =4
+                    Visible: =ctxSegManual = "Aplicadas" && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =lblDatosSecMan.Y + lblDatosSecMan.Height + 8
+                    ZIndex: =9
+
+                    lblKvK1Man As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =22
+                        Size: =9
+                        Text: ="Cuenta"
+                        Width: =Parent.Width*0.4
+                        ZIndex: =1
+
+                    lblKvV1Man As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        Size: =9
+                        Text: =If(IsBlank(gvarTxMan.AccountNumber), "— sin cuenta —", Text(gvarTxMan.AccountNumber, "[$-en-US]0"))
+                        Width: =Parent.Width*0.6
+                        X: =Parent.Width*0.4
+                        ZIndex: =2
+
+                    lblKvK2Man As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =22
+                        Size: =9
+                        Text: ="Moneda"
+                        Width: =Parent.Width*0.4
+                        Y: =24
+                        ZIndex: =3
+
+                    lblKvV2Man As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        Size: =9
+                        Text: =gvarTxMan.Currency
+                        Width: =Parent.Width*0.6
+                        X: =Parent.Width*0.4
+                        Y: =24
+                        ZIndex: =4
+
+                    lblKvK3Man As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =22
+                        Size: =9
+                        Text: ="Total"
+                        Width: =Parent.Width*0.4
+                        Y: =48
+                        ZIndex: =5
+
+                    lblKvV3Man As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        Size: =9
+                        Text: =Text(gvarTxMan.Total, FmtMoney)
+                        Width: =Parent.Width*0.6
+                        X: =Parent.Width*0.4
+                        Y: =48
+                        ZIndex: =6
+
+                    lblKvK4Man As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =22
+                        Size: =9
+                        Text: ="Aplicada por"
+                        Width: =Parent.Width*0.4
+                        Y: =72
+                        ZIndex: =7
+
+                    lblKvV4Man As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        Size: =9
+                        Text: =gvarTxMan.'Modified By'.'Full Name'
+                        Width: =Parent.Width*0.6
+                        X: =Parent.Width*0.4
+                        Y: =72
+                        ZIndex: =8
+
+                    lblKvK5Man As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =22
+                        Size: =9
+                        Text: ="Aplicada"
+                        Width: =Parent.Width*0.4
+                        Y: =96
+                        ZIndex: =9
+
+                    lblKvV5Man As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        Size: =9
+                        Text: =Text(gvarTxMan.'Modified On', FmtFecha)
+                        Width: =Parent.Width*0.6
+                        X: =Parent.Width*0.4
+                        Y: =96
+                        ZIndex: =10
+
+                cntWarnMotivoMan As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeWarnSoft
+                    Height: =lblWarnMotivoMan.Y + lblWarnMotivoMan.Height + 9
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Visible: =ctxSegManual = "Aplicadas" && !IsBlank(gvarTxMan) && !IsBlank(gvarTxMan.MotivoRechazoCore)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =cntKvAplicadaMan.Y + cntKvAplicadaMan.Height + 12 + 16 + 8
+                    ZIndex: =10
+
+                    icoWarnMotivoMan As icon:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeWarn
+                        DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                        DisabledColor: =RGBA(244, 244, 244, 1)
+                        Height: =16
+                        Icon: =Icon.Warning
+                        Width: =16
+                        X: =13
+                        Y: =11
+                        ZIndex: =1
+
+                    lblWarnMotivoMan As label:
+                        AutoHeight: =true
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeWarn
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Size: =9
+                        Text: =Coalesce(gvarTxMan.MotivoRechazoCore, gvarTxMan.Comentarios)
+                        Width: =Parent.Width - 51
+                        X: =38
+                        Y: =9
+                        ZIndex: =2
+
+                lblChequesSecMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =7.88
+                    Text: ="CHEQUES DE LA TRANSACCIÓN (" & CountRows(galChequesMan.AllItems) & ")"
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =btnAplicarMan.Y + btnAplicarMan.Height + 16
+                    ZIndex: =11
+
+                btnAplicarMan As button:
+                    BorderColor: =App.Theme.Colors.Primary
+                    BorderThickness: =0
+                    Color: =ThemeSurface
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =ThemeAccent
+                    FontWeight: =FontWeight.Semibold
+                    HoverBorderColor: =App.Theme.Colors.Darker10
+                    HoverColor: =App.Theme.Colors.PrimaryForeground
+                    HoverFill: =ThemeAccentDark
+                    OnSelect: |-
+                        =IfError(
+                            // 1 sola columna, SIN SubmitForm, SIN Refresh de tabla completa
+                            Patch(
+                                'CH-Tbl-Transactions',
+                                gvarTxMan,
+                                { TransactionStatus: 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada }
+                            ),
+                            // --- Fallback: el guard rechazó / hubo error → feedback VISIBLE (MA3) ---
+                            UpdateContext({ctxErrorMan: Coalesce(FirstError.Message, "No se pudo aplicar la transacción.")});
+                            Notify(ctxErrorMan, NotificationType.Error),
+                            // --- DefaultResult (sin error): éxito + auto-avance ---
+                            UpdateContext({ctxErrorMan: Blank()});
+                            Notify("Transacción aplicada.", NotificationType.Success);
+                            // la tx recién aplicada ya tiene TransactionStatus → sale del filtro sin Refresh
+                            Set(
+                                gvarTxMan,
+                                First(
+                                    Sort(
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                        && BatchStatus = Blank()
+                                        && TransactionStatus = Blank()
+                                        && 'Created By'.User = gvarCajeroMan.cajero
+                                ),
+                                'Created On', SortOrder.Ascending
+                            )
+                                )
+                            );
+                            Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan);
+                            Reset(inpCampoMontoMan);  Reset(inpCampoRefMan);
+                            SetFocus(inpCampoCuentaMan)
+                        )
+                    PressedBorderColor: =App.Theme.Colors.Darker40
+                    PressedColor: =Self.Color
+                    PressedFill: =App.Theme.Colors.Darker40
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    TabIndex: =5
+                    Text: ="↵  Marcar como aplicada (Enter)"
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =inpCampoRefMan.Y + inpCampoRefMan.Height + 14
+                    ZIndex: =12
+
+                inpCampoRefMan As text:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =2
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: =gvarTxMan.TransactionReference
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    Fill: =ThemeSurface2
+                    FocusedBorderColor: =ThemeAccent
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HintText: =""
+                    HoverBorderColor: =App.Theme.Colors.Darker40
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =App.Theme.Colors.Lighter70
+                    OnChange: =Reset(Self)
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    TabIndex: =4
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =lblCampoRefLabMan.Y + 18
+                    ZIndex: =13
+
+                lblCampoRefLabMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: ="TAB 4 · Referencia"
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =inpCampoMontoMan.Y + inpCampoMontoMan.Height + 10
+                    ZIndex: =14
+
+                inpCampoMontoMan As text:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =2
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: =Text(gvarTxMan.Total, FmtMoney)
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    Fill: =ThemeSurface2
+                    FocusedBorderColor: =ThemeAccent
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HintText: =""
+                    HoverBorderColor: =App.Theme.Colors.Darker40
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =App.Theme.Colors.Lighter70
+                    OnChange: =Reset(Self)
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    TabIndex: =3
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =lblCampoMontoLabMan.Y + 18
+                    ZIndex: =15
+
+                lblCampoMontoLabMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: ="TAB 3 · Monto total"
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =inpCampoMonedaMan.Y + inpCampoMonedaMan.Height + 10
+                    ZIndex: =16
+
+                inpCampoMonedaMan As text:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =2
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: =gvarTxMan.Currency
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    Fill: =ThemeSurface2
+                    FocusedBorderColor: =ThemeAccent
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HintText: =""
+                    HoverBorderColor: =App.Theme.Colors.Darker40
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =App.Theme.Colors.Lighter70
+                    OnChange: =Reset(Self)
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    TabIndex: =2
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =lblCampoMonedaLabMan.Y + 18
+                    ZIndex: =17
+
+                lblCampoMonedaLabMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: ="TAB 2 · Moneda"
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =inpCampoCuentaMan.Y + inpCampoCuentaMan.Height + 10
+                    ZIndex: =18
+
+                inpCampoCuentaMan As text:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =2
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: =If(IsBlank(gvarTxMan.AccountNumber), "— sin cuenta —", Text(gvarTxMan.AccountNumber, "[$-en-US]0"))
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    Fill: =ThemeSurface2
+                    FocusedBorderColor: =ThemeAccent
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HintText: =""
+                    HoverBorderColor: =App.Theme.Colors.Darker40
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =App.Theme.Colors.Lighter70
+                    OnChange: =Reset(Self)
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    TabIndex: =1
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =lblCampoCuentaLabMan.Y + 18
+                    ZIndex: =19
+
+                lblCampoCuentaLabMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: ="TAB 1 · Número de cuenta"
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12
+                    ZIndex: =20
+
+                cmpEmptyDetMan As cmpEmpty:
+                    Glifo: ="⌨"
+                    Height: =Parent.Height - 53
+                    Mensaje: ="Seleccioná una transacción para grabarla."
+                    Visible: =IsBlank(gvarTxMan)
+                    Width: =Parent.Width
+                    Y: =53
+                    ZIndex: =21
+
+                shpDetLineaMan As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    Width: =Parent.Width
+                    Y: =52
+                    ZIndex: =22
+
+                cmpPilDetEstadoMan As cmpPildora:
+                    Height: =22
+                    Texto: =If(ctxSegManual = "Aplicadas", "Aplicada", Switch(true, !IsBlank(gvarTxMan.MotivoRechazoCore), "Rechazo core", IsBlank(gvarTxMan.AccountNumber), "Sin cuenta", !IsBlank(gvarTxMan.RelatedDepositRecounting), "Con cheques", "—"))
+                    Tono: =If(ctxSegManual = "Aplicadas", "ok", Switch(Self.Texto, "Rechazo core", "danger", "Sin cuenta", "warn", "Con cheques", "info", "neutro"))
+                    Width: =40 + 7*Len(Self.Texto)
+                    X: =Parent.Width - 16 - Self.Width
+                    Y: =16
+                    ZIndex: =23
+
+                lblDetSubMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =8.25
+                    Text: =Coalesce(gvarTxMan.RelatedDepositRecounting.Name, "—")
+                    Width: =Parent.Width - 130
+                    X: =16
+                    Y: =34
+                    ZIndex: =24
+
+                lblDetRefMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =22
+                    Size: =14.25
+                    Text: =gvarTxMan.Name
+                    Width: =Parent.Width - 130
+                    X: =16
+                    Y: =12
+                    ZIndex: =25
+

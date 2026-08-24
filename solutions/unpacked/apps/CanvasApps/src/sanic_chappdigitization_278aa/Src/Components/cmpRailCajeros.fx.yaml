@@ -1,0 +1,245 @@
+cmpRailCajeros As CanvasComponent:
+    OnSeleccion():
+        ThisProperty:
+            Default: =
+    CajeroSel: =galCajerosRail.Selected
+    ChildTabPriority: =true
+    ContentLanguage: =""
+    Datos: |-
+        =Table({cajeroNombre: "SampleText", pendientesCorte: "", mesa: "", badge: 0, cajero: GUID(), totalEur: 0.00, totalNio: 0.00, totalUsd: 0.00})
+    EnableChildFocus: =true
+    Fill: =RGBA(0, 0, 0, 0)
+    Height: =640
+    Titulo: ="Text"
+    Visible: =true
+    Width: =640
+    X: =0
+    Y: =0
+
+    shpFondoRail As rectangle:
+        BorderColor: =App.Theme.Colors.Darker40
+        Fill: =ThemeSurface
+        Height: =Parent.Height
+        Width: =Parent.Width
+        ZIndex: =1
+
+    shpBordeRail As rectangle:
+        BorderColor: =App.Theme.Colors.Darker40
+        Fill: =ThemeLine
+        Height: =Parent.Height
+        Width: =1
+        X: =Parent.Width-1
+        ZIndex: =2
+
+    lblTituloRail As label:
+        BorderColor: =App.Theme.Colors.Darker40
+        Color: =ThemeInk3
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        FontWeight: =FontWeight.Semibold
+        Height: =16
+        Size: =7.88
+        Text: =Upper(cmpRailCajeros.Titulo)
+        Width: =Parent.Width-26
+        X: =13
+        Y: =11
+        ZIndex: =3
+
+    cntOrdenRail As groupContainer.manualLayoutContainer:
+        DropShadow: =DropShadow.Light
+        Fill: =Color.Transparent
+        Height: =26
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
+        Width: =Parent.Width-26
+        X: =13
+        Y: =lblTituloRail.Y + lblTituloRail.Height + 8
+        ZIndex: =4
+
+        btnOrdCantRail As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =If(Coalesce(ctxOrdenRail,"cant")="cant", ThemeAccent, ThemeInk2)
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            Fill: =If(Coalesce(ctxOrdenRail,"cant")="cant", ThemeAccentSoft, ThemeSurface)
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =App.Theme.Colors.Darker10
+            OnSelect: =Set(ctxOrdenRail,"cant")
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =8.25
+            Text: ="Más pendientes"
+            Width: =(Parent.Width-6)/2
+            ZIndex: =1
+
+        btnOrdAZRail As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =If(Coalesce(ctxOrdenRail,"cant")="az", ThemeAccent, ThemeInk2)
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            Fill: =If(Coalesce(ctxOrdenRail,"cant")="az", ThemeAccentSoft, ThemeSurface)
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =App.Theme.Colors.Darker10
+            OnSelect: =Set(ctxOrdenRail,"az")
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =8.25
+            Text: ="A–Z"
+            Width: =btnOrdCantRail.Width
+            X: =btnOrdCantRail.X + btnOrdCantRail.Width + 6
+            ZIndex: =2
+
+    galCajerosRail As gallery.galleryVertical:
+        '#CopilotOverlayLabel': ="Filtered"
+        BorderColor: =App.Theme.Colors.Darker40
+        DelayItemLoading: =true
+        Height: =Parent.Height - Self.Y
+        Items: |-
+            =Sort(
+                cmpRailCajeros.Datos,
+                If(
+                    Coalesce(
+                        ctxOrdenRail,
+                        "cant"
+                    ) = "cant",
+                    badge,
+                    cajeroNombre
+                ),
+                If(
+                    Coalesce(
+                        ctxOrdenRail,
+                        "cant"
+                    ) = "cant",
+                    SortOrder.Descending,
+                    SortOrder.Ascending
+                )
+            )
+        Layout: =Layout.Vertical
+        LoadingSpinner: =LoadingSpinner.Data
+        OnSelect: =cmpRailCajeros.OnSeleccion()
+        TemplatePadding: =0
+        TemplateSize: =52
+        Width: =Parent.Width
+        Y: =cntOrdenRail.Y + cntOrdenRail.Height + 8
+        ZIndex: =5
+
+        shpSelRail As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+            Height: =Parent.TemplateHeight
+            Width: =Parent.TemplateWidth
+            ZIndex: =1
+
+        shpSelBarraRail As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeAccent
+            Height: =Parent.TemplateHeight
+            Visible: =ThisItem.IsSelected
+            Width: =3
+            ZIndex: =2
+
+        btnFilaRail As button:
+            BorderColor: =App.Theme.Colors.Primary
+            BorderThickness: =0
+            Color: =App.Theme.Colors.PrimaryForeground
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            Fill: =Color.Transparent
+            FocusedBorderThickness: =0
+            FontWeight: =FontWeight.Semibold
+            Height: =Parent.TemplateHeight
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =ThemeSurface2
+            OnSelect: |-
+                =Select(Parent);
+                cmpRailCajeros.OnSeleccion()
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =ThemeAccentSoft
+            Size: =15
+            Text: =""
+            Width: =Parent.TemplateWidth
+            ZIndex: =3
+
+        lblNombreRail As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =RGBA(0, 0, 0, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            OnSelect: =Select(Parent)
+            Size: =9
+            Text: =ThisItem.cajeroNombre
+            Width: =Parent.TemplateWidth - 70
+            X: =13
+            Y: =9
+            ZIndex: =4
+
+        lblMesaRail As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Height: =14
+            OnSelect: =Select(Parent)
+            Size: =9
+            Text: =ThisItem.mesa
+            Width: =Parent.TemplateWidth - 70
+            X: =13
+            Y: =28
+            ZIndex: =5
+
+        pilBadgeRail As button:
+            BorderColor: =App.Theme.Colors.Primary
+            BorderThickness: =0
+            Color: =ThemeAccent
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccentSoft
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =App.Theme.Colors.Darker10
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =9
+            Text: =Text(ThisItem.badge)
+            Width: =40
+            X: =Parent.TemplateWidth - 52
+            Y: =15
+            ZIndex: =6
+

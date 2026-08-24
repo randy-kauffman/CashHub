@@ -1,0 +1,65 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpKpi:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      Etiqueta:
+        PropertyKind: Input
+        DisplayName: Etiqueta
+        Description: A custom property
+        DataType: Text
+        Default: ="Text"
+      Valor:
+        PropertyKind: Input
+        DisplayName: Valor
+        Description: A custom property
+        DataType: Text
+        Default: ="Text"
+    Children:
+      - cntFondoKpi:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            BorderColor: =ThemeLine
+            BorderStyle: =BorderStyle.None
+            BorderThickness: =1
+            DropShadow: =DropShadow.None
+            Fill: =ThemeSurface
+            Height: =Parent.Height
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Width: =Parent.Width
+          Children:
+            - lblValKpi:
+                Control: Label@2.5.1
+                Properties:
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Bold
+                  Height: =26
+                  Size: =16.5
+                  Text: =cmpKpi.Valor
+                  Width: =Parent.Width-30
+                  X: =15
+                  Y: =32
+            - lblLabKpi:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk3
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Bold
+                  Height: =14
+                  Size: =7.88
+                  Text: =Upper(cmpKpi.Etiqueta)
+                  Width: =Parent.Width-30
+                  X: =15
+                  Y: =10

@@ -1,0 +1,511 @@
+scrCorte As screen:
+    ContentLanguage: =""
+    Fill: =ThemeBg
+    LoadingSpinnerColor: =ThemeAccent
+    OnVisible: |-
+        =UpdateContext({ctxDlgCorteCor: false, ctxCorriendoCor: false});
+        ClearCollect(
+            colCajerosCor,
+            ForAll(
+                Table(ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload)),
+                {
+                    cajero:          GUID(Text(ThisRecord.Value.cajero)),
+                    cajeroNombre:    Text(ThisRecord.Value.cajeroNombre),
+                    mesa:            Text(ThisRecord.Value.mesa),
+                    pendientesCorte: Value(ThisRecord.Value.pendientesCorte),
+                    totalNio:        Value(ThisRecord.Value.totalNio),
+                    totalUsd:        Value(ThisRecord.Value.totalUsd),
+                    totalEur:        Value(ThisRecord.Value.totalEur)
+                }
+            )
+        )
+
+    cmpHeaderCor As cmpHeader:
+        Height: =LayHeaderH
+        OnCheques: =Navigate(scrCheques, ScreenTransition.None)
+        OnCorte: =Navigate(scrCorte, ScreenTransition.None)
+        OnLotes: =Navigate(scrLotes, ScreenTransition.None)
+        OnManual: =Navigate(scrManual, ScreenTransition.None)
+        Width: =Parent.Width
+        ZIndex: =1
+
+    cntBodyCor As groupContainer.manualLayoutContainer:
+        DropShadow: =DropShadow.Light
+        Fill: =Color.Transparent
+        Height: =Parent.Height - LayHeaderH
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
+        Width: =Parent.Width
+        Y: =LayHeaderH
+        ZIndex: =2
+
+        cmpRailCor As cmpRailCajeros:
+            Datos: =AddColumns(Filter(colCajerosCor, pendientesCorte > 0), badge, pendientesCorte)
+            Height: =Parent.Height
+            OnSeleccion: =Set(gvarCajeroCor, cmpRailCor.CajeroSel)
+            Titulo: ="CAJEROS CON CORTE PENDIENTE"
+            Width: =LayRailW
+            ZIndex: =1
+
+        cntMainCor As groupContainer.manualLayoutContainer:
+            DropShadow: =DropShadow.Light
+            Fill: =Color.Transparent
+            Height: =Parent.Height
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            Width: =Parent.Width - LayRailW
+            X: =LayRailW
+            ZIndex: =2
+
+            cntToolbarCor As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =Color.Transparent
+                Height: =40
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Visible: =!IsBlank(gvarCajeroCor)
+                Width: =Parent.Width - 2*LayGutter
+                X: =LayGutter
+                Y: =LayGutter
+                ZIndex: =1
+
+                lblMetaCor As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =Parent.Height
+                    Size: =9
+                    Text: =$"{gvarCajeroCor.cajeroNombre} · {gvarCajeroCor.mesa} — {gvarCajeroCor.pendientesCorte} transacciones de efectivo pendientes"
+                    Width: =Parent.Width - 160
+                    ZIndex: =1
+
+                btnCorteCor As button:
+                    BorderColor: =App.Theme.Colors.Primary
+                    BorderStyle: =BorderStyle.None
+                    Color: =ThemeSurface
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    DisplayMode: =If(IsBlank(gvarCajeroCor), DisplayMode.Disabled, DisplayMode.Edit)
+                    Fill: =ThemeAccent
+                    FontWeight: =FontWeight.Semibold
+                    Height: =32
+                    HoverBorderColor: =App.Theme.Colors.Darker10
+                    HoverColor: =App.Theme.Colors.PrimaryForeground
+                    HoverFill: =ThemeAccentDark
+                    OnSelect: |-
+                        =UpdateContext({ctxCortePreviewCor: Environment.sanic_CHPreviewTransactionCut({CajeroId: gvarCajeroCor.cajero}), ctxCorriendoCor: false, ctxDlgCorteCor: true})
+                    PressedBorderColor: =App.Theme.Colors.Darker40
+                    PressedColor: =Self.Color
+                    PressedFill: =App.Theme.Colors.Darker40
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    Text: ="Realizar corte"
+                    Width: =150
+                    X: =Parent.Width - Self.Width
+                    Y: =(Parent.Height - Self.Height)/2
+                    ZIndex: =2
+
+            cmpKpiPendCor As cmpKpi:
+                Etiqueta: ="PENDIENTES"
+                Height: =LayKpiH
+                Valor: =Text(gvarCajeroCor.pendientesCorte)
+                Visible: =!IsBlank(gvarCajeroCor)
+                Width: =(Parent.Width - 2*LayGutter - 3*LayGap)/4
+                X: =LayGutter
+                Y: =cntToolbarCor.Y + cntToolbarCor.Height + LayGap
+                ZIndex: =2
+
+            cmpKpiNioCor As cmpKpi:
+                Etiqueta: ="TOTAL C$"
+                Height: =LayKpiH
+                Valor: =SimboloNIO & " " & Text(gvarCajeroCor.totalNio, FmtMoney)
+                Visible: =!IsBlank(gvarCajeroCor)
+                Width: =(Parent.Width - 2*LayGutter - 3*LayGap)/4
+                X: =cmpKpiPendCor.X + cmpKpiPendCor.Width + LayGap
+                Y: =cntToolbarCor.Y + cntToolbarCor.Height + LayGap
+                ZIndex: =3
+
+            cmpKpiUsdCor As cmpKpi:
+                Etiqueta: ="TOTAL US$"
+                Height: =LayKpiH
+                Valor: =SimboloUSD & " " & Text(gvarCajeroCor.totalUsd, FmtMoney)
+                Visible: =!IsBlank(gvarCajeroCor)
+                Width: =(Parent.Width - 2*LayGutter - 3*LayGap)/4
+                X: =cmpKpiNioCor.X + cmpKpiNioCor.Width + LayGap
+                Y: =cntToolbarCor.Y + cntToolbarCor.Height + LayGap
+                ZIndex: =4
+
+            cmpKpiEurCor As cmpKpi:
+                Etiqueta: ="TOTAL €"
+                Height: =LayKpiH
+                Valor: =SimboloEUR & " " & Text(gvarCajeroCor.totalEur, FmtMoney)
+                Visible: =!IsBlank(gvarCajeroCor)
+                Width: =(Parent.Width - 2*LayGutter - 3*LayGap)/4
+                X: =cmpKpiUsdCor.X + cmpKpiUsdCor.Width + LayGap
+                Y: =cntToolbarCor.Y + cntToolbarCor.Height + LayGap
+                ZIndex: =5
+
+            cntGridCardCor As groupContainer.manualLayoutContainer:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                DropShadow: =DropShadow.Light
+                Fill: =ThemeSurface
+                Height: =Parent.Height - Self.Y - LayGutter
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =LayCardR
+                RadiusBottomRight: =LayCardR
+                RadiusTopLeft: =LayCardR
+                RadiusTopRight: =LayCardR
+                Visible: =!IsBlank(gvarCajeroCor)
+                Width: =Parent.Width - 2*LayGutter
+                X: =LayGutter
+                Y: =cmpKpiPendCor.Y + cmpKpiPendCor.Height + LayGap
+                ZIndex: =6
+
+                lblColRefCor As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =22
+                    Size: =7.5
+                    Text: ="REFERENCIA"
+                    Width: |-
+                        =With({U:(galTxCor.Width-50)/6.4}, 1.1*U)
+                    X: =14
+                    Y: =12
+                    ZIndex: =1
+
+                lblColDepCor As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =22
+                    Size: =7.5
+                    Text: ="DEPÓSITO / CLIENTE"
+                    Width: |-
+                        =With({U:(galTxCor.Width-50)/6.4}, 2*U)
+                    X: |-
+                        =14 + With({U:(galTxCor.Width-50)/6.4}, 1.1*U + 10)
+                    Y: =12
+                    ZIndex: =2
+
+                lblColCtaCor As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =22
+                    Size: =7.5
+                    Text: ="CUENTA"
+                    Width: |-
+                        =With({U:(galTxCor.Width-50)/6.4}, 1*U)
+                    X: |-
+                        =14 + With({U:(galTxCor.Width-50)/6.4}, 3.1*U + 20)
+                    Y: =12
+                    ZIndex: =3
+
+                lblColMontoCor As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =22
+                    Size: =7.5
+                    Text: ="MONTO"
+                    Width: |-
+                        =With({U:(galTxCor.Width-50)/6.4}, 0.9*U)
+                    X: |-
+                        =14 + With({U:(galTxCor.Width-50)/6.4}, 4.1*U + 30)
+                    Y: =12
+                    ZIndex: =4
+
+                lblColMonCor As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =22
+                    Size: =7.5
+                    Text: ="MON."
+                    Width: |-
+                        =With({U:(galTxCor.Width-50)/6.4}, 0.6*U)
+                    X: |-
+                        =14 + With({U:(galTxCor.Width-50)/6.4}, 5*U + 40)
+                    Y: =12
+                    ZIndex: =5
+
+                lblColCreadaCor As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =22
+                    Size: =7.5
+                    Text: ="CREADA"
+                    Width: |-
+                        =With({U:(galTxCor.Width-50)/6.4}, 0.8*U)
+                    X: |-
+                        =14 + With({U:(galTxCor.Width-50)/6.4}, 5.6*U + 50)
+                    Y: =12
+                    ZIndex: =6
+
+                shpGridLineaCor As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    Width: =Parent.Width - 2*14
+                    X: =14
+                    Y: =lblColRefCor.Y + lblColRefCor.Height
+                    ZIndex: =7
+
+                galTxCor As gallery.galleryVertical:
+                    '#CopilotOverlayLabel': ="Filtered"
+                    BorderColor: =App.Theme.Colors.Darker40
+                    DelayItemLoading: =true
+                    Height: =cntGridFootCor.Y - Self.Y
+                    Items: |-
+                        =Sort(
+                            Filter(
+                                'CH-Tbl-Transactions',
+                                TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Batch
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && 'Created By'.User = gvarCajeroCor.cajero
+                            ),
+                            'Created On',
+                            SortOrder.Ascending
+                        )
+                    Layout: =Layout.Vertical
+                    LoadingSpinner: =LoadingSpinner.Data
+                    TemplatePadding: =0
+                    TemplateSize: =LayRowH
+                    Width: =Parent.Width - 2*14
+                    X: =14
+                    Y: =shpGridLineaCor.Y + 6
+                    ZIndex: =8
+
+                    lblTxRefCor As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =LayRowH
+                        Size: =9
+                        Text: =ThisItem.Name
+                        Width: |-
+                            =With({U:(Parent.TemplateWidth-50)/6.4}, 1.1*U)
+                        ZIndex: =1
+
+                    lblTxDepCor As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =LayRowH
+                        Size: =9
+                        Text: =ThisItem.'Created On'
+                        Width: |-
+                            =With({U:(Parent.TemplateWidth-50)/6.4}, 2*U)
+                        X: |-
+                            =With({U:(Parent.TemplateWidth-50)/6.4}, 1.1*U + 10)
+                        ZIndex: =2
+
+                    lblTxCtaCor As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =LayRowH
+                        Size: =9
+                        Text: =ThisItem.'Import Sequence Number'
+                        Width: |-
+                            =With({U:(Parent.TemplateWidth-50)/6.4}, 1*U)
+                        X: |-
+                            =With({U:(Parent.TemplateWidth-50)/6.4}, 3.1*U + 20)
+                        ZIndex: =3
+
+                    lblTxMontoCor As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =LayRowH
+                        Size: =9
+                        Text: =ThisItem.'Modified On'
+                        Width: |-
+                            =With({U:(Parent.TemplateWidth-50)/6.4}, 0.9*U)
+                        X: |-
+                            =With({U:(Parent.TemplateWidth-50)/6.4}, 4.1*U + 30)
+                        ZIndex: =4
+
+                    lblTxMonCor As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =LayRowH
+                        Size: =9
+                        Text: =Switch(ThisItem.Currency, 'CH-Ch-Currency'.NIO, SimboloNIO, 'CH-Ch-Currency'.USD, SimboloUSD, 'CH-Ch-Currency'.EUR, SimboloEUR, "—")
+                        Width: |-
+                            =With({U:(Parent.TemplateWidth-50)/6.4}, 0.6*U)
+                        X: |-
+                            =With({U:(Parent.TemplateWidth-50)/6.4}, 5*U + 40)
+                        ZIndex: =5
+
+                    lblTxCreadaCor As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =LayRowH
+                        Size: =9
+                        Text: =ThisItem.'Record Created On'
+                        Width: |-
+                            =With({U:(Parent.TemplateWidth-50)/6.4}, 0.8*U)
+                        X: |-
+                            =With({U:(Parent.TemplateWidth-50)/6.4}, 5.6*U + 50)
+                        ZIndex: =6
+
+                    shpTxSepCor As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLineSoft
+                        Height: =1
+                        Width: =Parent.TemplateWidth
+                        Y: =LayRowH - 1
+                        ZIndex: =7
+
+                shpGridFootLinCor As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    Width: =Parent.Width - 2*14
+                    X: =14
+                    Y: =cntGridFootCor.Y
+                    ZIndex: =9
+
+                cntGridFootCor As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeSurface2
+                    Height: =36
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =4
+                    RadiusBottomRight: =4
+                    RadiusTopLeft: =4
+                    RadiusTopRight: =4
+                    Width: =Parent.Width - 2*14
+                    X: =14
+                    Y: =Parent.Height - 14 - 36
+                    ZIndex: =10
+
+                    lblFootCntCor As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        Size: =9
+                        Text: =$"{gvarCajeroCor.pendientesCorte} transacciones"
+                        Width: |-
+                            =With({U:(cntGridFootCor.Width-50)/6.4}, 3.1*U + 20 + 1*U)
+                        ZIndex: =1
+
+                    lblFootNioCor As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        Size: =9
+                        Text: =SimboloNIO & " " & Text(gvarCajeroCor.totalNio, FmtMoney)
+                        Visible: =false
+                        Width: |-
+                            =With({U:(cntGridFootCor.Width-50)/6.4}, 0.9*U)
+                        X: |-
+                            =With({U:(cntGridFootCor.Width-50)/6.4}, 4.1*U + 30)
+                        ZIndex: =2
+
+                    lblFootUsdCor As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Bold
+                        Height: =Parent.Height
+                        Size: =9
+                        Text: =SimboloUSD & " " & Text(gvarCajeroCor.totalUsd, FmtMoney)
+                        Visible: =false
+                        Width: |-
+                            =With({U:(cntGridFootCor.Width-50)/6.4}, 0.9*U)
+                        X: |-
+                            =With({U:(cntGridFootCor.Width-50)/6.4}, 5*U + 40)
+                        ZIndex: =3
+
+            cmpEmptyCor As cmpEmpty:
+                Glifo: ="⛁"
+                Height: =Parent.Height - 2*LayGutter
+                Mensaje: ="Elegí un cajero del panel izquierdo para ver sus transacciones pendientes y realizar el corte."
+                Visible: =IsBlank(gvarCajeroCor)
+                Width: =Parent.Width - 2*LayGutter
+                X: =LayGutter
+                Y: =LayGutter
+                ZIndex: =7
+
+    cmpDlgCorteCor As cmpDialogo:
+        AnchoCard: =440
+        Height: =App.Height
+        Mostrar: =ctxDlgCorteCor
+        OkHabilitado: =!ctxCorriendoCor
+        OnCancelar: |-
+            =UpdateContext({ctxDlgCorteCor: false})
+        OnOk: |-
+            =UpdateContext({ctxCorriendoCor: true});
+            'CH-Flow-CreateCut'.Run(gvarCajeroCor.cajero);
+            UpdateContext({ctxCorriendoCor: false, ctxDlgCorteCor: false});
+            Set(gvarCajeroCor, Blank());
+            Notify("Corte generado. El lote quedó en estado Generado.", NotificationType.Success)
+        Texto: |-
+            =$"Se creará un lote en estado Generado con las {ctxCortePreviewCor.EligibleCount} transacciones de efectivo pendientes del cajero (" &
+            SimboloNIO & " " & Text(ctxCortePreviewCor.TotalNIO, FmtMoney) & " · " &
+            SimboloUSD & " " & Text(ctxCortePreviewCor.TotalUSD, FmtMoney) &
+            "). El lote queda a su nombre. El conteo lo confirma el servidor en el momento del corte: las transacciones creadas después entran en el próximo corte."
+        TextoOk: ="Sí, generar corte"
+        Titulo: =$"¿Generar el corte de {gvarCajeroCor.cajeroNombre}?"
+        Tono: ="warn"
+        Visible: =ctxDlgCorteCor
+        Width: =App.Width
+        ZIndex: =3
+

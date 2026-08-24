@@ -1,5 +1,51 @@
 App As appinfo:
     BackEnabled: =true
+    Formulas: |-
+        =// ===================== PALETA (RGBA exactos del mockup, gemela de Reception/Recounting v2) =====================
+        ThemeAccent      = RGBA(200, 16, 46, 1);      // #C8102E
+        ThemeAccentDark  = RGBA(164, 13, 38, 1);      // #A40D26 — hover del boton primario
+        ThemeAccentSoft  = RGBA(251, 235, 237, 1);    // #FBEBED
+        ThemeBg          = RGBA(246, 245, 244, 1);    // #F6F5F4
+        ThemeSurface     = RGBA(255, 255, 255, 1);    // #FFFFFF
+        ThemeSurface2    = RGBA(250, 248, 247, 1);    // #FAF8F7
+        ThemeInk         = RGBA(32, 28, 29, 1);       // #201C1D
+        ThemeInk2        = RGBA(102, 89, 92, 1);      // #66595C
+        ThemeInk3        = RGBA(148, 138, 140, 1);    // #948A8C
+        ThemeLine        = RGBA(226, 220, 221, 1);    // #E2DCDD
+        ThemeLineSoft    = RGBA(237, 232, 233, 1);    // #EDE8E9
+        ThemeOk          = RGBA(14, 122, 60, 1);      // #0E7A3C
+        ThemeOkSoft      = RGBA(226, 242, 232, 1);    // #E2F2E8
+        ThemeInfo        = RGBA(35, 85, 125, 1);      // #23557D
+        ThemeInfoSoft    = RGBA(228, 238, 246, 1);    // #E4EEF6
+        ThemeWarn        = RGBA(154, 91, 0, 1);       // #9A5B00
+        ThemeWarnSoft    = RGBA(251, 240, 220, 1);    // #FBF0DC
+        ThemeDanger      = RGBA(179, 38, 30, 1);      // #B3261E
+        ThemeDangerSoft  = RGBA(252, 234, 232, 1);    // #FCEAE8
+        ThemeDangerLine  = RGBA(231, 185, 181, 1);    // #E7B9B5 — borde de boton chico peligroso
+        ThemeOverlay     = RGBA(40, 30, 32, 0.45);    // velo de los modales
+        // ===================== CONSTANTES DE LAYOUT (el sistema de posicionamiento) =====================
+        LayHeaderH = 60;      // alto del encabezado
+        LayRailW   = 230;     // ancho del rail de cajeros
+        LayGutter  = 18;      // margen lateral / respiro entre zonas
+        LayGap     = 14;      // separacion entre cards
+        LayCardR   = 13;      // radio de card
+        LayRowH    = 44;      // alto de fila de galeria
+        LayKpiH    = 74;      // alto de KPI card
+        // ===================== FORMATOS =====================
+        FmtMoney = "#,##0.00";              // el '0' fuerza el entero: "#,###" daba "C$ .00"
+        FmtFecha = "dd/mm/yyyy HH:mm";      // HH = 24 h. hh seria 12 h SIN AM/PM
+        FmtHora  = "HH:mm";
+        SimboloNIO = "C$";  SimboloUSD = "US$";  SimboloEUR = "€";
+        // ===================== IDENTIDAD (sin conectores) =====================
+        UsuarioNombre = User().FullName;
+        UsuarioIniciales =
+            Left(User().FullName, 1) &
+            If(
+                CountRows(Split(User().FullName, " ")) > 1,
+                Left(Last(Split(User().FullName, " ")).Value, 1),
+                ""
+            );
+        // Si IntelliSense nombra la columna de Split() distinto de 'Value', EL SUYO MANDA.
     OnError: |-
         =Trace("CH-App-Digitization error no controlado: " & FirstError.Message, TraceSeverity.Error);
         Notify("Ocurrió un error inesperado: " & FirstError.Message, NotificationType.Error)

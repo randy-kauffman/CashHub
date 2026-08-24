@@ -1,0 +1,902 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrCheques:
+    Properties:
+      Fill: =ThemeBg
+      LoadingSpinnerColor: =ThemeAccent
+      OnVisible: |-
+        =UpdateContext({
+            ctxSegChq: "Enviados",
+            ctxEstadoChq: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',
+            ctxFeedbackChq: "",
+            ctxFeedbackMsgChq: "",
+            ctxBusyChq: false
+        });
+        Reset(inpBuscarChq);
+        Set(gvarChq,
+            First(Filter('CH-Tbl-Checks',
+                CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'))
+        )
+    Children:
+      - cmpHeaderChq:
+          Control: CanvasComponent
+          ComponentName: cmpHeader
+          Properties:
+            Activo: ="Cheques"
+            Height: =LayHeaderH
+            OnCheques: =Navigate(scrCheques, ScreenTransition.None)
+            OnCorte: =Navigate(scrCorte, ScreenTransition.None)
+            OnLotes: =Navigate(scrLotes, ScreenTransition.None)
+            OnManual: =Navigate(scrManual, ScreenTransition.None)
+            Subtitulo: ="Cheques"
+            Titulo: ="Digitación"
+            Width: =Parent.Width
+      - cntBodyChq:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Fill: =ThemeBg
+            Height: =Parent.Height - LayHeaderH
+            Width: =Parent.Width
+            Y: =LayHeaderH
+          Children:
+            - cntMainChq:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Fill: =Color.Transparent
+                  Height: =Parent.Height
+                  Width: =Parent.Width
+                Children:
+                  - cntToolbarChq:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Fill: =Color.Transparent
+                        Height: =52
+                        Width: =Parent.Width
+                      Children:
+                        - cntSegChq:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              BorderColor: =ThemeLine
+                              BorderThickness: =1
+                              Fill: =ThemeSurface2
+                              Height: =34
+                              RadiusBottomLeft: =9
+                              RadiusBottomRight: =9
+                              RadiusTopLeft: =9
+                              RadiusTopRight: =9
+                              Width: =360
+                              X: =LayGutter
+                              Y: =(Parent.Height - Self.Height) / 2
+                            Children:
+                              - btnSegEnvChq:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderThickness: =0
+                                    Color: =If(ctxSegChq="Enviados", ThemeAccent, ThemeInk2)
+                                    Fill: =If(ctxSegChq="Enviados", ThemeSurface, Color.Transparent)
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =If(ctxSegChq="Enviados", FontWeight.Semibold, FontWeight.Normal)
+                                    Height: =Parent.Height - 6
+                                    OnSelect: |-
+                                      =UpdateContext({
+                                          ctxSegChq: "Enviados",
+                                          ctxEstadoChq: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',
+                                          ctxFeedbackChq: ""
+                                      });
+                                      Reset(inpBuscarChq);
+                                      Set(gvarChq, First(Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq)))
+                                    RadiusBottomLeft: =7
+                                    RadiusBottomRight: =7
+                                    RadiusTopLeft: =7
+                                    RadiusTopRight: =7
+                                    Size: =9
+                                    Text: =$"Enviados ({CountRows(Filter('CH-Tbl-Checks', CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'))})"
+                                    Width: =(Parent.Width - 12) / 3
+                                    X: =3
+                                    Y: =3
+                              - btnSegRecChq:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderThickness: =0
+                                    Color: =If(ctxSegChq="Recibidos", ThemeAccent, ThemeInk2)
+                                    Fill: =If(ctxSegChq="Recibidos", ThemeSurface, Color.Transparent)
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =If(ctxSegChq="Recibidos", FontWeight.Semibold, FontWeight.Normal)
+                                    Height: =Parent.Height - 6
+                                    OnSelect: |-
+                                      =UpdateContext({
+                                          ctxSegChq: "Recibidos",
+                                          ctxEstadoChq: 'CheckStatus (CH-Tbl-Checks)'.Recibido,
+                                          ctxFeedbackChq: ""
+                                      });
+                                      Reset(inpBuscarChq);
+                                      Set(gvarChq, First(Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq)))
+                                    RadiusBottomLeft: =7
+                                    RadiusBottomRight: =7
+                                    RadiusTopLeft: =7
+                                    RadiusTopRight: =7
+                                    Size: =9
+                                    Text: =$"Recibidos ({CountRows(Filter('CH-Tbl-Checks', CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recibido))})"
+                                    Width: =(Parent.Width - 12) / 3
+                                    X: =btnSegEnvChq.X + btnSegEnvChq.Width + 3
+                                    Y: =3
+                              - btnSegNoRecChq:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderThickness: =0
+                                    Color: =If(ctxSegChq="No recibidos", ThemeAccent, ThemeInk2)
+                                    Fill: =If(ctxSegChq="No recibidos", ThemeSurface, Color.Transparent)
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =If(ctxSegChq="No recibidos", FontWeight.Semibold, FontWeight.Normal)
+                                    Height: =Parent.Height - 6
+                                    OnSelect: |-
+                                      =UpdateContext({
+                                          ctxSegChq: "No recibidos",
+                                          ctxEstadoChq: 'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
+                                          ctxFeedbackChq: ""
+                                      });
+                                      Reset(inpBuscarChq);
+                                      Set(gvarChq, First(Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq)))
+                                    RadiusBottomLeft: =7
+                                    RadiusBottomRight: =7
+                                    RadiusTopLeft: =7
+                                    RadiusTopRight: =7
+                                    Size: =9
+                                    Text: =$"No recibidos ({CountRows(Filter('CH-Tbl-Checks', CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'))})"
+                                    Width: =(Parent.Width - 12) / 3
+                                    X: =btnSegRecChq.X + btnSegRecChq.Width + 3
+                                    Y: =3
+                        - inpBuscarChq:
+                            Control: Classic/TextInput@2.3.2
+                            Properties:
+                              AccessibleLabel: ="Buscar cheque por número o cliente"
+                              BorderColor: =ThemeLine
+                              Font: =Font.'Open Sans'
+                              Height: =34
+                              HintText: ="⌕ N° de cheque o cliente…"
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              Size: =9
+                              Width: =280
+                              X: =cntSegChq.X + cntSegChq.Width + 10
+                              Y: =(Parent.Height - Self.Height) / 2
+                  - cntListaChq:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Fill: =ThemeSurface
+                        Height: =Parent.Height - Self.Y - LayGap
+                        RadiusBottomLeft: =LayCardR
+                        RadiusBottomRight: =LayCardR
+                        RadiusTopLeft: =LayCardR
+                        RadiusTopRight: =LayCardR
+                        Width: =(Parent.Width - 2*LayGutter - LayGap) * 0.6
+                        X: =LayGutter
+                        Y: =cntToolbarChq.Y + cntToolbarChq.Height
+                      Children:
+                        - cntGridHeadChq:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =ThemeSurface2
+                              Height: =34
+                              RadiusBottomLeft: =0
+                              RadiusBottomRight: =0
+                              RadiusTopLeft: =LayCardR
+                              RadiusTopRight: =LayCardR
+                              Width: =Parent.Width
+                            Children:
+                              - lblColNumChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =34
+                                    Size: =7.5
+                                    Text: ="N° CHEQUE"
+                                    Width: =0.15*(Parent.Width - 32)
+                                    X: =16
+                              - lblColClienteChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =34
+                                    Size: =7.5
+                                    Text: ="CLIENTE / DEPÓSITO"
+                                    Width: =0.26*(Parent.Width - 32)
+                                    X: =16 + 0.15*(Parent.Width - 32)
+                              - lblColPorChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =34
+                                    Size: =7.5
+                                    Text: =Switch(ctxSegChq, "Enviados", "ENVIADO POR", "Recibidos", "RECIBIDO POR", "No recibidos", "NO RECIBIDO POR")
+                                    Width: =0.15*(Parent.Width - 32)
+                                    X: =16 + 0.41*(Parent.Width - 32)
+                              - lblColMontoChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =34
+                                    Size: =7.5
+                                    Text: ="MONTO"
+                                    Width: =0.13*(Parent.Width - 32)
+                                    X: =16 + 0.56*(Parent.Width - 32)
+                              - lblColFechaChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =34
+                                    Size: =7.5
+                                    Text: =Switch(ctxSegChq, "Enviados", "ENVIADO", "Recibidos", "RECIBIDO", "No recibidos", "NO RECIBIDO")
+                                    Width: =0.16*(Parent.Width - 32)
+                                    X: =16 + 0.69*(Parent.Width - 32)
+                              - lblColEstadoChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =34
+                                    Size: =7.5
+                                    Text: ="ESTADO"
+                                    Width: =0.15*(Parent.Width - 32)
+                                    X: =16 + 0.85*(Parent.Width - 32)
+                              - shpGridHeadLineaChq:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeLine
+                                    Height: =1
+                                    Width: =Parent.Width
+                                    Y: =Parent.Height - 1
+                        - galChequesChq:
+                            Control: Gallery@2.15.0
+                            Variant: Vertical
+                            Properties:
+                              Height: =Parent.Height - Self.Y
+                              Items: |-
+                                =With({_q: Trim(inpBuscarChq.Text)},
+                                    Filter(
+                                        Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq),
+                                        CheckNumber = _q
+                                    )
+                                )
+                              OnSelect: |-
+                                =Set(gvarChq, ThisItem); UpdateContext({ctxFeedbackChq: ""})
+                              TemplatePadding: =0
+                              TemplateSize: =LayRowH
+                              Width: =Parent.Width
+                              Y: =cntGridHeadChq.Y + cntGridHeadChq.Height
+                            Children:
+                              - shpFilaSelChq:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =If(!IsBlank(gvarChq) && ThisItem.'CH-Tbl-Checks' = gvarChq.'CH-Tbl-Checks', ThemeAccentSoft, Color.Transparent)
+                                    Height: =Parent.TemplateHeight
+                                    Width: =Parent.TemplateWidth
+                              - shpFilaSelBarraChq:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeAccent
+                                    Height: =Parent.TemplateHeight
+                                    Visible: =!IsBlank(gvarChq) && ThisItem.'CH-Tbl-Checks' = gvarChq.'CH-Tbl-Checks'
+                                    Width: =3
+                              - btnFilaChq:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderThickness: =0
+                                    Fill: =Color.Transparent
+                                    Font: =Font.'Open Sans'
+                                    Height: =Parent.TemplateHeight
+                                    HoverFill: =ThemeSurface2
+                                    OnSelect: =Select(Parent)
+                                    PressedFill: =ThemeAccentSoft
+                                    Text: =""
+                                    Width: =Parent.TemplateWidth
+                              - lblFilaNumChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: =Select(Parent)
+                                    Text: =ThisItem.CheckNumber
+                                    Width: =0.15*(Parent.TemplateWidth - 32)
+                                    X: =16
+                              - lblFilaClienteChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: =Select(Parent)
+                                    Text: =Coalesce(ThisItem.RelatedReCounterDepositID.BagID.ReceptionID.RemitentName, "—") & " · " & Coalesce(ThisItem.RelatedReCounterDepositID.Name, "—")
+                                    Width: =0.26*(Parent.TemplateWidth - 32)
+                                    X: =16 + 0.15*(Parent.TemplateWidth - 32)
+                              - lblFilaPorChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: =Select(Parent)
+                                    Text: =Switch(ctxSegChq, "Enviados", Coalesce(ThisItem.SentToDigitizationBy.'Full Name', "—"), Coalesce(ThisItem.ReceivedBy.'Full Name', "—"))
+                                    Width: =0.15*(Parent.TemplateWidth - 32)
+                                    X: =16 + 0.41*(Parent.TemplateWidth - 32)
+                              - lblFilaMontoChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: =Select(Parent)
+                                    Text: =Text(ThisItem.CheckAmount, FmtMoney)
+                                    Width: =0.13*(Parent.TemplateWidth - 32)
+                                    X: =16 + 0.56*(Parent.TemplateWidth - 32)
+                              - lblFilaFechaChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: =Select(Parent)
+                                    Text: =Switch(ctxSegChq, "Enviados", Text(ThisItem.'Enviado el', FmtHora), "Recibidos", Text(ThisItem.'Recibido el', FmtFecha), "No recibidos", Text(ThisItem.'No recibido el', FmtFecha))
+                                    Width: =0.16*(Parent.TemplateWidth - 32)
+                                    X: =16 + 0.69*(Parent.TemplateWidth - 32)
+                              - pilFilaEstadoChq:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderThickness: =0
+                                    Color: |-
+                                      =With({s: ThisItem.CheckStatus}, Switch(s, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', ThemeInfo, 'CheckStatus (CH-Tbl-Checks)'.Recibido, ThemeOk, 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', ThemeDanger, ThemeInk3))
+                                    DisplayMode: =DisplayMode.View
+                                    Fill: |-
+                                      =With({s: ThisItem.CheckStatus}, Switch(s, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', ThemeInfoSoft, 'CheckStatus (CH-Tbl-Checks)'.Recibido, ThemeOkSoft, 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', ThemeDangerSoft, ThemeLineSoft))
+                                    Font: =Font.'Open Sans'
+                                    Height: =22
+                                    RadiusBottomLeft: =12
+                                    RadiusBottomRight: =12
+                                    RadiusTopLeft: =12
+                                    RadiusTopRight: =12
+                                    Size: =7.88
+                                    Text: =Switch(ThisItem.CheckStatus, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', "Enviado", 'CheckStatus (CH-Tbl-Checks)'.Recibido, "Recibido", 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', "No recibido", "—")
+                                    Width: =82
+                                    X: =16 + 0.85*(Parent.TemplateWidth - 32)
+                                    Y: =(Parent.TemplateHeight - 22) / 2
+                              - shpFilaSepChq:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeLineSoft
+                                    Height: =1
+                                    Width: =Parent.TemplateWidth
+                                    Y: =Parent.TemplateHeight - 1
+                        - cmpVacioChq:
+                            Control: CanvasComponent
+                            ComponentName: cmpEmpty
+                            Properties:
+                              Glifo: ="✓"
+                              Height: =Parent.Height - galChequesChq.Y
+                              Mensaje: =Switch(ctxSegChq, "Enviados", If(Trim(inpBuscarChq.Text) <> "", "Ningún cheque enviado coincide con la búsqueda.", "No hay cheques esperando recepción. Cuando el Supervisor envíe cheques a digitación, aparecen acá."), "Recibidos", "Todavía no marcaste cheques como recibidos en este filtro.", "No recibidos", "No hay cheques marcados como no recibidos.")
+                              Visible: =IsEmpty(galChequesChq.AllItems)
+                              Width: =Parent.Width
+                              Y: =galChequesChq.Y
+                  - cntDetalleChq:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Fill: =ThemeSurface
+                        Height: =cntListaChq.Height
+                        RadiusBottomLeft: =LayCardR
+                        RadiusBottomRight: =LayCardR
+                        RadiusTopLeft: =LayCardR
+                        RadiusTopRight: =LayCardR
+                        Width: =(Parent.Width - 2*LayGutter - LayGap) * 0.4
+                        X: =cntListaChq.X + cntListaChq.Width + LayGap
+                        Y: =cntListaChq.Y
+                      Children:
+                        - cntDetHeaderChq:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =Color.Transparent
+                              Height: =56
+                              Visible: =!IsBlank(gvarChq)
+                              Width: =Parent.Width
+                            Children:
+                              - lblDetTituloChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =22
+                                    Size: =12
+                                    Text: =$"Cheque {Coalesce(gvarChq.CheckNumber, "—")}"
+                                    Width: =Parent.Width - 16 - 92 - 20
+                                    X: =16
+                                    Y: =9
+                              - lblDetSubChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    Height: =16
+                                    Size: =8.25
+                                    Text: =Coalesce(gvarChq.RelatedReCounterDepositID.BagID.ReceptionID.RemitentName , "—") & " · " & Coalesce(gvarChq.RelatedReCounterDepositID.Name, "—")
+                                    Width: =Parent.Width - 16 - 92 - 20
+                                    X: =16
+                                    Y: =31
+                              - pilDetEstadoChq:
+                                  Control: CanvasComponent
+                                  ComponentName: cmpPildora
+                                  Properties:
+                                    Height: =22
+                                    Texto: =Switch(gvarChq.CheckStatus, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', "Enviado", 'CheckStatus (CH-Tbl-Checks)'.Recibido, "Recibido", 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', "No recibido", "—")
+                                    Tono: =Switch(gvarChq.CheckStatus, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', "info", 'CheckStatus (CH-Tbl-Checks)'.Recibido, "ok", 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', "danger", "neutro")
+                                    Width: =92
+                                    X: =Parent.Width - 16 - 92
+                                    Y: =(Parent.Height - 22) / 2
+                              - shpDetHeaderLineaChq:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeLine
+                                    Height: =1
+                                    Width: =Parent.Width
+                                    Y: =Parent.Height - 1
+                        - cntDetOpsChq:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =Color.Transparent
+                              Height: =52
+                              Visible: =!IsBlank(gvarChq) && gvarChq.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'
+                              Width: =Parent.Width
+                              Y: =cntDetHeaderChq.Y + cntDetHeaderChq.Height
+                            Children:
+                              - btnRecibidoChq:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    Color: =ThemeSurface
+                                    DisabledBorderColor: =Color.Transparent
+                                    DisabledColor: =ThemeInk3
+                                    DisabledFill: =ThemeLineSoft
+                                    DisplayMode: =If(ctxBusyChq, DisplayMode.Disabled, DisplayMode.Edit)
+                                    Fill: =ThemeAccent
+                                    Font: =Font.'Open Sans'
+                                    Height: =32
+                                    HoverFill: =ThemeAccentDark
+                                    OnSelect: |-
+                                      =UpdateContext({ctxBusyChq: true, ctxFeedbackChq: ""});
+                                      IfError(
+                                          Patch('CH-Tbl-Checks', gvarChq,
+                                              {CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.Recibido});
+                                          UpdateContext({ctxFeedbackChq: "ok",
+                                              ctxFeedbackMsgChq: $"Cheque {gvarChq.CheckNumber} marcado como Recibido."});
+                                          Set(gvarChq, First(Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq))),
+                                          UpdateContext({ctxFeedbackChq: "error",
+                                              ctxFeedbackMsgChq: $"No se pudo marcar como Recibido. {FirstError.Message}"})
+                                      );
+                                      UpdateContext({ctxBusyChq: false})
+                                    RadiusBottomLeft: =8
+                                    RadiusBottomRight: =8
+                                    RadiusTopLeft: =8
+                                    RadiusTopRight: =8
+                                    Size: =9
+                                    Text: ="Recibido"
+                                    Width: =(Parent.Width - 32 - 8) / 2
+                                    X: =16
+                                    Y: =10
+                              - btnNoRecibidoChq:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderColor: =ThemeLine
+                                    BorderThickness: =1
+                                    Color: =ThemeInk2
+                                    DisabledBorderColor: =Color.Transparent
+                                    DisabledColor: =ThemeInk3
+                                    DisabledFill: =ThemeLineSoft
+                                    DisplayMode: =If(ctxBusyChq, DisplayMode.Disabled, DisplayMode.Edit)
+                                    Fill: =Color.Transparent
+                                    Font: =Font.'Open Sans'
+                                    Height: =32
+                                    HoverFill: =ThemeSurface2
+                                    OnSelect: |-
+                                      =UpdateContext({ctxBusyChq: true, ctxFeedbackChq: ""});
+                                      IfError(
+                                          Patch('CH-Tbl-Checks', gvarChq,
+                                              {CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'});
+                                          UpdateContext({ctxFeedbackChq: "ok",
+                                              ctxFeedbackMsgChq: $"Cheque {gvarChq.CheckNumber} marcado como No recibido."});
+                                          Set(gvarChq, First(Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq))),
+                                          UpdateContext({ctxFeedbackChq: "error",
+                                              ctxFeedbackMsgChq: $"No se pudo marcar como No recibido. {FirstError.Message}"})
+                                      );
+                                      UpdateContext({ctxBusyChq: false})
+                                    RadiusBottomLeft: =8
+                                    RadiusBottomRight: =8
+                                    RadiusTopLeft: =8
+                                    RadiusTopRight: =8
+                                    Size: =9
+                                    Text: ="No recibido"
+                                    Width: =(Parent.Width - 32 - 8) / 2
+                                    X: =btnRecibidoChq.X + btnRecibidoChq.Width + 8
+                                    Y: =10
+                              - shpDetOpsLineaChq:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeLineSoft
+                                    Height: =1
+                                    Width: =Parent.Width
+                                    Y: =Parent.Height - 1
+                        - cntDetBodyChq:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =Color.Transparent
+                              Height: =Parent.Height - Self.Y
+                              Visible: =!IsBlank(gvarChq)
+                              Width: =Parent.Width
+                              Y: =If(cntDetOpsChq.Visible, cntDetOpsChq.Y + cntDetOpsChq.Height, cntDetHeaderChq.Y + cntDetHeaderChq.Height)
+                            Children:
+                              - lblFeedbackChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =If(ctxFeedbackChq = "ok", ThemeOk, ThemeDanger)
+                                    Fill: =If(ctxFeedbackChq = "ok", ThemeOkSoft, ThemeDangerSoft)
+                                    Font: =Font.'Open Sans'
+                                    PaddingBottom: =9
+                                    PaddingLeft: =12
+                                    PaddingRight: =12
+                                    PaddingTop: =9
+                                    Size: =9
+                                    Text: =ctxFeedbackMsgChq
+                                    Visible: =ctxFeedbackChq <> ""
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =14
+                              - lblSecDatosChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =16
+                                    Size: =7.88
+                                    Text: ="DATOS DEL CHEQUE"
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =14 + If(ctxFeedbackChq <> "", 52, 0)
+                              - cntKvNumChq:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    Height: =20
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =lblSecDatosChq.Y + lblSecDatosChq.Height + 8
+                                  Children:
+                                    - lblVNumChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =Parent.Height
+                                          Text: =Coalesce(gvarChq.CheckNumber, "—")
+                                          Width: =Parent.Width - 128
+                                          X: =128
+                                    - lblKNumChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.Height
+                                          Text: ="Número"
+                                          Width: =120
+                              - cntKvMontoChq:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    Height: =20
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =cntKvNumChq.Y + cntKvNumChq.Height + 2
+                                  Children:
+                                    - lblVMontoChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =Parent.Height
+                                          Text: =Text(gvarChq.CheckAmount, FmtMoney)
+                                          Width: =Parent.Width - 128
+                                          X: =128
+                                    - lblKMontoChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.Height
+                                          Text: ="Monto"
+                                          Width: =120
+                              - cntKvMonedaChq:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    Height: =20
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =cntKvMontoChq.Y + 22
+                                  Children:
+                                    - lblVMonedaChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =Parent.Height
+                                          Text: =Coalesce(Text(gvarChq.CheckCurrency), "—")
+                                          Width: =Parent.Width - 128
+                                          X: =128
+                                    - lblKMonedaChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.Height
+                                          Text: ="Moneda"
+                                          Width: =120
+                              - cntKvTipoChq:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    Height: =20
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =cntKvMonedaChq.Y + 22
+                                  Children:
+                                    - lblVTipoChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =Parent.Height
+                                          Text: =Coalesce(Text(gvarChq.CheckTypes), "—")
+                                          Width: =Parent.Width - 128
+                                          X: =128
+                                    - lblKTipoChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.Height
+                                          Text: ="Tipo"
+                                          Width: =120
+                              - cntKvClienteChq:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    Height: =20
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =cntKvTipoChq.Y + 22
+                                  Children:
+                                    - lblVClienteChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =Parent.Height
+                                          Text: =Coalesce(gvarChq.RelatedReCounterDepositID.BagID.ReceptionID.RemitentName, "—")
+                                          Width: =Parent.Width - 128
+                                          X: =128
+                                    - lblKClienteChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.Height
+                                          Text: ="Cliente"
+                                          Width: =120
+                              - cntKvDepositoChq:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    Height: =20
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =cntKvClienteChq.Y + 22
+                                  Children:
+                                    - lblVDepositoChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =Parent.Height
+                                          Text: =Coalesce(gvarChq.RelatedReCounterDepositID.Name, "—")
+                                          Width: =Parent.Width - 128
+                                          X: =128
+                                    - lblKDepositoChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.Height
+                                          Text: ="Depósito"
+                                          Width: =120
+                              - lblSecTrazaChq:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =16
+                                    Size: =7.88
+                                    Text: ="TRAZABILIDAD"
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =cntKvDepositoChq.Y + cntKvDepositoChq.Height + 14
+                              - cntKvEnvPorChq:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    Height: =20
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =lblSecTrazaChq.Y + lblSecTrazaChq.Height + 8
+                                  Children:
+                                    - lblVEnvPorChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =Parent.Height
+                                          Text: =Coalesce(gvarChq.SentToDigitizationBy.'Full Name', "—")
+                                          Width: =Parent.Width - 128
+                                          X: =128
+                                    - lblKEnvPorChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.Height
+                                          Text: ="Enviado por"
+                                          Width: =120
+                              - cntKvEnvElChq:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    Height: =20
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =cntKvEnvPorChq.Y + 22
+                                  Children:
+                                    - lblVEnvElChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =Parent.Height
+                                          Text: =Text(gvarChq.'Enviado el', FmtFecha)
+                                          Width: =Parent.Width - 128
+                                          X: =128
+                                    - lblKEnvElChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.Height
+                                          Text: ="Enviado a digitación"
+                                          Width: =180
+                              - cntKvRecPorChq:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    Height: =20
+                                    Visible: =gvarChq.CheckStatus <> 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =cntKvEnvElChq.Y + 22
+                                  Children:
+                                    - lblVRecPorChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =Parent.Height
+                                          Text: =Coalesce(gvarChq.ReceivedBy.'Full Name', "—")
+                                          Width: =Parent.Width - 128
+                                          X: =128
+                                    - lblKRecPorChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.Height
+                                          Text: =If(gvarChq.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', "No recibido por", "Recibido por")
+                                          Width: =220
+                              - cntKvRecElChq:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    Height: =20
+                                    Visible: =gvarChq.CheckStatus <> 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'
+                                    Width: =Parent.Width - 32
+                                    X: =16
+                                    Y: =cntKvRecPorChq.Y + 22
+                                  Children:
+                                    - lblVRecElChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =Parent.Height
+                                          Text: =Text(If(gvarChq.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recibido, gvarChq.'Recibido el', gvarChq.'No recibido el'), FmtFecha)
+                                          Width: =Parent.Width - 128
+                                          X: =128
+                                    - lblKRecElChq:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.Height
+                                          Text: =If(gvarChq.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', "No recibido el", "Recibido el")
+                                          Width: =220
+                        - cmpDetVacioChq:
+                            Control: CanvasComponent
+                            ComponentName: cmpEmpty
+                            Properties:
+                              Glifo: |-
+                                ="🧾"
+                              Height: =Parent.Height
+                              Mensaje: ="Seleccioná un cheque de la lista para ver su detalle y su trazabilidad."
+                              Visible: =IsBlank(gvarChq)
+                              Width: =Parent.Width
