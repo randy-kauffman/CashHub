@@ -1,0 +1,3162 @@
+scrTulas As screen:
+    Fill: =ThemeBg
+    LoadingSpinnerColor: =ThemeAccent
+    OnVisible: |-
+        =// ===== 0. GUARDA DE SESION — 03 no existe sin sesion resuelta =====
+        //   Los bloques 1, 2 y 3 viven en el ELSE de esta guarda: sin sesion no se toca
+        //   el estado local ni se dispara UNA sola consulta. Navigate() NO corta la
+        //   formula (01 §7.10), asi que sin el else las dos consultas de
+        //   btnCargarSesionTul se disparaban igual, filtrando por una PK vacia.
+        If(
+            IsBlank(gvarSesion.'CH-Tbl-RecountingSession'),
+        
+            Notify(
+                "No hay una sesión de conteo abierta. Vuelva a la pantalla de sesión.",
+                NotificationType.Error
+            );
+            //Select(btnIrSesionTul)
+            Blank()
+            ,
+        
+            // ===== 1. ESTADO LOCAL — todo el contexto de la pantalla, de una =====
+            UpdateContext(
+                {
+                    ctxScanTul:          "",
+                    ctxTulaElegidaTul:   Defaults('CH-Tbl-Bags'),
+                    ctxDeclElegidaTul:   Defaults('CH-Tbl-DeclaredBags'),
+                    ctxPickTulaTul:      Defaults('CH-Tbl-Bags'),
+                    ctxPickDeclTul:      Defaults('CH-Tbl-DeclaredBags'),
+                    ctxTulaFrescaTul:    Defaults('CH-Tbl-Bags'),
+                    ctxDetalleTul:       Defaults('CH-Tbl-RecountingSessionDetails'),
+                    ctxSolicitudPrevTul: Defaults('CH-Tbl-ApprovalRequests'),
+                    ctxDlgTulaTul:       false,
+                    ctxDlgDeclTul:       false,
+                    ctxDlgSinDecTul:     false,
+                    ctxEsperandoTul:     false,
+                    ctxRechazadaTul:     false
+                }
+            );
+        
+            // ===== 2. GLOBALES DE TULA — el hub no tiene tula abierta =====
+            Set(gvarTula, Blank());
+            Set(gvarSesionDetalle, Blank());
+            Set(gvarDeclaredBag, Blank());
+            Set(gvarSolicitud, Blank());
+        
+            // ===== 3. DATOS DE LA SESION (una consulta delegable por universo) =====
+            //   El motor btnCargarSesionTul (§5.2) tiene las consultas: aca solo se lo invoca.
+            Clear(colTulasCandidatasTul);
+            Clear(colDeclaradasCandidatasTul);
+            Select(btnCargarSesionTul)
+        );
+        
+        // ===== 4. UI: la galeria y el input NO arrastran la visita anterior =====
+        //   Va FUERA de la guarda, siempre: son tres llamadas locales sin costo, y dejar el
+        //   input limpio y con foco tambien es lo correcto en el camino de salida.
+        Reset(galTulasTul);
+        Reset(inpScanTul);
+        SetFocus(inpScanTul)
+
+    shpRailTul As rectangle:
+        Fill: =ThemeSurface
+        Height: =768
+        Width: =250
+        ZIndex: =1
+
+    shpRailLineaTul As rectangle:
+        Fill: =ThemeLine
+        Height: =768
+        Width: =1
+        X: =249
+        ZIndex: =2
+
+    btnMarcaTul As button:
+        BorderThickness: =0
+        Color: =ThemeSurface
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeAccent
+        FontWeight: =FontWeight.Bold
+        Height: =34
+        HoverFill: =ThemeAccent
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeAccent
+        RadiusBottomLeft: =9
+        RadiusBottomRight: =9
+        RadiusTopLeft: =9
+        RadiusTopRight: =9
+        Size: =10.5
+        Text: ="C$"
+        Width: =34
+        X: =16
+        Y: =14
+        ZIndex: =3
+
+    lblTituloTul As label:
+        Color: =ThemeInk
+        FontWeight: =FontWeight.Semibold
+        Height: =18
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =10.5
+        Text: ="Reconteo"
+        Width: =170
+        Wrap: =false
+        X: =60
+        Y: =14
+        ZIndex: =4
+
+    lblSubtituloTul As label:
+        Color: =ThemeInk3
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: ="Sesión de conteo"
+        Width: =170
+        Wrap: =false
+        X: =60
+        Y: =32
+        ZIndex: =5
+
+    shpRailBrandLineaTul As rectangle:
+        Fill: =ThemeLineSoft
+        Height: =1
+        Width: =218
+        X: =16
+        Y: =58
+        ZIndex: =6
+
+    btnChipUsuarioTul As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        Color: =ThemeInk
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeSurface2
+        FontWeight: =FontWeight.Semibold
+        Height: =34
+        HoverFill: =ThemeSurface2
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeSurface2
+        RadiusBottomLeft: =17
+        RadiusBottomRight: =17
+        RadiusTopLeft: =17
+        RadiusTopRight: =17
+        Size: =9
+        Text: =""
+        Width: =226
+        X: =12
+        Y: =68
+        ZIndex: =7
+
+    btnAvatarUsuarioTul As button:
+        BorderThickness: =0
+        Color: =ThemeAccent
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeAccentSoft
+        FontWeight: =FontWeight.Bold
+        Height: =26
+        HoverFill: =ThemeAccentSoft
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeAccentSoft
+        RadiusBottomLeft: =13
+        RadiusBottomRight: =13
+        RadiusTopLeft: =13
+        RadiusTopRight: =13
+        Size: =7.88
+        Text: =UsuarioIniciales
+        Width: =26
+        X: =17
+        Y: =72
+        ZIndex: =8
+
+    lblUsuarioTul As label:
+        Color: =ThemeInk2
+        Height: =34
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.63
+        Text: =UsuarioNombre
+        Width: =175
+        Wrap: =false
+        X: =51
+        Y: =68
+        ZIndex: =9
+
+    btnChipMesaTul As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        Color: =ThemeInk
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeSurface2
+        FontWeight: =FontWeight.Semibold
+        Height: =30
+        HoverFill: =ThemeSurface2
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeSurface2
+        RadiusBottomLeft: =15
+        RadiusBottomRight: =15
+        RadiusTopLeft: =15
+        RadiusTopRight: =15
+        Size: =9
+        Text: =""
+        Width: =226
+        X: =12
+        Y: =111
+        ZIndex: =10
+
+    lblMesaTul As label:
+        Align: =Align.Center
+        Color: =ThemeInk2
+        Height: =30
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =gvarMesa.Name
+        Width: =226
+        Wrap: =false
+        X: =12
+        Y: =111
+        ZIndex: =11
+
+    lblRailLabTul As label:
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =18
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =7.5
+        Text: ="TOTALES DE LA SESIÓN"
+        Width: =218
+        Wrap: =false
+        X: =16
+        Y: =150
+        ZIndex: =12
+
+    cmpKpiNIOTul As cmpKpiSesion:
+        Cheques: |-
+            =Sum(
+                Filter(
+                    colDepositosSesionTul As D,
+                    D.Currency = 'CH-Ch-Currency'.NIO &&
+                    !IsBlank(
+                        LookUp(
+                            Filter(colTulasSesionTul, BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada),
+                            'CH-Tbl-Bags' = D.BagID.'CH-Tbl-Bags'
+                        ).'CH-Tbl-Bags'
+                    )
+                ),
+                BACLocalCheckAmount + OtherLocaCheckAmount
+            )
+        Efectivo: |-
+            =Sum(
+                Filter(
+                    colDepositosSesionTul As D,
+                    D.Currency = 'CH-Ch-Currency'.NIO &&
+                    !IsBlank(
+                        LookUp(
+                            Filter(colTulasSesionTul, BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada),
+                            'CH-Tbl-Bags' = D.BagID.'CH-Tbl-Bags'
+                        ).'CH-Tbl-Bags'
+                    )
+                ),
+                CashAmount
+            )
+        Simbolo: =SimboloNIO
+        X: =12
+        Y: =177
+        ZIndex: =13
+
+    cmpKpiUSDTul As cmpKpiSesion:
+        Cheques: |-
+            =Sum(
+                Filter(
+                    colDepositosSesionTul As D,
+                    D.Currency = 'CH-Ch-Currency'.USD &&
+                    !IsBlank(
+                        LookUp(
+                            Filter(colTulasSesionTul, BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada),
+                            'CH-Tbl-Bags' = D.BagID.'CH-Tbl-Bags'
+                        ).'CH-Tbl-Bags'
+                    )
+                ),
+                BACLocalCheckAmount + OtherLocaCheckAmount
+            )
+        Efectivo: |-
+            =Sum(
+                Filter(
+                    colDepositosSesionTul As D,
+                    D.Currency = 'CH-Ch-Currency'.USD &&
+                    !IsBlank(
+                        LookUp(
+                            Filter(colTulasSesionTul, BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada),
+                            'CH-Tbl-Bags' = D.BagID.'CH-Tbl-Bags'
+                        ).'CH-Tbl-Bags'
+                    )
+                ),
+                CashAmount
+            )
+        Moneda: ="USD"
+        MonedaNombre: ="Dólares"
+        Simbolo: =SimboloUSD
+        X: =12
+        Y: =cmpKpiNIOTul.Y + cmpKpiNIOTul.Height + 9
+        ZIndex: =14
+
+    cmpKpiEURTul As cmpKpiSesion:
+        Cheques: |-
+            =Sum(
+                Filter(
+                    colDepositosSesionTul As D,
+                    D.Currency = 'CH-Ch-Currency'.EUR &&
+                    !IsBlank(
+                        LookUp(
+                            Filter(colTulasSesionTul, BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada),
+                            'CH-Tbl-Bags' = D.BagID.'CH-Tbl-Bags'
+                        ).'CH-Tbl-Bags'
+                    )
+                ),
+                BACLocalCheckAmount + OtherLocaCheckAmount
+            )
+        Efectivo: |-
+            =Sum(
+                Filter(
+                    colDepositosSesionTul As D,
+                    D.Currency = 'CH-Ch-Currency'.EUR &&
+                    !IsBlank(
+                        LookUp(
+                            Filter(colTulasSesionTul, BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada),
+                            'CH-Tbl-Bags' = D.BagID.'CH-Tbl-Bags'
+                        ).'CH-Tbl-Bags'
+                    )
+                ),
+                CashAmount
+            )
+        Moneda: ="EUR"
+        MonedaNombre: ="Euros"
+        Simbolo: =SimboloEUR
+        X: =12
+        Y: =cmpKpiUSDTul.Y + cmpKpiUSDTul.Height + 9
+        ZIndex: =15
+
+    shpRailFootLineaTul As rectangle:
+        Fill: =ThemeLineSoft
+        Height: =1
+        Width: =218
+        X: =16
+        Y: =692
+        ZIndex: =16
+
+    lblFootFechaTul As label:
+        Color: =ThemeInk2
+        Height: =17
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: =Text(gvarSesion.'Created On', FmtFechaCorta) & "  ·  " & gvarMesa.Name
+        Width: =218
+        Wrap: =false
+        X: =16
+        Y: =701
+        ZIndex: =17
+
+    lblFootContadorTul As label:
+        Color: =ThemeInk3
+        Height: =17
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: |-
+            =CountRows(colTulasSesionTul) & " tulas aperturadas · " &
+            CountRows(Filter(colTulasSesionTul, BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada)) &
+            " recontadas"
+        Width: =218
+        Wrap: =false
+        X: =16
+        Y: =lblFootFechaTul.Y + lblFootFechaTul.Height
+        ZIndex: =18
+
+    lblFootNotaTul As label:
+        Color: =ThemeInk3
+        Height: =17
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: ="Los totales incluyen solo tulas recontadas."
+        Width: =218
+        Wrap: =false
+        X: =16
+        Y: =lblFootContadorTul.Y + lblFootContadorTul.Height
+        ZIndex: =19
+
+    btnScanSupTul As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        Color: =ThemeInk
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeSurface
+        FontWeight: =FontWeight.Semibold
+        Height: =144
+        HoverFill: =ThemeSurface
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeSurface
+        RadiusBottomLeft: =13
+        RadiusBottomRight: =13
+        RadiusTopLeft: =13
+        RadiusTopRight: =13
+        Size: =9
+        Text: =""
+        Width: =1076
+        X: =270
+        Y: =16
+        ZIndex: =20
+
+    lblScanTitTul As label:
+        Color: =ThemeInk
+        FontWeight: =FontWeight.Semibold
+        Height: =18
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =10.13
+        Text: ="Abrir una tula"
+        Width: =300
+        Wrap: =false
+        X: =288
+        Y: =32
+        ZIndex: =21
+
+    btnScanCajaTul As button:
+        BorderColor: =ThemeAccent
+        Color: =ThemeInk
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeSurface
+        FontWeight: =FontWeight.Semibold
+        Height: =44
+        HoverFill: =ThemeSurface
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeSurface
+        RadiusBottomLeft: =9
+        RadiusBottomRight: =9
+        RadiusTopLeft: =9
+        RadiusTopRight: =9
+        Size: =9
+        Text: =""
+        Width: =900
+        X: =288
+        Y: =lblScanTitTul.Y + lblScanTitTul.Height + 10
+        ZIndex: =22
+
+    icoScanTul As icon:
+        AccessibleLabel: ="Buscar tula"
+        Color: =ThemeInk3
+        Height: =20
+        Icon: =Icon.Search
+        Width: =20
+        X: =btnScanCajaTul.X + 13
+        Y: =btnScanCajaTul.Y + 12
+        ZIndex: =23
+
+    inpScanTul As text:
+        AccessibleLabel: ="Número de tula"
+        BorderThickness: =0
+        Color: =ThemeInk
+        Default: =""
+        Fill: =Color.Transparent
+        FontWeight: =FontWeight.Semibold
+        Height: =44
+        HintText: ="Escanee o digite el número de tula…"
+        HoverFill: =Color.Transparent
+        OnChange: |-
+            =// El Enter del lector de codigo de barras: OnChange dispara al presionar Enter
+            // (y al perder el foco). TODA la logica de apertura vive en btnAbrirTul.OnSelect.
+            If(!IsBlank(Trim(Self.Text)), Select(btnAbrirTul))
+        RadiusBottomLeft: =7
+        RadiusBottomRight: =7
+        RadiusTopLeft: =7
+        RadiusTopRight: =7
+        Size: =12
+        Width: =843
+        X: =icoScanTul.X + icoScanTul.Width + 10
+        Y: =btnScanCajaTul.Y
+        ZIndex: =24
+
+    btnAbrirTul As button:
+        BorderThickness: =0
+        Color: =ThemeSurface
+        DisabledBorderColor: =Color.Transparent
+        DisabledColor: =ThemeInk3
+        DisabledFill: =ThemeLineSoft
+        DisplayMode: |-
+            =If(
+                gvarIdentidadOk && !IsBlank(Trim(inpScanTul.Text)),
+                DisplayMode.Edit,
+                DisplayMode.Disabled
+            )
+        Fill: =ThemeAccent
+        FontWeight: =FontWeight.Semibold
+        Height: =44
+        HoverFill: =ThemeAccentDark
+        OnSelect: |-
+            =// ===== 1. Estado limpio: cada escaneo empieza de cero =====
+            UpdateContext(
+                {
+                    ctxScanTul:        Trim(inpScanTul.Text),
+                    ctxTulaElegidaTul: Defaults('CH-Tbl-Bags'),
+                    ctxDeclElegidaTul: Defaults('CH-Tbl-DeclaredBags'),
+                    ctxPickTulaTul:    Defaults('CH-Tbl-Bags'),
+                    ctxPickDeclTul:    Defaults('CH-Tbl-DeclaredBags'),
+                    ctxDlgTulaTul:     false,
+                    ctxDlgDeclTul:     false,
+                    ctxDlgSinDecTul:   false
+                }
+            );
+            
+            If(
+                IsBlank(ctxScanTul),
+                Notify("Escanee o digite un número de tula.", NotificationType.Warning),
+            
+                // ===== 2. DOS consultas delegables, una por universo, en paralelo =====
+                Concurrent(
+                    ClearCollect(
+                        colTulasCandidatasTul,
+                        SortByColumns(
+                            Filter(
+                                'CH-Tbl-Bags',
+                                BagID = ctxScanTul &&
+                                (
+                                    BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda' ||
+                                    BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'  ||
+                                    BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero'
+                                )
+                            ),
+                            "createdon",
+                            SortOrder.Descending
+                        )
+                    ),
+                    ClearCollect(
+                        colDeclaradasCandidatasTul,
+                        SortByColumns(
+                            Filter('CH-Tbl-DeclaredBags', BagNumber = ctxScanTul && IsBlank(BagID.'CH-Tbl-Bags')),
+                            "createdon",
+                            SortOrder.Descending
+                        )
+                    )
+                );
+            
+                // ===== 3. La decision, en un solo If encadenado =====
+                If(
+                    // (A) no hay ninguna tula recontable con ese numero
+                    CountRows(colTulasCandidatasTul) = 0,
+                        Notify(
+                            "La tula " & ctxScanTul & " no está disponible para reconteo: no existe, no fue recibida o ya fue recontada.",
+                            NotificationType.Error
+                        );
+                        Reset(inpScanTul);
+                        SetFocus(inpScanTul),
+            
+                    // (B) homonimas: el cajero desambigua (dialogo B1)
+                    CountRows(colTulasCandidatasTul) > 1,
+                        UpdateContext({ ctxDlgTulaTul: true }),
+            
+                    // (C) una sola, y ya esta abierta en ESTA sesion: se retoma
+                    First(colTulasCandidatasTul).BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero' &&
+                    First(colTulasCandidatasTul).RecountingSession.'CH-Tbl-RecountingSession'
+                        = gvarSesion.'CH-Tbl-RecountingSession',
+                        UpdateContext({ ctxTulaElegidaTul: First(colTulasCandidatasTul) });
+                        Select(btnReabrirTul),
+            
+                    // (D) una sola, pero no se puede abrir
+                    First(colTulasCandidatasTul).BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                        Notify(
+                            "La tula " & ctxScanTul & " no está almacenada en bóveda: puede estar todavía en esclusa o asignada a otro cajero.",
+                            NotificationType.Warning
+                        );
+                        Reset(inpScanTul);
+                        SetFocus(inpScanTul),
+            
+                    // (E) una sola, en boveda: seguimos con la declaracion
+                    UpdateContext({ ctxTulaElegidaTul: First(colTulasCandidatasTul) });
+                    Select(btnResolverDeclaracionTul)
+                )
+            )
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeAccentDark
+        RadiusBottomLeft: =8
+        RadiusBottomRight: =8
+        RadiusTopLeft: =8
+        RadiusTopRight: =8
+        Size: =9.75
+        Text: ="Abrir tula"
+        Width: =130
+        X: =btnScanCajaTul.X + btnScanCajaTul.Width + 10
+        Y: =btnScanCajaTul.Y
+        ZIndex: =25
+
+    lblScanNotaTul As label:
+        Color: =ThemeInk3
+        Height: =30
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: |-
+            ="El campo toma el foco al entrar: el lector de código de barras dispara la apertura con Enter, sin tocar el mouse."
+        Width: =1040
+        X: =288
+        Y: =btnScanCajaTul.Y + btnScanCajaTul.Height + 10
+        ZIndex: =26
+
+    btnCardListaTul As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        Color: =ThemeInk
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeSurface
+        FontWeight: =FontWeight.Semibold
+        Height: =578
+        HoverFill: =ThemeSurface
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeSurface
+        RadiusBottomLeft: =13
+        RadiusBottomRight: =13
+        RadiusTopLeft: =13
+        RadiusTopRight: =13
+        Size: =9
+        Text: =""
+        Width: =1076
+        X: =270
+        Y: =172
+        ZIndex: =27
+
+    lblPanelTitTul As label:
+        Color: =ThemeInk
+        FontWeight: =FontWeight.Semibold
+        Height: =26
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9.75
+        Text: ="Tulas aperturadas hoy"
+        Width: =200
+        Wrap: =false
+        X: =286
+        Y: =181
+        ZIndex: =28
+
+    lblPanelSubTul As label:
+        Color: =ThemeInk3
+        Height: =26
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: |-
+            =If(
+                IsEmpty(colTulasSesionTul),
+                "0 tulas",
+                CountRows(colTulasSesionTul) & " tulas · " &
+                CountRows(Filter(colTulasSesionTul, BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada)) &
+                " recontadas"
+            )
+        Width: =220
+        Wrap: =false
+        X: =lblPanelTitTul.X + lblPanelTitTul.Width + 10
+        Y: =181
+        ZIndex: =29
+
+    btnActualizarTul As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        Color: =ThemeInk2
+        Fill: =ThemeSurface
+        FontWeight: =FontWeight.Semibold
+        Height: =26
+        HoverFill: =ThemeSurface2
+        OnSelect: |-
+            =// Forma 1 de la regla D-5: el usuario PIDE traer lo que cambiaron otros.
+            Refresh('CH-Tbl-Bags');
+            Select(btnCargarSesionTul)
+        PaddingBottom: =0
+        PaddingLeft: =20
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeSurface2
+        RadiusBottomLeft: =7
+        RadiusBottomRight: =7
+        RadiusTopLeft: =7
+        RadiusTopRight: =7
+        Size: =8.25
+        Text: ="Actualizar"
+        Width: =104
+        X: =1226
+        Y: =181
+        ZIndex: =30
+
+    icoActualizarTul As icon:
+        AccessibleLabel: ="Actualizar la lista de tulas"
+        Color: =ThemeInk2
+        Height: =14
+        Icon: =Icon.Reload
+        OnSelect: =Select(btnActualizarTul)
+        Width: =14
+        X: =btnActualizarTul.X + 9
+        Y: =btnActualizarTul.Y + 6
+        ZIndex: =31
+
+    shpPanelLineaTul As rectangle:
+        Fill: =ThemeLine
+        Height: =1
+        Width: =1076
+        X: =270
+        Y: =215
+        ZIndex: =32
+
+    shpHeadListaTul As rectangle:
+        Fill: =ThemeSurface2
+        Height: =32
+        Width: =1076
+        X: =270
+        Y: =216
+        ZIndex: =33
+
+    lblHeadTulaTul As label:
+        Color: =ThemeInk2
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =7.5
+        Text: ="N° DE TULA"
+        Wrap: =false
+        X: =286
+        Y: =216
+        ZIndex: =34
+
+    lblHeadPlanillaTul As label:
+        Color: =ThemeInk2
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =7.5
+        Text: ="PLANILLA"
+        Width: =140
+        Wrap: =false
+        X: =446
+        Y: =216
+        ZIndex: =35
+
+    lblHeadClienteTul As label:
+        Color: =ThemeInk2
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =7.5
+        Text: ="CLIENTE"
+        Width: =378
+        Wrap: =false
+        X: =596
+        Y: =216
+        ZIndex: =36
+
+    lblHeadHoraTul As label:
+        Color: =ThemeInk2
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =7.5
+        Text: ="ACTIVIDAD"
+        Width: =110
+        Wrap: =false
+        X: =984
+        Y: =216
+        ZIndex: =37
+
+    lblHeadEstadoTul As label:
+        Color: =ThemeInk2
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =7.5
+        Text: ="ESTADO"
+        Width: =190
+        Wrap: =false
+        X: =1104
+        Y: =216
+        ZIndex: =38
+
+    shpHeadLineaTul As rectangle:
+        Fill: =ThemeLine
+        Height: =1
+        Width: =1076
+        X: =270
+        Y: =248
+        ZIndex: =39
+
+    galTulasTul As gallery.galleryVertical:
+        DelayItemLoading: =true
+        Height: =501
+        Items: =colTulasSesionTul
+        Layout: =Layout.Vertical
+        OnSelect: |-
+            =// UN solo handler por fila (receta 7.3): los hijos del template delegan con
+            // Select(Parent). La cuarta ruta de apertura -el retome- termina en btnReabrirTul.
+            UpdateContext({ ctxTulaElegidaTul: ThisItem });
+            Select(btnReabrirTul)
+        TemplatePadding: =0
+        TemplateSize: =42
+        Width: =1076
+        X: =270
+        Y: =249
+        ZIndex: =40
+
+        shpSelTul As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+            FontWeight: =FontWeight.Semibold
+            Height: =42
+            HoverFill: =If(ThisItem.IsSelected, ThemeAccentSoft, ThemeSurface2)
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =9
+            Text: =""
+            Width: =1076
+            ZIndex: =1
+
+        shpSelBarraTul As rectangle:
+            Fill: =ThemeAccent
+            Height: =42
+            Visible: =ThisItem.IsSelected
+            Width: =3
+            ZIndex: =2
+
+        lblCelTulaTul As label:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.75
+            Text: =ThisItem.BagID
+            Wrap: =false
+            X: =16
+            Y: =11
+            ZIndex: =3
+
+        lblCelPlanillaTul As label:
+            Color: =ThemeInk
+            Height: =20
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.38
+            Text: =ThisItem.ReceiptIdMirror
+            Width: =140
+            Wrap: =false
+            X: =176
+            Y: =11
+            ZIndex: =4
+
+        lblCelClienteTul As label:
+            Color: =ThemeInk2
+            Height: =20
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.38
+            Text: =ThisItem.ReceptionID.RemitentName
+            Width: =378
+            Wrap: =false
+            X: =326
+            Y: =11
+            ZIndex: =5
+
+        lblCelHoraTul As label:
+            Color: =ThemeInk3
+            Height: =20
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: =Text(ThisItem.'Modified On', FmtHora)
+            Width: =110
+            Wrap: =false
+            X: =714
+            Y: =11
+            ZIndex: =6
+
+        pilCelEstadoTul As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =If(Self.Fill = ThemeLineSoft, 1, 0)
+            Color: |-
+                =Switch(
+                    ThisItem.BagStatus,
+                    'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeInk3,
+                    'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOk,
+                    'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfo,
+                    'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOk,
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarn,
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeWarn,
+                    ThemeInk3
+                )
+            Fill: |-
+                =Switch(
+                    ThisItem.BagStatus,
+                    'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
+                    'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeWarnSoft,
+                    ThemeLineSoft
+                )
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            HoverFill: |-
+                =Switch(
+                    ThisItem.BagStatus,
+                    'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
+                    'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeWarnSoft,
+                    ThemeLineSoft
+                )
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: |-
+                =Switch(
+                    ThisItem.BagStatus,
+                    'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
+                    'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeWarnSoft,
+                    ThemeLineSoft
+                )
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =7.88
+            Text: |-
+                =Switch(
+                    ThisItem.BagStatus,
+                    'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            "Recibida en esclusa",
+                    'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           "Almacenada en bóveda",
+                    'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              "Asignada a cajero",
+                    'BagStatus (CH-Tbl-Bags)'.Recontada,                                        "Recontada",
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', "Pendiente de revisión",
+                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  "Pendiente supervisor (esclusa)",
+                    "—"
+                )
+            Width: =14 + 6.2 * Len(Self.Text)
+            X: =834
+            Y: =10
+            ZIndex: =7
+
+        icoCelChevronTul As icon:
+            Color: =ThemeInk3
+            Height: =16
+            Icon: =Icon.ChevronRight
+            OnSelect: =Select(Parent)
+            Width: =16
+            X: =1039
+            Y: =13
+            ZIndex: =8
+
+        shpSepTul As rectangle:
+            Fill: =ThemeLineSoft
+            Height: =1
+            Width: =1076
+            Y: =41
+            ZIndex: =9
+
+    lblVacioTitTul As label:
+        Align: =Align.Center
+        Color: =ThemeInk2
+        FontWeight: =FontWeight.Semibold
+        Height: =20
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9.38
+        Text: ="Aún no abrió ninguna tula en esta sesión"
+        Visible: =IsEmpty(colTulasSesionTul)
+        Width: =1016
+        Wrap: =false
+        X: =300
+        Y: =287
+        ZIndex: =41
+
+    lblVacioTxtTul As label:
+        Align: =Align.Center
+        Color: =ThemeInk3
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9.38
+        Text: ="Escanee el número de tula con el lector o escríbalo en la barra de arriba y presione Enter."
+        Visible: =lblVacioTitTul.Visible
+        Width: =1016
+        X: =300
+        Y: =lblVacioTitTul.Y + lblVacioTitTul.Height + 4
+        ZIndex: =42
+
+    btnCargarSesionTul As button:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Fill: =Color.Transparent
+        FontWeight: =FontWeight.Semibold
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnSelect: |-
+            =// MOTOR: las dos consultas de la sesion, en paralelo.
+            // Forma PRINCIPAL de 03 §5.2: el espejo E-1 (RecountingSessionMirror en
+            // CH-Tbl-DepositsRecountings) esta DESPLEGADO y backfilled (05-backend-espejos.md),
+            // asi que la consulta de depositos delega en 1 salto y las dos ramas son
+            // independientes: van en Concurrent.
+            Concurrent(
+                ClearCollect(
+                    colTulasSesionTul,
+                    SortByColumns(
+                        Filter(
+                            'CH-Tbl-Bags',
+                            RecountingSession.'CH-Tbl-RecountingSession' = gvarSesion.'CH-Tbl-RecountingSession'
+                        ),
+                        "modifiedon",
+                        SortOrder.Descending
+                    )
+                ),
+                ClearCollect(
+                    colDepositosSesionTul,
+                    Filter(
+                        'CH-Tbl-DepositsRecountings',
+                        RecountingSessionMirror.'CH-Tbl-RecountingSession' = gvarSesion.'CH-Tbl-RecountingSession'
+                    )
+                )
+            )
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =Color.Transparent
+        RadiusBottomLeft: =0
+        RadiusBottomRight: =0
+        RadiusTopLeft: =0
+        RadiusTopRight: =0
+        Size: =9
+        TabIndex: =-1
+        Text: =""
+        Width: =1
+        Y: =767
+        ZIndex: =43
+
+    btnResolverDeclaracionTul As button:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Fill: =Color.Transparent
+        FontWeight: =FontWeight.Semibold
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnSelect: |-
+            =If(
+                // ===== (1) SIN DECLARACION: ruta de solicitud al supervisor =====
+                CountRows(colDeclaradasCandidatasTul) = 0,
+            
+                    // ¿ya hay una solicitud de HOY, de este cajero, para este numero de tula?
+                    UpdateContext(
+                        {
+                            ctxSolicitudPrevTul:
+                                First(
+                                    Sort(
+                                        Filter(
+                                            'CH-Tbl-ApprovalRequests',
+                                            RequestType = "Tula sin declaracion" &&
+                                            BagNumber   = ctxScanTul &&
+                                            'Created By'.User = gvarUser.User &&
+                                            'Created On' >= Today()
+                                        ),
+                                        'Created On',
+                                        SortOrder.Descending
+                                    )
+                                )
+                        }
+                    );
+                    If(
+                        // ¿es de ESTA tula y de ESTA sesion? Los dos GUID viajan en RequestResources
+                        !IsBlank(ctxSolicitudPrevTul.'CH-Tbl-ApprovalRequest') &&
+                        !IsBlank(Find(Text(ctxTulaElegidaTul.'CH-Tbl-Bags'), ctxSolicitudPrevTul.RequestResources)) &&
+                        !IsBlank(Find(Text(gvarSesion.'CH-Tbl-RecountingSession'), ctxSolicitudPrevTul.RequestResources)),
+            
+                        If(
+                            // sigue pendiente ⇒ NO se duplica: se re-adopta y se vuelve a esperar
+                            IsBlank(ctxSolicitudPrevTul.ApprovalStatus),
+                                Set(gvarSolicitud, ctxSolicitudPrevTul);
+                                UpdateContext({ ctxEsperandoTul: true, ctxRechazadaTul: false }),
+            
+                            // ya aprobada ⇒ se consume: abrimos sin declaracion
+                            ctxSolicitudPrevTul.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Aprobado,
+                                Set(gvarSolicitud, ctxSolicitudPrevTul);
+                                UpdateContext({ ctxDeclElegidaTul: Defaults('CH-Tbl-DeclaredBags') });
+                                Select(btnAbrirNuevaTul),
+            
+                            // rechazada ⇒ el cajero puede volver a pedirla: dialogo B3
+                            UpdateContext({ ctxDlgSinDecTul: true })
+                        ),
+                        UpdateContext({ ctxDlgSinDecTul: true })
+                    ),
+            
+                // ===== (2) MAS DE UNA DECLARACION: el cajero desambigua (dialogo B2) =====
+                CountRows(colDeclaradasCandidatasTul) > 1,
+                    UpdateContext({ ctxDlgDeclTul: true }),
+            
+                // ===== (3) EXACTAMENTE UNA: camino feliz, directo al conteo =====
+                UpdateContext({ ctxDeclElegidaTul: First(colDeclaradasCandidatasTul) });
+                Select(btnAbrirNuevaTul)
+            )
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =Color.Transparent
+        RadiusBottomLeft: =0
+        RadiusBottomRight: =0
+        RadiusTopLeft: =0
+        RadiusTopRight: =0
+        Size: =9
+        TabIndex: =-1
+        Text: =""
+        Width: =1
+        X: =2
+        Y: =767
+        ZIndex: =44
+
+    btnAbrirNuevaTul As button:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Fill: =Color.Transparent
+        FontWeight: =FontWeight.Semibold
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnSelect: |-
+            =// ===== 1. RE-LECTURA POR PK: la tula pudo cambiar mientras el cajero decidia =====
+            UpdateContext(
+                {
+                    ctxTulaFrescaTul:
+                        LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxTulaElegidaTul.'CH-Tbl-Bags')
+                }
+            );
+            
+            If(
+                // ---- ya no existe ----
+                IsBlank(ctxTulaFrescaTul.'CH-Tbl-Bags'),
+                    Notify("La tula ya no está disponible. Actualice la lista y vuelva a escanearla.", NotificationType.Error);
+                    Reset(inpScanTul);
+                    SetFocus(inpScanTul),
+            
+                // ---- se la llevo otro (o cambio de estado) ----
+                ctxTulaFrescaTul.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                    Notify(
+                        "La tula " & ctxTulaFrescaTul.BagID & " dejó de estar almacenada en bóveda: otro cajero pudo tomarla. No se abrió nada.",
+                        NotificationType.Error
+                    );
+                    Reset(inpScanTul);
+                    SetFocus(inpScanTul),
+            
+                // ---- camino feliz ----
+                If(
+                    IsBlank(ctxDeclElegidaTul.'CH-Tbl-DeclaredBags'),
+            
+                    // (a) SIN declaracion: BagDeclarationID queda en blanco
+                    IfError(
+                        Set(
+                            gvarTula,
+                            Patch(
+                                'CH-Tbl-Bags',
+                                ctxTulaFrescaTul,
+                                {
+                                    BagStatus:         'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',
+                                    RecountingSession: gvarSesion
+                                }
+                            )
+                        ),
+                        Notify("No se pudo abrir la tula: " & FirstError.Message, NotificationType.Error);
+                        Set(gvarTula, Blank())
+                    );
+                    Set(gvarDeclaredBag, Blank()),
+            
+                    // (b) CON declaracion: se escribe el enlace en las DOS puntas
+                    IfError(
+                        Set(
+                            gvarTula,
+                            Patch(
+                                'CH-Tbl-Bags',
+                                ctxTulaFrescaTul,
+                                {
+                                    BagStatus:         'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',
+                                    RecountingSession: gvarSesion,
+                                    BagDeclarationID:  ctxDeclElegidaTul
+                                }
+                            )
+                        ),
+                        Notify("No se pudo abrir la tula: " & FirstError.Message, NotificationType.Error);
+                        Set(gvarTula, Blank())
+                    );
+                    If(
+                        IsBlank(gvarTula.'CH-Tbl-Bags'),
+                        Set(gvarDeclaredBag, Blank()),
+                        IfError(
+                            Set(
+                                gvarDeclaredBag,
+                                Patch('CH-Tbl-DeclaredBags', ctxDeclElegidaTul, { BagID: gvarTula })
+                            ),
+                            Notify(
+                                "La tula se abrió, pero no se pudo enlazar la declaración: " & FirstError.Message,
+                                NotificationType.Error
+                            );
+                            Set(gvarDeclaredBag, Blank())
+                        )
+                    )
+                );
+            
+                // ---- 2. sin tula patcheada NO se sigue ----
+                If(
+                    IsBlank(gvarTula.'CH-Tbl-Bags'),
+                    Reset(inpScanTul); SetFocus(inpScanTul),
+                    Select(btnEntrarConteoTul)
+                )
+            )
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =Color.Transparent
+        RadiusBottomLeft: =0
+        RadiusBottomRight: =0
+        RadiusTopLeft: =0
+        RadiusTopRight: =0
+        Size: =9
+        TabIndex: =-1
+        Text: =""
+        Width: =1
+        X: =4
+        Y: =767
+        ZIndex: =45
+
+    btnReabrirTul As button:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Fill: =Color.Transparent
+        FontWeight: =FontWeight.Semibold
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnSelect: |-
+            =// Retomar NO patchea nada: la tula ya es del cajero (o ya esta Recontada).
+            IfError(
+                Set(gvarTula, LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxTulaElegidaTul.'CH-Tbl-Bags')),
+                Notify("No se pudo releer la tula: " & FirstError.Message, NotificationType.Error);
+                Set(gvarTula, Blank())
+            );
+            
+            If(
+                IsBlank(gvarTula.'CH-Tbl-Bags'),
+                Notify("La tula ya no está disponible. Toque el botón Actualizar para refrescar la lista.", NotificationType.Error),
+            
+                // la declaracion se relee COMPLETA por PK: 04 necesita sus totales, no la anotacion
+                If(
+                    IsBlank(gvarTula.BagDeclarationID.'CH-Tbl-DeclaredBags'),
+                    Set(gvarDeclaredBag, Blank()),
+                    Set(
+                        gvarDeclaredBag,
+                        LookUp(
+                            'CH-Tbl-DeclaredBags',
+                            'CH-Tbl-DeclaredBags' = gvarTula.BagDeclarationID.'CH-Tbl-DeclaredBags'
+                        )
+                    )
+                );
+                Select(btnEntrarConteoTul)
+            )
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =Color.Transparent
+        RadiusBottomLeft: =0
+        RadiusBottomRight: =0
+        RadiusTopLeft: =0
+        RadiusTopRight: =0
+        Size: =9
+        TabIndex: =-1
+        Text: =""
+        Width: =1
+        X: =6
+        Y: =767
+        ZIndex: =46
+
+    btnEntrarConteoTul As button:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Fill: =Color.Transparent
+        FontWeight: =FontWeight.Semibold
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnSelect: |-
+            =If(
+                IsBlank(gvarTula.'CH-Tbl-Bags'),
+                Notify("No hay ninguna tula para abrir.", NotificationType.Error),
+            
+                // ===== 1. EL DETALLE DE SESION — SIEMPRE, en las CUATRO rutas y en el retome =====
+                UpdateContext(
+                    {
+                        ctxDetalleTul:
+                            LookUp(
+                                'CH-Tbl-RecountingSessionDetails',
+                                BagId.'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags' &&
+                                RecountingSessionId.'CH-Tbl-RecountingSession'
+                                    = gvarSesion.'CH-Tbl-RecountingSession'
+                            )
+                    }
+                );
+                If(
+                    IsBlank(ctxDetalleTul.'CH-Tbl-RecountingSessionDetail'),
+                    IfError(
+                        Set(
+                            gvarSesionDetalle,
+                            Patch(
+                                'CH-Tbl-RecountingSessionDetails',
+                                Defaults('CH-Tbl-RecountingSessionDetails'),
+                                {
+                                    RecountingSessionId:           gvarSesion,
+                                    BagId:                         gvarTula,
+                                    RecountingSessionDetailStatus: 'ch-recountingDetailsStatus'.'En progreso'
+                                }
+                            )
+                        ),
+                        Notify(
+                            "No se pudo crear el detalle de sesión de la tula: " & FirstError.Message,
+                            NotificationType.Error
+                        );
+                        Set(gvarSesionDetalle, Blank())
+                    ),
+                    Set(gvarSesionDetalle, ctxDetalleTul)
+                );
+            
+                // ===== 2. SIN DETALLE NO SE NAVEGA. Es la precondicion dura de 04 =====
+                If(
+                    IsBlank(gvarSesionDetalle.'CH-Tbl-RecountingSessionDetail'),
+                    Notify(
+                        "La tula no se abrió: sin detalle de sesión la máquina contadora no tiene ID_Sesion y el reconteo sería a ciegas.",
+                        NotificationType.Error
+                    ),
+            
+                    // ===== 3. CONTRATO 03 -> 04 (01 §4.5) =====
+                    Set(gvarSolicitud, Blank());
+                    Set(gvarDepositoSinGuardar, false);
+                    Clear(colDetalleConteoCon);
+                    Clear(colChecksCon);
+                    Clear(colAutoContadoraCon);
+                    Clear(colDepDeclaradosCon);
+                    Clear(colDepRecontadosCon);
+                    Clear(colChequesDeclaradosCon);
+                    Clear(colChecksTulaCon);
+                    Clear(colDetalleDVCon);
+                    Clear(colChecksDVCon);
+                    Clear(colHallazgosCon);
+                    UpdateContext({ ctxEsperandoTul: false, ctxRechazadaTul: false });
+                    Reset(inpScanTul);
+                    Notify("Tula " & gvarTula.BagID & " abierta.", NotificationType.Information);
+                    Navigate(scrConteo)
+                )
+            )
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =Color.Transparent
+        RadiusBottomLeft: =0
+        RadiusBottomRight: =0
+        RadiusTopLeft: =0
+        RadiusTopRight: =0
+        Size: =9
+        TabIndex: =-1
+        Text: =""
+        Width: =1
+        X: =8
+        Y: =767
+        ZIndex: =47
+
+    tmrPollTul As timer:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Duration: =15000
+        Fill: =Color.Transparent
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnTimerEnd: |-
+            =// UNA consulta delegable, por PK. OnTimerStart queda VACIO: cero Refresh por tick.
+            Set(
+                gvarSolicitud,
+                LookUp(
+                    'CH-Tbl-ApprovalRequests',
+                    'CH-Tbl-ApprovalRequest' = gvarSolicitud.'CH-Tbl-ApprovalRequest'
+                )
+            );
+            If(
+                // ---- APROBADO: se abre la tula, sin declaracion ----
+                gvarSolicitud.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Aprobado,
+                    Refresh('CH-Tbl-Bags');
+                    UpdateContext(
+                        {
+                            ctxEsperandoTul:   false,
+                            ctxRechazadaTul:   false,
+                            ctxDeclElegidaTul: Defaults('CH-Tbl-DeclaredBags')
+                        }
+                    );
+                    Select(btnAbrirNuevaTul),
+            
+                // ---- RECHAZADO: BLOQUEA, no libera ----
+                gvarSolicitud.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Rechazado,
+                    Refresh('CH-Tbl-Bags');
+                    UpdateContext({ ctxEsperandoTul: false, ctxRechazadaTul: true }),
+            
+                // ---- ni una ni otra: SIGUE PENDIENTE. No se hace NADA ----
+                false
+            )
+        PressedFill: =Color.Transparent
+        Repeat: =true
+        Size: =9
+        Start: =ctxEsperandoTul && !IsBlank(gvarSolicitud.'CH-Tbl-ApprovalRequest')
+        Text: =""
+        Visible: =false
+        Width: =1
+        X: =10
+        Y: =767
+        ZIndex: =48
+
+    cntDlgTulaTul As groupContainer.manualLayoutContainer:
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxDlgTulaTul
+        Width: =Parent.Width
+        ZIndex: =49
+
+        btnBloqTulaTul As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            Fill: =Color.Transparent
+            FontWeight: =FontWeight.Semibold
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =9
+            TabIndex: =-1
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntCardTulaTul As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =btnDlgOkTulaTul.Y + btnDlgOkTulaTul.Height + 19
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =560
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            lblDlgTitTulaTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Bold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.88
+                Text: ="Seleccione la tula recibida"
+                Width: =494
+                X: =22
+                Y: =17
+                ZIndex: =1
+
+            lblDlgTxtTulaTul As label:
+                AutoHeight: =true
+                Color: =ThemeInk2
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: |-
+                    ="Hay " & CountRows(colTulasCandidatasTul) & " tulas con el número " & ctxScanTul &
+                    " en el sistema. Elija la que tiene físicamente en la mesa."
+                Width: =516
+                X: =22
+                Y: =lblDlgTitTulaTul.Y + lblDlgTitTulaTul.Height + 4
+                ZIndex: =2
+
+            icoDlgXTulaTul As icon:
+                AccessibleLabel: ="Cerrar el diálogo"
+                Color: =ThemeInk3
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ ctxDlgTulaTul: false });
+                    Reset(inpScanTul);
+                    SetFocus(inpScanTul)
+                TabIndex: =0
+                Width: =18
+                X: =cntCardTulaTul.Width - 36
+                Y: =17
+                ZIndex: =3
+
+            galPickTulasTul As gallery.galleryVertical:
+                Height: =Min(CountRows(colTulasCandidatasTul), 3) * 74
+                Items: =colTulasCandidatasTul
+                Layout: =Layout.Vertical
+                OnSelect: |-
+                    =// Una fila NO seleccionable no cambia el centinela, y este If es el unico
+                    // lugar donde eso se decide.
+                    If(
+                        ThisItem.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                        UpdateContext({ ctxPickTulaTul: ThisItem })
+                    )
+                TemplatePadding: =0
+                TemplateSize: =74
+                Width: =516
+                X: =22
+                Y: =lblDlgTxtTulaTul.Y + lblDlgTxtTulaTul.Height + 13
+                ZIndex: =4
+
+                btnPickTulaTul As button:
+                    BorderColor: |-
+                        =If(
+                            ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeLineSoft,
+                            ThisItem.'CH-Tbl-Bags' = ctxPickTulaTul.'CH-Tbl-Bags',                  ThemeAccent,
+                            ThemeLine
+                        )
+                    BorderThickness: =1
+                    Color: =ThemeInk
+                    Fill: |-
+                        =If(
+                            ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeSurface2,
+                            ThisItem.'CH-Tbl-Bags' = ctxPickTulaTul.'CH-Tbl-Bags',                  ThemeAccentSoft,
+                            ThemeSurface
+                        )
+                    FontWeight: =FontWeight.Semibold
+                    Height: =63
+                    HoverFill: |-
+                        =If(
+                            ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeSurface2,
+                            ThemeAccentSoft
+                        )
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    PressedFill: |-
+                        =If(
+                            ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeSurface2,
+                            ThemeAccentSoft
+                        )
+                    RadiusBottomLeft: =11
+                    RadiusBottomRight: =11
+                    RadiusTopLeft: =11
+                    RadiusTopRight: =11
+                    Size: =9
+                    Text: =""
+                    Width: =516
+                    ZIndex: =1
+
+                lblPickTulaTitTul As label:
+                    Color: |-
+                        =If(
+                            ThisItem.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                            ThemeInk,
+                            ThemeInk3
+                        )
+                    FontWeight: =FontWeight.Semibold
+                    Height: =18
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.75
+                    Text: =ThisItem.BagID & " · Planilla " & ThisItem.ReceiptIdMirror
+                    Width: =340
+                    Wrap: =false
+                    X: =14
+                    Y: =9
+                    ZIndex: =2
+
+                lblPickTulaMetaTul As label:
+                    Color: =ThemeInk3
+                    Height: =16
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =8.25
+                    Text: |-
+                        =ThisItem.ReceptionID.RemitentName & "  ·  Recibida " &
+                        Text(ThisItem.'Created On', FmtFechaCorta) & "  ·  Lote " & ThisItem.ReceptionBatchId.Name
+                    Width: =340
+                    Wrap: =false
+                    X: =14
+                    Y: =27
+                    ZIndex: =3
+
+                lblPickTulaMotivoTul As label:
+                    Color: =ThemeWarn
+                    Height: =16
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =8.25
+                    Text: |-
+                        =Switch(
+                            ThisItem.BagStatus,
+                            'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',  "No seleccionable: todavía está en esclusa, sin almacenar en bóveda.",
+                            'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',    "No seleccionable: ya está asignada a un cajero.",
+                            "No seleccionable en este estado."
+                        )
+                    Visible: =ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'
+                    Width: =340
+                    Wrap: =false
+                    X: =14
+                    Y: =43
+                    ZIndex: =4
+
+                pilPickTulaTul As button:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =If(Self.Fill = ThemeLineSoft, 1, 0)
+                    Color: |-
+                        =Switch(
+                            ThisItem.BagStatus,
+                            'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeInk3,
+                            'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOk,
+                            'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfo,
+                            'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOk,
+                            'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarn,
+                            'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeWarn,
+                            ThemeInk3
+                        )
+                    Fill: |-
+                        =Switch(
+                            ThisItem.BagStatus,
+                            'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
+                            'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeWarnSoft,
+                            ThemeLineSoft
+                        )
+                    FontWeight: =FontWeight.Semibold
+                    Height: =22
+                    HoverFill: |-
+                        =Switch(
+                            ThisItem.BagStatus,
+                            'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
+                            'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeWarnSoft,
+                            ThemeLineSoft
+                        )
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    PressedFill: |-
+                        =Switch(
+                            ThisItem.BagStatus,
+                            'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
+                            'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeWarnSoft,
+                            ThemeLineSoft
+                        )
+                    RadiusBottomLeft: =12
+                    RadiusBottomRight: =12
+                    RadiusTopLeft: =12
+                    RadiusTopRight: =12
+                    Size: =7.88
+                    Text: |-
+                        =Switch(
+                            ThisItem.BagStatus,
+                            'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            "Recibida en esclusa",
+                            'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           "Almacenada en bóveda",
+                            'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              "Asignada a cajero",
+                            'BagStatus (CH-Tbl-Bags)'.Recontada,                                        "Recontada",
+                            'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', "Pendiente de revisión",
+                            'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  "Pendiente supervisor (esclusa)",
+                            "—"
+                        )
+                    Width: =14 + 6.2 * Len(Self.Text)
+                    X: =516 - 14 - Self.Width
+                    Y: =20
+                    ZIndex: =5
+
+            btnAvisoTulaTul As button:
+                BorderThickness: =0
+                Color: =ThemeInk
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeInfoSoft
+                FontWeight: =FontWeight.Semibold
+                HoverFill: =ThemeInfoSoft
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeInfoSoft
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Size: =9
+                Text: =""
+                Width: =516
+                X: =22
+                Y: =galPickTulasTul.Y + galPickTulasTul.Height + 11
+                ZIndex: =5
+
+            icoAvisoTulaTul As icon:
+                Color: =ThemeInfo
+                Height: =16
+                Icon: =Icon.Information
+                Visible: =btnAvisoTulaTul.Visible
+                Width: =16
+                X: =btnAvisoTulaTul.X + 13
+                Y: =btnAvisoTulaTul.Y + 12
+                ZIndex: =6
+
+            lblAvisoTulaTul As label:
+                Color: =ThemeInfo
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: ="Solo las tulas Almacenadas en bóveda pueden abrirse para reconteo."
+                Visible: =btnAvisoTulaTul.Visible
+                Width: =466
+                X: =btnAvisoTulaTul.X + 38
+                Y: =btnAvisoTulaTul.Y
+                ZIndex: =7
+
+            btnDlgCancelTulaTul As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ ctxDlgTulaTul: false });
+                    Reset(inpScanTul);
+                    SetFocus(inpScanTul)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Cancelar"
+                Width: =14 + 6.6 * Len(Self.Text)
+                X: =btnDlgOkTulaTul.X - 8 - Self.Width
+                Y: =btnDlgOkTulaTul.Y
+                ZIndex: =8
+
+            btnDlgOkTulaTul As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: |-
+                    =If(
+                        gvarIdentidadOk && !IsBlank(ctxPickTulaTul.'CH-Tbl-Bags'),
+                        DisplayMode.Edit,
+                        DisplayMode.Disabled
+                    )
+                Fill: =ThemeAccent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeAccentDark
+                OnSelect: |-
+                    =UpdateContext({ ctxDlgTulaTul: false, ctxTulaElegidaTul: ctxPickTulaTul });
+                    Select(btnResolverDeclaracionTul)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeAccentDark
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Abrir tula"
+                Width: =14 + 6.6 * Len(Self.Text)
+                X: =cntCardTulaTul.Width - 22 - Self.Width
+                Y: =btnAvisoTulaTul.Y + btnAvisoTulaTul.Height + 15
+                ZIndex: =9
+
+    cntDlgDeclTul As groupContainer.manualLayoutContainer:
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxDlgDeclTul
+        Width: =Parent.Width
+        ZIndex: =50
+
+        btnBloqDeclTul As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            Fill: =Color.Transparent
+            FontWeight: =FontWeight.Semibold
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =9
+            TabIndex: =-1
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntCardDeclTul As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =btnDlgOkDeclTul.Y + btnDlgOkDeclTul.Height + 19
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =560
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            lblDlgTitDeclTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Bold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.88
+                Text: ="Seleccione la declaración"
+                Width: =494
+                X: =22
+                Y: =17
+                ZIndex: =1
+
+            lblDlgTxtDeclTul As label:
+                AutoHeight: =true
+                Color: =ThemeInk2
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: |-
+                    ="El cliente " & ctxTulaElegidaTul.ReceptionID.RemitentName & " tiene " &
+                    CountRows(colDeclaradasCandidatasTul) & " declaraciones vigentes para la tula " &
+                    ctxScanTul & "."
+                Width: =516
+                X: =22
+                Y: =lblDlgTitDeclTul.Y + lblDlgTitDeclTul.Height + 4
+                ZIndex: =2
+
+            icoDlgXDeclTul As icon:
+                AccessibleLabel: ="Cerrar el diálogo"
+                Color: =ThemeInk3
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ ctxDlgDeclTul: false });
+                    Reset(inpScanTul);
+                    SetFocus(inpScanTul)
+                TabIndex: =0
+                Width: =18
+                X: =cntCardDeclTul.Width - 36
+                Y: =17
+                ZIndex: =3
+
+            galPickDeclTul As gallery.galleryVertical:
+                Height: =Min(CountRows(colDeclaradasCandidatasTul), 3) * 74
+                Items: =colDeclaradasCandidatasTul
+                Layout: =Layout.Vertical
+                OnSelect: |-
+                    =UpdateContext({ ctxPickDeclTul: ThisItem })
+                TemplatePadding: =0
+                TemplateSize: =74
+                Width: =516
+                X: =22
+                Y: =lblDlgTxtDeclTul.Y + lblDlgTxtDeclTul.Height + 13
+                ZIndex: =4
+
+                btnPickDeclTul As button:
+                    BorderColor: |-
+                        =If(
+                            ThisItem.'CH-Tbl-DeclaredBags' = ctxPickDeclTul.'CH-Tbl-DeclaredBags',
+                            ThemeAccent,
+                            ThemeLine
+                        )
+                    BorderThickness: =1
+                    Color: =ThemeInk
+                    Fill: |-
+                        =If(
+                            ThisItem.'CH-Tbl-DeclaredBags' = ctxPickDeclTul.'CH-Tbl-DeclaredBags',
+                            ThemeAccentSoft,
+                            ThemeSurface
+                        )
+                    FontWeight: =FontWeight.Semibold
+                    Height: =63
+                    HoverFill: =ThemeAccentSoft
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    PressedFill: =ThemeAccentSoft
+                    RadiusBottomLeft: =11
+                    RadiusBottomRight: =11
+                    RadiusTopLeft: =11
+                    RadiusTopRight: =11
+                    Size: =9
+                    Text: =""
+                    Width: =516
+                    ZIndex: =1
+
+                lblPickDeclTitTul As label:
+                    Color: =ThemeInk
+                    FontWeight: =FontWeight.Semibold
+                    Height: =18
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.75
+                    Text: =ctxTulaElegidaTul.ReceptionID.RemitentName
+                    Width: =330
+                    Wrap: =false
+                    X: =14
+                    Y: =11
+                    ZIndex: =2
+
+                lblPickDeclMetaTul As label:
+                    Color: =ThemeInk3
+                    Height: =32
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =8.25
+                    Text: |-
+                        ="Declarada " & Text(ThisItem.'Created On', FmtFecha) & "  ·  " &
+                        Text(ThisItem.TotalDeposits) & " depósitos declarados"
+                    Width: =330
+                    X: =14
+                    Y: =29
+                    ZIndex: =3
+
+                lblPickDeclMontoTul As label:
+                    Align: =Align.Right
+                    Color: =ThemeInk
+                    FontWeight: =FontWeight.Bold
+                    Height: =18
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.75
+                    Text: =fxMonto(ThisItem.TotalNIO, SimboloNIO)
+                    Width: =140
+                    Wrap: =false
+                    X: =362
+                    Y: =13
+                    ZIndex: =4
+
+                lblPickDeclMonto2Tul As label:
+                    Align: =Align.Right
+                    Color: =ThemeInk3
+                    Height: =16
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =8.25
+                    Text: =fxMonto(ThisItem.TotalUSD, SimboloUSD) & "  ·  " & fxMonto(ThisItem.TotalEUR, SimboloEUR)
+                    Width: =140
+                    Wrap: =false
+                    X: =362
+                    Y: =lblPickDeclMontoTul.Y + lblPickDeclMontoTul.Height
+                    ZIndex: =5
+
+            btnAvisoDeclTul As button:
+                BorderThickness: =0
+                Color: =ThemeInk
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeWarnSoft
+                FontWeight: =FontWeight.Semibold
+                Height: =58
+                HoverFill: =ThemeWarnSoft
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeWarnSoft
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Size: =9
+                Text: =""
+                Width: =516
+                X: =22
+                Y: =galPickDeclTul.Y + galPickDeclTul.Height + 11
+                ZIndex: =5
+
+            icoAvisoDeclTul As icon:
+                Color: =ThemeWarn
+                Height: =16
+                Icon: =Icon.Warning
+                Visible: =btnAvisoDeclTul.Visible
+                Width: =16
+                X: =btnAvisoDeclTul.X + 13
+                Y: =btnAvisoDeclTul.Y + 12
+                ZIndex: =6
+
+            lblAvisoDeclTul As label:
+                Color: =ThemeWarn
+                Height: =58
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: ="La declaración elegida define lo Declarado de toda la tula. Si elige la incorrecta, todas las diferencias van a estar mal."
+                Visible: =btnAvisoDeclTul.Visible
+                Width: =466
+                X: =btnAvisoDeclTul.X + 38
+                Y: =btnAvisoDeclTul.Y
+                ZIndex: =7
+
+            btnDlgCancelDeclTul As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ ctxDlgDeclTul: false });
+                    Reset(inpScanTul);
+                    SetFocus(inpScanTul)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Cancelar"
+                Width: =14 + 6.6 * Len(Self.Text)
+                X: =btnDlgOkDeclTul.X - 8 - Self.Width
+                Y: =btnDlgOkDeclTul.Y
+                ZIndex: =8
+
+            btnDlgOkDeclTul As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: |-
+                    =If(
+                        gvarIdentidadOk && !IsBlank(ctxPickDeclTul.'CH-Tbl-DeclaredBags'),
+                        DisplayMode.Edit,
+                        DisplayMode.Disabled
+                    )
+                Fill: =ThemeAccent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeAccentDark
+                OnSelect: |-
+                    =UpdateContext({ ctxDlgDeclTul: false, ctxDeclElegidaTul: ctxPickDeclTul });
+                    Select(btnAbrirNuevaTul)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeAccentDark
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Usar esta declaración"
+                Width: =14 + 6.6 * Len(Self.Text)
+                X: =cntCardDeclTul.Width - 22 - Self.Width
+                Y: =btnAvisoDeclTul.Y + btnAvisoDeclTul.Height + 15
+                ZIndex: =9
+
+    cntDlgSinDecTul As groupContainer.manualLayoutContainer:
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxDlgSinDecTul
+        Width: =Parent.Width
+        ZIndex: =51
+
+        btnBloqSinDecTul As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            Fill: =Color.Transparent
+            FontWeight: =FontWeight.Semibold
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =9
+            TabIndex: =-1
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntCardSinDecTul As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =btnDlgOkSinDecTul.Y + btnDlgOkSinDecTul.Height + 19
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =400
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            btnIcoSinDecTul As button:
+                BorderThickness: =0
+                Color: =ThemeInk
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeWarnSoft
+                FontWeight: =FontWeight.Semibold
+                Height: =34
+                HoverFill: =ThemeWarnSoft
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeWarnSoft
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Size: =9
+                Text: =""
+                Width: =34
+                X: =22
+                Y: =17
+                ZIndex: =1
+
+            icoTipoSinDecTul As icon:
+                Color: =ThemeWarn
+                Height: =18
+                Icon: =Icon.Lock
+                Width: =18
+                X: =btnIcoSinDecTul.X + 8
+                Y: =btnIcoSinDecTul.Y + 8
+                ZIndex: =2
+
+            lblDlgTitSinDecTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Bold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.88
+                Text: ="Tula sin declaración"
+                Width: =290
+                X: =btnIcoSinDecTul.X + btnIcoSinDecTul.Width + 10
+                Y: =17
+                ZIndex: =3
+
+            lblDlgTxtSinDecTul As label:
+                AutoHeight: =true
+                Color: =ThemeInk2
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: |-
+                    ="La tula " & ctxTulaElegidaTul.BagID & " no fue declarada por el cliente " &
+                    ctxTulaElegidaTul.ReceptionID.RemitentName & "."
+                Width: =312
+                X: =lblDlgTitSinDecTul.X
+                Y: =lblDlgTitSinDecTul.Y + lblDlgTitSinDecTul.Height + 4
+                ZIndex: =4
+
+            icoDlgXSinDecTul As icon:
+                AccessibleLabel: ="Cerrar el diálogo"
+                Color: =ThemeInk3
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ ctxDlgSinDecTul: false });
+                    Reset(inpScanTul);
+                    SetFocus(inpScanTul)
+                TabIndex: =0
+                Width: =18
+                X: =cntCardSinDecTul.Width - 36
+                Y: =17
+                ZIndex: =5
+
+            lblKvTulaEtqSinDecTul As label:
+                Color: =ThemeInk3
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Tula"
+                Width: =110
+                Wrap: =false
+                X: =22
+                Y: =lblDlgTxtSinDecTul.Y + lblDlgTxtSinDecTul.Height + 12
+                ZIndex: =6
+
+            lblKvTulaSinDecTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.75
+                Text: =ctxTulaElegidaTul.BagID
+                Width: =238
+                Wrap: =false
+                X: =140
+                Y: =lblKvTulaEtqSinDecTul.Y
+                ZIndex: =7
+
+            lblKvPlanEtqSinDecTul As label:
+                Color: =ThemeInk3
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Planilla"
+                Width: =110
+                Wrap: =false
+                X: =22
+                Y: =lblKvTulaEtqSinDecTul.Y + 22
+                ZIndex: =8
+
+            lblKvPlanSinDecTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.75
+                Text: =ctxTulaElegidaTul.ReceiptIdMirror
+                Width: =238
+                Wrap: =false
+                X: =140
+                Y: =lblKvPlanEtqSinDecTul.Y
+                ZIndex: =9
+
+            lblKvCliEtqSinDecTul As label:
+                Color: =ThemeInk3
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Cliente"
+                Width: =110
+                Wrap: =false
+                X: =22
+                Y: =lblKvPlanEtqSinDecTul.Y + 22
+                ZIndex: =10
+
+            lblKvCliSinDecTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.75
+                Text: =ctxTulaElegidaTul.ReceptionID.RemitentName
+                Width: =238
+                Wrap: =false
+                X: =140
+                Y: =lblKvCliEtqSinDecTul.Y
+                ZIndex: =11
+
+            lblKvMesaEtqSinDecTul As label:
+                Color: =ThemeInk3
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Mesa"
+                Width: =110
+                Wrap: =false
+                X: =22
+                Y: =lblKvCliEtqSinDecTul.Y + 22
+                ZIndex: =12
+
+            lblKvMesaSinDecTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.75
+                Text: =gvarMesa.Name
+                Width: =238
+                Wrap: =false
+                X: =140
+                Y: =lblKvMesaEtqSinDecTul.Y
+                ZIndex: =13
+
+            btnAvisoSinDecTul As button:
+                BorderThickness: =0
+                Color: =ThemeInk
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeWarnSoft
+                FontWeight: =FontWeight.Semibold
+                Height: =58
+                HoverFill: =ThemeWarnSoft
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeWarnSoft
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Size: =9
+                Text: =""
+                Width: =356
+                X: =22
+                Y: =lblKvMesaEtqSinDecTul.Y + lblKvMesaEtqSinDecTul.Height + 14
+                ZIndex: =14
+
+            icoAvisoSinDecTul As icon:
+                Color: =ThemeWarn
+                Height: =16
+                Icon: =Icon.Warning
+                Visible: =btnAvisoSinDecTul.Visible
+                Width: =16
+                X: =btnAvisoSinDecTul.X + 13
+                Y: =btnAvisoSinDecTul.Y + 12
+                ZIndex: =15
+
+            lblAvisoSinDecTul As label:
+                Color: =ThemeWarn
+                Height: =58
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: ="Se enviará una solicitud de aprobación al supervisor. La tula queda bloqueada hasta que responda."
+                Visible: =btnAvisoSinDecTul.Visible
+                Width: =306
+                X: =btnAvisoSinDecTul.X + 38
+                Y: =btnAvisoSinDecTul.Y
+                ZIndex: =16
+
+            btnDlgCancelSinDecTul As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ ctxDlgSinDecTul: false });
+                    Reset(inpScanTul);
+                    SetFocus(inpScanTul)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Cancelar"
+                Width: =14 + 6.6 * Len(Self.Text)
+                X: =btnDlgOkSinDecTul.X - 8 - Self.Width
+                Y: =btnDlgOkSinDecTul.Y
+                ZIndex: =17
+
+            btnDlgOkSinDecTul As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: |-
+                    =If(
+                        gvarIdentidadOk && !IsBlank(ctxTulaElegidaTul.'CH-Tbl-Bags'),
+                        DisplayMode.Edit,
+                        DisplayMode.Disabled
+                    )
+                Fill: =ThemeAccent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeAccentDark
+                OnSelect: |-
+                    =UpdateContext({ ctxDlgSinDecTul: false });
+                    
+                    IfError(
+                        Set(
+                            gvarSolicitud,
+                            Patch(
+                                'CH-Tbl-ApprovalRequests',
+                                Defaults('CH-Tbl-ApprovalRequests'),
+                                {
+                                    RequestType:    "Tula sin declaracion",
+                                    BagNumber:      Trim(ctxTulaElegidaTul.BagID),
+                                    RequestDetails: fxHtmlSinDeclaracion(
+                                                        Trim(ctxTulaElegidaTul.BagID),
+                                                        ctxTulaElegidaTul.ReceiptIdMirror,
+                                                        ctxTulaElegidaTul.ReceptionID.RemitentName,
+                                                        gvarUser.'Full Name',
+                                                        gvarMesa.Name,
+                                                        Text(Now(), FmtFecha)
+                                                    ),
+                                    RequestResources: JSON({
+                                        BagGUID:               Text(ctxTulaElegidaTul.'CH-Tbl-Bags'),
+                                        RecountingSessionGUID: Text(gvarSesion.'CH-Tbl-RecountingSession')
+                                    })
+                                }
+                            )
+                        ),
+                        Notify("No se pudo crear la solicitud: " & FirstError.Message, NotificationType.Error);
+                        Set(gvarSolicitud, Blank())
+                    );
+                    
+                    If(
+                        IsBlank(gvarSolicitud.'CH-Tbl-ApprovalRequest'),
+                        Reset(inpScanTul); SetFocus(inpScanTul),
+                        UpdateContext({ ctxEsperandoTul: true, ctxRechazadaTul: false })
+                    )
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeAccentDark
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Enviar solicitud"
+                Width: =14 + 6.6 * Len(Self.Text)
+                X: =cntCardSinDecTul.Width - 22 - Self.Width
+                Y: =btnAvisoSinDecTul.Y + btnAvisoSinDecTul.Height + 15
+                ZIndex: =18
+
+    cntEsperaTul As groupContainer.manualLayoutContainer:
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxEsperandoTul
+        Width: =Parent.Width
+        ZIndex: =52
+
+        btnBloqEsperaTul As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            Fill: =Color.Transparent
+            FontWeight: =FontWeight.Semibold
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =9
+            TabIndex: =-1
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntCardEsperaTul As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =btnDlgCancelEsperaTul.Y + btnDlgCancelEsperaTul.Height + 19
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =400
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            lblDlgTitEsperaTul As label:
+                AutoHeight: =true
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Bold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.88
+                Text: ="Esperando aprobación del supervisor"
+                Width: =356
+                X: =22
+                Y: =17
+                ZIndex: =1
+
+            lblDlgTxtEsperaTul As label:
+                AutoHeight: =true
+                Color: =ThemeInk2
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: ="La tula queda bloqueada hasta que el supervisor responda."
+                Width: =356
+                X: =22
+                Y: =lblDlgTitEsperaTul.Y + lblDlgTitEsperaTul.Height + 6
+                ZIndex: =2
+
+            btnWaitRowTul As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeSurface2
+                FontWeight: =FontWeight.Semibold
+                Height: =62
+                HoverFill: =ThemeSurface2
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =11
+                RadiusBottomRight: =11
+                RadiusTopLeft: =11
+                RadiusTopRight: =11
+                Size: =9
+                Text: =""
+                Width: =356
+                X: =22
+                Y: =lblDlgTxtEsperaTul.Y + lblDlgTxtEsperaTul.Height + 13
+                ZIndex: =3
+
+            spnEsperaTul As Spinner:
+                BasePaletteColor: =
+                DisplayMode: =DisplayMode.Edit
+                FontColor: =
+                Height: =34
+                SpinnerColor: =
+                TrackColor: =
+                Width: =34
+                X: =btnWaitRowTul.X + 16
+                Y: =btnWaitRowTul.Y + 14
+                ZIndex: =4
+
+            lblWaitTitTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.75
+                Text: ="Solicitud enviada al supervisor"
+                Width: =270
+                Wrap: =false
+                X: =spnEsperaTul.X + spnEsperaTul.Width + 14
+                Y: =btnWaitRowTul.Y + 13
+                ZIndex: =5
+
+            lblWaitSubTul As label:
+                Color: =ThemeInk3
+                Height: =16
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Se consulta el estado cada 15 segundos · enviada " & Text(gvarSolicitud.'Created On', FmtHora)
+                Width: =270
+                Wrap: =false
+                X: =lblWaitTitTul.X
+                Y: =lblWaitTitTul.Y + lblWaitTitTul.Height
+                ZIndex: =6
+
+            lblKvTulaEtqEsperaTul As label:
+                Color: =ThemeInk3
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Tula"
+                Width: =110
+                Wrap: =false
+                X: =22
+                Y: =btnWaitRowTul.Y + btnWaitRowTul.Height + 13
+                ZIndex: =7
+
+            lblKvTulaEsperaTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.75
+                Text: =ctxTulaElegidaTul.BagID
+                Width: =238
+                Wrap: =false
+                X: =140
+                Y: =lblKvTulaEtqEsperaTul.Y
+                ZIndex: =8
+
+            lblKvPlanEtqEsperaTul As label:
+                Color: =ThemeInk3
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Planilla"
+                Width: =110
+                Wrap: =false
+                X: =22
+                Y: =lblKvTulaEtqEsperaTul.Y + 22
+                ZIndex: =9
+
+            lblKvPlanEsperaTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.75
+                Text: =ctxTulaElegidaTul.ReceiptIdMirror
+                Width: =238
+                Wrap: =false
+                X: =140
+                Y: =lblKvPlanEtqEsperaTul.Y
+                ZIndex: =10
+
+            lblKvCliEtqEsperaTul As label:
+                Color: =ThemeInk3
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.25
+                Text: ="Cliente"
+                Width: =110
+                Wrap: =false
+                X: =22
+                Y: =lblKvPlanEtqEsperaTul.Y + 22
+                ZIndex: =11
+
+            lblKvCliEsperaTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.75
+                Text: =ctxTulaElegidaTul.ReceptionID.RemitentName
+                Width: =238
+                Wrap: =false
+                X: =140
+                Y: =lblKvCliEtqEsperaTul.Y
+                ZIndex: =12
+
+            btnDlgCancelEsperaTul As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =// Cancela la ESPERA, no la SOLICITUD: la app nunca escribe ApprovalStatus.
+                    // Estas dos primeras lineas son las que apagan el timer (su Start cuelga de
+                    // ctxEsperandoTul && !IsBlank(gvarSolicitud.'CH-Tbl-ApprovalRequest')).
+                    UpdateContext({ ctxEsperandoTul: false });
+                    Set(gvarSolicitud, Blank());
+                    Notify(
+                        "La solicitud sigue pendiente: el supervisor todavía tiene que responderla. Vuelva a escanear la tula más tarde.",
+                        NotificationType.Information
+                    );
+                    Reset(inpScanTul);
+                    SetFocus(inpScanTul)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Cancelar la espera"
+                Width: =14 + 6.6 * Len(Self.Text)
+                X: =cntCardEsperaTul.Width - 22 - Self.Width
+                Y: =lblKvCliEtqEsperaTul.Y + lblKvCliEtqEsperaTul.Height + 15
+                ZIndex: =13
+
+    cntRechazoTul As groupContainer.manualLayoutContainer:
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxRechazadaTul
+        Width: =Parent.Width
+        ZIndex: =53
+
+        btnBloqRechazoTul As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            Fill: =Color.Transparent
+            FontWeight: =FontWeight.Semibold
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Size: =9
+            TabIndex: =-1
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntCardRechazoTul As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =btnDlgOkRechazoTul.Y + btnDlgOkRechazoTul.Height + 19
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =400
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            btnIcoRechazoTul As button:
+                BorderThickness: =0
+                Color: =ThemeInk
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeDangerSoft
+                FontWeight: =FontWeight.Semibold
+                Height: =34
+                HoverFill: =ThemeDangerSoft
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeDangerSoft
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Size: =9
+                Text: =""
+                Width: =34
+                X: =22
+                Y: =17
+                ZIndex: =1
+
+            icoTipoRechazoTul As icon:
+                Color: =ThemeDanger
+                Height: =18
+                Icon: =Icon.Blocked
+                Width: =18
+                X: =btnIcoRechazoTul.X + 8
+                Y: =btnIcoRechazoTul.Y + 8
+                ZIndex: =2
+
+            lblDlgTitRechazoTul As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Bold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.88
+                Text: ="Solicitud rechazada"
+                Width: =278
+                X: =btnIcoRechazoTul.X + btnIcoRechazoTul.Width + 10
+                Y: =17
+                ZIndex: =3
+
+            lblDlgTxtRechazoTul As label:
+                AutoHeight: =true
+                Color: =ThemeInk2
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: |-
+                    ="El supervisor rechazó la apertura de la tula " & ctxTulaElegidaTul.BagID &
+                    " sin declaración del cliente."
+                Width: =312
+                X: =lblDlgTitRechazoTul.X
+                Y: =lblDlgTitRechazoTul.Y + lblDlgTitRechazoTul.Height + 4
+                ZIndex: =4
+
+            icoDlgXRechazoTul As icon:
+                AccessibleLabel: ="Cerrar el diálogo"
+                Color: =ThemeInk3
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ ctxRechazadaTul: false });
+                    Set(gvarSolicitud, Blank());
+                    Reset(inpScanTul);
+                    SetFocus(inpScanTul)
+                TabIndex: =0
+                Width: =18
+                X: =cntCardRechazoTul.Width - 36
+                Y: =17
+                ZIndex: =5
+
+            btnAvisoRechazoTul As button:
+                BorderThickness: =0
+                Color: =ThemeInk
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeDangerSoft
+                FontWeight: =FontWeight.Semibold
+                Height: =76
+                HoverFill: =ThemeDangerSoft
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeDangerSoft
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Size: =9
+                Text: =""
+                Width: =356
+                X: =22
+                Y: =lblDlgTxtRechazoTul.Y + lblDlgTxtRechazoTul.Height + 13
+                ZIndex: =6
+
+            icoAvisoRechazoTul As icon:
+                Color: =ThemeDanger
+                Height: =16
+                Icon: =Icon.Blocked
+                Visible: =btnAvisoRechazoTul.Visible
+                Width: =16
+                X: =btnAvisoRechazoTul.X + 13
+                Y: =btnAvisoRechazoTul.Y + 12
+                ZIndex: =7
+
+            lblAvisoRechazoTul As label:
+                Color: =ThemeDanger
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: |-
+                    ="Rechazada por " & gvarSolicitud.SolvedBy.'Full Name' & "  ·  " &
+                    Text(gvarSolicitud.ResolutionDatetime, FmtFecha)
+                Visible: =btnAvisoRechazoTul.Visible
+                Width: =306
+                Wrap: =false
+                X: =btnAvisoRechazoTul.X + 38
+                Y: =btnAvisoRechazoTul.Y + 9
+                ZIndex: =8
+
+            lblMotivoRechazoTul As label:
+                Color: =ThemeDanger
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: =gvarSolicitud.StatusReason
+                Visible: =btnAvisoRechazoTul.Visible
+                Width: =306
+                X: =lblAvisoRechazoTul.X
+                Y: =lblAvisoRechazoTul.Y + lblAvisoRechazoTul.Height
+                ZIndex: =9
+
+            lblNotaRechazoTul As label:
+                Color: =ThemeInk2
+                Height: =34
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: |-
+                    ="El rechazo no abre la tula: sigue almacenada en bóveda y no se creó ningún detalle de reconteo."
+                Width: =356
+                X: =22
+                Y: =btnAvisoRechazoTul.Y + btnAvisoRechazoTul.Height + 12
+                ZIndex: =10
+
+            btnDlgOkRechazoTul As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =ThemeAccent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =ThemeAccentDark
+                OnSelect: |-
+                    =UpdateContext({ ctxRechazadaTul: false });
+                    Set(gvarSolicitud, Blank());
+                    Reset(inpScanTul);
+                    SetFocus(inpScanTul)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedFill: =ThemeAccentDark
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Entendido"
+                Width: =14 + 6.6 * Len(Self.Text)
+                X: =cntCardRechazoTul.Width - 22 - Self.Width
+                Y: =lblNotaRechazoTul.Y + lblNotaRechazoTul.Height + 15
+                ZIndex: =11
+
+    btnIrSesionTul As button:
+        BorderColor: =App.Theme.Colors.Primary
+        Color: =Color.Transparent
+        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        DisabledFill: =RGBA(244, 244, 244, 1)
+        Fill: =Color.Transparent
+        Font: =App.Theme.Font
+        FontWeight: =FontWeight.Semibold
+        Height: =1
+        HoverBorderColor: =App.Theme.Colors.Darker10
+        HoverColor: =App.Theme.Colors.PrimaryForeground
+        HoverFill: =App.Theme.Colors.Darker10
+        OnSelect: =Notify("No hay una sesión activa.", NotificationType.Warning); Navigate(scrSesion)
+        PressedBorderColor: =App.Theme.Colors.Darker40
+        PressedColor: =Self.Color
+        PressedFill: =App.Theme.Colors.Darker40
+        Size: =15
+        Text: =
+        Visible: =false
+        Width: =1
+        X: =1
+        Y: =1
+        ZIndex: =54
+

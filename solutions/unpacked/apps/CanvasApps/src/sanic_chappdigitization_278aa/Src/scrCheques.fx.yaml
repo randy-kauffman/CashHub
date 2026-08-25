@@ -202,7 +202,7 @@ scrCheques As screen:
                     BorderColor: =ThemeLine
                     BorderThickness: =2
                     Color: =RGBA(0, 0, 0, 1)
-                    Default: ="Text input"
+                    Default: =
                     DisabledBorderColor: =RGBA(166, 166, 166, 1)
                     DisabledColor: =RGBA(166, 166, 166, 1)
                     DisabledFill: =RGBA(244, 244, 244, 1)
@@ -343,10 +343,10 @@ scrCheques As screen:
                     Height: =Parent.Height - Self.Y
                     Items: |-
                         =With({_q: Trim(inpBuscarChq.Text)},
-                            Filter(
-                                Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq),
-                                CheckNumber = _q
-                            )
+                            
+                                Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq)
+                                 //CheckNumber = _q || IsBlank(_q)
+                            
                         )
                     Layout: =Layout.Vertical
                     LoadingSpinner: =LoadingSpinner.Data
@@ -427,7 +427,7 @@ scrCheques As screen:
                         Height: =Parent.TemplateHeight
                         OnSelect: =Select(Parent)
                         Size: =13
-                        Text: =Switch(ctxSegChq, "Enviados", Coalesce(ThisItem.SentToDigitizationBy.'Full Name', "—"), Coalesce(ThisItem.ReceivedBy.'Full Name', "—"))
+                        Text: =ThisItem.Name
                         Width: =0.15*(Parent.TemplateWidth - 32)
                         X: =16 + 0.41*(Parent.TemplateWidth - 32)
                         ZIndex: =6
@@ -441,7 +441,7 @@ scrCheques As screen:
                         Height: =Parent.TemplateHeight
                         OnSelect: =Select(Parent)
                         Size: =13
-                        Text: =Text(ThisItem.CheckAmount, FmtMoney)
+                        Text: =ThisItem.Name
                         Width: =0.13*(Parent.TemplateWidth - 32)
                         X: =16 + 0.56*(Parent.TemplateWidth - 32)
                         ZIndex: =7
@@ -454,7 +454,7 @@ scrCheques As screen:
                         Height: =Parent.TemplateHeight
                         OnSelect: =Select(Parent)
                         Size: =13
-                        Text: =Switch(ctxSegChq, "Enviados", Text(ThisItem.'Enviado el', FmtHora), "Recibidos", Text(ThisItem.'Recibido el', FmtFecha), "No recibidos", Text(ThisItem.'No recibido el', FmtFecha))
+                        Text: =ThisItem.Name
                         Width: =0.16*(Parent.TemplateWidth - 32)
                         X: =16 + 0.69*(Parent.TemplateWidth - 32)
                         ZIndex: =8

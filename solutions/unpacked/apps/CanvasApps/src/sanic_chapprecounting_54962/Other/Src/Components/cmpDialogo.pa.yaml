@@ -1,0 +1,301 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpDialogo:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      AnchoCard:
+        PropertyKind: Input
+        DisplayName: AnchoCard
+        Description: A custom property
+        DataType: Number
+        Default: =400
+      Contorno:
+        PropertyKind: Input
+        DisplayName: Contorno
+        Description: A custom property
+        DataType: Boolean
+        Default: =false
+      Icono:
+        PropertyKind: Input
+        DisplayName: Icono
+        Description: A custom property
+        DataType: Text
+        Default: =""
+      MostrarCerrar:
+        PropertyKind: Input
+        DisplayName: MostrarCerrar
+        Description: A custom property
+        DataType: Boolean
+        Default: =true
+      OnCancelar:
+        PropertyKind: Event
+        DisplayName: OnCancelar
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      OnConfirmar:
+        PropertyKind: Event
+        DisplayName: OnConfirmar
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      Peligro:
+        PropertyKind: Input
+        DisplayName: Peligro
+        Description: A custom property
+        DataType: Boolean
+        Default: =false
+      Subtitulo:
+        PropertyKind: Input
+        DisplayName: Subtitulo
+        Description: A custom property
+        DataType: Text
+        Default: =""
+      TextoCancelar:
+        PropertyKind: Input
+        DisplayName: TextoCancelar
+        Description: A custom property
+        DataType: Text
+        Default: ="Cancelar"
+      TextoConfirmar:
+        PropertyKind: Input
+        DisplayName: TextoConfirmar
+        Description: A custom property
+        DataType: Text
+        Default: ="Continuar"
+      Titulo:
+        PropertyKind: Input
+        DisplayName: Titulo
+        Description: A custom property
+        DataType: Text
+        Default: ="¿Confirmás?"
+      Tono:
+        PropertyKind: Input
+        DisplayName: Tono
+        Description: A custom property
+        DataType: Text
+        Default: ="info"
+    Properties:
+      Fill: =ThemeOverlay
+      Height: =768
+      Width: =1366
+    Children:
+      - btnBloqueoDlg:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            Fill: =Color.Transparent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =Parent.Height
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =Color.Transparent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =Color.Transparent
+            Size: =9
+            TabIndex: =-1
+            Text: =""
+            Width: =Parent.Width
+      - cntCardDlg:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =btnConfirmarDlg.Y + btnConfirmarDlg.Height + 19
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =cmpDialogo.AnchoCard
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+          Children:
+            - btnIcoDlg:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =ThemeInk
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =Switch(cmpDialogo.Tono, "ok", ThemeOkSoft, "warn", ThemeWarnSoft, "danger", ThemeDangerSoft, ThemeInfoSoft)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =34
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =Switch(cmpDialogo.Tono, "ok", ThemeOkSoft, "warn", ThemeWarnSoft, "danger", ThemeDangerSoft, ThemeInfoSoft)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Switch(cmpDialogo.Tono, "ok", ThemeOkSoft, "warn", ThemeWarnSoft, "danger", ThemeDangerSoft, ThemeInfoSoft)
+                  RadiusBottomLeft: =9
+                  RadiusBottomRight: =9
+                  RadiusTopLeft: =9
+                  RadiusTopRight: =9
+                  Size: =9
+                  Text: =""
+                  Visible: =!IsBlank(cmpDialogo.Icono)
+                  Width: =34
+                  X: =22
+                  Y: =17
+            - icoTipoDlg:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =Switch(cmpDialogo.Tono, "ok", ThemeOk, "warn", ThemeWarn, "danger", ThemeDanger, ThemeInfo)
+                  DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                  DisabledColor: =RGBA(119, 119, 119, 1)
+                  Height: =18
+                  Icon: =Switch(cmpDialogo.Icono, "check", Icon.Check, "lock", Icon.Lock, "trash", Icon.Trash, "sync", Icon.Sync, "blocked", Icon.Blocked, "warning", Icon.Warning, Icon.Information)
+                  Visible: =btnIcoDlg.Visible
+                  Width: =18
+                  X: =btnIcoDlg.X + 8
+                  Y: =btnIcoDlg.Y + 8
+            - lblTituloDlg:
+                Control: Label@2.5.1
+                Properties:
+                  AutoHeight: =true
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Bold
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10.88
+                  Text: =cmpDialogo.Titulo
+                  Width: =Parent.Width - Self.X - 44
+                  X: =If(IsBlank(cmpDialogo.Icono), 22, btnIcoDlg.X + btnIcoDlg.Width + 10)
+                  Y: =17
+            - lblSubtituloDlg:
+                Control: Label@2.5.1
+                Properties:
+                  AutoHeight: =true
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk2
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =54
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9
+                  Text: =cmpDialogo.Subtitulo
+                  VerticalAlign: =VerticalAlign.Top
+                  Visible: =!IsBlank(cmpDialogo.Subtitulo)
+                  Width: =Parent.Width - Self.X - 22
+                  X: =lblTituloDlg.X
+                  Y: =lblTituloDlg.Y + lblTituloDlg.Height + 6
+            - icoCerrarDlg:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: ="Cerrar"
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk3
+                  DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                  DisabledColor: =RGBA(119, 119, 119, 1)
+                  Height: =18
+                  HoverColor: =ThemeInk
+                  Icon: =Icon.Cancel
+                  OnSelect: =Select(btnCancelarDlg)
+                  TabIndex: =0
+                  Visible: =cmpDialogo.MostrarCerrar
+                  Width: =18
+                  X: =Parent.Width - 36
+                  Y: =17
+            - btnCancelarDlg:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Color: =ThemeInk2
+                  DisabledBorderColor: =Color.Transparent
+                  DisabledColor: =ThemeInk3
+                  DisabledFill: =ThemeLineSoft
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  Height: =32
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =ThemeSurface2
+                  OnSelect: =cmpDialogo.OnCancelar()
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =ThemeSurface2
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  Size: =9
+                  Text: =cmpDialogo.TextoCancelar
+                  Width: =14 + 6.6 * Len(Self.Text)
+                  X: =btnConfirmarDlg.X - 8 - Self.Width
+                  Y: =btnConfirmarDlg.Y
+            - btnConfirmarDlg:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeAccent
+                  BorderThickness: =If(cmpDialogo.Contorno, 1, 0)
+                  Color: =If(cmpDialogo.Contorno, ThemeAccent, ThemeSurface)
+                  DisabledBorderColor: =Color.Transparent
+                  DisabledColor: =ThemeInk3
+                  DisabledFill: =ThemeLineSoft
+                  Fill: =If(cmpDialogo.Contorno, ThemeSurface, If(cmpDialogo.Peligro, ThemeDanger, ThemeAccent))
+                  Font: =Font.'Open Sans'
+                  Height: =32
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =If(cmpDialogo.Contorno, ThemeAccentSoft, If(cmpDialogo.Peligro, ThemeDanger, ThemeAccentDark))
+                  OnSelect: =cmpDialogo.OnConfirmar()
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =If(cmpDialogo.Contorno, ThemeAccentSoft, If(cmpDialogo.Peligro, ThemeDanger, ThemeAccentDark))
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  Size: =9
+                  Text: =cmpDialogo.TextoConfirmar
+                  Width: =14 + 6.6 * Len(Self.Text)
+                  X: =Parent.Width - 22 - Self.Width
+                  Y: =lblSubtituloDlg.Y + lblSubtituloDlg.Height + 20

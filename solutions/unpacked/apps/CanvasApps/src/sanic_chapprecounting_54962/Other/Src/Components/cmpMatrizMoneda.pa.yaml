@@ -1,0 +1,483 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpMatrizMoneda:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      Card:
+        PropertyKind: Input
+        DisplayName: Card
+        Description: A custom property
+        DataType: Boolean
+        Default: =true
+      ChequesDec:
+        PropertyKind: Input
+        DisplayName: ChequesDec
+        Description: A custom property
+        DataType: Number
+        Default: =0
+      ChequesRec:
+        PropertyKind: Input
+        DisplayName: ChequesRec
+        Description: A custom property
+        DataType: Number
+        Default: =0
+      DifCheques:
+        PropertyKind: Output
+        DisplayName: DifCheques
+        Description: A custom property
+        DataType: Number
+      DifEfectivo:
+        PropertyKind: Output
+        DisplayName: DifEfectivo
+        Description: A custom property
+        DataType: Number
+      DifMonto:
+        PropertyKind: Output
+        DisplayName: DifMonto
+        Description: A custom property
+        DataType: Number
+      EfectivoDec:
+        PropertyKind: Input
+        DisplayName: EfectivoDec
+        Description: A custom property
+        DataType: Number
+        Default: =0
+      EfectivoRec:
+        PropertyKind: Input
+        DisplayName: EfectivoRec
+        Description: A custom property
+        DataType: Number
+        Default: =0
+      HayDiferencia:
+        PropertyKind: Output
+        DisplayName: HayDiferencia
+        Description: A custom property
+        DataType: Boolean
+      Moneda:
+        PropertyKind: Input
+        DisplayName: Moneda
+        Description: A custom property
+        DataType: Text
+        Default: ="NIO"
+      MonedaNombre:
+        PropertyKind: Input
+        DisplayName: MonedaNombre
+        Description: A custom property
+        DataType: Text
+        Default: ="Córdobas"
+      MontoChequesDec:
+        PropertyKind: Input
+        DisplayName: MontoChequesDec
+        Description: A custom property
+        DataType: Number
+        Default: =0
+      MontoChequesRec:
+        PropertyKind: Input
+        DisplayName: MontoChequesRec
+        Description: A custom property
+        DataType: Number
+        Default: =0
+      Simbolo:
+        PropertyKind: Input
+        DisplayName: Simbolo
+        Description: A custom property
+        DataType: Text
+        Default: ="C$ "
+      Titulo:
+        PropertyKind: Input
+        DisplayName: Titulo
+        Description: A custom property
+        DataType: Text
+        Default: =""
+    Properties:
+      DifCheques: =cmpMatrizMoneda.ChequesRec - cmpMatrizMoneda.ChequesDec
+      DifEfectivo: =cmpMatrizMoneda.EfectivoRec - cmpMatrizMoneda.EfectivoDec
+      DifMonto: =cmpMatrizMoneda.MontoChequesRec - cmpMatrizMoneda.MontoChequesDec
+      HayDiferencia: =cmpMatrizMoneda.DifCheques <> 0 || cmpMatrizMoneda.DifMonto <> 0 || cmpMatrizMoneda.DifEfectivo <> 0
+      Height: =100
+      Width: =435
+    Children:
+      - btnSupMat:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =If(cmpMatrizMoneda.Card, 1, 0)
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =If(cmpMatrizMoneda.Card, ThemeSurface, ThemeSurface2)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =Parent.Height
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =If(cmpMatrizMoneda.Card, ThemeSurface, ThemeSurface2)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =If(cmpMatrizMoneda.Card, ThemeSurface, ThemeSurface2)
+            RadiusBottomLeft: =If(cmpMatrizMoneda.Card, 11, 0)
+            RadiusBottomRight: =If(cmpMatrizMoneda.Card, 11, 0)
+            RadiusTopLeft: =If(cmpMatrizMoneda.Card, 11, 0)
+            RadiusTopRight: =If(cmpMatrizMoneda.Card, 11, 0)
+            Size: =9
+            Text: =""
+            Width: =Parent.Width
+      - lblCodigoMat:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: =If(IsBlank(cmpMatrizMoneda.Titulo), Upper(cmpMatrizMoneda.Moneda), "")
+            Visible: =IsBlank(cmpMatrizMoneda.Titulo)
+            Width: =44
+            Wrap: =false
+            X: =14
+            Y: =8
+      - lblNombreMat:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: =If(IsBlank(cmpMatrizMoneda.Titulo), cmpMatrizMoneda.MonedaNombre, cmpMatrizMoneda.Titulo)
+            Width: =Parent.Width - Self.X - 14
+            Wrap: =false
+            X: =lblCodigoMat.X + lblCodigoMat.Width + 7
+            Y: =8
+      - lblThChqMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =12
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.13
+            Text: ="CHEQUES"
+            Width: =90
+            Wrap: =false
+            X: =lblThMtoMat.X - 90
+            Y: =27
+      - lblThMtoMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =12
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.13
+            Text: ="MONTO CHEQUES"
+            Width: =110
+            Wrap: =false
+            X: =lblThEfeMat.X - 110
+            Y: =27
+      - lblThEfeMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =12
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.13
+            Text: ="EFECTIVO"
+            Width: =107
+            Wrap: =false
+            X: =Parent.Width - 14 - 107
+            Y: =27
+      - shpLineaThMat:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            Fill: =ThemeLineSoft
+            Height: =1
+            Width: =Parent.Width - 28
+            X: =14
+            Y: =lblThChqMat.Y + lblThChqMat.Height + 2
+      - lblRecLabMat:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="Recontado"
+            Width: =100
+            Wrap: =false
+            X: =14
+            Y: =shpLineaThMat.Y + 3
+      - lblRecChqMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =Text(cmpMatrizMoneda.ChequesRec)
+            Width: =90
+            Wrap: =false
+            X: =lblThChqMat.X
+            Y: =lblRecLabMat.Y
+      - lblRecMtoMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =fxMonto(cmpMatrizMoneda.MontoChequesRec, cmpMatrizMoneda.Simbolo)
+            Width: =110
+            Wrap: =false
+            X: =lblThMtoMat.X
+            Y: =lblRecLabMat.Y
+      - lblRecEfeMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =fxMonto(cmpMatrizMoneda.EfectivoRec, cmpMatrizMoneda.Simbolo)
+            Width: =107
+            Wrap: =false
+            X: =lblThEfeMat.X
+            Y: =lblRecLabMat.Y
+      - lblDecLabMat:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="Declarado"
+            Width: =100
+            Wrap: =false
+            X: =14
+            Y: =lblRecLabMat.Y + lblRecLabMat.Height
+      - lblDecChqMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =Text(cmpMatrizMoneda.ChequesDec)
+            Width: =90
+            Wrap: =false
+            X: =lblThChqMat.X
+            Y: =lblDecLabMat.Y
+      - lblDecMtoMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =fxMonto(cmpMatrizMoneda.MontoChequesDec, cmpMatrizMoneda.Simbolo)
+            Width: =110
+            Wrap: =false
+            X: =lblThMtoMat.X
+            Y: =lblDecLabMat.Y
+      - lblDecEfeMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =fxMonto(cmpMatrizMoneda.EfectivoDec, cmpMatrizMoneda.Simbolo)
+            Width: =107
+            Wrap: =false
+            X: =lblThEfeMat.X
+            Y: =lblDecLabMat.Y
+      - shpLineaDifMat:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            Fill: =ThemeLineSoft
+            Height: =1
+            Width: =Parent.Width - 28
+            X: =14
+            Y: =lblDecLabMat.Y + lblDecLabMat.Height + 2
+      - lblDifLabMat:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="Diferencia"
+            Width: =100
+            Wrap: =false
+            X: =14
+            Y: =shpLineaDifMat.Y + 3
+      - lblDifChqMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =fxColorDif(cmpMatrizMoneda.DifCheques)
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =fxCantDif(cmpMatrizMoneda.DifCheques)
+            Width: =90
+            Wrap: =false
+            X: =lblThChqMat.X
+            Y: =lblDifLabMat.Y
+      - lblDifMtoMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =fxColorDif(cmpMatrizMoneda.DifMonto)
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =fxMontoDif(cmpMatrizMoneda.DifMonto, cmpMatrizMoneda.Simbolo)
+            Width: =110
+            Wrap: =false
+            X: =lblThMtoMat.X
+            Y: =lblDifLabMat.Y
+      - lblDifEfeMat:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =fxColorDif(cmpMatrizMoneda.DifEfectivo)
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =fxMontoDif(cmpMatrizMoneda.DifEfectivo, cmpMatrizMoneda.Simbolo)
+            Width: =107
+            Wrap: =false
+            X: =lblThEfeMat.X
+            Y: =lblDifLabMat.Y

@@ -162,6 +162,7 @@ Screens:
                             Properties:
                               AccessibleLabel: ="Buscar cheque por número o cliente"
                               BorderColor: =ThemeLine
+                              Default: =
                               Font: =Font.'Open Sans'
                               Height: =34
                               HintText: ="⌕ N° de cheque o cliente…"
@@ -281,13 +282,7 @@ Screens:
                             Variant: Vertical
                             Properties:
                               Height: =Parent.Height - Self.Y
-                              Items: |-
-                                =With({_q: Trim(inpBuscarChq.Text)},
-                                    Filter(
-                                        Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq),
-                                        CheckNumber = _q
-                                    )
-                                )
+                              Items: "=With({_q: Trim(inpBuscarChq.Text)},\n    \n        Filter('CH-Tbl-Checks', CheckStatus = ctxEstadoChq)\n         //CheckNumber = _q || IsBlank(_q)\n    \n)"
                               OnSelect: |-
                                 =Set(gvarChq, ThisItem); UpdateContext({ctxFeedbackChq: ""})
                               TemplatePadding: =0
@@ -347,7 +342,7 @@ Screens:
                                     Font: =Font.'Open Sans'
                                     Height: =Parent.TemplateHeight
                                     OnSelect: =Select(Parent)
-                                    Text: =Switch(ctxSegChq, "Enviados", Coalesce(ThisItem.SentToDigitizationBy.'Full Name', "—"), Coalesce(ThisItem.ReceivedBy.'Full Name', "—"))
+                                    Text: =ThisItem.Name
                                     Width: =0.15*(Parent.TemplateWidth - 32)
                                     X: =16 + 0.41*(Parent.TemplateWidth - 32)
                               - lblFilaMontoChq:
@@ -358,7 +353,7 @@ Screens:
                                     FontWeight: =FontWeight.Semibold
                                     Height: =Parent.TemplateHeight
                                     OnSelect: =Select(Parent)
-                                    Text: =Text(ThisItem.CheckAmount, FmtMoney)
+                                    Text: =ThisItem.Name
                                     Width: =0.13*(Parent.TemplateWidth - 32)
                                     X: =16 + 0.56*(Parent.TemplateWidth - 32)
                               - lblFilaFechaChq:
@@ -369,7 +364,7 @@ Screens:
                                     Font: =Font.'Open Sans'
                                     Height: =Parent.TemplateHeight
                                     OnSelect: =Select(Parent)
-                                    Text: =Switch(ctxSegChq, "Enviados", Text(ThisItem.'Enviado el', FmtHora), "Recibidos", Text(ThisItem.'Recibido el', FmtFecha), "No recibidos", Text(ThisItem.'No recibido el', FmtFecha))
+                                    Text: =ThisItem.Name
                                     Width: =0.16*(Parent.TemplateWidth - 32)
                                     X: =16 + 0.69*(Parent.TemplateWidth - 32)
                               - pilFilaEstadoChq:

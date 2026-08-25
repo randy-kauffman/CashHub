@@ -1,0 +1,337 @@
+cmpMatrizMoneda As CanvasComponent:
+    Card: =true
+    ChequesDec: =0
+    ChequesRec: =0
+    DifCheques: =cmpMatrizMoneda.ChequesRec - cmpMatrizMoneda.ChequesDec
+    DifEfectivo: =cmpMatrizMoneda.EfectivoRec - cmpMatrizMoneda.EfectivoDec
+    DifMonto: =cmpMatrizMoneda.MontoChequesRec - cmpMatrizMoneda.MontoChequesDec
+    EfectivoDec: =0
+    EfectivoRec: =0
+    Fill: =RGBA(0, 0, 0, 0)
+    HayDiferencia: =cmpMatrizMoneda.DifCheques <> 0 || cmpMatrizMoneda.DifMonto <> 0 || cmpMatrizMoneda.DifEfectivo <> 0
+    Height: =100
+    Moneda: ="NIO"
+    MonedaNombre: ="Córdobas"
+    MontoChequesDec: =0
+    MontoChequesRec: =0
+    Simbolo: ="C$ "
+    Titulo: =""
+    Width: =435
+    X: =0
+    Y: =0
+    ZIndex: =1
+
+    btnSupMat As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =If(cmpMatrizMoneda.Card, 1, 0)
+        Color: =ThemeInk
+        DisplayMode: =DisplayMode.View
+        Fill: =If(cmpMatrizMoneda.Card, ThemeSurface, ThemeSurface2)
+        Height: =Parent.Height
+        HoverFill: =If(cmpMatrizMoneda.Card, ThemeSurface, ThemeSurface2)
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =If(cmpMatrizMoneda.Card, ThemeSurface, ThemeSurface2)
+        RadiusBottomLeft: =If(cmpMatrizMoneda.Card, 11, 0)
+        RadiusBottomRight: =If(cmpMatrizMoneda.Card, 11, 0)
+        RadiusTopLeft: =If(cmpMatrizMoneda.Card, 11, 0)
+        RadiusTopRight: =If(cmpMatrizMoneda.Card, 11, 0)
+        Size: =9
+        Text: =""
+        Width: =Parent.Width
+        ZIndex: =1
+
+    lblCodigoMat As label:
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =7.88
+        Text: =If(IsBlank(cmpMatrizMoneda.Titulo), Upper(cmpMatrizMoneda.Moneda), "")
+        Visible: =IsBlank(cmpMatrizMoneda.Titulo)
+        Width: =44
+        Wrap: =false
+        X: =14
+        Y: =8
+        ZIndex: =2
+
+    lblNombreMat As label:
+        Color: =ThemeInk
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: =If(IsBlank(cmpMatrizMoneda.Titulo), cmpMatrizMoneda.MonedaNombre, cmpMatrizMoneda.Titulo)
+        Width: =Parent.Width - Self.X - 14
+        Wrap: =false
+        X: =lblCodigoMat.X + lblCodigoMat.Width + 7
+        Y: =8
+        ZIndex: =3
+
+    lblThChqMat As label:
+        Align: =Align.Right
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =12
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =7.13
+        Text: ="CHEQUES"
+        Width: =90
+        Wrap: =false
+        X: =lblThMtoMat.X - 90
+        Y: =27
+        ZIndex: =4
+
+    lblThMtoMat As label:
+        Align: =Align.Right
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =12
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =7.13
+        Text: ="MONTO CHEQUES"
+        Width: =110
+        Wrap: =false
+        X: =lblThEfeMat.X - 110
+        Y: =27
+        ZIndex: =5
+
+    lblThEfeMat As label:
+        Align: =Align.Right
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =12
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =7.13
+        Text: ="EFECTIVO"
+        Width: =107
+        Wrap: =false
+        X: =Parent.Width - 14 - 107
+        Y: =27
+        ZIndex: =6
+
+    shpLineaThMat As rectangle:
+        Fill: =ThemeLineSoft
+        Height: =1
+        Width: =Parent.Width - 28
+        X: =14
+        Y: =lblThChqMat.Y + lblThChqMat.Height + 2
+        ZIndex: =7
+
+    lblRecLabMat As label:
+        Color: =ThemeInk2
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: ="Recontado"
+        Width: =100
+        Wrap: =false
+        X: =14
+        Y: =shpLineaThMat.Y + 3
+        ZIndex: =8
+
+    lblRecChqMat As label:
+        Align: =Align.Right
+        Color: =ThemeInk
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =Text(cmpMatrizMoneda.ChequesRec)
+        Width: =90
+        Wrap: =false
+        X: =lblThChqMat.X
+        Y: =lblRecLabMat.Y
+        ZIndex: =9
+
+    lblRecMtoMat As label:
+        Align: =Align.Right
+        Color: =ThemeInk
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =fxMonto(cmpMatrizMoneda.MontoChequesRec, cmpMatrizMoneda.Simbolo)
+        Width: =110
+        Wrap: =false
+        X: =lblThMtoMat.X
+        Y: =lblRecLabMat.Y
+        ZIndex: =10
+
+    lblRecEfeMat As label:
+        Align: =Align.Right
+        Color: =ThemeInk
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =fxMonto(cmpMatrizMoneda.EfectivoRec, cmpMatrizMoneda.Simbolo)
+        Width: =107
+        Wrap: =false
+        X: =lblThEfeMat.X
+        Y: =lblRecLabMat.Y
+        ZIndex: =11
+
+    lblDecLabMat As label:
+        Color: =ThemeInk2
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: ="Declarado"
+        Width: =100
+        Wrap: =false
+        X: =14
+        Y: =lblRecLabMat.Y + lblRecLabMat.Height
+        ZIndex: =12
+
+    lblDecChqMat As label:
+        Align: =Align.Right
+        Color: =ThemeInk
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =Text(cmpMatrizMoneda.ChequesDec)
+        Width: =90
+        Wrap: =false
+        X: =lblThChqMat.X
+        Y: =lblDecLabMat.Y
+        ZIndex: =13
+
+    lblDecMtoMat As label:
+        Align: =Align.Right
+        Color: =ThemeInk
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =fxMonto(cmpMatrizMoneda.MontoChequesDec, cmpMatrizMoneda.Simbolo)
+        Width: =110
+        Wrap: =false
+        X: =lblThMtoMat.X
+        Y: =lblDecLabMat.Y
+        ZIndex: =14
+
+    lblDecEfeMat As label:
+        Align: =Align.Right
+        Color: =ThemeInk
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =fxMonto(cmpMatrizMoneda.EfectivoDec, cmpMatrizMoneda.Simbolo)
+        Width: =107
+        Wrap: =false
+        X: =lblThEfeMat.X
+        Y: =lblDecLabMat.Y
+        ZIndex: =15
+
+    shpLineaDifMat As rectangle:
+        Fill: =ThemeLineSoft
+        Height: =1
+        Width: =Parent.Width - 28
+        X: =14
+        Y: =lblDecLabMat.Y + lblDecLabMat.Height + 2
+        ZIndex: =16
+
+    lblDifLabMat As label:
+        Color: =ThemeInk2
+        FontWeight: =FontWeight.Bold
+        Height: =16
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: ="Diferencia"
+        Width: =100
+        Wrap: =false
+        X: =14
+        Y: =shpLineaDifMat.Y + 3
+        ZIndex: =17
+
+    lblDifChqMat As label:
+        Align: =Align.Right
+        Color: =fxColorDif(cmpMatrizMoneda.DifCheques)
+        FontWeight: =FontWeight.Bold
+        Height: =16
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =fxCantDif(cmpMatrizMoneda.DifCheques)
+        Width: =90
+        Wrap: =false
+        X: =lblThChqMat.X
+        Y: =lblDifLabMat.Y
+        ZIndex: =18
+
+    lblDifMtoMat As label:
+        Align: =Align.Right
+        Color: =fxColorDif(cmpMatrizMoneda.DifMonto)
+        FontWeight: =FontWeight.Bold
+        Height: =16
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =fxMontoDif(cmpMatrizMoneda.DifMonto, cmpMatrizMoneda.Simbolo)
+        Width: =110
+        Wrap: =false
+        X: =lblThMtoMat.X
+        Y: =lblDifLabMat.Y
+        ZIndex: =19
+
+    lblDifEfeMat As label:
+        Align: =Align.Right
+        Color: =fxColorDif(cmpMatrizMoneda.DifEfectivo)
+        FontWeight: =FontWeight.Bold
+        Height: =16
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =fxMontoDif(cmpMatrizMoneda.DifEfectivo, cmpMatrizMoneda.Simbolo)
+        Width: =107
+        Wrap: =false
+        X: =lblThEfeMat.X
+        Y: =lblDifLabMat.Y
+        ZIndex: =20
+
