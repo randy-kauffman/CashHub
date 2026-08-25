@@ -6,6 +6,7 @@
     "IsSampleData": false,
     "IsWritable": true,
     "LogicalName": "sanic_chtblclientaccount",
+    "MaxGetRowsCount": 500,
     "Name": "CH-Tbl-ClientAccounts",
     "NativeCDSDataSourceInfoNameMapping": {
       "_ownerid_value": "Owner",
@@ -31,6 +32,7 @@
       "sanic_Client": "Client",
       "sanic_currency": "Moneda",
       "sanic_name": "Numero de cuenta",
+      "sanic_recordstatus": "RecordStatus",
       "statecode": "Status",
       "statuscode": "Status Reason",
       "timezoneruleversionnumber": "Time Zone Rule Version Number",
@@ -72,6 +74,52 @@
     },
     "OptionSetTypeKey": "PicklistType",
     "RelatedColumnInvariantName": "sanic_currency",
+    "RelatedEntityName": "CH-Tbl-ClientAccounts",
+    "Type": "OptionSetInfo"
+  },
+  {
+    "DisplayName": "CH-Ch-RecordStatus",
+    "Name": "sanic_chchrecordstatus",
+    "OptionSetInfoNameMapping": {
+      "159460000": "Active",
+      "159460001": "Inactive",
+      "159460002": "PendingApproval",
+      "159460003": "PendingDeactivation"
+    },
+    "OptionSetIsBooleanValued": false,
+    "OptionSetIsGlobal": true,
+    "OptionSetReference": {
+      "OptionSetReferenceItem0": {
+        "OptionSetReferenceColumnName": "sanic_chchrecordstatus",
+        "OptionSetReferenceEntityName": "CH-Tbl-ClientAccounts"
+      },
+      "OptionSetReferenceItem1": {
+        "OptionSetReferenceColumnName": "sanic_recordstatus",
+        "OptionSetReferenceEntityName": "CH-Tbl-ClientAccounts"
+      },
+      "OptionSetReferenceItem2": {
+        "OptionSetReferenceColumnName": "sanic_clientstatus",
+        "OptionSetReferenceEntityName": "CH-Tbl-ClientEmails"
+      },
+      "OptionSetReferenceItem3": {
+        "OptionSetReferenceColumnName": "sanic_recordstatus",
+        "OptionSetReferenceEntityName": "CH-Tbl-ClientEmails"
+      },
+      "OptionSetReferenceItem4": {
+        "OptionSetReferenceColumnName": "sanic_clientstatus",
+        "OptionSetReferenceEntityName": "CH-Tbl-ClientBranches"
+      },
+      "OptionSetReferenceItem5": {
+        "OptionSetReferenceColumnName": "sanic_recordstatus",
+        "OptionSetReferenceEntityName": "CH-Tbl-ClientBranches"
+      },
+      "OptionSetReferenceItem6": {
+        "OptionSetReferenceColumnName": "sanic_recordstatus",
+        "OptionSetReferenceEntityName": "CH-Tbl-Clients"
+      }
+    },
+    "OptionSetTypeKey": "PicklistType",
+    "RelatedColumnInvariantName": "sanic_chchrecordstatus",
     "RelatedEntityName": "CH-Tbl-ClientAccounts",
     "Type": "OptionSetInfo"
   },

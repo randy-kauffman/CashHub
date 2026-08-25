@@ -1,59 +1,118 @@
 App As appinfo:
     BackEnabled: =true
+    Formulas: |-
+        =// ===================== PALETA (RGBA exactos del mockup :root) =====================
+        ThemeAccent      = RGBA(200, 16, 46, 1);      // #C8102E
+        ThemeAccentDark  = RGBA(164, 13, 38, 1);      // #A40D26 — hover del boton primario
+        ThemeAccentSoft  = RGBA(251, 235, 237, 1);    // #FBEBED
+        ThemeBg          = RGBA(246, 245, 244, 1);    // #F6F5F4
+        ThemeSurface     = RGBA(255, 255, 255, 1);    // #FFFFFF
+        ThemeSurface2    = RGBA(250, 248, 247, 1);    // #FAF8F7
+        ThemeInk         = RGBA(32, 28, 29, 1);       // #201C1D
+        ThemeInk2        = RGBA(102, 89, 92, 1);      // #66595C
+        ThemeInk3        = RGBA(148, 138, 140, 1);    // #948A8C
+        ThemeLine        = RGBA(226, 220, 221, 1);    // #E2DCDD
+        ThemeLineSoft    = RGBA(237, 232, 233, 1);    // #EDE8E9
+        ThemeOk          = RGBA(14, 122, 60, 1);      ThemeOkSoft     = RGBA(226, 242, 232, 1);
+        ThemeInfo        = RGBA(35, 85, 125, 1);      ThemeInfoSoft   = RGBA(228, 238, 246, 1);
+        ThemeWarn        = RGBA(154, 91, 0, 1);       ThemeWarnSoft   = RGBA(251, 240, 220, 1);
+        ThemeDanger      = RGBA(179, 38, 30, 1);      ThemeDangerSoft = RGBA(252, 234, 232, 1);
+        ThemeDangerLine  = RGBA(231, 185, 181, 1);
+        ThemeOverlay     = RGBA(40, 30, 32, 0.45);    // velo de dialogos/panel lateral
+        // ===================== CONSTANTES DE LAYOUT (el sistema de posicionamiento) =====================
+        fxHeaderH   = 60;      // alto del encabezado (cmpAppHeader)
+        fxGutter    = 18;      // margen lateral / respiro entre zonas
+        fxGap       = 14;      // separacion entre cards
+        fxCardR     = 13;      // radio de card
+        fxRowH      = 44;      // alto de fila de galeria (grillas anchas: Clientes, Solicitudes)
+        fxRowHChica = 38;      // alto de fila de galeria en mini-grillas embebidas (lineas de RFC)
+        fxRowHHist  = 78;      // alto de fila de galeria del timeline/historial (scrSolicitud, 3 lineas de texto)
+        fxKpiH      = 66;      // alto de KPI card
+        fxSideW     = 290;     // ancho del sidebar de ficha de cliente (CI1)
+        fxPanelW    = Min(430, App.Width * 0.46);   // ancho del panel lateral (CL2/CI2) — nunca mas de 430px ni mas del 46% del ancho
+        fxDlgW      = 440;     // ancho maximo del dialogo modal de confirmacion (CI3/SO2)
+        // ===================== FORMATOS =====================
+        FmtMoney = "#,##0.00";              // el '0' fuerza el entero
+        FmtFecha = "dd/mm/yyyy HH:mm";      // HH = 24 h. hh seria 12h SIN AM/PM (gotcha 8.1)
+        FmtHora  = "HH:mm";
+        SimboloNIO = "C$";  SimboloUSD = "US$";  SimboloEUR = "€";
+        // ===================== MAPA AREA POR TABLA (derivado — CH-Tbl-ClientDataChangePermission no tiene columna de area) =====================
+        // La clave "Tabla" es el mismo texto libre que usa sanic_targettable (cabecera de RFC) y
+        // sanic_name (permiso) para identificar la tabla objetivo. Literales = LOGICAL NAME de la
+        // entidad, verificados contra data/seed/20-clientdatachangepermissions.json,
+        // data/seed/10-clienttablelogicalfieldnames.json y src/backend/CashHub.Plugins/Schema.cs
+        // (esto resuelve la D6 de "Divergencias declaradas" — ya NO es "a verificar en Studio").
+        fxAreaPorTabla = Table(
+            {Tabla: "sanic_chtblclient",        Area: "Banca Empresas"},
+            {Tabla: "sanic_chtblclientbranch",  Area: "Bóveda"},
+            {Tabla: "sanic_chtblclientemail",   Area: "Banca Empresas"},
+            {Tabla: "sanic_chtblclientaccount", Area: "Banca Empresas"}
+        );
+        // ===================== IDENTIDAD (sin conectores) =====================
+        UsuarioNombre = User().FullName;
+        UsuarioIniciales =
+            Left(User().FullName, 1) &
+            If(
+                CountRows(Split(User().FullName, " ")) > 1,
+                Left(Last(Split(User().FullName, " ")).Value, 1),
+                ""
+            );
+        // Si IntelliSense nombra la columna de Split() distinto de 'Value', EL SUYO MANDA.
+    OnError: |-
+        =Trace("[ClientAdmin] " & FirstError.Message & " | " & FirstError.Kind, TraceSeverity.Error);
+        Notify("Ocurrió un error inesperado: " & FirstError.Message, NotificationType.Error)
     OnStart: |-
-        =Set(
-            gvarSideMenu,
-            Table(
-                {
-                    Icon: "People",
-                    Label: "Clientes",
-                    Screen: 'screen Clients',
-                    Tooltip: "Power Apps Tooltip"
-                },
-                {
-                    Icon: "BranchCompare",
-                    Label: "Solicitudes de cambio",
-                    Screen: 'screen RFC',
-                    Tooltip: "Power BI Tooltip"
-                }
+        =// 1) Identidad
+        Set(gvarUser, LookUp(Users, 'Primary Email' = User().Email));
+        // 2) Permisos — deduplicando por AADGroupID antes de llamar a Graph.
+        //    Con 2 areas x 2 roles x hasta 4 tablas, v1 hacia hasta 16 llamadas secuenciales a
+        //    Office365Groups.ListGroupMembers (una por fila de CH-Tbl-ClientDataChangePermissions).
+        //    Aca se llama UNA VEZ POR GRUPO AAD DISTINTO (tipicamente 4: Contributor/Approver x
+        //    Banca Empresas/Boveda) — el resto de las filas comparten grupo.
+        //    Nota: Concurrent() no aplica aca — necesita formulas SINTACTICAMENTE explicitas, no un
+        //    ForAll de longitud dinamica; la optimizacion real es la deduplicacion, no el paralelismo.
+        ClearCollect(colTodosLosPermisos, 'CH-Tbl-ClientDataChangePermissions');
+        ClearCollect(colGruposUnicosCDCP, Distinct(colTodosLosPermisos, AADGroupID));
+        Clear(colMisGruposCDCP);
+        ForAll(
+            colGruposUnicosCDCP As Grupo,
+            If(
+                !IsBlank(LookUp(Office365Groups.ListGroupMembers(Text(Grupo.Value)).value, userPrincipalName = User().Email)),
+                Collect(colMisGruposCDCP, {AADGroupID: Grupo.Value})
             )
         );
-        
-        
-        //ClearCollect(colAADGroups, Office365Groups.ListOwnedGroupsV3().value);
-        
-        //Check if the user is in the security groups
-        Clear(colClientDataPermissions);
-        
-        ForAll('CH-Tbl-ClientDataChangePermissions' As Permission,
-        
-        If( !IsBlank(
-                    LookUp(
-                        Office365Groups.ListGroupMembers(Permission.AADGroupID).value,
-                        userPrincipalName = User().Email
-                    )
-                ) ,Collect(colClientDataPermissions, Permission))
+        ClearCollect(
+            colMisPermisos,
+            Filter(colTodosLosPermisos, AADGroupID in colMisGruposCDCP.AADGroupID)
         );
-        
+        // 3) Resumen de rol para el chip del header (cmpAppHeader.RolTexto) — aproximacion honesta:
+        //    si el usuario tuviera permisos en mas de un area (no es el caso de negocio esperado),
+        //    se muestra el area de la PRIMERA fila de colMisPermisos.
         Set(
-            gvarUser,
-            LookUp(
-                Users,
-                'Primary Email' = User().Email
+            gvarRolTexto,
+            If(
+                CountRows(colMisPermisos) = 0,
+                "Sin acceso",
+                (
+                    If(
+                        CountRows(Filter(colMisPermisos, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver)) > 0,
+                        "Approver",
+                        "Contributor"
+                    )
+                ) & " · " & LookUp(fxAreaPorTabla, Tabla = First(colMisPermisos).Name).Area
             )
         );
+        // 4) Deep-link — UNA sola vez (no se repite en scrSplash.Timer, ver guia 05... esta app no
+        //    tiene guia numerada para Splash, va en esta misma guia §5).
         If(
             !IsBlank(Param("RFC")),
             Set(
-                gvarSelectedChangeRequest,
-                LookUp(
-                    'CH-Tbl-ClientDataChangeRequests',
-                    'CH-Tbl-ClientDataChangeRequest' = GUID(Param("RFC"))
-                )
+                gvarSolicitudSel,
+                LookUp('CH-Tbl-ClientDataChangeRequests', 'CH-Tbl-ClientDataChangeRequest' = GUID(Param("RFC")))
             );
-            Set(gvarSelectedClient, gvarSelectedChangeRequest.RelatedClient)
+            Set(gvarClienteSel, gvarSolicitudSel.RelatedClient)
         )
-    StartScreen: ='screen Splash'
+    StartScreen: =scrSplash
     Theme: =PowerAppsTheme
 
     Host As hostControl.DefaultHostControlVariant:

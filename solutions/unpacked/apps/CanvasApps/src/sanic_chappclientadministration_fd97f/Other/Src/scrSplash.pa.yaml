@@ -1,0 +1,54 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrSplash:
+    Properties:
+      Fill: =ThemeBg
+    Children:
+      - lblCargandoSpl:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            Font: =Font.'Open Sans'
+            Height: =20
+            Size: =9.5
+            Text: ="Cargando…"
+            Width: =160
+            X: =App.Width/2 - 80
+            Y: =App.Height/2 - 8
+      - lblMarcaSpl:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeSurface
+            Fill: =ThemeAccent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Size: =18
+            Text: ="C$"
+            Width: =40
+            X: =App.Width/2 - 20
+            Y: =App.Height/2 - 60
+      - tmrSplash:
+          Control: Timer@2.1.0
+          Properties:
+            AutoStart: =true
+            Duration: =350
+            Height: =4
+            OnTimerEnd: |-
+              =If(
+                  !IsBlank(gvarSolicitudSel),
+                  Navigate(scrSolicitud, ScreenTransition.Fade),
+                  Navigate(scrClientes, ScreenTransition.Fade)
+              )
+            Visible: =false
+            Width: =40
+            X: =App.Width/2 - 20
+            Y: =App.Height/2 + 20

@@ -1,0 +1,247 @@
+cmpAppHeader As CanvasComponent:
+    OnClientes():
+        ThisProperty:
+            Default: =
+    OnSolicitudes():
+        ThisProperty:
+            Default: =
+    Activo: ="Clientes"
+    Fill: =RGBA(0, 0, 0, 0)
+    Height: =640
+    RolTexto: =""
+    Subtitulo: ="Maestro de clientes"
+    Titulo: ="Administración de Clientes"
+    Width: =640
+    X: =0
+    Y: =0
+    ZIndex: =1
+
+    shpFondoHdr As rectangle:
+        BorderColor: =App.Theme.Colors.Darker40
+        Fill: =ThemeSurface
+        Height: =Parent.Height
+        Width: =Parent.Width
+        ZIndex: =1
+
+    shpLineaHdr As rectangle:
+        BorderColor: =App.Theme.Colors.Darker40
+        Fill: =ThemeLine
+        Height: =1
+        Width: =Parent.Width
+        Y: =Parent.Height-1
+        ZIndex: =2
+
+    btnMarcaHdr As button:
+        BorderColor: =App.Theme.Colors.Primary
+        BorderThickness: =0
+        Color: =ThemeSurface
+        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        DisabledFill: =RGBA(244, 244, 244, 1)
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeAccent
+        FontWeight: =FontWeight.Bold
+        Height: =34
+        HoverBorderColor: =App.Theme.Colors.Darker10
+        HoverColor: =App.Theme.Colors.PrimaryForeground
+        HoverFill: =App.Theme.Colors.Darker10
+        PressedBorderColor: =App.Theme.Colors.Darker40
+        PressedColor: =Self.Color
+        PressedFill: =App.Theme.Colors.Darker40
+        RadiusBottomLeft: =9
+        RadiusBottomRight: =9
+        RadiusTopLeft: =9
+        RadiusTopRight: =9
+        Size: =11
+        Text: ="C$"
+        Width: =34
+        X: =fxGutter
+        Y: =(Parent.Height-34)/2
+        ZIndex: =3
+
+    cntNavHdr As groupContainer.manualLayoutContainer:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        DropShadow: =DropShadow.Light
+        Fill: =ThemeSurface2
+        Height: =32
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =16
+        RadiusBottomRight: =16
+        RadiusTopLeft: =16
+        RadiusTopRight: =16
+        Width: =200
+        X: =lblTituloHdr.X + 230
+        Y: =(Parent.Height-32)/2
+        ZIndex: =4
+
+        btnNavClientesHdr As button:
+            BorderColor: =App.Theme.Colors.Primary
+            BorderThickness: =0
+            Color: =If(cmpAppHeader.Activo = "Clientes", ThemeAccent, ThemeInk2)
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            Fill: =If(cmpAppHeader.Activo = "Clientes", ThemeSurface, Color.Transparent)
+            FontWeight: =If(cmpAppHeader.Activo = "Clientes", FontWeight.Semibold, FontWeight.Normal)
+            Height: =26
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =If(cmpAppHeader.Activo = "Clientes", ThemeSurface, ThemeSurface2)
+            OnSelect: =cmpAppHeader.OnClientes()
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: ="Clientes"
+            Width: =(Parent.Width - 6)/2
+            X: =3
+            Y: =3
+            ZIndex: =1
+
+        btnNavSolicitudesHdr As button:
+            BorderColor: =App.Theme.Colors.Primary
+            BorderThickness: =0
+            Color: =If(cmpAppHeader.Activo = "Solicitudes", ThemeAccent, ThemeInk2)
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            Fill: =If(cmpAppHeader.Activo = "Solicitudes", ThemeSurface, Color.Transparent)
+            FontWeight: =If(cmpAppHeader.Activo = "Solicitudes", FontWeight.Semibold, FontWeight.Normal)
+            Height: =26
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =If(cmpAppHeader.Activo = "Solicitudes", ThemeSurface, ThemeSurface2)
+            OnSelect: =cmpAppHeader.OnSolicitudes()
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: ="Solicitudes"
+            Width: =(Parent.Width - 6)/2
+            X: =btnNavClientesHdr.X + btnNavClientesHdr.Width
+            Y: =3
+            ZIndex: =2
+
+    lblTituloHdr As label:
+        BorderColor: =App.Theme.Colors.Darker40
+        Color: =RGBA(0, 0, 0, 1)
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        FontWeight: =FontWeight.Semibold
+        Height: =20
+        Size: =10.5
+        Text: =cmpAppHeader.Titulo
+        Width: =220
+        X: =btnMarcaHdr.X + btnMarcaHdr.Width + 12
+        Y: =10
+        ZIndex: =5
+
+    lblSubHdr As label:
+        BorderColor: =App.Theme.Colors.Darker40
+        Color: =ThemeInk3
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        Height: =16
+        Size: =8.25
+        Text: =cmpAppHeader.Subtitulo
+        Width: =220
+        X: =lblTituloHdr.X
+        Y: =lblTituloHdr.Y + 18
+        ZIndex: =6
+
+    cntUserHdr As groupContainer.manualLayoutContainer:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        DropShadow: =DropShadow.Light
+        Fill: =ThemeSurface2
+        Height: =32
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =16
+        RadiusBottomRight: =16
+        RadiusTopLeft: =16
+        RadiusTopRight: =16
+        Width: =pilRolHdr.X + pilRolHdr.Width + 4
+        X: =Parent.Width - fxGutter - Self.Width
+        Y: =(Parent.Height-32)/2
+        ZIndex: =7
+
+        btnAvatarHdr As button:
+            BorderColor: =App.Theme.Colors.Primary
+            BorderThickness: =0
+            Color: =ThemeAccent
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccentSoft
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =App.Theme.Colors.Darker10
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =7.88
+            Text: =UsuarioIniciales
+            Width: =26
+            X: =4
+            Y: =3
+            ZIndex: =3
+
+        lblUsuarioHdr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Height: =Parent.Height
+            Size: =8.63
+            Text: =UsuarioNombre
+            Width: =Len(UsuarioNombre) * 5.6
+            X: =btnAvatarHdr.X + btnAvatarHdr.Width + 8
+            ZIndex: =4
+
+        pilRolHdr As button:
+            BorderColor: =App.Theme.Colors.Primary
+            BorderThickness: =0
+            Color: =ThemeInfo
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeInfoSoft
+            FontWeight: =FontWeight.Bold
+            Height: =18
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =App.Theme.Colors.Darker10
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =9
+            RadiusBottomRight: =9
+            RadiusTopLeft: =9
+            RadiusTopRight: =9
+            Size: =7.5
+            Text: =cmpAppHeader.RolTexto
+            Width: =Len(cmpAppHeader.RolTexto) * 5.2 + 16
+            X: =lblUsuarioHdr.X + lblUsuarioHdr.Width + 8
+            Y: =(Parent.Height-18)/2
+            ZIndex: =5
+

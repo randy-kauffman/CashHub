@@ -1,0 +1,1593 @@
+scrClientes As screen:
+    Fill: =ThemeBg
+    LoadingSpinnerColor: =App.Theme.Colors.Primary
+    OnVisible: |-
+        =// 1) Estado local a default (gotcha 8.3 — no arrastrar estado de la visita anterior)
+        UpdateContext({
+            ctxSegEstadoCli: "Activos",
+            ctxPagCli: 1,
+            ctxPagTamCli: 50,
+            ctxOrdenAscCli: true,
+            ctxPanelAltaCli: false,
+            ctxGuardandoCli: false
+        });
+        Reset(inpBusqCli);
+        // 2) RFCs sin resolver (badge "RFC en curso" + KPIs) — acotada por ESTADO server-side.
+        //    Filtro delegable: ORs sobre el mismo picklist. Se re-ejecuta al volver de crear
+        //    una solicitud (el boton del panel la refresca, y este OnVisible tambien).
+        ClearCollect(
+            colRfcEnCursoCli,
+            Filter(
+                'CH-Tbl-ClientDataChangeRequests',
+                'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
+                || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted
+                || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved
+            )
+        );
+        // 3) Listado inicial: segmento "Activos", sin texto de busqueda (Search con "" devuelve todo)
+        ClearCollect(
+            colClientesCli,
+            Search(
+                Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Active),
+                Trim(inpBusqCli.Text),
+                Name, CIFBCO, CIFCOM
+            )
+        )
+
+    cmpAppHeaderCli As cmpAppHeader:
+        Height: =fxHeaderH
+        OnClientes: =false
+        OnSolicitudes: =Navigate(scrSolicitudes, ScreenTransition.None)
+        RolTexto: =gvarRolTexto
+        Width: =Parent.Width
+        ZIndex: =2
+
+    cntToolbarCli As groupContainer.manualLayoutContainer:
+        Fill: =Color.Transparent
+        Height: =54
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
+        Width: =Parent.Width
+        Y: =fxHeaderH
+        ZIndex: =3
+
+        cntSegEstadoCli As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Light
+            Fill: =ThemeSurface2
+            Height: =34
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =9
+            RadiusBottomRight: =9
+            RadiusTopLeft: =9
+            RadiusTopRight: =9
+            Width: =btnSegTodosCli.X + btnSegTodosCli.Width + 3
+            X: =fxGutter
+            Y: =(Parent.Height - 34)/2
+            ZIndex: =9
+
+            btnSegTodosCli As button:
+                BorderColor: =App.Theme.Colors.Primary
+                BorderThickness: =0
+                Color: =If(ctxSegEstadoCli = "Todos", ThemeAccent, ThemeInk2)
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =If(ctxSegEstadoCli = "Todos", ThemeSurface, Color.Transparent)
+                FontWeight: =If(ctxSegEstadoCli = "Todos", FontWeight.Semibold, FontWeight.Normal)
+                Height: =28
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =If(ctxSegEstadoCli = "Todos", ThemeSurface, ThemeSurface2)
+                OnSelect: |-
+                    =UpdateContext({ctxSegEstadoCli: "Todos", ctxPagCli: 1});
+                    ClearCollect(
+                        colClientesCli,
+                        Search('CH-Tbl-Clients', Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM)
+                    )
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Text: ="Todos"
+                Width: =Len(Self.Text) * 6 + 22
+                X: =btnSegPendientesCli.X + btnSegPendientesCli.Width + 3
+                Y: =3
+                ZIndex: =10
+
+            btnSegPendientesCli As button:
+                BorderColor: =App.Theme.Colors.Primary
+                BorderThickness: =0
+                Color: =If(ctxSegEstadoCli = "Pendientes", ThemeAccent, ThemeInk2)
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =If(ctxSegEstadoCli = "Pendientes", ThemeSurface, Color.Transparent)
+                FontWeight: =If(ctxSegEstadoCli = "Pendientes", FontWeight.Semibold, FontWeight.Normal)
+                Height: =28
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =If(ctxSegEstadoCli = "Pendientes", ThemeSurface, ThemeSurface2)
+                OnSelect: |-
+                    =UpdateContext({ctxSegEstadoCli: "Pendientes", ctxPagCli: 1});
+                    ClearCollect(
+                        colClientesCli,
+                        Search(
+                            Filter(
+                                'CH-Tbl-Clients',
+                                RecordStatus = 'CH-Ch-RecordStatus'.PendingApproval
+                                || RecordStatus = 'CH-Ch-RecordStatus'.PendingDeactivation
+                            ),
+                            Trim(inpBusqCli.Text),
+                            Name, CIFBCO, CIFCOM
+                        )
+                    )
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Text: |-
+                    ="Pendientes (" & CountRows(
+                        Filter(
+                            'CH-Tbl-Clients',
+                            RecordStatus = 'CH-Ch-RecordStatus'.PendingApproval
+                            || RecordStatus = 'CH-Ch-RecordStatus'.PendingDeactivation
+                        )
+                    ) & ")"
+                Width: =Len(Self.Text) * 6 + 22
+                X: =btnSegInactivosCli.X + btnSegInactivosCli.Width + 3
+                Y: =3
+                ZIndex: =11
+
+            btnSegInactivosCli As button:
+                BorderColor: =App.Theme.Colors.Primary
+                BorderThickness: =0
+                Color: =If(ctxSegEstadoCli = "Inactivos", ThemeAccent, ThemeInk2)
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =If(ctxSegEstadoCli = "Inactivos", ThemeSurface, Color.Transparent)
+                FontWeight: =If(ctxSegEstadoCli = "Inactivos", FontWeight.Semibold, FontWeight.Normal)
+                Height: =28
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =If(ctxSegEstadoCli = "Inactivos", ThemeSurface, ThemeSurface2)
+                OnSelect: |-
+                    =UpdateContext({ctxSegEstadoCli: "Inactivos", ctxPagCli: 1});
+                    ClearCollect(
+                        colClientesCli,
+                        Search(
+                            Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Inactive),
+                            Trim(inpBusqCli.Text),
+                            Name, CIFBCO, CIFCOM
+                        )
+                    )
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Text: ="Inactivos (" & CountRows(Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Inactive)) & ")"
+                Width: =Len(Self.Text) * 6 + 22
+                X: =btnSegActivosCli.X + btnSegActivosCli.Width + 3
+                Y: =3
+                ZIndex: =12
+
+            btnSegActivosCli As button:
+                BorderColor: =App.Theme.Colors.Primary
+                BorderThickness: =0
+                Color: =If(ctxSegEstadoCli = "Activos", ThemeAccent, ThemeInk2)
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =If(ctxSegEstadoCli = "Activos", ThemeSurface, Color.Transparent)
+                FontWeight: =If(ctxSegEstadoCli = "Activos", FontWeight.Semibold, FontWeight.Normal)
+                Height: =28
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =If(ctxSegEstadoCli = "Activos", ThemeSurface, ThemeSurface2)
+                OnSelect: |-
+                    =UpdateContext({ctxSegEstadoCli: "Activos", ctxPagCli: 1});
+                    ClearCollect(
+                        colClientesCli,
+                        Search(
+                            Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Active),
+                            Trim(inpBusqCli.Text),
+                            Name, CIFBCO, CIFCOM
+                        )
+                    )
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Text: ="Activos (" & CountRows(Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Active)) & ")"
+                Width: =Len(Self.Text) * 6 + 22
+                X: =3
+                Y: =3
+                ZIndex: =13
+
+        cntBusqCli As groupContainer.manualLayoutContainer:
+            DropShadow: =DropShadow.Light
+            Fill: =Color.Transparent
+            Height: =32
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            Width: =Min(340, Parent.Width * 0.25)
+            X: =cntSegEstadoCli.X + cntSegEstadoCli.Width + fxGap
+            Y: =(Parent.Height - 32)/2
+            ZIndex: =14
+
+            icoLupaBusqCli As icon:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(244, 244, 244, 1)
+                Height: =16
+                Icon: =Icon.Search
+                Width: =16
+                X: =10
+                Y: =(Parent.Height - 16)/2
+                ZIndex: =15
+
+            inpBusqCli As text:
+                BorderColor: =ThemeLine
+                BorderThickness: =2
+                Color: =RGBA(0, 0, 0, 1)
+                Default: =
+                DelayOutput: =true
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =ThemeSurface
+                FocusedBorderThickness: =4
+                Height: =Parent.Height
+                HintText: ="Nombre, CIF BCO o CIF COM…"
+                HoverBorderColor: =ThemeLine
+                HoverColor: =RGBA(0, 0, 0, 1)
+                HoverFill: =App.Theme.Colors.Lighter70
+                OnChange: |-
+                    =UpdateContext({ctxPagCli: 1});
+                    Switch(
+                        ctxSegEstadoCli,
+                        "Activos",
+                        ClearCollect(
+                            colClientesCli,
+                            Search(
+                                Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Active),
+                                Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM
+                            )
+                        ),
+                        "Inactivos",
+                        ClearCollect(
+                            colClientesCli,
+                            Search(
+                                Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Inactive),
+                                Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM
+                            )
+                        ),
+                        "Pendientes",
+                        ClearCollect(
+                            colClientesCli,
+                            Search(
+                                Filter(
+                                    'CH-Tbl-Clients',
+                                    RecordStatus = 'CH-Ch-RecordStatus'.PendingApproval
+                                    || RecordStatus = 'CH-Ch-RecordStatus'.PendingDeactivation
+                                ),
+                                Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM
+                            )
+                        ),
+                        ClearCollect(
+                            colClientesCli,
+                            Search('CH-Tbl-Clients', Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM)
+                        )
+                    )
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Width: =Parent.Width - 32
+                X: =32
+                ZIndex: =16
+
+        btnNuevoClienteCli As button:
+            BorderColor: =App.Theme.Colors.Primary
+            BorderThickness: =0
+            Color: =ThemeSurface
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =ThemeAccent
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =ThemeAccentDark
+            OnSelect: |-
+                =Reset(inpNombrePanCli);
+                Reset(inpCifBcoPanCli);
+                Reset(inpCifComPanCli);
+                Reset(inpMotivoPanCli);
+                UpdateContext({ctxPanelAltaCli: true})
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =9
+            Text: ="+ Nuevo cliente"
+            Visible: =!IsBlank(LookUp(colMisPermisos, Name = "sanic_chtblclient" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+            Width: =150
+            X: =Parent.Width - fxGutter - Self.Width
+            Y: =(Parent.Height - 32)/2
+            ZIndex: =17
+
+    cntBodyCli As groupContainer.manualLayoutContainer:
+        Fill: =Color.Transparent
+        Height: =Parent.Height - Self.Y
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
+        Width: =Parent.Width
+        Y: =cntToolbarCli.Y + cntToolbarCli.Height
+        ZIndex: =4
+
+        cntKpiActivosCli As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Light
+            Fill: =ThemeSurface
+            Height: =fxKpiH
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Width: =(Parent.Width - fxGutter*2 - fxGap*3) / 4
+            X: =fxGutter
+            ZIndex: =18
+
+            lblKpiActivosValCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =RGBA(0, 0, 0, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =26
+                Size: =16.5
+                Text: =Text(CountRows(Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Active)))
+                Width: =Parent.Width - 30
+                X: =15
+                Y: =22
+                ZIndex: =19
+
+            lblKpiActivosLabCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =14
+                Size: =7.88
+                Text: ="CLIENTES ACTIVOS"
+                Width: =Parent.Width - 30
+                X: =15
+                Y: =8
+                ZIndex: =20
+
+        cntKpiRfcCli As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Light
+            Fill: =ThemeSurface
+            Height: =fxKpiH
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Width: =(Parent.Width - fxGutter*2 - fxGap*3) / 4
+            X: =cntKpiActivosCli.X + cntKpiActivosCli.Width + fxGap
+            ZIndex: =21
+
+            lblKpiRfcSubCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Height: =14
+                Size: =8.25
+                Text: ="solicitudes sin resolver"
+                Width: =Parent.Width - 30
+                X: =15
+                Y: =48
+                ZIndex: =1
+
+            lblKpiRfcValCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =RGBA(0, 0, 0, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =26
+                Size: =16.5
+                Text: =Text(CountRows(Distinct(Filter(colRfcEnCursoCli, !IsBlank(RelatedClient)), Text(RelatedClient.'CH-Tbl-Client'))))
+                Width: =Parent.Width - 30
+                X: =15
+                Y: =22
+                ZIndex: =2
+
+            lblKpiRfcLabCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =14
+                Size: =7.88
+                Text: ="CON RFC EN CURSO"
+                Width: =Parent.Width - 30
+                X: =15
+                Y: =8
+                ZIndex: =22
+
+        cntKpiAltasCli As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Light
+            Fill: =ThemeSurface
+            Height: =fxKpiH
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Width: =(Parent.Width - fxGutter*2 - fxGap*3) / 4
+            X: =cntKpiRfcCli.X + cntKpiRfcCli.Width + fxGap
+            ZIndex: =23
+
+            lblKpiAltasSubCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Height: =14
+                Size: =8.25
+                Text: ="esperando aprobación"
+                Width: =Parent.Width - 30
+                X: =15
+                Y: =48
+                ZIndex: =1
+
+            lblKpiAltasValCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =RGBA(0, 0, 0, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =26
+                Size: =16.5
+                Text: =Text(CountRows(Filter(colRfcEnCursoCli, Type = 'Type (CH-Tbl-ClientDataChangeRequests)'.Create && 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted)))
+                Width: =Parent.Width - 30
+                X: =15
+                Y: =22
+                ZIndex: =2
+
+            lblKpiAltasLabCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =14
+                Size: =7.88
+                Text: ="ALTAS PENDIENTES"
+                Width: =Parent.Width - 30
+                X: =15
+                Y: =8
+                ZIndex: =3
+
+        cntKpiHoyCli As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Light
+            Fill: =ThemeSurface
+            Height: =fxKpiH
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Width: =(Parent.Width - fxGutter*2 - fxGap*3) / 4
+            X: =cntKpiAltasCli.X + cntKpiAltasCli.Width + fxGap
+            ZIndex: =24
+
+            lblKpiHoySubCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Height: =14
+                Size: =8.25
+                Text: =CountRows(Filter(colRfcEnCursoCli, 'Created On' >= Today())) & " sin resolver"
+                Width: =Parent.Width - 30
+                X: =15
+                Y: =48
+                ZIndex: =1
+
+            lblKpiHoyValCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =RGBA(0, 0, 0, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =26
+                Size: =16.5
+                Text: =Text(CountRows(Filter('CH-Tbl-ClientDataChangeRequests', 'Created On' >= Today())))
+                Width: =Parent.Width - 30
+                X: =15
+                Y: =22
+                ZIndex: =2
+
+            lblKpiHoyLabCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =14
+                Size: =7.88
+                Text: ="SOLICITUDES HOY"
+                Width: =Parent.Width - 30
+                X: =15
+                Y: =8
+                ZIndex: =3
+
+        cntGrillaCli As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Light
+            Fill: =ThemeSurface
+            Height: =Parent.Height - Self.Y - fxGap
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =fxCardR
+            RadiusBottomRight: =fxCardR
+            RadiusTopLeft: =fxCardR
+            RadiusTopRight: =fxCardR
+            Width: =Parent.Width - fxGutter*2
+            X: =fxGutter
+            Y: =cntKpiActivosCli.Y + cntKpiActivosCli.Height + fxGap
+            ZIndex: =25
+
+            btnColClienteCli As button:
+                Align: =Align.Left
+                BorderColor: =App.Theme.Colors.Primary
+                BorderThickness: =0
+                Color: =ThemeInk2
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Bold
+                Height: =24
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =ThemeInk2
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ctxOrdenAscCli: !ctxOrdenAscCli, ctxPagCli: 1})
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                Size: =7.5
+                Text: ="CLIENTE " & If(ctxOrdenAscCli, "▼", "▲")
+                Width: =(Parent.Width - 32 - fxGap) * 0.29
+                X: =16
+                Y: =6
+                ZIndex: =1
+
+            lblColCifBcoCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =16
+                Size: =7.5
+                Text: ="CIF BCO"
+                Width: =(Parent.Width - 32 - fxGap) * 0.14
+                X: =btnColClienteCli.X + btnColClienteCli.Width
+                Y: =10
+                ZIndex: =3
+
+            lblColCifComCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =16
+                Size: =7.5
+                Text: ="CIF COM"
+                Width: =(Parent.Width - 32 - fxGap) * 0.14
+                X: =lblColCifBcoCli.X + lblColCifBcoCli.Width
+                Y: =10
+                ZIndex: =4
+
+            lblColEstadoCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =16
+                Size: =7.5
+                Text: ="ESTADO"
+                Width: =(Parent.Width - 32 - fxGap) * 0.14
+                X: =lblColCifComCli.X + lblColCifComCli.Width + fxGap
+                Y: =10
+                ZIndex: =5
+
+            lblColSolicitudCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =16
+                Size: =7.5
+                Text: ="SOLICITUD"
+                Width: =(Parent.Width - 32 - fxGap) * 0.16
+                X: =lblColEstadoCli.X + lblColEstadoCli.Width
+                Y: =10
+                ZIndex: =6
+
+            lblColModifCli As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =16
+                Size: =7.5
+                Text: ="MODIFICADO"
+                Width: =(Parent.Width - 32 - fxGap) * 0.13
+                X: =lblColSolicitudCli.X + lblColSolicitudCli.Width
+                Y: =10
+                ZIndex: =7
+
+            shpColLineaCli As rectangle:
+                BorderColor: =App.Theme.Colors.Darker40
+                Fill: =ThemeLine
+                Height: =1
+                Width: =Parent.Width
+                Y: =36
+                ZIndex: =8
+
+            galClientesCli As gallery.galleryVertical:
+                '#CopilotOverlayLabel': ="Filtered"
+                BorderColor: =App.Theme.Colors.Darker40
+                DelayItemLoading: =true
+                Height: =Parent.Height - 37 - cntPagCli.Height
+                Items: |-
+                    =FirstN(
+                        LastN(
+                            Sort(colClientesCli, Name, If(ctxOrdenAscCli, SortOrder.Ascending, SortOrder.Descending)),
+                            CountRows(colClientesCli) - (ctxPagCli - 1) * ctxPagTamCli
+                        ),
+                        ctxPagTamCli
+                    )
+                Layout: =Layout.Vertical
+                LoadingSpinner: =LoadingSpinner.Data
+                OnSelect: |-
+                    =Set(gvarClienteSel, ThisItem);
+                    Navigate(scrCliente, ScreenTransition.None)
+                TemplatePadding: =0
+                TemplateSize: =fxRowH
+                Width: =Parent.Width
+                Y: =37
+                ZIndex: =9
+
+                btnFilaCli As button:
+                    BorderColor: =App.Theme.Colors.Primary
+                    BorderThickness: =0
+                    Color: =App.Theme.Colors.PrimaryForeground
+                    DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    Fill: =Color.Transparent
+                    FontWeight: =FontWeight.Semibold
+                    Height: =fxRowH
+                    HoverBorderColor: =App.Theme.Colors.Darker10
+                    HoverColor: =App.Theme.Colors.PrimaryForeground
+                    HoverFill: =ThemeSurface2
+                    OnSelect: =Select(Parent)
+                    PressedBorderColor: =App.Theme.Colors.Darker40
+                    PressedColor: =Self.Color
+                    PressedFill: =ThemeAccentSoft
+                    Size: =15
+                    Text: =""
+                    Width: =Parent.TemplateWidth
+                    ZIndex: =1
+
+                lblNombreFilaCli As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =fxRowH
+                    OnSelect: =Select(Parent)
+                    Size: =9
+                    Text: =ThisItem.Name
+                    Width: =btnColClienteCli.Width
+                    X: =btnColClienteCli.X
+                    ZIndex: =2
+
+                lblCifBcoFilaCli As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =fxRowH
+                    OnSelect: =Select(Parent)
+                    Size: =9
+                    Text: =ThisItem.CIFBCO
+                    Width: =lblColCifBcoCli.Width
+                    X: =lblColCifBcoCli.X
+                    ZIndex: =3
+
+                lblCifComFilaCli As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =fxRowH
+                    OnSelect: =Select(Parent)
+                    Size: =9
+                    Text: =ThisItem.CIFCOM
+                    Width: =lblColCifComCli.Width
+                    X: =lblColCifComCli.X
+                    ZIndex: =4
+
+                pilEstadoFilaCli As button:
+                    BorderColor: =App.Theme.Colors.Primary
+                    BorderThickness: =0
+                    Color: |-
+                        =Switch(
+                            ThisItem.RecordStatus,
+                            'CH-Ch-RecordStatus'.Active,               ThemeOk,
+                            'CH-Ch-RecordStatus'.Inactive,             ThemeInk3,
+                            'CH-Ch-RecordStatus'.PendingApproval,      ThemeWarn,
+                            'CH-Ch-RecordStatus'.PendingDeactivation,  ThemeWarn,
+                            ThemeInk3
+                        )
+                    DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    DisplayMode: =DisplayMode.View
+                    Fill: |-
+                        =Switch(
+                            ThisItem.RecordStatus,
+                            'CH-Ch-RecordStatus'.Active,               ThemeOkSoft,
+                            'CH-Ch-RecordStatus'.Inactive,             ThemeLineSoft,
+                            'CH-Ch-RecordStatus'.PendingApproval,      ThemeWarnSoft,
+                            'CH-Ch-RecordStatus'.PendingDeactivation,  ThemeWarnSoft,
+                            ThemeLineSoft
+                        )
+                    FontWeight: =FontWeight.Semibold
+                    Height: =20
+                    HoverBorderColor: =App.Theme.Colors.Darker10
+                    HoverColor: =App.Theme.Colors.PrimaryForeground
+                    HoverFill: =App.Theme.Colors.Darker10
+                    OnSelect: =Select(Parent)
+                    PressedBorderColor: =App.Theme.Colors.Darker40
+                    PressedColor: =Self.Color
+                    PressedFill: =App.Theme.Colors.Darker40
+                    RadiusBottomLeft: =12
+                    RadiusBottomRight: =12
+                    RadiusTopLeft: =12
+                    RadiusTopRight: =12
+                    Size: =7.88
+                    Text: |-
+                        =Switch(
+                            ThisItem.RecordStatus,
+                            'CH-Ch-RecordStatus'.Active,               "Activo",
+                            'CH-Ch-RecordStatus'.Inactive,             "Inactivo",
+                            'CH-Ch-RecordStatus'.PendingApproval,      "Pend. aprobación",
+                            'CH-Ch-RecordStatus'.PendingDeactivation,  "Pend. desactivación",
+                            "—"
+                        )
+                    Width: =Len(Self.Text) * 5.4 + 18
+                    X: =lblColEstadoCli.X
+                    Y: =(fxRowH - 20)/2
+                    ZIndex: =5
+
+                pilRfcFilaCli As button:
+                    BorderColor: =App.Theme.Colors.Primary
+                    BorderThickness: =0
+                    Color: =ThemeWarn
+                    DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    DisplayMode: =DisplayMode.View
+                    Fill: =ThemeWarnSoft
+                    FontWeight: =FontWeight.Semibold
+                    Height: =20
+                    HoverBorderColor: =App.Theme.Colors.Darker10
+                    HoverColor: =App.Theme.Colors.PrimaryForeground
+                    HoverFill: =App.Theme.Colors.Darker10
+                    OnSelect: =Select(Parent)
+                    PressedBorderColor: =App.Theme.Colors.Darker40
+                    PressedColor: =Self.Color
+                    PressedFill: =App.Theme.Colors.Darker40
+                    RadiusBottomLeft: =12
+                    RadiusBottomRight: =12
+                    RadiusTopLeft: =12
+                    RadiusTopRight: =12
+                    Size: =7.88
+                    Text: ="RFC en curso"
+                    Visible: =!IsBlank(LookUp(colRfcEnCursoCli, RelatedClient.'CH-Tbl-Client' = ThisItem.'CH-Tbl-Client'))
+                    Width: =Len(Self.Text) * 5.4 + 18
+                    X: =lblColSolicitudCli.X
+                    Y: =(fxRowH - 20)/2
+                    ZIndex: =6
+
+                lblModifFilaCli As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =fxRowH
+                    OnSelect: =Select(Parent)
+                    Size: =8.63
+                    Text: =ThisItem.'Modified On'
+                    Width: =lblColModifCli.Width
+                    X: =lblColModifCli.X
+                    ZIndex: =7
+
+                shpSepFilaCli As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLineSoft
+                    Height: =1
+                    Width: =Parent.TemplateWidth
+                    Y: =fxRowH - 1
+                    ZIndex: =8
+
+            lblVacioGrillaCli As label:
+                Align: =Align.Center
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Size: =9.38
+                Text: ="No hay clientes que coincidan con el segmento o la búsqueda."
+                Visible: =CountRows(colClientesCli) = 0
+                Width: =Parent.Width
+                Y: =galClientesCli.Y + 40
+                ZIndex: =10
+
+            cntPagCli As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =ThemeSurface2
+                Height: =36
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Width: =Parent.Width
+                Y: =Parent.Height - 36
+                ZIndex: =11
+
+                lblResumenPagCli As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =Parent.Height
+                    Size: =8.63
+                    Text: =CountRows(colClientesCli) & " clientes · página " & ctxPagCli & " de " & Max(1, RoundUp(CountRows(colClientesCli) / ctxPagTamCli, 0))
+                    Width: =Parent.Width * 0.5
+                    X: =16
+                    ZIndex: =36
+
+                btnPagAntCli As button:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =1
+                    Color: =ThemeInk2
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    DisplayMode: =If(ctxPagCli > 1, DisplayMode.Edit, DisplayMode.Disabled)
+                    Fill: =ThemeSurface
+                    FontWeight: =FontWeight.Semibold
+                    Height: =28
+                    HoverBorderColor: =App.Theme.Colors.Darker10
+                    HoverColor: =App.Theme.Colors.PrimaryForeground
+                    HoverFill: =ThemeSurface2
+                    OnSelect: |-
+                        =UpdateContext({ctxPagCli: ctxPagCli - 1})
+                    PressedBorderColor: =App.Theme.Colors.Darker40
+                    PressedColor: =Self.Color
+                    PressedFill: =App.Theme.Colors.Darker40
+                    RadiusBottomLeft: =6
+                    RadiusBottomRight: =6
+                    RadiusTopLeft: =6
+                    RadiusTopRight: =6
+                    Size: =8.25
+                    Text: ="‹"
+                    Width: =28
+                    X: =btnPagSigCli.X - 6 - Self.Width
+                    Y: =(Parent.Height - 28)/2
+                    ZIndex: =37
+
+                btnPagSigCli As button:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =1
+                    Color: =ThemeInk2
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    DisplayMode: =If(ctxPagCli < Max(1, RoundUp(CountRows(colClientesCli) / ctxPagTamCli, 0)), DisplayMode.Edit, DisplayMode.Disabled)
+                    Fill: =ThemeSurface
+                    FontWeight: =FontWeight.Semibold
+                    Height: =28
+                    HoverBorderColor: =App.Theme.Colors.Darker10
+                    HoverColor: =App.Theme.Colors.PrimaryForeground
+                    HoverFill: =ThemeSurface2
+                    OnSelect: |-
+                        =UpdateContext({ctxPagCli: ctxPagCli + 1})
+                    PressedBorderColor: =App.Theme.Colors.Darker40
+                    PressedColor: =Self.Color
+                    PressedFill: =App.Theme.Colors.Darker40
+                    RadiusBottomLeft: =6
+                    RadiusBottomRight: =6
+                    RadiusTopLeft: =6
+                    RadiusTopRight: =6
+                    Size: =8.25
+                    Text: ="›"
+                    Width: =28
+                    X: =Parent.Width - 16 - Self.Width
+                    Y: =(Parent.Height - 28)/2
+                    ZIndex: =38
+
+    shpVeloPanCli As rectangle:
+        BorderColor: =App.Theme.Colors.Darker40
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        Visible: =ctxPanelAltaCli
+        Width: =Parent.Width
+        ZIndex: =5
+
+    btnVeloClicPanCli As button:
+        BorderColor: =App.Theme.Colors.Primary
+        Color: =App.Theme.Colors.PrimaryForeground
+        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        DisabledFill: =RGBA(244, 244, 244, 1)
+        Fill: =Color.Transparent
+        FontWeight: =FontWeight.Semibold
+        Height: =Parent.Height
+        HoverBorderColor: =App.Theme.Colors.Darker10
+        HoverColor: =App.Theme.Colors.PrimaryForeground
+        HoverFill: =Color.Transparent
+        OnSelect: |-
+            =UpdateContext({ctxPanelAltaCli: false})
+        PressedBorderColor: =App.Theme.Colors.Darker40
+        PressedColor: =Self.Color
+        PressedFill: =Color.Transparent
+        Size: =15
+        Text: =""
+        Visible: =ctxPanelAltaCli
+        Width: =shpVeloPanCli.X + shpVeloPanCli.Width - fxPanelW
+        ZIndex: =6
+
+    cntPanelAltaCli As groupContainer.manualLayoutContainer:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        DropShadow: =DropShadow.Regular
+        Fill: =ThemeSurface
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
+        Visible: =ctxPanelAltaCli
+        Width: =fxPanelW
+        X: =Parent.Width - fxPanelW
+        ZIndex: =7
+
+        cntPanelAltaHeadCli As groupContainer.manualLayoutContainer:
+            DropShadow: =DropShadow.Light
+            Fill: =Color.Transparent
+            Height: =74
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            Width: =Parent.Width
+            ZIndex: =39
+
+            lblPanelTitCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =RGBA(0, 0, 0, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =20
+                Size: =11
+                Text: ="Nueva solicitud de alta de cliente"
+                Width: =Parent.Width - 70
+                X: =20
+                Y: =10
+                ZIndex: =40
+
+            lblPanelSubCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Size: =8.25
+                Text: ="Se creará una solicitud tipo Alta que debe aprobar otro miembro de Banca de Empresas. El cliente aparecerá en el maestro cuando la solicitud se apruebe y aplique."
+                Width: =Parent.Width - 70
+                X: =20
+                Y: =30
+                ZIndex: =41
+
+            icoPanelXCli As icon:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(244, 244, 244, 1)
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ctxPanelAltaCli: false})
+                Width: =18
+                X: =Parent.Width - 34
+                Y: =12
+                ZIndex: =42
+
+        cntPanelAltaBodyCli As groupContainer.manualLayoutContainer:
+            DropShadow: =DropShadow.Light
+            Fill: =Color.Transparent
+            Height: =Parent.Height - Self.Y - 64
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            Width: =Parent.Width
+            Y: =cntPanelAltaHeadCli.Y + cntPanelAltaHeadCli.Height
+            ZIndex: =43
+
+            lblNombreLabPanCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                Size: =8.25
+                Text: ="Nombre del cliente *"
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =8
+                ZIndex: =44
+
+            inpNombrePanCli As text:
+                BorderColor: =ThemeLine
+                BorderThickness: =2
+                Color: =RGBA(0, 0, 0, 1)
+                Default: =
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =ThemeSurface
+                FocusedBorderThickness: =4
+                Height: =34
+                HintText: ="Razón social completa"
+                HoverBorderColor: =ThemeLine
+                HoverColor: =RGBA(0, 0, 0, 1)
+                HoverFill: =App.Theme.Colors.Lighter70
+                MaxLength: =100
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =lblNombreLabPanCli.Y + lblNombreLabPanCli.Height + 4
+                ZIndex: =45
+
+            lblCifBcoLabPanCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                Size: =8.25
+                Text: ="CIF BCO *"
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =inpNombrePanCli.Y + inpNombrePanCli.Height + 13
+                ZIndex: =46
+
+            inpCifBcoPanCli As text:
+                BorderColor: =ThemeLine
+                BorderThickness: =2
+                Color: =RGBA(0, 0, 0, 1)
+                Default: =
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =ThemeSurface
+                FocusedBorderThickness: =4
+                Height: =34
+                HintText: =""
+                HoverBorderColor: =ThemeLine
+                HoverColor: =RGBA(0, 0, 0, 1)
+                HoverFill: =App.Theme.Colors.Lighter70
+                MaxLength: =100
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =lblCifBcoLabPanCli.Y + lblCifBcoLabPanCli.Height + 4
+                ZIndex: =47
+
+            lblCifComLabPanCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                Size: =8.25
+                Text: ="CIF COM *"
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =inpCifBcoPanCli.Y + inpCifBcoPanCli.Height + 13
+                ZIndex: =48
+
+            inpCifComPanCli As text:
+                BorderColor: |-
+                    =ThemeLine
+                    
+                    /*If(
+                        Len(Trim(inpCifComPanCli.Text)) > 0 && !IsMatch(Trim(inpCifComPanCli.Text), "C-\d{5}"),
+                        ThemeDanger,
+                        ThemeLine
+                    )*/
+                BorderThickness: =2
+                Color: =RGBA(0, 0, 0, 1)
+                Default: =
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =ThemeSurface
+                FocusedBorderThickness: =4
+                Height: =34
+                HintText: =""
+                HoverBorderColor: =ThemeLine
+                HoverColor: =RGBA(0, 0, 0, 1)
+                HoverFill: =App.Theme.Colors.Lighter70
+                MaxLength: =100
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =lblCifComLabPanCli.Y + lblCifComLabPanCli.Height + 4
+                ZIndex: =49
+
+            lblCifComErrPanCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeDanger
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Height: =28
+                Size: =8.25
+                Text: |-
+                    ="El CIF COM debe tener el formato C-#####. Corregilo para continuar."
+                Visible: =false//Len(Trim(inpCifComPanCli.Text)) > 0 && !IsMatch(Trim(inpCifComPanCli.Text), "C-\d{5}")
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =inpCifComPanCli.Y + inpCifComPanCli.Height + 4
+                ZIndex: =50
+
+            lblMotivoLabPanCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                Size: =8.25
+                Text: ="Motivo de la solicitud *"
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =lblCifComErrPanCli.Y + lblCifComErrPanCli.Height + 6
+                ZIndex: =51
+
+            inpMotivoPanCli As text:
+                BorderColor: =ThemeLine
+                BorderThickness: =2
+                Color: =RGBA(0, 0, 0, 1)
+                Default: =
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =ThemeSurface
+                FocusedBorderThickness: =4
+                Height: =56
+                HintText: |-
+                    ="Ej: cliente nuevo de Banca de Empresas, convenio firmado…"
+                HoverBorderColor: =ThemeLine
+                HoverColor: =RGBA(0, 0, 0, 1)
+                HoverFill: =App.Theme.Colors.Lighter70
+                Mode: =TextMode.MultiLine
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =lblMotivoLabPanCli.Y + lblMotivoLabPanCli.Height + 4
+                ZIndex: =52
+
+            lblResumenSecPanCli As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                Size: =7.88
+                Text: ="RESUMEN DE LA SOLICITUD (3 CAMBIOS)"
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =inpMotivoPanCli.Y + inpMotivoPanCli.Height + 13
+                ZIndex: =53
+
+            cntResumenPanCli As groupContainer.manualLayoutContainer:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                DropShadow: =DropShadow.Light
+                Fill: =ThemeSurface
+                Height: =104
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =lblResumenSecPanCli.Y + lblResumenSecPanCli.Height + 4
+                ZIndex: =54
+
+                lblResumenCifComPanCli As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: |-
+                        =ThemeInk
+                        /*If(
+                            Len(Trim(inpCifComPanCli.Text)) > 0 && !IsMatch(Trim(inpCifComPanCli.Text), "C-\d{5}"),
+                            ThemeDanger,
+                            ThemeInk
+                        )*/
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =22
+                    Size: =9
+                    Text: |-
+                        ="CIFCOM → " & Trim(inpCifComPanCli.Text)
+                            /*& If(
+                                Len(Trim(inpCifComPanCli.Text)) > 0 && !IsMatch(Trim(inpCifComPanCli.Text), "C-\d{5}"),
+                                "  (inválido)",
+                                ""
+                            )*/
+                    Width: =Parent.Width - 28
+                    X: =14
+                    Y: =76
+                    ZIndex: =55
+
+                lblResumenCifBcoPanCli As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =22
+                    Size: =9
+                    Text: ="CIFBCO → " & Trim(inpCifBcoPanCli.Text)
+                    Width: =Parent.Width - 28
+                    X: =14
+                    Y: =54
+                    ZIndex: =56
+
+                lblResumenNombrePanCli As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =22
+                    Size: =9
+                    Text: ="Nombre → " & Trim(inpNombrePanCli.Text)
+                    Width: =Parent.Width - 28
+                    X: =14
+                    Y: =32
+                    ZIndex: =57
+
+                lblResumenHeadPanCli As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Fill: =ThemeSurface2
+                    FontWeight: =FontWeight.Bold
+                    Height: =28
+                    PaddingLeft: =14
+                    Size: =7.5
+                    Text: ="CAMPO → VALOR PROPUESTO"
+                    Width: =Parent.Width
+                    ZIndex: =58
+
+            cntBannerPanCli As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =Color.Transparent
+                Height: =lblBannerPanCli.Height + 18
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Width: =Parent.Width - 40
+                X: =20
+                Y: =cntResumenPanCli.Y + cntResumenPanCli.Height + 13
+                ZIndex: =59
+
+                shpBannerPanCli As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeInfoSoft
+                    Height: =Parent.Height
+                    Width: =Parent.Width
+                    ZIndex: =60
+
+                lblBannerPanCli As label:
+                    AutoHeight: =true
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInfo
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Size: =8.63
+                    Text: ="Sucursales, correos y cuentas se agregan desde la ficha del cliente una vez aprobada el alta — cada una genera su propia solicitud."
+                    Width: =Parent.Width - 26
+                    X: =13
+                    Y: =9
+                    ZIndex: =61
+
+        cntPanelAltaFootCli As groupContainer.manualLayoutContainer:
+            DropShadow: =DropShadow.Light
+            Fill: =Color.Transparent
+            Height: =64
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            Width: =Parent.Width
+            Y: =Parent.Height - 64
+            ZIndex: =62
+
+            btnCancelarPanCli As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ctxPanelAltaCli: false})
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: ="Cancelar"
+                Width: =110
+                X: =btnCrearPanCli.X - 8 - Self.Width
+                Y: =(Parent.Height - 32)/2
+                ZIndex: =63
+
+            btnCrearPanCli As button:
+                BorderColor: =App.Theme.Colors.Primary
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: |-
+                    =If(
+                        !ctxGuardandoCli
+                        && Len(Trim(inpNombrePanCli.Text)) > 0
+                        && Len(Trim(inpCifBcoPanCli.Text)) > 0
+                        && Len(Trim(inpCifComPanCli.Text)) > 0
+                        && Len(Trim(inpMotivoPanCli.Text)) > 0,
+                        DisplayMode.Edit,
+                        DisplayMode.Disabled
+                    )
+                Fill: =ThemeAccent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =ThemeAccentDark
+                OnSelect: |-
+                    =UpdateContext({ctxGuardandoCli: true});
+                    IfError(
+                        With(
+                            {
+                                // 1. Cabecera en Draft — el guard de lineas lo exige para el paso 2.
+                                rfc: Patch(
+                                    'CH-Tbl-ClientDataChangeRequests',
+                                    Defaults('CH-Tbl-ClientDataChangeRequests'),
+                                    {
+                                        Type: 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,
+                                        'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,
+                                        Reason: Trim(inpMotivoPanCli.Text),
+                                        TargetTable: "sanic_chtblclient",
+                                        TargetTableDisplayName: "Clientes",
+                                        TargetTablePluralName: "sanic_chtblclients"
+                                    }
+                                )
+                            },
+                            // 2. Las 3 lineas, con la cabecera TODAVIA en Draft.
+                            // Linea 1 — Nombre
+                            Patch(
+                                'CH-Tbl-ClientDataChangeRequestLines',
+                                Defaults('CH-Tbl-ClientDataChangeRequestLines'),
+                                {
+                                    ChangeRequestID: rfc,
+                                    'Field Definition': LookUp(
+                                        'CH-Tbl-ClientTableLogicalFieldNames',
+                                        Name = "Nombre" && Table = "sanic_chtblclient"
+                                    ),
+                                    NewValue: Trim(inpNombrePanCli.Text),
+                                    ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Draft
+                                }
+                            );
+                            // Linea 2 — CIFBCO
+                            Patch(
+                                'CH-Tbl-ClientDataChangeRequestLines',
+                                Defaults('CH-Tbl-ClientDataChangeRequestLines'),
+                                {
+                                    ChangeRequestID: rfc,
+                                    'Field Definition': LookUp(
+                                        'CH-Tbl-ClientTableLogicalFieldNames',
+                                        Name = "CIFBCO" && Table = "sanic_chtblclient"
+                                    ),
+                                    NewValue: Trim(inpCifBcoPanCli.Text),
+                                    ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Draft
+                                }
+                            );
+                            // Linea 3 — CIFCOM
+                            Patch(
+                                'CH-Tbl-ClientDataChangeRequestLines',
+                                Defaults('CH-Tbl-ClientDataChangeRequestLines'),
+                                {
+                                    ChangeRequestID: rfc,
+                                    'Field Definition': LookUp(
+                                        'CH-Tbl-ClientTableLogicalFieldNames',
+                                        Name = "CIFCOM" && Table = "sanic_chtblclient"
+                                    ),
+                                    NewValue: Trim(inpCifComPanCli.Text),
+                                    ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Draft
+                                }
+                            );
+                            // 3. Cabecera a Submitted — unica transicion humana que ChangeRequestApprovalGuard
+                            //    permite tras Draft (misma secuencia que 03 §10.4).
+                            Patch(
+                                'CH-Tbl-ClientDataChangeRequests',
+                                rfc,
+                                {'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted}
+                            );
+                            // 4. Refresh del badge/KPIs — el mockup lo exige "al volver de crear la solicitud"
+                            ClearCollect(
+                                colRfcEnCursoCli,
+                                Filter(
+                                    'CH-Tbl-ClientDataChangeRequests',
+                                    'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
+                                    || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted
+                                    || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved
+                                )
+                            );
+                            UpdateContext({ctxPanelAltaCli: false});
+                            Notify(
+                                "Solicitud " & rfc.Name & " creada y enviada a aprobación.",
+                                NotificationType.Success
+                            )
+                        ),
+                        // Error REAL, nunca generico (bug U4 de v1); el panel queda abierto con lo tipeado
+                        Notify(
+                            "No se pudo crear la solicitud: " & FirstError.Message,
+                            NotificationType.Error
+                        )
+                    );
+                    UpdateContext({ctxGuardandoCli: false})
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: =If(ctxGuardandoCli, "Enviando…", "Crear y enviar solicitud")
+                Width: =190
+                X: =Parent.Width - 20 - Self.Width
+                Y: =(Parent.Height - 32)/2
+                ZIndex: =64
+

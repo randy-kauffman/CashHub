@@ -2,7 +2,8 @@
 
 > Alcance: altas, modificaciones, activaciones y bajas de Clientes,
 > Sucursales, Correos autorizados y Cuentas, todas vía RFC (Request For
-> Change) con aprobación cuatro-ojos y flujos aplicadores.
+> Change) con aprobación cuatro-ojos y materialización **síncrona** por
+> Custom API.
 
 ## 1. Qué es este proceso
 
@@ -10,15 +11,26 @@ Nadie escribe directo sobre el dato maestro de un cliente. Cualquier alta o
 cambio — nombre, CIF, una sucursal nueva, un correo autorizado, una cuenta,
 o pasar un registro a Inactive — nace como una **solicitud de cambio (RFC)**
 en estado Draft/Submitted. Un segundo usuario, con permiso de aprobador para
-esa tabla puntual, la revisa y decide Approved o Rejected. Recién ahí un
-flujo de Power Automate separado — según el tipo de RFC — hace la escritura
-real sobre Cliente, Sucursal, Correo o Cuenta y cierra el ciclo en Applied o
-Failed. Aprobar **nunca** aplica el cambio: aprobar solo habilita a que el
-aplicador lo tome.
+esa tabla puntual, la revisa y decide.
+
+**Desde el rediseño v2 (desplegado 2026-08-25), la decisión ES la
+materialización.** Aprobar o Rechazar ya no es un cambio de estado que
+espera a un flujo aparte: invoca la Custom API `sanic_CHResolveChangeRequest`
+(§7), que en la misma transacción del pipeline valida separación de
+funciones, escribe el maestro (Cliente/Sucursal/Correo/Cuenta) si corresponde,
+registra la bitácora y deja la cabecera en su estado final — **Applied** o
+**Rejected** — todo antes de devolver la respuesta a la app. El estado
+intermedio `Approved` que existía en la v1 (una solicitud "aprobada" a la
+espera de que un flujo la tomara, potencialmente para siempre si ese flujo
+estaba caído) **ya no se escribe en este camino**: el ciclo salta de
+`Submitted` directo a `Applied`/`Rejected`. El valor de opción `Approved`
+sigue existiendo en el esquema (dato histórico de RFC resueltos antes de la
+migración) pero ningún camino vivo lo produce.
 
 La separación de funciones (quien pide ≠ quien aprueba, y quien aprueba debe
 pertenecer al grupo Approver de esa tabla) no es solo un botón oculto en la
-app: la impone un plugin server-side (§2, §8), así que sigue firme aunque
+app: la impone un plugin server-side sobre la cabecera (§2, §8) y, desde v2,
+también uno sobre las **líneas** del RFC (§8) — así que sigue firme aunque
 alguien le pegue al registro por Web API o Excel.
 
 Handoffs:
@@ -35,31 +47,21 @@ Handoffs:
 
 ```mermaid
 flowchart LR
-    A[Contributor<br/>completa formulario] -->|Patch| B[RFC Draft]
+    A[Contributor<br/>completa panel] -->|Patch| B[RFC Draft]
     B -->|Enviar| C[RFC Submitted]
-    C -->|Notify reviewers*| D[Aviso Teams<br/>a Approvers]
+    C -->|Notify reviewers| D[Aviso Teams<br/>a Approvers]
     C --> E{Approver}
-    E -->|Aprobar + comentario| F[RFC Approved]
-    E -->|Rechazar + comentario| G[RFC Rejected]
-    F --> H{Tipo de RFC}
-    H -->|Create| I[CH-Flow-Createclientdata]
-    H -->|Update| J[CH-Flow-Applyclientdatachanges]
-    H -->|Activate| K[CH-Flow-Activate row*]
-    H -->|Deactivate| L[CH-Flow-Deactivate row*]
-    I --> M[RFC Applied]
-    J --> M
-    K --> M
-    L --> M
-    I -.error.-> N[RFC Failed]
-    J -.error.-> N
-    F -.timeout sin cerrar.-> O[CH-Flow-RFCWatchdog] --> N
+    E -->|"Aprobar/Rechazar + comentario<br/>(Custom API sanic_CHResolveChangeRequest)"| R[["Transacción síncrona:<br/>valida + materializa maestro<br/>+ bitácora + estado final"]]
+    R --> M[RFC Applied]
+    R --> N[RFC Rejected]
+    R -.error de negocio<br/>o del guard.-> X[Excepción visible<br/>RFC sigue Submitted]
     M --> P[Notify when RFC<br/>implementation finish]
     N --> P
-    G --> P
 ```
 
-*Estado ON/OFF de Notify reviewers, Activate row y Deactivate row: **verificar
-en vivo** (ver §5).
+Los 4 flujos materializadores (`Apply client data changes`, `Create client
+data`, `Activate row`, `Deactivate row`) y el `RFCWatchdog` que cerraba los
+RFC huérfanos quedaron **retirados** el 2026-08-25 — ver §5.
 
 ## 2. Estados y transiciones
 
@@ -77,16 +79,19 @@ en vivo** (ver §5).
 | Valor | Etiqueta | Quién transiciona | Guard |
 |---|---|---|---|
 | 159460000 | Draft | Contributor (crea/edita el borrador) | Ninguno — libre mientras sea el propio Draft |
-| 159460001 | Submitted | Contributor (Enviar) | App bloquea si hay otro RFC no resuelto sobre el mismo campo + mismo registro destino |
-| 159460002 | Approved | Approver | `GuardChangeRequestApprovalPlugin`: previo debe ser Submitted, resolutor ≠ creador, resolutor pertenece al grupo Approver de la tabla objetivo (fail-closed) |
-| 159460003 | Rejected | Approver | Mismo guard que Approved |
-| 159460004 | Applied | Flujo aplicador (sistema) | — transición de sistema, el guard la deja pasar sin fricción |
-| 159460005 | Failed | Flujo aplicador o `CH-Flow-RFCWatchdog` | — ídem |
-| 159460006 | Canceled | Contributor (desde Draft) | — ídem |
+| 159460001 | Submitted | Contributor (Enviar) | App bloquea si hay otro RFC no resuelto sobre el mismo campo + mismo registro destino (aviso, no bloqueo duro — el guard de servidor no impone esta regla) |
+| 159460002 | Approved | **Sin uso en ningún camino vivo** desde 2026-08-25 | Valor histórico: RFC resueltos antes de la migración a Custom API pueden tenerlo grabado; ningún flujo ni la Custom API lo vuelven a escribir (ver §1) |
+| 159460003 | Rejected | Approver, vía Custom API `sanic_CHResolveChangeRequest` (§7) | `ChangeRequestResolution.Evaluate` (dominio puro) delega la separación de funciones en la misma lógica de `ChangeRequestApprovalGuard`: previo debe ser Submitted, resolutor ≠ creador, resolutor pertenece al grupo Approver de la tabla objetivo (fail-closed) |
+| 159460004 | Applied | Approver, vía la misma Custom API — **directo desde Submitted, sin pasar por Approved** | Mismo guard que Rejected; además, en Update/Create exige al menos una línea de cambio (`ChangeRequestResolution.RequiresLines`) — un RFC vacío es rechazado como error de negocio, no un éxito disfrazado |
+| 159460005 | Failed | Sin uso en ningún camino vivo desde 2026-08-25 | La Custom API es transaccional: si algo falla, la excepción sale visible y el RFC **permanece en Submitted** (nunca queda "a medio aplicar" ni se graba en Failed) — el valor sigue existiendo en el esquema por compatibilidad histórica |
+| 159460006 | Canceled | Contributor (desde Draft) | — transición de sistema/creador, sin fricción del guard |
 
-El guard además bloquea **crear** un RFC que nazca ya en Approved, Rejected,
-Applied o Failed (cierra el bypass de un `Create` directo por Web API con el
-estado final ya puesto).
+El guard de cabecera (`GuardChangeRequestApprovalPlugin`) además bloquea
+**crear** un RFC que nazca ya en Approved, Rejected, Applied o Failed (cierra
+el bypass de un `Create` directo por Web API con el estado final ya puesto).
+La Custom API resuelve la cabecera con la identidad real del resolutor (no
+como sistema) precisamente para que este guard la re-valide de igual manera
+que si fuera un Patch humano — ver §7/§8.
 
 ### 2.2 RFC — línea (`CH-Tbl-ClientDataChangeRequestLine` /
 `sanic_chtblclientdatachangerequestline`), campo `sanic_changestatus`
@@ -98,19 +103,33 @@ Aprobar/Rechazar se aplica a **todas las líneas de la solicitud a la vez**:
 no existe un camino de UI para aprobar una línea y rechazar otra dentro del
 mismo RFC, aunque el modelo de datos sí guarda un estado por línea.
 
-Bug histórico ya corregido (ver CHANGELOG): la acción `Actualizar status CRL
-a FAILED` de los flujos aplicadores escribía 159460004 (Applied) en vez de
-159460005 (Failed) — una línea que fallaba quedaba marcada como aplicada.
-Corregido a 159460005 y desplegado en DEV; el caso CA-15 lo verifica en vivo.
+Bug histórico ya corregido (ver CHANGELOG) y hoy **doblemente obsoleto**: la
+acción `Actualizar status CRL a FAILED` de los flujos aplicadores (retirados,
+§5) escribía 159460004 (Applied) en vez de 159460005 (Failed) — una línea que
+fallaba quedaba marcada como aplicada. El caso CA-15 lo verificó en vivo antes
+de la migración. Desde v2, la línea nunca puede quedar en un estado
+intermedio incoherente: `ResolveChangeRequestPlugin` la mueve a Applied/Denied
+en la misma transacción atómica en la que resuelve la cabecera — o la
+transacción entera revierte y la línea sigue en Submitted junto con la
+cabecera.
+
+`GuardChangeRequestLinePlugin` (nuevo, §8) impone además, sobre esta tabla,
+que mientras el RFC padre esté en Draft no puede haber dos líneas apuntando
+al mismo `sanic_fielddefinition` (cierra un duplicado silencioso que antes
+nadie evitaba).
 
 ### 2.3 Tipo de RFC (`sanic_type`, en la cabecera)
 
-| Valor | Etiqueta | Dispara |
+| Valor | Etiqueta | Materializa (vía `sanic_CHResolveChangeRequest`) |
 |---|---|---|
-| 159460000 | Update | `CH-Flow-Applyclientdatachanges` |
-| 159460001 | Deactivate | `CH-Flow-Deactivate row` |
-| 159460002 | Create | `CH-Flow-Createclientdata` |
-| 159460003 | Activate | `CH-Flow-Activate row` |
+| 159460000 | Update | `Update` sobre el registro destino, un único `Entity` con todos los campos convertidos (atomicidad real: ya no hay un `Update` por campo) |
+| 159460001 | Deactivate | `sanic_recordstatus = Inactive` sobre el registro destino |
+| 159460002 | Create | `Create` del registro nuevo con todos los campos de las líneas + `sanic_recordstatus = Active` |
+| 159460003 | Activate | `sanic_recordstatus = Active` sobre el registro destino |
+
+La tabla destino se resuelve dinámicamente desde `sanic_targettable` de la
+cabecera — a diferencia de los viejos `Activate row`/`Deactivate row`, que
+tenían un `Switch` de 4 tablas hardcodeado.
 
 ### 2.4 `recordstatus` de Cliente / Sucursal / Correo / Cuenta
 (`sanic_recordstatus`, option set global `sanic_chchrecordstatus`)
@@ -122,16 +141,15 @@ Corregido a 159460005 y desplegado en DEV; el caso CA-15 lo verifica en vivo.
 | 159460002 | PendingApproval |
 | 159460003 | PendingDeactivation |
 
-**Hecho verificado esta sesión** (contradice cualquier doc que diga que el
-cliente nace directo en Active): el `AppDefaultValue` de `sanic_recordstatus`
-en `CH-Tbl-Client/Entity.xml` es **159460002 (PendingApproval)**. Un cliente
-recién creado en pantalla nace pendiente; recién cuando el RFC de tipo
-**Create** queda Approved y `CH-Flow-Createclientdata` lo materializa, el
-registro se crea/activa con `sanic_recordstatus = Active` directamente en el
-JSON de creación (el flujo agrega ese campo al construir el registro, no lo
-deja en el default). Los valores PendingDeactivation no tienen, hasta donde
-cubre este documento, un flujo que los escriba de forma automática — su uso
-real es **verificar en vivo**.
+El `AppDefaultValue` de `sanic_recordstatus` en `CH-Tbl-Client/Entity.xml` es
+**159460002 (PendingApproval)** — pero eso solo importa para un registro
+creado por fuera del ciclo RFC (o mientras el RFC de Alta sigue en Draft): un
+cliente **no existe en el maestro** hasta que su RFC de tipo Create se
+resuelve, y `ResolveChangeRequestPlugin` lo crea con `sanic_recordstatus =
+Active` puesto explícitamente en el mismo `Create` (no lo deja en el default,
+igual que hacía el viejo `Createclientdata`). Los valores PendingDeactivation
+no tienen, hasta donde cubre este documento, un camino que los escriba de
+forma automática — su uso real es **verificar en vivo**.
 
 Statecode/statuscode estándar de Dataverse (Active/Inactive, valores 0/1) es
 un campo aparte de `sanic_recordstatus` en las 4 tablas; ambos existen en
@@ -171,16 +189,24 @@ Distinción app vs. servidor:
   vía `checkMemberGroups`, fail-**cerrado** — si Graph falla no se otorga
   ningún permiso), una fila Approver para la tabla objetivo; oculta
   Enviar/Cancelar si el usuario no es el creador.
-- **El servidor impone** (real): `GuardChangeRequestApprovalPlugin` (§2.1,
-  §8) — estado previo Submitted, resolutor ≠ creador, y desde la Fase 2
-  también la membresía real del grupo Approver, resuelta contra
+- **El servidor impone** (real): `GuardChangeRequestApprovalPlugin` sobre la
+  cabecera (§2.1, §8) — estado previo Submitted, resolutor ≠ creador, y desde
+  la Fase 2 también la membresía real del grupo Approver, resuelta contra
   `CH-Tbl-ClientDataChangePermission` (tabla → grupo AAD) y el **Azure AD
   group team** correspondiente (`teammembership`), fail-closed: sin grupo
   configurado o sin membresía confirmada, se bloquea. Los AAD group teams
   que el guard necesita se provisionan con
   `scripts/provision-approver-teams.sh` (uno por grupo AAD distinto usado
   como Approver en `CH-Tbl-ClientDataChangePermission`; la membresía se
-  materializa sola cuando cada aprobador entra al entorno).
+  materializa sola cuando cada aprobador entra al entorno). Desde v2,
+  `GuardChangeRequestLinePlugin` (§8) impone la misma separación de
+  funciones sobre las **líneas**, cerrando el hueco que existía antes.
+  El Custom API `sanic_CHResolveChangeRequest` (§7) que dispara la
+  resolución **reutiliza la misma resolución de membresía**
+  (`ChangeRequestApproverResolver`, compartida entre el guard de cabecera,
+  el de líneas y el plugin de la API) — es una sola fuente de verdad para
+  "¿este usuario es Approver de esta tabla?", no tres implementaciones que
+  puedan divergir.
 
 Matriz quién-puede-qué (tabla `CH-Tbl-ClientDataChangePermission` /
 `sanic_chtblclientdatachangepermission`, campo `sanic_type`): **159460000
@@ -199,86 +225,112 @@ de grupos AAD para este proceso vive en filas de
 
 ## 4. Aplicaciones
 
-Única vía oficial: la **canvas app** `CH-App-ClientAdministration`
-(`sanic_chappclientadministration_fd97f`). La **app model-driven** que existía
-en paralelo (AppModule + sitemap + 9 web resources de formulario, todos con
-sus validaciones desconectadas del evento que las dispara) fue **eliminada
-por decisión de negocio** (CHANGELOG) — si ves referencias a ella en manuales
-viejos, están obsoletas. Esta app **no** pasó por el rediseño v2 que sí
-tuvieron Reception/Recounting/Supervisor/Digitization/Hub/Tracker — sigue
-siendo la app v1 descrita en
-[docs/guias/06-manual-administracion-clientes.md](../guias/06-manual-administracion-clientes.md).
+Única vía oficial: la **canvas app v2** `CH-App-ClientAdministration v2`
+(CashHubApps **1.33.0.0**, publicada en DEV el 2026-08-25). Esta app **sí**
+pasó por el rediseño v2 que ya tuvieron Reception/Recounting/Supervisor/
+Digitization/Hub/Tracker — descrita en
+[docs/guias/06-manual-administracion-clientes.md](../guias/06-manual-administracion-clientes.md)
+y en el detalle de reconstrucción de
+[docs/clientadmin-rebuild/](../clientadmin-rebuild/00-analisis-y-plan.md).
+La **app model-driven** que existía en paralelo en versiones anteriores
+(AppModule + sitemap + 9 web resources de formulario, todos con sus
+validaciones desconectadas del evento que las dispara) fue **eliminada por
+decisión de negocio** (CHANGELOG) — si ves referencias a ella en manuales
+viejos, están obsoletas.
+
+100% controles clásicos nativos, sin Power CAT ni PCF, layout responsive
+horizontal por contenedores manuales — mismo paradigma que el resto de la
+familia v2 (ver `docs/clientadmin-rebuild/01-app.md` §0).
 
 | Pantalla | Sirve a |
 |---|---|
-| Splash | Entrada; si trae `Param("RFC")` (deep-link de Teams), navega directo a ChangeRequestDetails. |
-| Clients | Alta y listado de Cliente — genera RFC tipo Create con 3 líneas (Nombre/CIFBCO/CIFCOM) en un solo Patch. |
-| ClientInformation | Ficha de un cliente: sub-grillas de Sucursales, Correos y **Cuentas** (número + moneda). Cada alta/edición ahí es un RFC propio — **dar de alta un cliente con 1 sucursal y 1 correo genera 3 RFC independientes**, cada uno aprobable por separado (limitación conocida, §10). |
-| RFC | Dashboard de solicitudes (toggle pendientes/todas) con badges de color por estado; sin lógica de creación/aprobación propia. |
-| ChangeRequestDetails | Pantalla de resolución: cabecera, líneas (valor viejo/nuevo), botones Aprobar/Rechazar/Enviar/Cancelar; comentario obligatorio al resolver. |
+| `scrSplash` | Entrada; si trae `Param("RFC")` (deep-link de Teams), navega directo a `scrSolicitud`. |
+| `scrClientes` | Listado de Cliente con badge "RFC en curso" por fila — alta de Cliente genera RFC tipo Create con 3 líneas (Nombre/CIFBCO/CIFCOM). |
+| `scrCliente` | Ficha de un cliente: datos maestros de solo lectura + 5 pestañas (Sucursales/Correos/Cuentas/Solicitudes/Bitácora). Cada alta/edición sobre un hijo es un RFC propio — **dar de alta un cliente con 1 sucursal y 1 correo sigue generando RFC independientes**, cada uno aprobable por separado (limitación conocida, §10). |
+| `scrSolicitudes` | Bandeja de RFC con tres segmentos: **Para mi decisión** (default del Approver), **Mías**, **Todas** — con búsqueda delegable y filtro por tabla objetivo. |
+| `scrSolicitud` | Pantalla única de detalle y decisión: cabecera, grilla de cambios (valor actual → propuesto), historial, y Aprobar/Rechazar/Enviar/Cancelar/Agregar-Quitar-cambio según estado y rol. Aprobar/Rechazar invoca `sanic_CHResolveChangeRequest` (§7) y el resultado — Aplicada o Rechazada — vuelve **síncrono**, sin refrescar. |
 
-Indicador "RFC en curso" por fila en Clients/ClientInformation (colección
-precargada, sin N+1) — mitiga el sub-bloqueo de crear dos RFC sobre el mismo
-campo sin saberlo.
+El header de la app es un componente compartido (`cmpAppHeader`,
+`CH-CL-SharedComponents`) con selector de dos pestañas (Clientes/Solicitudes)
+fijo — no hay menú de navegación aparte. Indicador "RFC en curso" por fila
+(colección precargada en `OnVisible`, sin N+1) en Clientes y en la ficha —
+mitiga el sub-bloqueo de crear dos RFC sobre el mismo campo sin saberlo.
 
 ## 5. Flujos Power Automate
 
-> **CAVEAT del CONTRATO**: el export de `solutions/unpacked/flow/` es un
-> snapshot puntual (hoy en `Version 1.12.0.0`) y no necesariamente refleja
-> reactivaciones hechas directo en el ambiente vivo — el caso confirmado es
-> `Apply client data changes` (ver abajo). Donde el estado no se pudo
-> confirmar de forma consistente entre export y CHANGELOG, se marca
-> **verificar en vivo**.
+> **Migración 2026-08-25**: los 4 flujos materializadores y el watchdog
+> quedaron **retirados** — reemplazados por la Custom API
+> `sanic_CHResolveChangeRequest` (§7). Los de notificación siguen vigentes
+> sin cambios de trigger. Ver `docs/clientadmin-rebuild/00-analisis-y-plan.md`
+> §3.1 para el detalle de la decisión y `08-integracion-y-deploy.md` para el
+> runbook del deploy.
 
 | Flujo | Trigger (webhook sobre `sanic_chtblclientdatachangerequest`) | Estado | Owner de la conexión |
 |---|---|---|---|
-| `CH-Flow-Notify reviewers` | Update, `sanic_changestatus = Submitted` | **verificar en vivo** | `new_sharedteams_084e4` |
-| `CH-Flow-Apply client data changes` | Update, `Approved + Update` | **ON** (reparado y reactivado — CHANGELOG; el export local todavía lo muestra Draft/OFF, no confiar en el export para este flujo puntual) | `sanic_CHCRDataverse` |
-| `CH-Flow-Create client data` | Update, `Approved + Create` | ON (confirmado en export) | `sanic_CHCRDataverse` |
-| `CH-Flow-Activate row` | Update, `Approved + Activate` | **verificar en vivo** | `sanic_CHCRDataverse` |
-| `CH-Flow-Deactivate row` | Update, `Approved + Deactivate` | **verificar en vivo** | `sanic_CHCRDataverse` |
-| `CH-Flow-Notify when RFC implementation finish` | Update, `Rejected \| Applied \| Failed` | ON (confirmado en export) | `new_sharedteams_084e4` |
-| `CH-Flow-RFCWatchdog` | Recurrence 15 min | ON (confirmado en export) | `sanic_CHCRDataverse` |
+| `CH-Flow-Notify reviewers` | Update, `sanic_changestatus = Submitted` | **ON — vigente**, sin cambios | `new_sharedteams_084e4` |
+| `CH-Flow-Apply client data changes` | Update, `Approved + Update` | **RETIRADO (2026-08-25)** — desactivado, reemplazado por `sanic_CHResolveChangeRequest` | `sanic_CHCRDataverse` |
+| `CH-Flow-Create client data` | Update, `Approved + Create` | **RETIRADO (2026-08-25)** — ídem | `sanic_CHCRDataverse` |
+| `CH-Flow-Activate row` | Update, `Approved + Activate` | **RETIRADO (2026-08-25)** — ídem | `sanic_CHCRDataverse` |
+| `CH-Flow-Deactivate row` | Update, `Approved + Deactivate` | **RETIRADO (2026-08-25)** — ídem | `sanic_CHCRDataverse` |
+| `CH-Flow-Notify when RFC implementation finish` | Update, `Rejected \| Applied \| Failed` | **ON — vigente**: la Custom API escribe esos mismos tres estados finales, así que este flujo sigue disparando igual que antes | `new_sharedteams_084e4` |
+| `CH-Flow-RFCWatchdog` | Recurrence 15 min | **RETIRADO (2026-08-25)** — sin sentido: ya no existe una ventana `Approved` en la que un RFC pueda quedar huérfano (§1) | `sanic_CHCRDataverse` |
 
-Qué toca cada uno:
+Los 4 flujos retirados y el watchdog **quedan desactivados pero todavía
+existen en la solución** — no fueron eliminados; una limpieza futura puede
+sacarlos de `CashHubCore`/`CashHubFlow` sin afectar nada vivo (pendiente
+conocido, ver `docs/clientadmin-rebuild/08-integracion-y-deploy.md`).
 
-- **Notify reviewers**: dispara sobre `Update` del RFC (webhook `message: 4`,
-  igual código que usan `Apply client data changes`/`Create client data`;
-  coherente con el propio ciclo de vida del RFC — nace en Draft, `sanic_changestatus
-  = Submitted` solo se alcanza con el Enviar, que es un Update, nunca un Create).
-  Arma una Adaptive Card con el diff (campo, valor actual, nuevo) y la postea
-  al chat Teams del grupo Approver de la tabla destino (crea el group chat vía
-  el flujo hijo `Create a Teams chat group…` si todavía no existe uno para ese
-  grupo).
+Qué toca cada uno de los que siguen vivos:
+
+- **Notify reviewers**: dispara sobre `Update` del RFC (webhook `message: 4`;
+  coherente con el propio ciclo de vida del RFC — nace en Draft,
+  `sanic_changestatus = Submitted` solo se alcanza con el Enviar, que es un
+  Update, nunca un Create). Arma una Adaptive Card con el diff (campo, valor
+  actual, nuevo) y la postea al chat Teams del grupo Approver de la tabla
+  destino (crea el group chat vía el flujo hijo `Create a Teams chat
+  group…` si todavía no existe uno para ese grupo). No requirió ningún
+  cambio con la migración: sigue escuchando exactamente la misma transición
+  (`Submitted`) que la app v2 sigue produciendo igual que la v1.
+- **Notify when RFC implementation finish**: dispara sobre `Rejected`,
+  `Applied` o `Failed`. Antes de la migración esos tres estados los escribían
+  los 4 flujos aplicadores (éxito) o el watchdog (`Failed` por timeout);
+  ahora los escribe `sanic_CHResolveChangeRequest` en la misma transacción
+  que resuelve el RFC — el flujo de notificación no tuvo que tocarse porque
+  sigue viendo la misma transición de estado, solo que ahora ocurre en el
+  acto en vez de con demora.
+
+Qué tocaban los retirados (referencia histórica, ya no ejecuta nada):
+
 - **Apply client data changes**: por cada línea, `Switch` por `sanic_datatype`
-  del catálogo de campos (§6) y `Update` sobre el registro destino. Try/Catch
-  global: cualquier fallo — incluido el primer paso — cierra el RFC en Failed
-  con auditoría (antes de la tanda 2 de mejoras, un fallo temprano dejaba el
-  RFC en Approved para siempre).
+  del catálogo de campos (§6) y `Update` **por campo** sobre el registro
+  destino (sin atomicidad — un fallo a mitad de camino dejaba el maestro a
+  medio actualizar). Reemplazado por `ApplyUpdate` en el plugin, que arma
+  UN solo `Entity` con todos los campos convertidos y hace UN `Update`.
 - **Create client data**: arma el JSON completo desde las líneas, agrega
-  `sanic_recordstatus = Active` y crea el registro. Enlaza `sanic_targetrecordid`
-  y `sanic_RelatedClient` en el RFC y en cada fila de auditoría de creación de
-  cliente (fix de backfill de `Update_a_row_1`/`Update_a_row` — antes eran
-  PATCH sin campos, no-ops, y el RFC quedaba sin saber qué registro había
-  creado).
+  `sanic_recordstatus = Active` y crea el registro. Reemplazado por
+  `ApplyCreate`, mismo resultado, sin flujo intermedio.
 - **Activate row / Deactivate row**: `Switch` por tabla destino (Client,
-  ClientBranch, ClientEmail, ClientAccount) y `Update` de
-  `sanic_recordstatus` a Active/Inactive.
-- **RFCWatchdog**: lee la Environment Variable `sanic_CHEVRfcApplyTimeoutMinutes`
-  (default 30 si no está seteada), busca RFC en Approved con `modifiedon` más
-  viejo que el timeout y los marca Failed con nota + auditoría. Es la red de
-  contención para el punto único de falla de los aplicadores — hoy es el que
-  efectivamente "cierra" cualquier RFC de Update/Activate/Deactivate cuyo
-  aplicador esté apagado (§10).
+  ClientBranch, ClientEmail, ClientAccount) hardcodeado y `Update` de
+  `sanic_recordstatus`. Reemplazado por `ApplyRecordStatusChange`, que
+  resuelve la tabla dinámicamente desde `sanic_targettable` — sin el switch
+  de 4 tablas fijo.
+- **RFCWatchdog**: leía la Environment Variable
+  `sanic_CHEVRfcApplyTimeoutMinutes` (default 30 si no estaba seteada),
+  buscaba RFC en Approved con `modifiedon` más viejo que el timeout y los
+  marcaba Failed con nota + auditoría. Era la red de contención para el
+  punto único de falla de los aplicadores — con la resolución síncrona esa
+  ventana de riesgo ya no existe, así que la red de contención tampoco hace
+  falta.
 
-Gap de OptionSet, ya corregido — pero **solo en uno de los dos aplicadores**:
-el caso `OptionSet (159460005)` del switch de tipo de dato en
-`Apply client data changes` hacía `AppendToArrayVariable` sobre `varItem`,
-una variable que ese flujo nunca inicializaba (patrón copiado de
-`Create client data`, donde sí se inicializa) — la definición no validaba
-(`InvalidVariableOperation`), el flujo quedaba en Draft y un cambio aprobado
-sobre un campo de lista de opciones nunca se escribía. Se corrigió
-reemplazando esa rama por un `Update_a_row_optionset` explícito (confirmado
+Gap de OptionSet, ya corregido en su momento sobre los flujos viejos — pero
+**solo en uno de los dos aplicadores**: el caso `OptionSet (159460005)` del
+switch de tipo de dato en `Apply client data changes` hacía
+`AppendToArrayVariable` sobre `varItem`, una variable que ese flujo nunca
+inicializaba (patrón copiado de `Create client data`, donde sí se
+inicializa) — la definición no validaba (`InvalidVariableOperation`), el
+flujo quedaba en Draft y un cambio aprobado sobre un campo de lista de
+opciones nunca se escribía. Se corrigió reemplazando esa rama por un
+`Update_a_row_optionset` explícito (confirmado
 en el JSON exportado de `Apply client data changes`). `Create client data`
 **nunca tuvo el bug**: su rama `OptionSet` ya construía la propiedad y la
 agregaba a `varItem` correctamente desde antes (el JSON exportado sigue
@@ -325,36 +377,103 @@ Referencia completa del modelo de datos y de los choices globales:
 
 ## 7. Custom APIs
 
-No aplica: este proceso no tiene ninguna Custom API propia. La única Custom
-API del repo (`sanic_CHValidateReceivedEmail`) pertenece al proceso de
-[02-recepcion-ingesta-emails](02-recepcion-ingesta-emails.md) y solo
-**consume** los datos que este proceso mantiene (resuelve cliente/correo
+### `sanic_CHResolveChangeRequest`
+
+Global, `POST`, síncrona. Backing: `ResolveChangeRequestPlugin`
+(`CashHub.Plugins`). Desplegada 2026-08-25, reemplaza los 4 flujos
+materializadores (§5).
+
+| Parámetro | Dirección | Tipo | Obligatorio | Contenido |
+|---|---|---|---|---|
+| `ChangeRequestId` | Entrada | Guid | Sí | El RFC (`sanic_chtblclientdatachangerequest`) a resolver |
+| `Decision` | Entrada | String | Sí | `"Approve"` o `"Reject"` |
+| `Comment` | Entrada | String | No | Va a `sanic_applynotes` de la cabecera |
+| `Outcome` | Salida | String | — | `"Applied"` o `"Rejected"`. Un fallo real **nunca** viaja acá disfrazado de salida: sale como `InvalidPluginExecutionException` con el motivo. |
+| `Message` | Salida | String | — | Texto de confirmación (`"RFC {id} resuelto: {outcome} por {resolutor}."`) |
+
+`executeprivilegename`: **`prvWritesanic_CHTblClientDataChangeRequest`**
+(Global) — el mismo privilegio que ya tiene `CH-SR-ClientAdminApprover` (y
+ningún otro rol ClientAdmin) sobre la cabecera del RFC. Sin este privilegio,
+cualquier usuario del entorno podría invocar la Custom API por Web API
+directo (mismo patrón de cierre que V-1 del corte de transacciones de
+Digitization).
+
+Qué hace, en orden, dentro de la misma transacción del pipeline:
+
+1. Lee la cabecera **como sistema** (`CreateOrganizationService(null)`) —
+   chequeo de solo lectura, independiente de los privilegios del resolutor.
+2. Resuelve la membresía Approver del resolutor
+   (`ChangeRequestApproverResolver`, misma resolución que usan los dos
+   guards de §8).
+3. Evalúa la decisión con `ChangeRequestResolution.Evaluate` (dominio puro,
+   `CashHub.Validation.Security`): separación de funciones + estados finales
+   a escribir. Si no es legítima, lanza la excepción con el motivo real —
+   nunca sigue de largo.
+4. Trae las líneas del RFC como sistema. En `Approve` de tipo Update/Create
+   exige al menos una línea — un RFC vacío es rechazado explícitamente
+   (`"no tiene lineas de cambio; no hay nada que aplicar"`), no un éxito
+   silencioso.
+5. Si es `Approve`: materializa sobre el maestro **como sistema**, con la
+   tabla resuelta dinámicamente desde `sanic_targettable` (§2.3) — un único
+   `Update`/`Create` con todos los campos ya convertidos por
+   `FieldValueConverter` (7 conversiones de tipo de dato: Text, Number,
+   Date, Money, Lookup, OptionSet, TwoOptions/Boolean — mismo catálogo que
+   describía el viejo `Switch` de los flujos, ahora en dominio puro
+   testeado).
+6. Marca cada línea Applied/Denied **con la identidad real del resolutor**
+   (`CreateOrganizationService(resolverId)`, no como sistema — si corriera
+   como sistema, `GuardChangeRequestLinePlugin`/`GuardChangeRequestApprovalPlugin`
+   resolverían membresía contra el usuario SYSTEM y bloquearían la
+   escritura).
+7. Escribe la bitácora (`CH-Tbl-ClientDataChangesAuditTrail`, §6) — una fila
+   por línea, o una fila de cabecera si el tipo es Activate/Deactivate (sin
+   líneas). Esta fila **solo** se escribe si se llegó hasta acá sin
+   excepción: nunca queda un rastro "Fail" a medio camino.
+8. Mueve la cabecera a su estado final (`Applied`/`Rejected`, identidad del
+   resolutor) — ver §2.1.
+
+La identidad **doble** (sistema para leer/materializar el maestro,
+resolutor real para escribir cabecera/líneas del RFC) es el mismo patrón que
+ya usan `CreateTransactionCutPlugin`/`DeclarationMaterializer` en otros
+procesos del repo.
+
+La otra Custom API del repo, `sanic_CHValidateReceivedEmail`, pertenece al
+proceso de [02-recepcion-ingesta-emails](02-recepcion-ingesta-emails.md) y
+solo **consume** los datos que este proceso mantiene (resuelve cliente/correo
 contra el maestro); no escribe sobre ninguna de las 10 tablas del dominio de
 Client Administration.
 
 ## 8. Steps de plugins
 
-Ambos steps viven en `CashHub.Plugins` (mismo assembly firmado que el motor
-de validación de correos) y corren **síncronos en Pre-operation (stage 20)**
-— tienen que poder abortar la transacción antes de que el pipeline la
+Todos viven en `CashHub.Plugins` (mismo assembly firmado que el motor de
+validación de correos) y corren **síncronos en Pre-operation (stage 20)** —
+tienen que poder abortar la transacción antes de que el pipeline la
 persista.
 
 | Plugin | Mensaje / etapa / filtro | Qué regla de negocio defiende |
 |---|---|---|
-| `GuardChangeRequestApprovalPlugin` | `Update` de `sanic_chtblclientdatachangerequest`, Pre-operation (20), filtrado en `sanic_changestatus`, con pre-image (`sanic_changestatus, createdby, sanic_targettable`) | Separación de funciones: bloquea que el creador de un RFC apruebe/rechace su propia solicitud, exige estado previo Submitted, y (Fase 2) exige que el resolutor pertenezca al grupo AAD Approver de la tabla objetivo destino — resuelto contra `CH-Tbl-ClientDataChangePermission` + membresía del Azure AD group team. Fail-closed en toda la cadena: sin grupo configurado, sin membresía resuelta, o sin creador identificable, se bloquea. |
+| `GuardChangeRequestApprovalPlugin` | `Update` de `sanic_chtblclientdatachangerequest`, Pre-operation (20), filtrado en `sanic_changestatus`, con pre-image (`sanic_changestatus, createdby, sanic_targettable`) | Separación de funciones sobre la **cabecera**: bloquea que el creador de un RFC apruebe/rechace su propia solicitud, exige estado previo Submitted, y exige que el resolutor pertenezca al grupo AAD Approver de la tabla objetivo destino — resuelto contra `CH-Tbl-ClientDataChangePermission` + membresía del Azure AD group team. Fail-closed en toda la cadena: sin grupo configurado, sin membresía resuelta, o sin creador identificable, se bloquea. Es la misma lógica que reutiliza `ChangeRequestResolution.Evaluate` dentro de la Custom API (§7) — un solo motor de decisión, no dos que puedan divergir. |
 | `GuardChangeRequestApprovalPlugin` | `Create` de `sanic_chtblclientdatachangerequest`, Pre-operation (20), sin filtro de atributo | Impide que un RFC nazca ya resuelto (Approved/Rejected/Applied/Failed) — cierra el bypass de crear directo en un estado final por Web API. |
+| `GuardChangeRequestLinePlugin` *(nuevo, 2026-08-25)* | `Create`/`Update`/`Delete` de `sanic_chtblclientdatachangerequestline`, Pre-operation (20), con pre-image (`sanic_changerequestid, sanic_fielddefinition`) en Update/Delete | Cierra el hallazgo S3 del análisis (no había guard sobre las líneas): el RFC padre debe estar en Draft, sin líneas duplicadas por (RFC, `sanic_fielddefinition`), y solo el creador del RFC o un Approver de la tabla objetivo puede tocar sus líneas. **Exento por profundidad** (`depth > 1`) cuando la escritura viene de `sanic_CHResolveChangeRequest` marcando el desenlace de sus propias líneas — esa transición ocurre con la cabecera ya en Submitted, algo que el guard bloquearía si la tratara como una escritura humana. |
 | `ClientBranchNameMirrorPlugin` | `Create` de `sanic_chtblclientbranch`, Pre-operation (20), sin filtro | Estampa `sanic_clientnamemirror` con una sola lectura del cliente (como sistema — es una derivación, no un permiso de negocio) y cero escrituras adicionales (escribe en el propio Target). |
 | `ClientBranchNameMirrorPlugin` | `Update` de `sanic_chtblclientbranch`, Pre-operation (20), filtrado en `sanic_client` | Re-estampa el espejo solo cuando la sucursal se re-cuelga de otro cliente; un Update que no toca `sanic_client` no dispara el step. |
 
-Las transiciones de sistema (`Approved→Applied/Failed` que hacen los flujos
-aplicadores, `→Canceled`, `Draft→Submitted`) pasan por el guard sin fricción
-— solo intercepta la **decisión humana** (`→Approved`/`→Rejected`) y el
-`Create` en un estado resuelto.
+Las transiciones de sistema (`→Applied/Rejected` que ahora escribe
+`sanic_CHResolveChangeRequest`, `→Canceled`, `Draft→Submitted`) pasan por el
+guard de cabecera sin fricción — solo intercepta la **decisión humana**
+(`→Approved`/`→Rejected`, camino que ya no produce ningún flujo vivo pero
+que el guard sigue defendiendo por si alguien intentara un Patch directo) y
+el `Create` en un estado resuelto. Sobre las líneas, el equivalente es la
+exención por profundidad descrita arriba.
 
-Registro (idempotente, vía Web API): `scripts/register-clientadmin-guard.sh`
-y `scripts/register-clientbranch-mirror.sh`. Ambos re-suben el mismo
+Registro (idempotente, vía Web API): `scripts/register-clientadmin-guard.sh`,
+`scripts/register-changerequestline-guard.sh` y
+`scripts/register-clientbranch-mirror.sh`. Los tres re-suben el mismo
 `pluginassembly` (un solo DLL con todos los tipos adentro) y crean/actualizan
 el `plugintype` y los `sdkmessageprocessingstep` correspondientes.
+`scripts/plugin-steps.sh` lista y activa/desactiva cualquier step del
+assembly por GUID (útil para confirmar en vivo qué está ON/OFF sin abrir el
+portal).
 
 ## 9. Acciones
 
@@ -380,49 +499,27 @@ el `plugintype` y los `sdkmessageprocessingstep` correspondientes.
 | **Qué valida el servidor** | La app bloquea el envío si hay otro RFC en curso sobre el mismo campo + mismo registro destino (conflict-check corregido para excluir el propio RFC y clientes no relacionados). El guard no interviene en esta transición (Draft→Submitted pasa libre). |
 | **Qué pasa si falla / deshacer** | Mensaje de conflicto en pantalla, el RFC queda en Draft. Deshacer: Cancelar sigue disponible desde Draft. |
 
-### Aprobar un RFC
+### Aprobar un RFC (resolución síncrona)
 
 | Campo | Contenido |
 |---|---|
 | **Quién** | Approver de la tabla objetivo del RFC, distinto del creador |
 | **Cuándo** | RFC en Submitted |
-| **Por qué / para qué** | Habilita que el flujo aplicador correspondiente materialice el cambio sobre el maestro |
-| **Cómo** | RFC → abrir en ChangeRequestDetails → botón Aprobar → comentario obligatorio |
-| **Qué valida el servidor** | `GuardChangeRequestApprovalPlugin`, Update Pre-operation: previo = Submitted, `initiatingUserId ≠ createdby`, y membresía confirmada en el grupo Approver de `sanic_targettable` (query a `CH-Tbl-ClientDataChangePermission` + `teammembership` del Azure AD group team). Cualquiera de las tres condiciones que falle bloquea con `InvalidPluginExecutionException`. |
-| **Qué pasa si falla / deshacer** | El usuario ve el error del guard tal cual (mensajes en español, nunca genéricos — p. ej. "El creador de un RFC no puede aprobar su propia solicitud"). No hay deshacer: aprobar es una transición de estado, no hay botón de "desaprobar"; si fue un error, hay que esperar a que el aplicador falle o pedir un RFC nuevo. |
+| **Por qué / para qué** | Materializa el cambio sobre el maestro **en el mismo gesto** — no hay un segundo paso automático que lo tome después |
+| **Cómo** | Solicitudes → abrir en `scrSolicitud` → botón "Aprobar…" → comentario obligatorio |
+| **Qué valida el servidor** | La Custom API `sanic_CHResolveChangeRequest` (§7): `ChangeRequestResolution.Evaluate` exige previo = Submitted, `initiatingUserId ≠ createdby`, membresía confirmada en el grupo Approver de `sanic_targettable`, y — si el tipo es Update/Create — al menos una línea de cambio. Cualquiera de esas condiciones que falle bloquea con `InvalidPluginExecutionException` **antes** de tocar el maestro. |
+| **Qué pasa si falla / deshacer** | El usuario ve el error tal cual lo devuelve el servidor (mensajes en español, nunca genéricos — p. ej. "El creador de un RFC no puede aprobar su propia solicitud" o "no tiene lineas de cambio; no hay nada que aplicar"), y el RFC **permanece en Submitted** (la transacción entera revierte). No hay deshacer sobre un Applied exitoso: es una transición de estado, no hay botón de "desaprobar"; si fue un error, hay que evaluar y, si corresponde, crear un RFC nuevo. |
 
-### Rechazar un RFC
+### Rechazar un RFC (resolución síncrona)
 
 | Campo | Contenido |
 |---|---|
 | **Quién** | Approver de la tabla objetivo, distinto del creador |
 | **Cuándo** | RFC en Submitted |
 | **Por qué / para qué** | Cierra la solicitud sin aplicar ningún cambio; deja constancia del motivo |
-| **Cómo** | ChangeRequestDetails → botón Rechazar → comentario obligatorio |
-| **Qué valida el servidor** | Mismo guard que Aprobar (estado previo, identidad, membresía) |
-| **Qué pasa si falla / deshacer** | Igual que Aprobar. No hay deshacer — Rejected es terminal; se necesita un RFC nuevo para reintentar el cambio. |
-
-### El aplicador materializa el cambio (automático, sin acción humana)
-
-| Campo | Contenido |
-|---|---|
-| **Quién** | Flujo Power Automate (`Create client data` / `Apply client data changes` / `Activate row` / `Deactivate row`, según `sanic_type`), corre como la cuenta de servicio de la conexión |
-| **Cuándo** | Webhook `Update` del RFC con `sanic_changestatus = Approved` |
-| **Por qué / para qué** | Es el único punto que escribe de verdad sobre Cliente/Sucursal/Correo/Cuenta |
-| **Cómo** | Automático — no hay gesto humano |
-| **Qué valida el servidor** | El propio flujo (conversión por `sanic_datatype`, Try/Catch que fuerza Failed ante cualquier error incluido el primer paso) más `ClientBranchNameMirrorPlugin` si la escritura toca una sucursal |
-| **Qué pasa si falla / deshacer** | RFC → Failed con `sanic_applynotes` explicando el motivo y una fila en `CH-Tbl-ClientDataChangesAuditTrail`; notifica por Teams al creador y al aprobador (`Notify when RFC implementation finish`). Sin deshacer automático: un RFC Failed no reintenta solo — hay que evaluar y, si corresponde, crear un RFC nuevo. |
-
-### El watchdog cierra un RFC atascado (automático)
-
-| Campo | Contenido |
-|---|---|
-| **Quién** | `CH-Flow-RFCWatchdog`, recurrencia cada 15 minutos |
-| **Cuándo** | RFC en Approved con `modifiedon` más viejo que `sanic_CHEVRfcApplyTimeoutMinutes` (default 30 min si la variable no está seteada) |
-| **Por qué / para qué** | Evita que un RFC quede "aprobado" para siempre si su aplicador falló antes de poder marcar el resultado (punto único de falla del primer paso de los aplicadores) |
-| **Cómo** | Automático |
-| **Qué valida el servidor** | El propio flujo — lee la Environment Variable, filtra por timeout, marca Failed con nota y auditoría |
-| **Qué pasa si falla / deshacer** | Si el watchdog mismo falla, el RFC sigue trabado en Approved sin nadie enterado — no tiene su propia red de contención. Sin deshacer: la única salida es un RFC nuevo. |
+| **Cómo** | `scrSolicitud` → botón "Rechazar…" → comentario obligatorio |
+| **Qué valida el servidor** | Misma Custom API y mismo motor de decisión que Aprobar (estado previo, identidad, membresía) — la diferencia es que no toca el maestro, solo marca líneas Denied y cabecera Rejected |
+| **Qué pasa si falla / deshacer** | Igual que Aprobar: motivo real en pantalla, RFC sigue en Submitted si falla. No hay deshacer una vez Rejected — es terminal; se necesita un RFC nuevo para reintentar el cambio. |
 
 ## 10. Supuestos y limitaciones
 
@@ -435,12 +532,16 @@ el `plugintype` y los `sdkmessageprocessingstep` correspondientes.
   app es la única vía soportada; cualquier manual o captura que muestre
   "Governance"/"Reviews" en la navegación estándar de Dataverse describe un
   estado que ya no existe.
-- **Los cambios sobre campos de tipo OptionSet tuvieron una ventana en la que
-  se ignoraban silenciosamente en `Apply client data changes`** (rama vacía
-  del switch de tipo de dato — `Create client data` nunca tuvo este bug, ver
-  §5). Se corrigió con un `Update_a_row_optionset` explícito en ese flujo —
-  el caso **CA-14** exige confirmarlo en vivo antes de asumirlo cerrado en el
-  ambiente que estés mirando.
+- **El bug histórico de OptionSet (§5) es hoy estructuralmente imposible de
+  repetir.** En la v1, `Apply client data changes` tenía una rama vacía para
+  OptionSet que silenciaba el cambio; el fix parche vivía solo en ese flujo.
+  Desde la migración a Custom API, las 7 conversiones de tipo de dato
+  (Text/Number/Date/Money/Lookup/OptionSet/TwoOptions) viven en
+  `FieldValueConverter` (`CashHub.Validation.Security`), un único punto con
+  tests, usado tanto para Create como para Update — no hay dos
+  implementaciones que puedan divergir. El caso **CA-14** de la guía de
+  pruebas queda como referencia histórica del bug ya cerrado, no como algo
+  a re-confirmar en cada release.
 - **Ni `CH-SR-ClientAdminContributor` ni `CH-SR-ClientAdminApprover` declaran
   ningún privilegio (Create/Read/Write) sobre `CH-Tbl-ClientAccount`** —
   verificado con `rg` sobre los dos XML de rol: ningún `prv*sanic_CHTblClientAccount`
@@ -450,13 +551,13 @@ el `plugintype` y los `sdkmessageprocessingstep` correspondientes.
   alcance de este documento) debería ver esa sub-grilla vacía por el modelo de
   seguridad estándar de Dataverse. No hay evidencia en el repo de que sea
   deliberado ni de que exista otra vía de acceso — **verificar en vivo**.
-- **Estado ON/OFF de `Notify reviewers`, `Activate row` y `Deactivate row`:
-  verificar en vivo.** El export local de la solución de flujos no es
-  necesariamente el estado real del ambiente (caso confirmado: `Apply client
-  data changes` aparece OFF en el export pero el CHANGELOG registra su
-  reparación y reactivación verificada en vivo). Mientras `Activate row` /
-  `Deactivate row` estén OFF, un RFC de tipo Activate/Deactivate aprobado no
-  se aplica nunca — a los ~30 minutos el watchdog lo marca Failed.
+- **Los 4 flujos materializadores y el watchdog quedaron desactivados, no
+  eliminados** (§5). Siguen presentes en `CashHubCore`/`CashHubFlow` y
+  reactivarlos por error volvería a disparar `Update`s duplicados sobre el
+  maestro en paralelo con la Custom API — no hay ninguna protección
+  adicional contra ese escenario más allá de mantenerlos apagados. Una
+  limpieza futura puede eliminarlos de la solución (pendiente conocido,
+  `docs/clientadmin-rebuild/08-integracion-y-deploy.md`).
 - **`sanic_applyon` es de solo lectura desde CHANGELOG reciente**: antes
   parecía un picker editable que sugería poder "programar" cuándo se aplica
   un cambio; en realidad los flujos aplican de inmediato y pisan el campo con
@@ -479,6 +580,12 @@ de cliente desde cero y su aprobación (CA-01/02), alta de sucursal con
 verificación del espejo (CA-03), alta de correo y de cuenta (CA-04/05),
 update de campo simple (CA-06), desactivar/reactivar cliente y su efecto en
 la ingesta de correos (CA-07/08), auto-aprobación bloqueada por Web API
-directa (CA-09), notificaciones Teams (CA-10), RFC en conflicto (CA-11), el
-watchdog (CA-12), rechazo (CA-13), OptionSet en RFC de Update (CA-14, marcado
-⚠️ — confirmar el fix en vivo) y línea fallida honesta (CA-15).
+directa (CA-09), notificaciones Teams (CA-10), RFC en conflicto (CA-11),
+rechazo (CA-13), OptionSet en RFC de Update ya resuelto arquitectónicamente
+(CA-14, §10) y línea fallida honesta (CA-15). **CA-12 (el watchdog) queda sin
+objeto** desde el retiro de §5 — no hay ventana `Approved` que vigilar.
+
+Cobertura de backend adicional por la migración, fuera de la numeración CA
+(suite de dominio puro, no de la guía integral): 56 tests nuevos sobre
+`ChangeRequestResolution`, `ChangeRequestLineGuard` y `FieldValueConverter`
+(`src/backend/CashHub.Validation.Tests/`), batería total 680/680 en verde.

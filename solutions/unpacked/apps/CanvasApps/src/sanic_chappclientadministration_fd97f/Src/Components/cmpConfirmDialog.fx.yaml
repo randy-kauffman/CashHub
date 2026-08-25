@@ -1,0 +1,252 @@
+cmpConfirmDialog As CanvasComponent:
+    OnCancelar():
+        ThisProperty:
+            Default: =
+    OnOk():
+        ThisProperty:
+            Default: =
+    CampoTexto: =inpCampoDlg.Text
+    Cargando: =false
+    EtiquetaCampo: ="Motivo de la solicitud"
+    Fill: =RGBA(0, 0, 0, 0)
+    Height: =640
+    Mostrar: =false
+    MostrarCampo: =true
+    OkHabilitado: =true
+    PlaceholderCampo: =""
+    Texto: =""
+    TextoCancelar: ="Cancelar"
+    TextoOk: ="Confirmar"
+    Titulo: =""
+    Tono: ="info"
+    ValorCampo: =""
+    Width: =640
+    X: =0
+    Y: =0
+    ZIndex: =1
+
+    cntFondoDlg As groupContainer.manualLayoutContainer:
+        DropShadow: =DropShadow.Light
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        Visible: =cmpConfirmDialog.Mostrar
+        Width: =Parent.Width
+        ZIndex: =1
+
+        btnBloqueoDlg As button:
+            BorderStyle: =BorderStyle.None
+            Color: =App.Theme.Colors.PrimaryForeground
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            Fill: =Color.Transparent
+            FontWeight: =FontWeight.Semibold
+            Height: =Parent.Height
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =Color.Transparent
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =Color.Transparent
+            Size: =15
+            TabIndex: =-1
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntCardDlg As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =lblCampoLblDlg.Y + lblCampoLblDlg.Height + If(cmpConfirmDialog.MostrarCampo, inpCampoDlg.Height + 12, 0) + 66
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =fxDlgW
+            X: =(Parent.Width - fxDlgW)/2
+            Y: =(Parent.Height - Self.Height)/2
+            ZIndex: =2
+
+            icoTonoDlg As icon:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: |-
+                    =Switch(
+                        cmpConfirmDialog.Tono,
+                        "danger", ThemeDanger,
+                        "warn", ThemeWarn,
+                        "ok", ThemeOk,
+                        ThemeInfo
+                    )
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(244, 244, 244, 1)
+                Height: =34
+                Icon: |-
+                    =Switch(
+                        cmpConfirmDialog.Tono,
+                        "danger", Icon.Warning,
+                        "warn", Icon.Warning,
+                        "ok", Icon.CheckBadge,
+                        Icon.Information
+                    )
+                Width: =34
+                X: =22
+                Y: =20
+                ZIndex: =3
+
+            lblTitDlg As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =RGBA(0, 0, 0, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =24
+                Size: =10.88
+                Text: =cmpConfirmDialog.Titulo
+                Width: =Parent.Width - icoTonoDlg.Width - 76
+                X: =icoTonoDlg.X + icoTonoDlg.Width + 12
+                Y: =22
+                ZIndex: =4
+
+            icoXDlg As icon:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(244, 244, 244, 1)
+                DisplayMode: =If(cmpConfirmDialog.Cargando, DisplayMode.Disabled, DisplayMode.Edit)
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: =cmpConfirmDialog.OnCancelar()
+                Width: =18
+                X: =Parent.Width - 30
+                Y: =22
+                ZIndex: =5
+
+            lblTxtDlg As label:
+                AutoHeight: =true
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Size: =9
+                Text: =cmpConfirmDialog.Texto
+                Width: =lblTitDlg.Width
+                X: =lblTitDlg.X
+                Y: =lblTitDlg.Y + lblTitDlg.Height + 2
+                ZIndex: =6
+
+            lblCampoLblDlg As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                Size: =8.25
+                Text: =cmpConfirmDialog.EtiquetaCampo
+                Visible: =cmpConfirmDialog.MostrarCampo
+                Width: =lblTitDlg.Width
+                X: =lblTitDlg.X
+                Y: =lblTxtDlg.Y + lblTxtDlg.Height + 10
+                ZIndex: =7
+
+            inpCampoDlg As text:
+                BorderColor: =ThemeLine
+                Color: =RGBA(0, 0, 0, 1)
+                Default: =cmpConfirmDialog.ValorCampo
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                DisplayMode: =If(cmpConfirmDialog.Cargando, DisplayMode.Disabled, DisplayMode.Edit)
+                Fill: =ThemeSurface2
+                FocusedBorderThickness: =2
+                Height: =64
+                HintText: =cmpConfirmDialog.PlaceholderCampo
+                HoverBorderColor: =ThemeLine
+                HoverColor: =RGBA(0, 0, 0, 1)
+                HoverFill: =ThemeSurface2
+                Mode: =TextMode.MultiLine
+                Size: =9
+                Visible: =cmpConfirmDialog.MostrarCampo
+                Width: =lblTitDlg.Width
+                X: =lblTitDlg.X
+                Y: =lblCampoLblDlg.Y + lblCampoLblDlg.Height + 4
+                ZIndex: =8
+
+            spnCargaDlg As Spinner:
+                BasePaletteColor: =
+                DisplayMode: =DisplayMode.Edit
+                FontColor: =
+                Height: =18
+                SpinnerColor: =
+                TrackColor: =
+                Visible: =cmpConfirmDialog.Cargando
+                Width: =18
+                X: =Parent.Width/2 - 9
+                Y: =Parent.Height - 56
+                ZIndex: =9
+
+            btnCancelDlg As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: =If(cmpConfirmDialog.Cargando, DisplayMode.Disabled, DisplayMode.Edit)
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverBorderColor: =ThemeLine
+                HoverColor: =ThemeInk2
+                HoverFill: =ThemeSurface2
+                OnSelect: =cmpConfirmDialog.OnCancelar()
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: =cmpConfirmDialog.TextoCancelar
+                Width: =110
+                X: =btnOkDlg.X - 8 - Self.Width
+                Y: =Parent.Height - 50
+                ZIndex: =10
+
+            btnOkDlg As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: =If(cmpConfirmDialog.OkHabilitado && !cmpConfirmDialog.Cargando, DisplayMode.Edit, DisplayMode.Disabled)
+                Fill: =Switch(cmpConfirmDialog.Tono, "danger", ThemeDanger, "ok", ThemeOk, ThemeAccent)
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =ThemeSurface
+                HoverFill: =App.Theme.Colors.Darker10
+                OnSelect: =cmpConfirmDialog.OnOk()
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9
+                Text: =If(cmpConfirmDialog.Cargando, "Aplicando…", cmpConfirmDialog.TextoOk)
+                Width: =150
+                X: =Parent.Width - 22 - Self.Width
+                Y: =Parent.Height - 50
+                ZIndex: =11
+

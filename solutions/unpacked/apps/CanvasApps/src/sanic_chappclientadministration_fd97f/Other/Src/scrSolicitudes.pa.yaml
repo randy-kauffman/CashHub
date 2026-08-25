@@ -1,0 +1,1123 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrSolicitudes:
+    Properties:
+      Fill: =ThemeBg
+      OnVisible: |-
+        =// ============ 1) Estado a default (gotcha 8.3: nada arrastra la visita anterior) ============
+        Reset(inpBusqSol);
+        Reset(drpTablaSol);
+        UpdateContext({
+            ctxFilasPag: 25,
+            ctxOrdenDesc: true,
+            ctxPagina: 1,
+            ctxBusqueda: "",
+            ctxBusqClienteGuid: GUID("00000000-0000-0000-0000-000000000000"),
+            ctxTabla: "",
+            // ¿De qué tablas objetivo soy Approver? (colMisPermisos viene de App.OnStart; los
+            // literales son el LOGICAL NAME de la entidad - D6 de 01 RESUELTA, ver 02 DC3 / 03
+            // hallazgo crítico #3)
+            ctxApruebaCliente:  CountRows(Filter(colMisPermisos, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = "sanic_chtblclient")) > 0,
+            ctxApruebaSucursal: CountRows(Filter(colMisPermisos, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = "sanic_chtblclientbranch")) > 0,
+            ctxApruebaCorreo:   CountRows(Filter(colMisPermisos, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = "sanic_chtblclientemail")) > 0,
+            ctxApruebaCuenta:   CountRows(Filter(colMisPermisos, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = "sanic_chtblclientaccount")) > 0
+        });
+        // Segmento default: "Para mi decisión" si soy Approver de algo; si no, "Mías".
+        // (Va en un UpdateContext SEPARADO: un UpdateContext no puede leer claves que setea él mismo.)
+        UpdateContext({
+            ctxSegmento: If(ctxApruebaCliente || ctxApruebaSucursal || ctxApruebaCorreo || ctxApruebaCuenta, "mi", "mias")
+        });
+        // ============ 2) BLOQUE-COMPLETO (cola + contadores + grilla) ============
+        // --- 2a. Cola "para mi decisión" - SIEMPRE se materializa (alimenta KPI 1, el contador del
+        //     segmento y la grilla del segmento "mi"). Filtro 100% delegable: picklist = opción,
+        //     desigualdad de GUID del lookup, OR de igualdades sobre TargetTable con booleanos
+        //     constantes de contexto. Sin AddColumns antes del filtro (gotcha 8.12).
+        ClearCollect(
+            colParaMiSol,
+            Sort(
+                Filter(
+                    'CH-Tbl-ClientDataChangeRequests',
+                    'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted
+                    && 'Created By'.User <> gvarUser.User
+                    && (
+                           (ctxApruebaCliente  && TargetTable = "sanic_chtblclient")
+                        || (ctxApruebaSucursal && TargetTable = "sanic_chtblclientbranch")
+                        || (ctxApruebaCorreo   && TargetTable = "sanic_chtblclientemail")
+                        || (ctxApruebaCuenta   && TargetTable = "sanic_chtblclientaccount")
+                    )
+                ),
+                'Created On', SortOrder.Descending
+            )
+        );
+        // --- 2b. Contadores server-side (CountRows delegado a Dataverse; ver "A verificar") ---
+        UpdateContext({
+            ctxCountMias:        CountRows(Filter('CH-Tbl-ClientDataChangeRequests', 'Created By'.User = gvarUser.User)),
+            ctxKpiResueltasHoy:  CountRows(Filter('CH-Tbl-ClientDataChangeRequests', SolvedOn >= Today())),
+            ctxKpiAplicadasHoy:  CountRows(Filter('CH-Tbl-ClientDataChangeRequests', SolvedOn >= Today() && 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied)),
+            ctxKpiRechazadasHoy: CountRows(Filter('CH-Tbl-ClientDataChangeRequests', SolvedOn >= Today() && 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected)),
+            ctxKpiFallidas7d:    CountRows(Filter('CH-Tbl-ClientDataChangeRequests', SolvedOn >= DateAdd(Today(), -7, TimeUnit.Days) && 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed))
+        });
+        // ============ 3) BLOQUE-GRILLA (la colección que pinta la galería, según segmento+filtros) ============
+        // If POR FUERA de cada ClearCollect, con else - gotcha 8.13. En "mi" se filtra EN MEMORIA
+        // sobre colParaMiSol (ya materializada y acotada); en "mias"/"todas" el filtro es server-side.
+        If(
+            ctxSegmento = "mi",
+            ClearCollect(
+                colSolicitudesSol,
+                Filter(
+                    colParaMiSol,
+                    (ctxTabla = "" || TargetTable = ctxTabla)
+                    && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                )
+            ),
+            ctxSegmento = "mias",
+            ClearCollect(
+                colSolicitudesSol,
+                Sort(
+                    Filter(
+                        'CH-Tbl-ClientDataChangeRequests',
+                        'Created By'.User = gvarUser.User
+                        && (ctxTabla = "" || TargetTable = ctxTabla)
+                        && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                    ),
+                    'Created On', SortOrder.Descending
+                )
+            ),
+            ClearCollect(
+                colSolicitudesSol,
+                Sort(
+                    Filter(
+                        'CH-Tbl-ClientDataChangeRequests',
+                        (ctxTabla = "" || TargetTable = ctxTabla)
+                        && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                    ),
+                    'Created On', SortOrder.Descending
+                )
+            )
+        );
+        UpdateContext({ctxPagina: 1})
+    Children:
+      - cmpAppHeaderSol:
+          Control: CanvasComponent
+          ComponentName: cmpAppHeader
+          Properties:
+            Activo: ="Solicitudes"
+            Height: =fxHeaderH
+            OnClientes: =Navigate(scrClientes, ScreenTransition.None)
+            OnSolicitudes: =false
+            RolTexto: =gvarRolTexto
+            Subtitulo: ="Solicitudes de cambio"
+            Titulo: ="Administración de Clientes"
+            Width: =Parent.Width
+      - cntToolbarSol:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =Color.Transparent
+            Height: =56
+            Width: =Parent.Width
+            Y: =fxHeaderH
+          Children:
+            - cntSegSol:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface2
+                  Height: =32
+                  RadiusBottomLeft: =9
+                  RadiusBottomRight: =9
+                  RadiusTopLeft: =9
+                  RadiusTopRight: =9
+                  Width: =btnSegTodasSol.X + btnSegTodasSol.Width + 3
+                  X: =fxGutter
+                  Y: =12
+                Children:
+                  - btnSegMiSol:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =If(ctxSegmento = "mi", ThemeAccent, ThemeInk2)
+                        Fill: =If(ctxSegmento = "mi", ThemeSurface, Color.Transparent)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =If(ctxSegmento = "mi", FontWeight.Semibold, FontWeight.Normal)
+                        Height: =26
+                        HoverFill: =If(ctxSegmento = "mi", ThemeSurface, ThemeSurface2)
+                        OnSelect: |-
+                          =UpdateContext({ctxSegmento: "mi"});
+                          If(
+                              ctxSegmento = "mi",
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Filter(
+                                      colParaMiSol,
+                                      (ctxTabla = "" || TargetTable = ctxTabla)
+                                      && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                  )
+                              ),
+                              ctxSegmento = "mias",
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Sort(
+                                      Filter(
+                                          'CH-Tbl-ClientDataChangeRequests',
+                                          'Created By'.User = gvarUser.User
+                                          && (ctxTabla = "" || TargetTable = ctxTabla)
+                                          && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                      ),
+                                      'Created On', SortOrder.Descending
+                                  )
+                              ),
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Sort(
+                                      Filter(
+                                          'CH-Tbl-ClientDataChangeRequests',
+                                          (ctxTabla = "" || TargetTable = ctxTabla)
+                                          && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                      ),
+                                      'Created On', SortOrder.Descending
+                                  )
+                              )
+                          );
+                          UpdateContext({ctxPagina: 1})
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9
+                        Text: ="Para mi decisión (" & CountRows(colParaMiSol) & ")"
+                        Width: =Len(Self.Text) * 5.6 + 26
+                        X: =3
+                        Y: =3
+                  - btnSegMiasSol:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =If(ctxSegmento = "mias", ThemeAccent, ThemeInk2)
+                        Fill: =If(ctxSegmento = "mias", ThemeSurface, Color.Transparent)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =If(ctxSegmento = "mias", FontWeight.Semibold, FontWeight.Normal)
+                        Height: =26
+                        HoverFill: =If(ctxSegmento = "mias", ThemeSurface, ThemeSurface2)
+                        OnSelect: |-
+                          =UpdateContext({ctxSegmento: "mias"});
+                          If(
+                              ctxSegmento = "mi",
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Filter(
+                                      colParaMiSol,
+                                      (ctxTabla = "" || TargetTable = ctxTabla)
+                                      && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                  )
+                              ),
+                              ctxSegmento = "mias",
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Sort(
+                                      Filter(
+                                          'CH-Tbl-ClientDataChangeRequests',
+                                          'Created By'.User = gvarUser.User
+                                          && (ctxTabla = "" || TargetTable = ctxTabla)
+                                          && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                      ),
+                                      'Created On', SortOrder.Descending
+                                  )
+                              ),
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Sort(
+                                      Filter(
+                                          'CH-Tbl-ClientDataChangeRequests',
+                                          (ctxTabla = "" || TargetTable = ctxTabla)
+                                          && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                      ),
+                                      'Created On', SortOrder.Descending
+                                  )
+                              )
+                          );
+                          UpdateContext({ctxPagina: 1})
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9
+                        Text: ="Mías (" & ctxCountMias & ")"
+                        Width: =Len(Self.Text) * 5.6 + 26
+                        X: =btnSegMiSol.X + btnSegMiSol.Width + 3
+                        Y: =3
+                  - btnSegTodasSol:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =If(ctxSegmento = "todas", ThemeAccent, ThemeInk2)
+                        Fill: =If(ctxSegmento = "todas", ThemeSurface, Color.Transparent)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =If(ctxSegmento = "todas", FontWeight.Semibold, FontWeight.Normal)
+                        Height: =26
+                        HoverFill: =If(ctxSegmento = "todas", ThemeSurface, ThemeSurface2)
+                        OnSelect: |-
+                          =UpdateContext({ctxSegmento: "todas"});
+                          If(
+                              ctxSegmento = "mi",
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Filter(
+                                      colParaMiSol,
+                                      (ctxTabla = "" || TargetTable = ctxTabla)
+                                      && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                  )
+                              ),
+                              ctxSegmento = "mias",
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Sort(
+                                      Filter(
+                                          'CH-Tbl-ClientDataChangeRequests',
+                                          'Created By'.User = gvarUser.User
+                                          && (ctxTabla = "" || TargetTable = ctxTabla)
+                                          && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                      ),
+                                      'Created On', SortOrder.Descending
+                                  )
+                              ),
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Sort(
+                                      Filter(
+                                          'CH-Tbl-ClientDataChangeRequests',
+                                          (ctxTabla = "" || TargetTable = ctxTabla)
+                                          && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                      ),
+                                      'Created On', SortOrder.Descending
+                                  )
+                              )
+                          );
+                          UpdateContext({ctxPagina: 1})
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9
+                        Text: ="Todas"
+                        Width: =Len(Self.Text) * 5.6 + 26
+                        X: =btnSegMiasSol.X + btnSegMiasSol.Width + 3
+                        Y: =3
+            - cntBusqSol:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Height: =32
+                  Width: =Min(300, Parent.Width * 0.25)
+                  X: =cntSegSol.X + cntSegSol.Width + fxGap
+                  Y: =12
+                Children:
+                  - icoLupaBusqSol:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        Color: =ThemeInk3
+                        Height: =16
+                        Icon: =Icon.Search
+                        Width: =16
+                        X: =10
+                        Y: =(Parent.Height - Self.Height) / 2
+                  - inpBusqSol:
+                      Control: Classic/TextInput@2.3.2
+                      Properties:
+                        BorderColor: =ThemeLine
+                        Default: =""
+                        Fill: =ThemeSurface
+                        Height: =Parent.Height
+                        HintText: ="N° de solicitud o cliente…"
+                        OnChange: |-
+                          =// inpBusqSol.OnChange - resuelve el "o cliente" de la búsqueda: el N° va delegable por
+                          // StartsWith(Name, …); el cliente se resuelve UNA vez acá (LookUp delegable sobre el maestro)
+                          // y entra al filtro como igualdad de GUID. Si nada matchea, GUID centinela que no matchea nunca
+                          // (jamás Blank: compararía lookup vacío = Blank y matchearía RFCs sin cliente).
+                          UpdateContext({
+                              ctxBusqueda: Trim(Self.Text),
+                              ctxBusqClienteGuid:
+                                  If(
+                                      IsBlank(Trim(Self.Text)),
+                                      GUID("00000000-0000-0000-0000-000000000000"),
+                                      Coalesce(
+                                          LookUp('CH-Tbl-Clients', StartsWith(Name, Trim(Self.Text))).'CH-Tbl-Client',
+                                          GUID("00000000-0000-0000-0000-000000000000")
+                                      )
+                                  )
+                          });
+                          If(
+                              ctxSegmento = "mi",
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Filter(
+                                      colParaMiSol,
+                                      (ctxTabla = "" || TargetTable = ctxTabla)
+                                      && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                  )
+                              ),
+                              ctxSegmento = "mias",
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Sort(
+                                      Filter(
+                                          'CH-Tbl-ClientDataChangeRequests',
+                                          'Created By'.User = gvarUser.User
+                                          && (ctxTabla = "" || TargetTable = ctxTabla)
+                                          && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                      ),
+                                      'Created On', SortOrder.Descending
+                                  )
+                              ),
+                              ClearCollect(
+                                  colSolicitudesSol,
+                                  Sort(
+                                      Filter(
+                                          'CH-Tbl-ClientDataChangeRequests',
+                                          (ctxTabla = "" || TargetTable = ctxTabla)
+                                          && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                      ),
+                                      'Created On', SortOrder.Descending
+                                  )
+                              )
+                          );
+                          UpdateContext({ctxPagina: 1})
+                        Width: =Parent.Width - 32
+                        X: =32
+            - drpTablaSol:
+                Control: Classic/DropDown@2.3.1
+                Properties:
+                  BorderColor: =ThemeLine
+                  Fill: =ThemeSurface
+                  Font: =Font.'Open Sans'
+                  Height: =32
+                  Items: |-
+                    =// drpTablaSol.Items - los valores de la columna Tabla son el LOGICAL NAME de sanic_targettable
+                    // (divergencia D6 de 01, RESUELTA - ver 02 DC3 / 03 hallazgo crítico #3)
+                    Table(
+                        {Etiqueta: "Todas las tablas", Tabla: ""},
+                        {Etiqueta: "Clientes",   Tabla: "sanic_chtblclient"},
+                        {Etiqueta: "Sucursales", Tabla: "sanic_chtblclientbranch"},
+                        {Etiqueta: "Correos",    Tabla: "sanic_chtblclientemail"},
+                        {Etiqueta: "Cuentas",    Tabla: "sanic_chtblclientaccount"}
+                    )
+                  Items.Value: =Etiqueta
+                  OnChange: |-
+                    =UpdateContext({ctxTabla: Self.Selected.Tabla});
+                    If(
+                        ctxSegmento = "mi",
+                        ClearCollect(
+                            colSolicitudesSol,
+                            Filter(
+                                colParaMiSol,
+                                (ctxTabla = "" || TargetTable = ctxTabla)
+                                && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                            )
+                        ),
+                        ctxSegmento = "mias",
+                        ClearCollect(
+                            colSolicitudesSol,
+                            Sort(
+                                Filter(
+                                    'CH-Tbl-ClientDataChangeRequests',
+                                    'Created By'.User = gvarUser.User
+                                    && (ctxTabla = "" || TargetTable = ctxTabla)
+                                    && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                ),
+                                'Created On', SortOrder.Descending
+                            )
+                        ),
+                        ClearCollect(
+                            colSolicitudesSol,
+                            Sort(
+                                Filter(
+                                    'CH-Tbl-ClientDataChangeRequests',
+                                    (ctxTabla = "" || TargetTable = ctxTabla)
+                                    && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                ),
+                                'Created On', SortOrder.Descending
+                            )
+                        )
+                    );
+                    UpdateContext({ctxPagina: 1})
+                  Size: =9
+                  Width: =170
+                  X: =cntBusqSol.X + cntBusqSol.Width + fxGap
+                  Y: =12
+            - btnRefrescarSol:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Color: =ThemeInk2
+                  DisabledBorderColor: =Color.Transparent
+                  DisabledColor: =ThemeInk3
+                  DisabledFill: =ThemeLineSoft
+                  Fill: =ThemeSurface
+                  Font: =Font.'Open Sans'
+                  Height: =26
+                  HoverFill: =ThemeSurface2
+                  OnSelect: |-
+                    =Refresh('CH-Tbl-ClientDataChangeRequests');
+                    ClearCollect(
+                        colParaMiSol,
+                        Sort(
+                            Filter(
+                                'CH-Tbl-ClientDataChangeRequests',
+                                'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted
+                                && 'Created By'.User <> gvarUser.User
+                                && (
+                                       (ctxApruebaCliente  && TargetTable = "sanic_chtblclient")
+                                    || (ctxApruebaSucursal && TargetTable = "sanic_chtblclientbranch")
+                                    || (ctxApruebaCorreo   && TargetTable = "sanic_chtblclientemail")
+                                    || (ctxApruebaCuenta   && TargetTable = "sanic_chtblclientaccount")
+                                )
+                            ),
+                            'Created On', SortOrder.Descending
+                        )
+                    );
+                    UpdateContext({
+                        ctxCountMias:        CountRows(Filter('CH-Tbl-ClientDataChangeRequests', 'Created By'.User = gvarUser.User)),
+                        ctxKpiResueltasHoy:  CountRows(Filter('CH-Tbl-ClientDataChangeRequests', SolvedOn >= Today())),
+                        ctxKpiAplicadasHoy:  CountRows(Filter('CH-Tbl-ClientDataChangeRequests', SolvedOn >= Today() && 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied)),
+                        ctxKpiRechazadasHoy: CountRows(Filter('CH-Tbl-ClientDataChangeRequests', SolvedOn >= Today() && 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected)),
+                        ctxKpiFallidas7d:    CountRows(Filter('CH-Tbl-ClientDataChangeRequests', SolvedOn >= DateAdd(Today(), -7, TimeUnit.Days) && 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed))
+                    });
+                    If(
+                        ctxSegmento = "mi",
+                        ClearCollect(
+                            colSolicitudesSol,
+                            Filter(
+                                colParaMiSol,
+                                (ctxTabla = "" || TargetTable = ctxTabla)
+                                && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                            )
+                        ),
+                        ctxSegmento = "mias",
+                        ClearCollect(
+                            colSolicitudesSol,
+                            Sort(
+                                Filter(
+                                    'CH-Tbl-ClientDataChangeRequests',
+                                    'Created By'.User = gvarUser.User
+                                    && (ctxTabla = "" || TargetTable = ctxTabla)
+                                    && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                ),
+                                'Created On', SortOrder.Descending
+                            )
+                        ),
+                        ClearCollect(
+                            colSolicitudesSol,
+                            Sort(
+                                Filter(
+                                    'CH-Tbl-ClientDataChangeRequests',
+                                    (ctxTabla = "" || TargetTable = ctxTabla)
+                                    && (ctxBusqueda = "" || StartsWith(Name, ctxBusqueda) || RelatedClient.'CH-Tbl-Client' = ctxBusqClienteGuid)
+                                ),
+                                'Created On', SortOrder.Descending
+                            )
+                        )
+                    );
+                    UpdateContext({ctxPagina: 1})
+                  RadiusBottomLeft: =7
+                  RadiusBottomRight: =7
+                  RadiusTopLeft: =7
+                  RadiusTopRight: =7
+                  Size: =8.25
+                  Text: ="↻ Actualizar"
+                  Width: =110
+                  X: =Parent.Width - fxGutter - Self.Width
+                  Y: =(Parent.Height - 26) / 2
+      - cntBodySol:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =Color.Transparent
+            Height: =Parent.Height - Self.Y
+            Width: =Parent.Width
+            Y: =cntToolbarSol.Y + cntToolbarSol.Height
+          Children:
+            - cntKpiParaMiSol:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  Height: =fxKpiH
+                  RadiusBottomLeft: =11
+                  RadiusBottomRight: =11
+                  RadiusTopLeft: =11
+                  RadiusTopRight: =11
+                  Width: =(Parent.Width - fxGutter*2 - fxGap*2) / 3
+                  X: =fxGutter
+                Children:
+                  - lblKpiParaMiLabSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =14
+                        Size: =7.88
+                        Text: ="ESPERAN MI DECISIÓN"
+                        Width: =Parent.Width - 30
+                        X: =15
+                        Y: =8
+                  - lblKpiParaMiValSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =26
+                        Size: =16.5
+                        Text: =CountRows(colParaMiSol)
+                        Width: =Parent.Width - 30
+                        X: =15
+                        Y: =22
+                  - lblKpiParaMiSubSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        Height: =14
+                        Size: =8.25
+                        Text: |-
+                          =// lblKpiParaMiSubSol.Text - antigüedad de la más vieja de MI cola (sobre la colección local;
+                          // la fecha base es Created On: no existe sello de "enviada", ver Divergencias)
+                          If(
+                              CountRows(colParaMiSol) = 0,
+                              "sin pendientes",
+                              With(
+                                  {vieja: First(Sort(colParaMiSol, 'Created On', SortOrder.Ascending)).'Created On'},
+                                  If(
+                                      DateDiff(vieja, Now(), TimeUnit.Hours) < 24,
+                                      "la más vieja: hace " & DateDiff(vieja, Now(), TimeUnit.Hours) & " h",
+                                      "la más vieja: hace " & DateDiff(vieja, Now(), TimeUnit.Days) & " días"
+                                  )
+                              )
+                          )
+                        Width: =Parent.Width - 30
+                        X: =15
+                        Y: =48
+            - cntKpiResueltasSol:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  Height: =fxKpiH
+                  RadiusBottomLeft: =11
+                  RadiusBottomRight: =11
+                  RadiusTopLeft: =11
+                  RadiusTopRight: =11
+                  Width: =(Parent.Width - fxGutter*2 - fxGap*2) / 3
+                  X: =cntKpiParaMiSol.X + cntKpiParaMiSol.Width + fxGap
+                Children:
+                  - lblKpiResueltasSubSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        Height: =14
+                        Size: =8.25
+                        Text: =ctxKpiAplicadasHoy & " aplicadas · " & ctxKpiRechazadasHoy & " rechazadas"
+                        Width: =Parent.Width - 30
+                        X: =15
+                        Y: =48
+                  - lblKpiResueltasValSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =26
+                        Size: =16.5
+                        Text: =ctxKpiResueltasHoy
+                        Width: =Parent.Width - 30
+                        X: =15
+                        Y: =22
+                  - lblKpiResueltasLabSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =14
+                        Size: =7.88
+                        Text: ="RESUELTAS HOY"
+                        Width: =Parent.Width - 30
+                        X: =15
+                        Y: =8
+            - cntKpiFallidasSol:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  Height: =fxKpiH
+                  RadiusBottomLeft: =11
+                  RadiusBottomRight: =11
+                  RadiusTopLeft: =11
+                  RadiusTopRight: =11
+                  Width: =(Parent.Width - fxGutter*2 - fxGap*2) / 3
+                  X: =cntKpiResueltasSol.X + cntKpiResueltasSol.Width + fxGap
+                Children:
+                  - lblKpiFallidasSubSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        Height: =14
+                        Size: =8.25
+                        Text: =If(ctxKpiFallidas7d > 0, "requiere revisión", "sin fallas recientes")
+                        Width: =Parent.Width - 30
+                        X: =15
+                        Y: =48
+                  - lblKpiFallidasValSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =If(ctxKpiFallidas7d > 0, ThemeDanger, ThemeInk)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =26
+                        Size: =16.5
+                        Text: =ctxKpiFallidas7d
+                        Width: =Parent.Width - 30
+                        X: =15
+                        Y: =22
+                  - lblKpiFallidasLabSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =14
+                        Size: =7.88
+                        Text: ="FALLIDAS (7 DÍAS)"
+                        Width: =Parent.Width - 30
+                        X: =15
+                        Y: =8
+            - cntGrillaSol:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  Height: =Parent.Height - Self.Y - 16
+                  RadiusBottomLeft: =fxCardR
+                  RadiusBottomRight: =fxCardR
+                  RadiusTopLeft: =fxCardR
+                  RadiusTopRight: =fxCardR
+                  Width: =Parent.Width - fxGutter*2
+                  X: =fxGutter
+                  Y: =fxKpiH + fxGap
+                Children:
+                  - shpGrillaHeadSol:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        Fill: =ThemeSurface2
+                        Height: =34
+                        Width: =Parent.Width
+                  - lblColNumSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: ="SOLICITUD"
+                        Width: =(Parent.Width - 92) * 0.14
+                        X: =16
+                  - lblColClienteSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: ="CLIENTE"
+                        Width: =(Parent.Width - 92) * 0.22
+                        X: =lblColNumSol.X + lblColNumSol.Width + 10
+                  - lblColTablaSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: ="TABLA"
+                        Width: =(Parent.Width - 92) * 0.14
+                        X: =lblColClienteSol.X + lblColClienteSol.Width + 10
+                  - lblColTipoSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: ="TIPO"
+                        Width: =(Parent.Width - 92) * 0.14
+                        X: =lblColTablaSol.X + lblColTablaSol.Width + 10
+                  - lblColEstadoSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: ="ESTADO"
+                        Width: =(Parent.Width - 92) * 0.12
+                        X: =lblColTipoSol.X + lblColTipoSol.Width + 10
+                  - lblColCreadorSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        Size: =7.5
+                        Text: ="CREADA POR"
+                        Width: =(Parent.Width - 92) * 0.12
+                        X: =lblColEstadoSol.X + lblColEstadoSol.Width + 10
+                  - lblColFechaSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Right
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =34
+                        OnSelect: |-
+                          =UpdateContext({ctxOrdenDesc: !ctxOrdenDesc, ctxPagina: 1})
+                        Size: =7.5
+                        Text: ="CREADA " & If(ctxOrdenDesc, "▼", "▲")
+                        Width: =(Parent.Width - 92) * 0.12
+                        X: =lblColCreadorSol.X + lblColCreadorSol.Width + 10
+                  - shpGrillaLineaSol:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        Fill: =ThemeLine
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =33
+                  - galSolicitudesSol:
+                      Control: Gallery@2.15.0
+                      Variant: Vertical
+                      Properties:
+                        Height: =Parent.Height - 34 - cntPagSol.Height
+                        Items: |-
+                          =FirstN(
+                              LastN(
+                                  Sort(colSolicitudesSol, 'Created On', If(ctxOrdenDesc, SortOrder.Descending, SortOrder.Ascending)),
+                                  CountRows(colSolicitudesSol) - (ctxPagina - 1) * ctxFilasPag
+                              ),
+                              ctxFilasPag
+                          )
+                        OnSelect: |-
+                          =// OnSelect - CONTRATO DE SALIDA de la pantalla (la acción vive acá, gotcha 8.4;
+                          // todos los hijos del template delegan con Select(Parent))
+                          Set(gvarSolicitudSel, ThisItem);
+                          Set(gvarClienteSel, ThisItem.RelatedClient);
+                          Navigate(scrSolicitud, ScreenTransition.None)
+                        TemplateSize: =fxRowH
+                        Width: =Parent.Width
+                        Y: =34
+                      Children:
+                        - btnFilaSol:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderThickness: =0
+                              Fill: =Color.Transparent
+                              Height: =fxRowH
+                              HoverFill: =ThemeSurface2
+                              OnSelect: =Select(Parent)
+                              PressedFill: =ThemeAccentSoft
+                              Size: =13
+                              Text: =""
+                              Width: =galSolicitudesSol.Width
+                        - shpFilaSelSol:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+                              Height: =fxRowH
+                              Width: =galSolicitudesSol.Width
+                        - shpFilaSelBarraSol:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =ThemeAccent
+                              Height: =fxRowH
+                              Visible: =ThisItem.IsSelected
+                              Width: =3
+                        - lblFilaNumSol:
+                            Control: Label@2.5.1
+                            Properties:
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =fxRowH
+                              OnSelect: =Select(Parent)
+                              Size: =9
+                              Text: =ThisItem.Name
+                              Width: =lblColNumSol.Width
+                              X: =lblColNumSol.X
+                        - lblFilaClienteSol:
+                            Control: Label@2.5.1
+                            Properties:
+                              Font: =Font.'Open Sans'
+                              Height: =fxRowH
+                              OnSelect: =Select(Parent)
+                              Size: =9
+                              Text: =ThisItem.RelatedClient.Name
+                              Width: =lblColClienteSol.Width
+                              X: =lblColClienteSol.X
+                        - lblFilaTablaSol:
+                            Control: Label@2.5.1
+                            Properties:
+                              Font: =Font.'Open Sans'
+                              Height: =fxRowH
+                              OnSelect: =Select(Parent)
+                              Size: =9
+                              Text: =ThisItem.TargetTableDisplayName
+                              Width: =lblColTablaSol.Width
+                              X: =lblColTablaSol.X
+                        - pilFilaTipoSol:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderThickness: =0
+                              Color: |-
+                                =// pilFilaTipoSol - Color (mapa TIPO de la receta 7.3, inline)
+                                Switch(
+                                    ThisItem.Type,
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Update,     ThemeInfo,
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Deactivate, ThemeDanger,
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Create,     ThemeAccent,
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Activate,   ThemeOk,
+                                    ThemeInk3
+                                )
+                              DisplayMode: =DisplayMode.View
+                              Fill: |-
+                                =// pilFilaTipoSol - Fill (mapa TIPO de la receta 7.3, inline)
+                                Switch(
+                                    ThisItem.Type,
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Update,     ThemeInfoSoft,
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Deactivate, ThemeDangerSoft,
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Create,     ThemeAccentSoft,
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Activate,   ThemeOkSoft,
+                                    ThemeLineSoft
+                                )
+                              Font: =Font.'Open Sans'
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              Size: =7.88
+                              Text: |-
+                                =// pilFilaTipoSol - mapa TIPO de la receta 7.3, inline (los mapas no pueden ser named
+                                // formulas: dependen de ThisItem - nota de 01 §3)
+                                Switch(
+                                    ThisItem.Type,
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Update,     "Edición",
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Deactivate, "Desactivación",
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Create,     "Alta",
+                                    'Type (CH-Tbl-ClientDataChangeRequests)'.Activate,   "Activación",
+                                    "—"
+                                )
+                              Width: =Len(Self.Text) * 5.4 + 18
+                              X: =lblColTipoSol.X
+                              Y: =(fxRowH - 20) / 2
+                        - pilFilaEstadoSol:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeLineSoft
+                              BorderThickness: =0
+                              Color: |-
+                                =// pilFilaEstadoSol - Color (mapa ESTADO de la receta 7.3, inline)
+                                Switch(
+                                    ThisItem.'Change Status',
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted, ThemeWarn,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved,  ThemeInfo,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected,  ThemeDanger,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied,   ThemeOk,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed,    ThemeDanger,
+                                    ThemeInk3
+                                )
+                              DisplayMode: =DisplayMode.View
+                              Fill: |-
+                                =// pilFilaEstadoSol - Fill (mapa ESTADO de la receta 7.3, inline)
+                                Switch(
+                                    ThisItem.'Change Status',
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted, ThemeWarnSoft,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved,  ThemeInfoSoft,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected,  ThemeDangerSoft,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied,   ThemeOkSoft,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed,    ThemeDangerSoft,
+                                    ThemeLineSoft
+                                )
+                              Font: =Font.'Open Sans'
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              Size: =7.88
+                              Text: |-
+                                =// pilFilaEstadoSol - mapa ESTADO de la receta 7.3, inline
+                                Switch(
+                                    ThisItem.'Change Status',
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,     "Borrador",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted, "Enviada",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved,  "Aprobada",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected,  "Rechazada",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied,   "Aplicada",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed,    "Fallida",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled,  "Cancelada",
+                                    "—"
+                                )
+                              Width: =Len(Self.Text) * 5.4 + 18
+                              X: =lblColEstadoSol.X
+                              Y: =(fxRowH - 20) / 2
+                        - lblFilaCreadorSol:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              Height: =fxRowH
+                              OnSelect: =Select(Parent)
+                              Size: =8.63
+                              Text: =ThisItem.'Created By'.'Full Name'
+                              Width: =lblColCreadorSol.Width
+                              X: =lblColCreadorSol.X
+                        - lblFilaFechaSol:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              Font: =Font.'Open Sans'
+                              Height: =fxRowH
+                              OnSelect: =Select(Parent)
+                              Size: =9
+                              Text: =ThisItem.'Created On'
+                              Width: =lblColFechaSol.Width
+                              X: =lblColFechaSol.X
+                        - shpFilaSepSol:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =ThemeLineSoft
+                              Height: =1
+                              Width: =galSolicitudesSol.Width
+                              Y: =fxRowH - 1
+                  - lblVacioSol:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        Color: =ThemeInk3
+                        Font: =Font.'Open Sans'
+                        Height: =60
+                        Size: =9.38
+                        Text: |-
+                          =Switch(
+                              ctxSegmento,
+                              "mi",   "No hay solicitudes esperando tu decisión." & If(ctxBusqueda <> "" || ctxTabla <> "", " Probá quitando la búsqueda o el filtro de tabla.", ""),
+                              "mias", "Todavía no tenés solicitudes" & If(ctxBusqueda <> "" || ctxTabla <> "", " que coincidan con los filtros.", " creadas."),
+                              "No hay solicitudes que coincidan con los filtros."
+                          )
+                        Visible: =CountRows(colSolicitudesSol) = 0
+                        Width: =Parent.Width * 0.6
+                        X: =Parent.Width * 0.2
+                        Y: =120
+                  - cntPagSol:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Fill: =ThemeSurface2
+                        Height: =36
+                        RadiusBottomLeft: =fxCardR
+                        RadiusBottomRight: =fxCardR
+                        RadiusTopLeft: =0
+                        RadiusTopRight: =0
+                        Width: =Parent.Width
+                        Y: =Parent.Height - 36
+                      Children:
+                        - lblResumenPagSol:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =Parent.Height
+                              Size: =9.38
+                              Text: =CountRows(colSolicitudesSol) & " solicitudes · página " & ctxPagina & " de " & Max(1, RoundUp(CountRows(colSolicitudesSol) / ctxFilasPag, 0))
+                              Width: =Parent.Width * 0.5
+                              X: =16
+                        - btnPagPrevSol:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeLine
+                              BorderThickness: =1
+                              Color: =ThemeInk2
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              DisplayMode: =If(ctxPagina > 1, DisplayMode.Edit, DisplayMode.Disabled)
+                              Fill: =ThemeSurface
+                              Font: =Font.'Open Sans'
+                              Height: =28
+                              HoverFill: =ThemeSurface2
+                              OnSelect: |-
+                                =UpdateContext({ctxPagina: ctxPagina - 1})
+                              RadiusBottomLeft: =6
+                              RadiusBottomRight: =6
+                              RadiusTopLeft: =6
+                              RadiusTopRight: =6
+                              Size: =8.25
+                              Text: ="‹"
+                              Width: =28
+                              X: =btnPagSigSol.X - 6 - Self.Width
+                              Y: =4
+                        - btnPagSigSol:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeLine
+                              BorderThickness: =1
+                              Color: =ThemeInk2
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              DisplayMode: =If(ctxPagina < Max(1, RoundUp(CountRows(colSolicitudesSol) / ctxFilasPag, 0)), DisplayMode.Edit, DisplayMode.Disabled)
+                              Fill: =ThemeSurface
+                              Font: =Font.'Open Sans'
+                              Height: =28
+                              HoverFill: =ThemeSurface2
+                              OnSelect: |-
+                                =UpdateContext({ctxPagina: ctxPagina + 1})
+                              RadiusBottomLeft: =6
+                              RadiusBottomRight: =6
+                              RadiusTopLeft: =6
+                              RadiusTopRight: =6
+                              Size: =8.25
+                              Text: ="›"
+                              Width: =28
+                              X: =Parent.Width - 16 - Self.Width
+                              Y: =4

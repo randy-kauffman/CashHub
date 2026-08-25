@@ -1,0 +1,820 @@
+<meta charset="utf-8">
+<title>CashHub · Mockup CH-App-ClientAdministration v2</title>
+<style>
+  :root{
+    --accent:#C8102E; --accent-dark:#A40D26; --accent-soft:#FBEBED;
+    --bg:#F6F5F4; --surface:#FFFFFF; --surface2:#FAF8F7;
+    --ink:#201C1D; --ink2:#66595C; --ink3:#948A8C;
+    --line:#E2DCDD; --line-soft:#EDE8E9;
+    --ok:#0E7A3C; --ok-soft:#E2F2E8;
+    --info:#23557D; --info-soft:#E4EEF6;
+    --warn:#9A5B00; --warn-soft:#FBF0DC;
+    --danger:#B3261E; --danger-soft:#FCEAE8; --danger-line:#E7B9B5;
+    --sel:#BBD6F2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#DDD9D7;font-family:"Open Sans","Segoe UI",system-ui,sans-serif;color:var(--ink);
+       padding:24px 14px 70px}
+  .wrap{width:min(1560px,100%);margin:0 auto}
+  button{font-family:inherit;cursor:default}
+  input,select,textarea{font-family:inherit;color:var(--ink)}
+
+  /* ---- chrome del documento ---- */
+  .docHead{background:#fff;border:1px solid #d8d2d0;border-radius:12px;padding:22px 28px}
+  .docHead h1{font-size:19px;margin-bottom:6px}
+  .docHead p{font-size:13px;color:#5c5254;line-height:1.6;max-width:1000px}
+  .docHead code{background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:12px}
+  .idx{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .idx a{font-size:11.5px;text-decoration:none;color:var(--ink2);background:var(--surface2);
+         border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+  .idx a b{color:var(--accent)}
+  .viewHead{margin:34px 0 10px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .vId{background:var(--accent);color:#fff;border-radius:7px;font-size:11px;font-weight:700;
+       padding:4px 10px;letter-spacing:.5px;flex:0 0 auto}
+  .viewHead h2{font-size:16px}
+  .viewHead p{font-size:12.5px;color:#5c5254;flex-basis:100%;line-height:1.5}
+  .notes{background:#fff;border:1px solid #d8d2d0;border-radius:12px;padding:22px 28px;margin-top:34px}
+  .notes h2{font-size:16px;margin-bottom:10px}
+  .notes h3{font-size:13.5px;margin:16px 0 6px}
+  .notes li{font-size:13px;color:#4a4143;margin:7px 0 7px 18px;line-height:1.55}
+  .notes code{background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:12px}
+
+  /* ---- marco de la app: responsive horizontal ---- */
+  .frame{background:var(--bg);border:1px solid #c9c3c1;border-radius:14px;overflow:hidden;
+         box-shadow:0 12px 30px rgba(40,30,32,.16);display:flex;flex-direction:column;
+         width:100%;height:720px;position:relative}
+  .frameWrap{width:100%}
+  .frameWrap.narrow{max-width:1080px}
+  .frameWrap.mini{max-width:840px}
+  .sizeTag{font-size:11px;color:var(--ink3);margin:0 0 6px;font-weight:600}
+
+  /* ---- header ---- */
+  .hdr{height:60px;background:var(--surface);border-bottom:1px solid var(--line);flex:0 0 auto;
+       display:flex;align-items:center;gap:14px;padding:0 20px}
+  .brandTile{width:34px;height:34px;border-radius:9px;background:var(--accent);color:#fff;
+             display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex:0 0 auto}
+  .hTitle{font-size:14px;font-weight:600;line-height:1.15;flex:0 0 auto}
+  .hTitle small{display:block;font-size:11px;color:var(--ink3);font-weight:400}
+  .navSeg{display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:999px;
+          padding:3px;gap:3px;margin-left:10px;flex:0 0 auto}
+  .navSeg button{font-size:12px;padding:6px 17px;border-radius:999px;border:none;background:transparent;color:var(--ink2)}
+  .navSeg button.on{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(40,30,32,.14)}
+  .spacer{flex:1}
+  .userChip{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--line);
+            border-radius:999px;padding:4px 12px 4px 5px;font-size:11.5px;color:var(--ink2);white-space:nowrap;flex:0 0 auto}
+  .avatar{width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+          display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex:0 0 auto}
+  .roleTag{font-size:10px;font-weight:700;color:var(--info);background:var(--info-soft);border-radius:999px;padding:2px 8px}
+
+  /* ---- atomos ---- */
+  .pill{font-size:10.5px;font-weight:600;border-radius:999px;padding:3px 10px;white-space:nowrap;display:inline-block}
+  .pInfo{color:var(--info);background:var(--info-soft)} .pOk{color:var(--ok);background:var(--ok-soft)}
+  .pWarn{color:var(--warn);background:var(--warn-soft)} .pMuted{color:var(--ink3);background:var(--line-soft)}
+  .pDanger{color:var(--danger);background:var(--danger-soft)} .pAccent{color:var(--accent);background:var(--accent-soft)}
+  .btn{font-size:12px;font-weight:600;border-radius:8px;padding:9px 18px;border:1px solid transparent;white-space:nowrap}
+  .btnPrimary{background:var(--accent);color:#fff}
+  .btnOutline{background:var(--surface);color:var(--accent);border-color:var(--accent)}
+  .btnGhost{background:transparent;color:var(--ink2);border-color:var(--line)}
+  .btnDanger{background:var(--danger);color:#fff}
+  .btnOk{background:var(--ok);color:#fff}
+  .btn:disabled,.btnDis{background:var(--line-soft);color:var(--ink3);border-color:transparent}
+  .btnSm{font-size:11px;font-weight:600;border-radius:7px;padding:6px 11px;border:1px solid var(--line);
+         background:var(--surface);color:var(--ink2)}
+  .btnSmAcc{color:var(--accent);border-color:var(--accent)}
+  .btnSmDan{color:var(--danger);border-color:var(--danger-line)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:13px;display:flex;
+        flex-direction:column;min-height:0;overflow:hidden}
+  .scrollY{overflow-y:auto;flex:1;min-height:0}
+  .meta{font-size:12px;color:var(--ink2)} .meta b{color:var(--ink)}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .in{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;background:#fff}
+  .banner{display:flex;gap:9px;font-size:12px;border-radius:9px;padding:9px 13px;line-height:1.45;align-items:flex-start}
+  .bInfo{background:var(--info-soft);color:var(--info)} .bWarn{background:var(--warn-soft);color:var(--warn)}
+  .bDanger{background:var(--danger-soft);color:var(--danger)} .bOk{background:var(--ok-soft);color:var(--ok)}
+  .listHead{background:var(--surface2);font-size:10.5px;font-weight:600;text-transform:uppercase;
+            letter-spacing:.5px;color:var(--ink2);padding:9px 14px;border-bottom:1px solid var(--line)}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:7px 18px;font-size:12.5px;align-content:start}
+  .kv dt{color:var(--ink3)} .kv dd{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+  .secLab{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);padding-top:2px}
+
+  /* ---- toolbar / segmentado ---- */
+  .toolbar{display:flex;align-items:center;gap:10px;padding:12px 18px 0;flex-wrap:wrap;flex:0 0 auto}
+  .seg{display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .seg button{font-size:12px;padding:6px 15px;border-radius:7px;color:var(--ink2);border:none;background:transparent}
+  .seg button.on{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(40,30,32,.12)}
+  .body2{flex:1;display:flex;gap:14px;padding:14px 18px 16px;min-height:0}
+  .bodyCol{flex:1;display:flex;gap:14px;padding:14px 18px 16px;min-height:0}
+
+  /* ---- KPIs ---- */
+  .kpiRow{display:flex;gap:12px;flex:0 0 auto}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 15px;flex:1;min-width:0}
+  .kpi .lab{font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px}
+  .kpi .val{font-size:clamp(16px,1.6vw,22px);font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px;line-height:1.1}
+  .kpi .sub{font-size:11px;color:var(--ink2);margin-top:2px}
+
+  /* ---- grillas fluidas ---- */
+  .gHead{background:var(--surface2);color:var(--ink2);font-size:10px;font-weight:700;text-transform:uppercase;
+         letter-spacing:.5px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .gRow{border-bottom:1px solid var(--line-soft);background:none;text-align:left;width:100%;
+        border-left:none;border-right:none;border-top:none}
+  .gSel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+  .gRow b{font-variant-numeric:tabular-nums}
+  .clHead,.clRow{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1.1fr .9fr;align-items:center;gap:10px;
+                 padding:10px 16px;font-size:12.5px}
+  .soHead,.soRow{display:grid;grid-template-columns:1fr 1.6fr 1fr 1fr .9fr .9fr .9fr;align-items:center;gap:10px;
+                 padding:10px 16px;font-size:12.5px}
+  .liHead,.liRow{display:grid;grid-template-columns:1.4fr 1.4fr 1.4fr .8fr;align-items:center;gap:10px;
+                 padding:10px 16px;font-size:12.5px}
+  .suHead,.suRow{display:grid;grid-template-columns:1.6fr 1.4fr 1fr .9fr;align-items:center;gap:10px;
+                 padding:10px 16px;font-size:12.5px}
+  .foot{background:var(--surface2);border-top:1px solid var(--line);font-weight:700;font-size:12.5px}
+  .sortable .arr{color:var(--accent);font-size:9px}
+
+  /* ---- ficha del cliente: sidebar + tabs ---- */
+  .fichaSide{width:clamp(230px,20%,290px);flex:0 0 auto;display:flex;flex-direction:column;gap:12px;min-height:0}
+  .tabRow{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 14px;flex:0 0 auto;background:var(--surface)}
+  .tabRow button{font-size:12px;font-weight:600;color:var(--ink2);background:none;border:none;
+                 padding:11px 14px;border-bottom:2.5px solid transparent}
+  .tabRow button.on{color:var(--accent);border-bottom-color:var(--accent)}
+  .tabRow .cnt{font-size:10px;font-weight:700;background:var(--line-soft);color:var(--ink2);
+               border-radius:999px;padding:1px 7px;margin-left:5px}
+  .tabRow button.on .cnt{background:var(--accent-soft);color:var(--accent)}
+
+  /* ---- diff old→new ---- */
+  .diffOld{color:var(--ink3);text-decoration:line-through;text-decoration-color:var(--danger);
+           text-decoration-thickness:1.5px}
+  .diffNew{font-weight:700;color:var(--ok)}
+  .diffArrow{color:var(--ink3);font-size:11px;padding:0 4px}
+
+  /* ---- panel lateral (alta/edición) ---- */
+  .sidePanel{position:absolute;top:0;right:0;bottom:0;width:min(430px,46%);background:var(--surface);
+             border-left:1px solid var(--line);box-shadow:-14px 0 32px rgba(40,30,32,.18);z-index:15;
+             display:flex;flex-direction:column}
+  .spHead{padding:16px 20px 12px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:10px;flex:0 0 auto}
+  .spHead h3{font-size:14.5px;flex:1}
+  .spHead small{display:block;font-size:11.5px;color:var(--ink3);font-weight:400;margin-top:2px}
+  .spBody{padding:16px 20px;display:flex;flex-direction:column;gap:13px;overflow-y:auto;flex:1}
+  .spFoot{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--line);flex:0 0 auto}
+  .field label{display:block;font-size:11px;font-weight:600;color:var(--ink2);margin-bottom:5px}
+  .field label em{color:var(--danger);font-style:normal}
+  .cin{border:1px solid var(--line);border-radius:7px;padding:8px 11px;background:#fff;font-size:12.5px;width:100%}
+  .cinErr{border-color:var(--danger)}
+  .fieldErr{font-size:11px;color:var(--danger);margin-top:4px}
+  .dimOv{position:absolute;inset:0;background:rgba(40,30,32,.28);z-index:10}
+
+  /* ---- overlay / dialogos ---- */
+  .ovl{position:absolute;inset:0;background:rgba(40,30,32,.45);display:flex;align-items:center;
+       justify-content:center;z-index:20;padding:26px}
+  .dlg{background:var(--surface);border-radius:13px;box-shadow:0 18px 40px rgba(30,20,22,.35);width:100%;
+       max-width:440px;max-height:100%;display:flex;flex-direction:column}
+  .dlgH{padding:17px 22px 4px;display:flex;align-items:flex-start;gap:10px}
+  .dlgH .dlgIcon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+                 font-size:16px;flex:0 0 auto}
+  .icOk{background:var(--ok-soft);color:var(--ok)} .icWarn{background:var(--warn-soft);color:var(--warn)}
+  .icDanger{background:var(--danger-soft);color:var(--danger)} .icInfo{background:var(--info-soft);color:var(--info)}
+  .dlgH h3{font-size:14.5px;flex:1;line-height:1.3}
+  .dlgH p{font-size:12px;color:var(--ink2);margin-top:4px;line-height:1.45}
+  .dlgX{background:none;border:none;color:var(--ink3);font-size:15px;border-radius:6px;padding:2px 7px}
+  .dlgB{padding:13px 22px 4px;display:flex;flex-direction:column;gap:11px;overflow-y:auto}
+  .dlgB p{font-size:12px;color:var(--ink2);line-height:1.5}
+  .dlgB p b{color:var(--ink)}
+  .dlgF{display:flex;justify-content:flex-end;gap:8px;padding:16px 22px 20px}
+
+  /* ---- timeline ---- */
+  .tl{display:flex;flex-direction:column}
+  .tlItem{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
+  .tlDot{width:9px;height:9px;border-radius:50%;background:var(--accent);margin-top:4px;flex:0 0 auto}
+  .tlItem .c b{font-size:12.5px} .tlItem .c small{font-size:11px;color:var(--ink3);display:block}
+  .tlItem .c p{font-size:12px;color:var(--ink2);margin-top:3px;line-height:1.4}
+</style>
+
+<div class="wrap">
+<div class="docHead">
+  <h1>CashHub · Mockup CH-App-ClientAdministration v2 · rev. 1</h1>
+  <p><b>Diseño responsive horizontal</b> — marcos al 100% del ancho, layout adaptable a cualquier pantalla
+    horizontal (vertical fuera de alcance). En canvas: <b>Escalar-para-ajustar OFF</b>, contenedores manuales con
+    posiciones/tamaños por fórmula relativa a <code>Parent.Width</code> — cero coordenadas fijas. Mismo sistema de
+    diseño que Digitization/Reception v2 (Open Sans, rojo BAC <code>#C8102E</code>, tokens en <code>App.Formulas</code>).
+    <b>100% controles clásicos nativos</b>, cero Power CAT, cero PCF, cero Forms conectados a tablas maestras.</p>
+  <p style="margin-top:8px">5 pantallas: <b>scrSplash</b> (deep-link, sin UI), <b>scrClientes</b>, <b>scrCliente</b>
+    (ficha con tabs), <b>scrSolicitudes</b> (bandeja RFC), <b>scrSolicitud</b> (detalle y decisión). El backend v2
+    materializa con la Custom API <code>sanic_CHResolveChangeRequest</code> (síncrona y transaccional): al aprobar,
+    el resultado <b>Aplicada / Fallida</b> se conoce <b>en el momento</b>, sin ventana "aprobada pero sin aplicar".</p>
+  <div class="idx">
+    <a href="#cl1"><b>CL1</b> · scrClientes — listado</a>
+    <a href="#cl2"><b>CL2</b> · scrClientes — nuevo cliente (RFC)</a>
+    <a href="#ci1"><b>CI1</b> · scrCliente — ficha + tabs</a>
+    <a href="#ci2"><b>CI2</b> · scrCliente — editar correo (RFC Update)</a>
+    <a href="#ci3"><b>CI3</b> · scrCliente — desactivar sucursal</a>
+    <a href="#so1"><b>SO1</b> · scrSolicitudes — bandeja</a>
+    <a href="#so2"><b>SO2</b> · scrSolicitud — decisión del aprobador</a>
+    <a href="#so3"><b>SO3</b> · scrSolicitud — aprobar → resultado síncrono</a>
+    <a href="#so4"><b>SO4</b> · scrSolicitud — error visible del guard</a>
+    <a href="#so5"><b>SO5</b> · scrSolicitud — vista del creador (Draft)</a>
+    <a href="#rsp"><b>RSP</b> · responsive (anchos)</a>
+  </div>
+</div>
+
+<!-- ============================================================ CL1 -->
+<section id="cl1">
+  <div class="viewHead"><span class="vId">CL1</span><h2>scrClientes — listado con estado y RFC en curso</h2>
+    <p>Búsqueda <b>delegable</b> (por nombre, CIF BCO o CIF COM contra Dataverse, sin <code>AddColumns</code> que
+      rompa delegación), segmentado por estado de registro, KPIs del maestro. La columna <b>Solicitud</b> marca los
+      clientes con RFC en curso (badge ámbar) y se refresca al volver de crear una solicitud. Filas con estado como
+      badge de color, no texto plano. "Nuevo cliente" visible solo para Contributors de la tabla Cliente.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Administración de Clientes<small>Maestro de clientes</small></div>
+      <div class="navSeg"><button class="on">Clientes</button><button>Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">MJ</span>María José Duarte <span class="roleTag">Contributor · Banca Empresas</span></div>
+    </div>
+    <div class="toolbar">
+      <div class="seg"><button class="on">Activos (312)</button><button>Inactivos (28)</button><button>Pendientes (6)</button><button>Todos</button></div>
+      <input class="in" style="flex:1;max-width:340px" placeholder="⌕ Nombre, CIF BCO o CIF COM…">
+      <div class="spacer"></div>
+      <button class="btn btnPrimary">+ Nuevo cliente</button>
+    </div>
+    <div class="body2" style="flex-direction:column;gap:12px">
+      <div class="kpiRow">
+        <div class="kpi"><div class="lab">Clientes activos</div><div class="val">312</div></div>
+        <div class="kpi"><div class="lab">Con RFC en curso</div><div class="val">9</div><div class="sub">solicitudes sin resolver</div></div>
+        <div class="kpi"><div class="lab">Altas pendientes</div><div class="val">6</div><div class="sub">esperando aprobación</div></div>
+        <div class="kpi"><div class="lab">Solicitudes hoy</div><div class="val">14</div><div class="sub">4 esperan a Banca Empresas</div></div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="clHead gHead"><span class="sortable">Cliente <span class="arr">▼</span></span><span>CIF BCO</span><span>CIF COM</span><span>Estado</span><span>Solicitud</span><span class="num">Modificado</span></div>
+        <div class="scrollY">
+          <button class="clRow gRow gSel"><b>Distribuidora La Colonia</b><span class="num">100234511</span><span class="num">C-88412</span><span><span class="pill pOk">Activo</span></span><span><span class="pill pWarn">RFC en curso</span></span><span class="num">hoy 09:41</span></button>
+          <button class="clRow gRow"><b>Ferretería SINSA</b><span class="num">100311220</span><span class="num">C-90233</span><span><span class="pill pOk">Activo</span></span><span></span><span class="num">ayer 16:20</span></button>
+          <button class="clRow gRow"><b>Casa Pellas</b><span class="num">100118834</span><span class="num">C-77120</span><span><span class="pill pOk">Activo</span></span><span></span><span class="num">ayer 11:05</span></button>
+          <button class="clRow gRow"><b>Supermercados La Unión</b><span class="num">100455900</span><span class="num">C-91455</span><span><span class="pill pOk">Activo</span></span><span><span class="pill pWarn">RFC en curso</span></span><span class="num">21 ago</span></button>
+          <button class="clRow gRow"><b>Café Soluble</b><span class="num">100518122</span><span class="num">C-93011</span><span><span class="pill pWarn">Pend. aprobación</span></span><span><span class="pill pInfo">Alta enviada</span></span><span class="num">21 ago</span></button>
+          <button class="clRow gRow"><b>Tip Top Industrial</b><span class="num">100226744</span><span class="num">C-85200</span><span><span class="pill pMuted">Inactivo</span></span><span></span><span class="num">14 ago</span></button>
+        </div>
+        <div class="clRow foot"><span>346 clientes · página 1 de 7</span><span></span><span></span><span></span><span></span><span class="num">‹ 1 2 3 … 7 ›</span></div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ CL2 -->
+<section id="cl2">
+  <div class="viewHead"><span class="vId">CL2</span><h2>scrClientes — nuevo cliente = RFC de alta (panel lateral)</h2>
+    <p>El panel deja <b>explícito</b> que no se crea el cliente sino una <b>solicitud de alta</b> que otro usuario
+      debe aprobar. Controles sueltos con validación propia (sin Form conectado al maestro). El resumen de líneas
+      muestra exactamente qué viajará en el RFC. Panel con ancho relativo (<code>Min(430, Parent.Width*0.46)</code>),
+      no 1366 fijo.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Administración de Clientes<small>Maestro de clientes</small></div>
+      <div class="navSeg"><button class="on">Clientes</button><button>Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">MJ</span>María José Duarte <span class="roleTag">Contributor · Banca Empresas</span></div>
+    </div>
+    <div class="body2" style="opacity:.5"><div class="card" style="flex:1"></div></div>
+    <div class="dimOv"></div>
+    <div class="sidePanel">
+      <div class="spHead">
+        <div style="flex:1"><h3>Nueva solicitud de alta de cliente</h3>
+          <small>Se creará un RFC tipo <b>Alta</b> que debe aprobar otro miembro de Banca de Empresas. El cliente
+          nace en estado <b>Pendiente de aprobación</b> hasta que se apruebe.</small></div>
+        <button class="dlgX">✕</button>
+      </div>
+      <div class="spBody">
+        <div class="field"><label>Nombre del cliente <em>*</em></label>
+          <input class="cin" value="Café Soluble, S.A."></div>
+        <div class="field"><label>CIF BCO <em>*</em></label>
+          <input class="cin" value="100518122"></div>
+        <div class="field"><label>CIF COM <em>*</em></label>
+          <input class="cin cinErr" value="C-9301">
+          <div class="fieldErr">El CIF COM debe tener el formato C-#####. Corregilo para continuar.</div></div>
+        <div class="field"><label>Motivo de la solicitud <em>*</em></label>
+          <textarea class="cin" style="min-height:56px;resize:none">Cliente nuevo de Banca de Empresas, convenio firmado el 20/08.</textarea></div>
+        <div class="secLab">Resumen de la solicitud (3 cambios)</div>
+        <div class="card" style="border-radius:9px">
+          <div class="listHead">Campo → valor propuesto</div>
+          <div style="padding:4px 14px 8px;font-size:12px;display:flex;flex-direction:column;gap:6px">
+            <div>Nombre → <b>Café Soluble, S.A.</b></div>
+            <div>CIF BCO → <b>100518122</b></div>
+            <div>CIF COM → <b class="diffOld">C-9301</b> <span style="color:var(--danger);font-size:11px">(inválido)</span></div>
+          </div>
+        </div>
+        <div class="banner bInfo">Sucursales, correos y cuentas se agregan desde la ficha del cliente una vez
+          aprobada el alta — cada una genera su propia solicitud.</div>
+      </div>
+      <div class="spFoot">
+        <button class="btn btnGhost">Cancelar</button>
+        <button class="btn btnDis" disabled>Crear y enviar solicitud</button>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ CI1 -->
+<section id="ci1">
+  <div class="viewHead"><span class="vId">CI1</span><h2>scrCliente — ficha con sidebar y tabs</h2>
+    <p>Sidebar con datos maestros (solo lectura, siempre) + tabs nativas: <b>Sucursales / Correos / Cuentas /
+      Solicitudes / Bitácora</b>. Cada tab con su grilla delegable y comandos visibles solo para el rol Contributor
+      de esa tabla (Sucursales = Bóveda; Correos, Cuentas = Banca Empresas). Los números de cuenta van
+      <b>enmascarados</b>. Filas con RFC en curso llevan badge y sus comandos de edición se bloquean con aviso.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Administración de Clientes<small>Ficha de cliente</small></div>
+      <div class="navSeg"><button class="on">Clientes</button><button>Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">MJ</span>María José Duarte <span class="roleTag">Contributor · Banca Empresas</span></div>
+    </div>
+    <div class="body2">
+      <div class="fichaSide">
+        <div class="card">
+          <div class="listHead" style="display:flex;align-items:center;gap:8px"><button class="btnSm">‹ Volver</button><span class="spacer"></span><span class="pill pOk">Activo</span></div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+            <div><b style="font-size:15px">Distribuidora La Colonia</b>
+              <div class="meta" style="margin-top:2px">Cliente desde mar 2024</div></div>
+            <div class="kv">
+              <dt>CIF BCO</dt><dd>100234511</dd>
+              <dt>CIF COM</dt><dd>C-88412</dd>
+              <dt>Sucursales</dt><dd>4 activas</dd>
+              <dt>Correos</dt><dd>3 autorizados</dd>
+              <dt>Cuentas</dt><dd>2</dd>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="listHead">Acciones sobre el cliente</div>
+          <div style="padding:11px 14px;display:flex;flex-direction:column;gap:8px">
+            <button class="btnSm btnSmAcc">✎ Solicitar edición de datos</button>
+            <button class="btnSm btnSmDan">⏻ Solicitar desactivación</button>
+            <div class="banner bWarn" style="padding:7px 10px;font-size:11px">Hay <b>1 solicitud en curso</b> sobre este cliente — no se puede pedir otra edición del mismo campo hasta que se resuelva.</div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="tabRow">
+          <button class="on">Sucursales <span class="cnt">4</span></button>
+          <button>Correos <span class="cnt">3</span></button>
+          <button>Cuentas <span class="cnt">2</span></button>
+          <button>Solicitudes <span class="cnt">5</span></button>
+          <button>Bitácora <span class="cnt">12</span></button>
+        </div>
+        <div class="toolbar" style="padding:11px 14px 0">
+          <input class="in" style="flex:1;max-width:280px" placeholder="⌕ Buscar sucursal…">
+          <div class="spacer"></div>
+          <span class="meta" style="font-size:11px;color:var(--ink3)">Gestiona: <b>Bóveda</b> — no tenés rol Contributor en Sucursales</span>
+          <button class="btnSm btnDis" disabled>+ Nueva sucursal</button>
+        </div>
+        <div class="suHead gHead" style="margin-top:10px"><span>Sucursal</span><span>Dirección</span><span>Estado</span><span>Solicitud</span></div>
+        <div class="scrollY">
+          <button class="suRow gRow"><b>Managua Centro</b><span class="meta">Km 4.5 Carretera Norte</span><span><span class="pill pOk">Activa</span></span><span></span></button>
+          <button class="suRow gRow gSel"><b>Masaya</b><span class="meta">Plaza La Estación, local 3</span><span><span class="pill pOk">Activa</span></span><span><span class="pill pWarn">RFC en curso</span></span></button>
+          <button class="suRow gRow"><b>León</b><span class="meta">Frente al parque central</span><span><span class="pill pOk">Activa</span></span><span></span></button>
+          <button class="suRow gRow"><b>Chinandega</b><span class="meta">Esquina opuesta al mercado</span><span><span class="pill pMuted">Inactiva</span></span><span></span></button>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ CI2 -->
+<section id="ci2">
+  <div class="viewHead"><span class="vId">CI2</span><h2>scrCliente — editar correo: captura el NUEVO valor</h2>
+    <p>Corrige el bug funcional más grave de la v1 (Editar creaba un RFC vacío, sin líneas). El panel muestra el
+      <b>valor actual</b> y captura el <b>valor propuesto</b> por campo editable; solo los campos modificados generan
+      línea de cambio, con vista previa <b>actual → propuesto</b>. La validación de correo no borra lo tipeado
+      (marca el error y deja corregir). Ejemplo en el tab <b>Correos</b>, donde María José sí es Contributor.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Administración de Clientes<small>Ficha de cliente</small></div>
+      <div class="navSeg"><button class="on">Clientes</button><button>Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">MJ</span>María José Duarte <span class="roleTag">Contributor · Banca Empresas</span></div>
+    </div>
+    <div class="body2" style="opacity:.5"><div class="card" style="flex:1"></div></div>
+    <div class="dimOv"></div>
+    <div class="sidePanel">
+      <div class="spHead">
+        <div style="flex:1"><h3>Solicitar edición de correo autorizado</h3>
+          <small>Distribuidora La Colonia · correo <b>pagos@lacolonia.com.ni</b>. Los cambios se aplican solo
+          cuando otro miembro de Banca de Empresas apruebe la solicitud.</small></div>
+        <button class="dlgX">✕</button>
+      </div>
+      <div class="spBody">
+        <div class="field"><label>Dirección de correo</label>
+          <div class="meta" style="margin-bottom:4px">Actual: <b>pagos@lacolonia.com.ni</b></div>
+          <input class="cin" value="tesoreria@lacolonia.com.ni"></div>
+        <div class="field"><label>Notificar siempre</label>
+          <div class="meta" style="margin-bottom:4px">Actual: <b>No</b></div>
+          <select class="cin"><option>Sí</option><option selected>No</option></select></div>
+        <div class="field"><label>Motivo de la solicitud <em>*</em></label>
+          <textarea class="cin" style="min-height:56px;resize:none">El cliente migró la casilla de pagos a tesorería (carta del 22/08).</textarea></div>
+        <div class="secLab">Cambios que viajan en la solicitud (1)</div>
+        <div class="card" style="border-radius:9px">
+          <div class="listHead">Campo · actual → propuesto</div>
+          <div style="padding:8px 14px 10px;font-size:12px;display:flex;flex-direction:column;gap:7px">
+            <div>Dirección: <span class="diffOld">pagos@lacolonia.com.ni</span><span class="diffArrow">→</span><span class="diffNew">tesoreria@lacolonia.com.ni</span></div>
+          </div>
+        </div>
+        <div class="banner bInfo">"Notificar siempre" no cambió — no genera línea. Si otro RFC en curso ya toca la
+          dirección de este correo, el envío se bloquea con aviso.</div>
+      </div>
+      <div class="spFoot">
+        <button class="btn btnGhost">Cancelar</button>
+        <button class="btn btnPrimary">Crear y enviar solicitud</button>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ CI3 -->
+<section id="ci3">
+  <div class="viewHead"><span class="vId">CI3</span><h2>scrCliente — desactivar sucursal (diálogo con motivo)</h2>
+    <p>Las acciones Activar/Desactivar generan un RFC de tipo correspondiente con motivo obligatorio. El diálogo es
+      de tamaño relativo (máx 440px), no 1366×768 fijo. Deja claro quién aprueba (Bóveda para Sucursales) y qué
+      pasa al aprobar.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Administración de Clientes<small>Ficha de cliente</small></div>
+      <div class="navSeg"><button class="on">Clientes</button><button>Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">RV</span>Roberto Vílchez <span class="roleTag">Contributor · Bóveda</span></div>
+    </div>
+    <div class="body2" style="opacity:.55"><div class="card" style="flex:1"></div></div>
+    <div class="ovl">
+      <div class="dlg">
+        <div class="dlgH"><div class="dlgIcon icDanger">⏻</div>
+          <div style="flex:1"><h3>¿Solicitar la desactivación de la sucursal Chinandega?</h3>
+            <p>Se creará una solicitud tipo <b>Desactivación</b> para <b>Distribuidora La Colonia · Chinandega</b>.
+               La sucursal sigue <b>Activa</b> hasta que un Approver de <b>Bóveda</b> apruebe.</p></div>
+          <button class="dlgX">✕</button></div>
+        <div class="dlgB">
+          <div class="field"><label>Motivo de la solicitud <em>*</em></label>
+            <textarea class="cin" style="min-height:64px;resize:none" placeholder="Ej: cierre de la plaza por mudanza del cliente…"></textarea></div>
+          <div class="banner bWarn">Mientras la solicitud esté en curso no se podrán pedir otros cambios sobre esta sucursal.</div>
+        </div>
+        <div class="dlgF"><button class="btn btnGhost">Cancelar</button><button class="btn btnDanger">Crear y enviar solicitud</button></div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ SO1 -->
+<section id="so1">
+  <div class="viewHead"><span class="vId">SO1</span><h2>scrSolicitudes — bandeja con prioridad del aprobador</h2>
+    <p>Segmentado <b>Para mi decisión / Mías / Todas</b>: el aprobador ve primero lo que espera por él (calculado
+      contra sus roles, no un toggle genérico). Estado y tipo como <b>badges de color</b> (Fallida en rojo — la v1
+      mostraba texto plano). Búsqueda delegable y filtro por tabla objetivo. KPIs de la cola. Columna
+      <b>Resuelta</b> muestra el resultado inmediato de la Custom API síncrona.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Administración de Clientes<small>Solicitudes de cambio</small></div>
+      <div class="navSeg"><button>Clientes</button><button class="on">Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">CE</span>Carla Espinoza <span class="roleTag">Approver · Banca Empresas</span></div>
+    </div>
+    <div class="toolbar">
+      <div class="seg"><button class="on">Para mi decisión (4)</button><button>Mías (2)</button><button>Todas</button></div>
+      <input class="in" style="flex:1;max-width:300px" placeholder="⌕ N° de solicitud o cliente…">
+      <select class="in"><option>Todas las tablas</option><option>Clientes</option><option>Sucursales</option><option>Correos</option><option>Cuentas</option></select>
+      <div class="spacer"></div>
+      <button class="btnSm">↻ Actualizar</button>
+    </div>
+    <div class="body2" style="flex-direction:column;gap:12px">
+      <div class="kpiRow">
+        <div class="kpi"><div class="lab">Esperan mi decisión</div><div class="val">4</div><div class="sub">la más vieja: hace 2 días</div></div>
+        <div class="kpi"><div class="lab">Resueltas hoy</div><div class="val">11</div><div class="sub">9 aplicadas · 2 rechazadas</div></div>
+        <div class="kpi"><div class="lab">Fallidas (7 días)</div><div class="val" style="color:var(--danger)">1</div><div class="sub">requiere revisión</div></div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="soHead gHead"><span>Solicitud</span><span>Cliente</span><span>Tabla</span><span>Tipo</span><span>Estado</span><span>Creada por</span><span class="num sortable">Enviada <span class="arr">▼</span></span></div>
+        <div class="scrollY">
+          <button class="soRow gRow gSel"><b>RFC-00341</b><span>Distribuidora La Colonia</span><span>Correos</span><span><span class="pill pInfo">Edición</span></span><span><span class="pill pWarn">Enviada</span></span><span class="meta">María J. Duarte</span><span class="num">hoy 09:41</span></button>
+          <button class="soRow gRow"><b>RFC-00340</b><span>Café Soluble</span><span>Clientes</span><span><span class="pill pAccent">Alta</span></span><span><span class="pill pWarn">Enviada</span></span><span class="meta">María J. Duarte</span><span class="num">ayer 15:02</span></button>
+          <button class="soRow gRow"><b>RFC-00338</b><span>Supermercados La Unión</span><span>Cuentas</span><span><span class="pill pInfo">Edición</span></span><span><span class="pill pWarn">Enviada</span></span><span class="meta">Luis Herrera</span><span class="num">ayer 11:47</span></button>
+          <button class="soRow gRow"><b>RFC-00336</b><span>Casa Pellas</span><span>Correos</span><span><span class="pill pDanger">Desactivación</span></span><span><span class="pill pWarn">Enviada</span></span><span class="meta">Luis Herrera</span><span class="num">22 ago</span></button>
+          <button class="soRow gRow" style="opacity:.75"><b>RFC-00333</b><span>Ferretería SINSA</span><span>Sucursales</span><span><span class="pill pInfo">Edición</span></span><span><span class="pill pOk">Aplicada</span></span><span class="meta">Roberto Vílchez</span><span class="num">22 ago</span></button>
+          <button class="soRow gRow" style="opacity:.75"><b>RFC-00331</b><span>Tip Top Industrial</span><span>Clientes</span><span><span class="pill pDanger">Desactivación</span></span><span><span class="pill pDanger">Fallida</span></span><span class="meta">Carla Espinoza</span><span class="num">21 ago</span></button>
+        </div>
+        <div class="soRow foot"><span>38 solicitudes · página 1 de 2</span><span></span><span></span><span></span><span></span><span></span><span class="num">‹ 1 2 ›</span></div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ SO2 -->
+<section id="so2">
+  <div class="viewHead"><span class="vId">SO2</span><h2>scrSolicitud — decisión del aprobador</h2>
+    <p>Cabecera con contexto completo; líneas de cambio como <b>actual → propuesto</b> (el valor actual se lee en
+      vivo del registro objetivo, solo las columnas necesarias). Aprobar/Rechazar visibles únicamente si: estado
+      Enviada + rol Approver de la tabla + <b>creador ≠ aprobador</b> — y el guard server-side revalida las tres
+      cosas al escribir. Historial de la solicitud como línea de tiempo.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Administración de Clientes<small>Detalle de solicitud</small></div>
+      <div class="navSeg"><button>Clientes</button><button class="on">Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">CE</span>Carla Espinoza <span class="roleTag">Approver · Banca Empresas</span></div>
+    </div>
+    <div class="body2">
+      <div class="card" style="flex:1.6">
+        <div class="listHead" style="display:flex;align-items:center;gap:10px">
+          <button class="btnSm">‹ Volver</button>
+          <span style="font-size:12px;text-transform:none;letter-spacing:0"><b>RFC-00341</b> · Edición de correo autorizado</span>
+          <span class="spacer"></span><span class="pill pWarn">Enviada</span></div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--line-soft)">
+          <div class="kv" style="grid-template-columns:auto 1fr auto 1fr">
+            <dt>Cliente</dt><dd style="text-align:left">Distribuidora La Colonia</dd>
+            <dt>Registro</dt><dd style="text-align:left">pagos@lacolonia.com.ni</dd>
+            <dt>Creada por</dt><dd style="text-align:left">María José Duarte</dd>
+            <dt>Enviada</dt><dd style="text-align:left">hoy 09:41</dd>
+            <dt>Motivo</dt><dd style="text-align:left;grid-column:2/5">El cliente migró la casilla de pagos a tesorería (carta del 22/08).</dd>
+          </div>
+        </div>
+        <div class="liHead gHead"><span>Campo</span><span>Valor actual</span><span>Valor propuesto</span><span>Estado</span></div>
+        <div class="scrollY">
+          <div class="liRow gRow"><b>Dirección de correo</b><span class="diffOld">pagos@lacolonia.com.ni</span><span class="diffNew">tesoreria@lacolonia.com.ni</span><span><span class="pill pWarn">Enviada</span></span></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;padding:13px 16px;border-top:1px solid var(--line)">
+          <button class="btn btnDanger">Rechazar…</button>
+          <button class="btn btnOk">Aprobar…</button>
+        </div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="listHead">Historial de la solicitud</div>
+        <div class="detBody" style="padding:14px 16px;overflow-y:auto">
+          <div class="tl">
+            <div class="tlItem"><span class="tlDot" style="background:var(--warn)"></span><div class="c"><b>Enviada a aprobación</b><small>hoy 09:41 · María José Duarte</small><p>Notificación enviada al chat de Approvers de Banca de Empresas.</p></div></div>
+            <div class="tlItem"><span class="tlDot" style="background:var(--ink3)"></span><div class="c"><b>Creada (Borrador)</b><small>hoy 09:38 · María José Duarte</small></div></div>
+          </div>
+          <div class="banner bInfo" style="margin-top:12px">Vos podés decidir esta solicitud: sos Approver de
+            <b>Correos</b> y no sos quien la creó. La decisión se valida también en el servidor.</div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ SO3 -->
+<section id="so3">
+  <div class="viewHead"><span class="vId">SO3</span><h2>scrSolicitud — aprobar: resultado síncrono de la Custom API</h2>
+    <p>Al confirmar, la app llama <code>sanic_CHResolveChangeRequest</code> y espera el resultado <b>en la misma
+      operación</b>: el cambio se aplica al maestro, la bitácora se escribe y el estado pasa a <b>Aplicada</b> — todo
+      o nada, transaccional. El diálogo pide comentario, se deshabilita mientras corre (anti doble-click) y al
+      terminar muestra el resultado real. Ya no existe la ventana "Aprobada pero sin aplicar" ni el watchdog.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Administración de Clientes<small>Detalle de solicitud</small></div>
+      <div class="navSeg"><button>Clientes</button><button class="on">Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">CE</span>Carla Espinoza <span class="roleTag">Approver · Banca Empresas</span></div>
+    </div>
+    <div class="body2" style="opacity:.55"><div class="card" style="flex:1"></div></div>
+    <div class="ovl">
+      <div class="dlg">
+        <div class="dlgH"><div class="dlgIcon icOk">✓</div>
+          <div style="flex:1"><h3>Solicitud RFC-00341 aplicada</h3>
+            <p>El correo autorizado de <b>Distribuidora La Colonia</b> se actualizó a
+               <b>tesoreria@lacolonia.com.ni</b>. La bitácora registró el cambio y se notificó a María José Duarte.</p></div>
+          <button class="dlgX">✕</button></div>
+        <div class="dlgB">
+          <div class="field"><label>Comentario de la decisión</label>
+            <input class="cin" value="Verificada la carta del cliente. Aprobado." disabled></div>
+          <div class="banner bOk">Aplicada <b>en el momento</b> por el servidor: cambio al maestro + bitácora +
+            estado, en una sola transacción. Si algo hubiera fallado, no se aplicaba nada.</div>
+        </div>
+        <div class="dlgF"><button class="btn btnPrimary">Entendido</button></div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ SO4 -->
+<section id="so4">
+  <div class="viewHead"><span class="vId">SO4</span><h2>scrSolicitud — el guard rechaza: error visible y accionable</h2>
+    <p>Corrige dos bugs de la v1: el spinner que quedaba trabado tras un error, y los mensajes genéricos que
+      descartaban el motivo real. El error del servidor se muestra tal cual (el guard produce mensajes concretos) y
+      la pantalla queda usable. Ejemplo: dos aprobadores concurrentes — el segundo llega tarde y el guard lo
+      detecta.</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Administración de Clientes<small>Detalle de solicitud</small></div>
+      <div class="navSeg"><button>Clientes</button><button class="on">Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">JR</span>Julio Rocha <span class="roleTag">Approver · Banca Empresas</span></div>
+    </div>
+    <div class="body2">
+      <div class="card" style="flex:1.6">
+        <div class="listHead" style="display:flex;align-items:center;gap:10px">
+          <button class="btnSm">‹ Volver</button>
+          <span style="font-size:12px;text-transform:none;letter-spacing:0"><b>RFC-00341</b> · Edición de correo autorizado</span>
+          <span class="spacer"></span><span class="pill pOk">Aplicada</span></div>
+        <div style="padding:12px 16px">
+          <div class="banner bDanger">No se pudo aprobar: la solicitud ya fue resuelta por <b>Carla Espinoza</b>
+            hace instantes (estado actual: <b>Aplicada</b>). Actualizá el detalle — no hay nada pendiente de
+            decidir.</div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn btnOutline">↻ Actualizar detalle</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="listHead">Historial de la solicitud</div>
+        <div class="detBody" style="padding:14px 16px">
+          <div class="tl">
+            <div class="tlItem"><span class="tlDot" style="background:var(--ok)"></span><div class="c"><b>Aplicada</b><small>hoy 10:02 · Carla Espinoza</small><p>Cambio aplicado al maestro en la misma transacción.</p></div></div>
+            <div class="tlItem"><span class="tlDot" style="background:var(--warn)"></span><div class="c"><b>Enviada a aprobación</b><small>hoy 09:41 · María José Duarte</small></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ SO5 -->
+<section id="so5">
+  <div class="viewHead"><span class="vId">SO5</span><h2>scrSolicitud — vista del creador (Borrador)</h2>
+    <p>El creador ve <b>Enviar / Cancelar</b> (solo él) y puede agregar o quitar líneas mientras esté en Borrador —
+      con confirmación al borrar. Al agregar una línea, el campo se elige del <b>catálogo de campos permitidos</b> de
+      la tabla objetivo y el valor actual se precarga solo. El chequeo de conflicto avisa si otra solicitud en curso
+      toca el mismo campo <b>del mismo registro</b> (no de otros clientes).</p></div>
+  <div class="frameWrap"><div class="sizeTag">ancho completo</div>
+  <div class="frame">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Administración de Clientes<small>Detalle de solicitud</small></div>
+      <div class="navSeg"><button>Clientes</button><button class="on">Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">MJ</span>María José Duarte <span class="roleTag">Contributor · Banca Empresas</span></div>
+    </div>
+    <div class="body2">
+      <div class="card" style="flex:1.6">
+        <div class="listHead" style="display:flex;align-items:center;gap:10px">
+          <button class="btnSm">‹ Volver</button>
+          <span style="font-size:12px;text-transform:none;letter-spacing:0"><b>RFC-00342</b> · Edición de cliente</span>
+          <span class="spacer"></span><span class="pill pMuted">Borrador</span></div>
+        <div style="padding:12px 16px;border-bottom:1px solid var(--line-soft)">
+          <div class="kv" style="grid-template-columns:auto 1fr auto 1fr">
+            <dt>Cliente</dt><dd style="text-align:left">Supermercados La Unión</dd>
+            <dt>Tabla</dt><dd style="text-align:left">Clientes</dd>
+            <dt>Motivo</dt><dd style="text-align:left;grid-column:2/5">Actualización de razón social por fusión.</dd>
+          </div>
+        </div>
+        <div class="toolbar" style="padding:10px 14px 0">
+          <button class="btnSm btnSmAcc">+ Agregar cambio</button>
+          <button class="btnSm btnSmDan">🗑 Quitar cambio…</button>
+          <div class="spacer"></div>
+          <span class="meta" style="font-size:11px">2 cambios en la solicitud</span>
+        </div>
+        <div class="liHead gHead" style="margin-top:8px"><span>Campo</span><span>Valor actual</span><span>Valor propuesto</span><span>Estado</span></div>
+        <div class="scrollY">
+          <div class="liRow gRow gSel"><b>Nombre</b><span class="diffOld">Supermercados La Unión</span><span class="diffNew">La Unión, S.A.</span><span><span class="pill pMuted">Borrador</span></span></div>
+          <div class="liRow gRow"><b>CIF COM</b><span class="diffOld">C-91455</span><span class="diffNew">C-91460</span><span><span class="pill pMuted">Borrador</span></span></div>
+        </div>
+        <div style="padding:0 16px 10px"><div class="banner bWarn">⚠ Otra solicitud en curso (<b>RFC-00338</b>, de
+          Luis Herrera) ya propone cambios sobre <b>este mismo cliente</b> en la tabla Cuentas. Revisala antes de
+          enviar para no pisarse.</div></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;padding:13px 16px;border-top:1px solid var(--line)">
+          <button class="btn btnGhost">Cancelar solicitud…</button>
+          <button class="btn btnPrimary">Enviar a aprobación…</button>
+        </div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="listHead">¿Quién aprueba?</div>
+        <div class="detBody" style="padding:14px 16px">
+          <div class="banner bInfo">Esta solicitud la decide un <b>Approver de Clientes</b> (Banca de Empresas).
+            Vos no podés aprobar tu propia solicitud — lo valida también el servidor.</div>
+          <div class="secLab" style="margin-top:6px">Al enviar</div>
+          <div class="tl">
+            <div class="tlItem"><span class="tlDot" style="background:var(--info)"></span><div class="c"><b>Se notifica al chat de Approvers</b><small>Adaptive Card en Teams con el detalle y link directo</small></div></div>
+            <div class="tlItem"><span class="tlDot" style="background:var(--info)"></span><div class="c"><b>Queda bloqueada la edición de líneas</b><small>hasta que se resuelva o se cancele</small></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============================================================ RSP -->
+<section id="rsp">
+  <div class="viewHead"><span class="vId">RSP</span><h2>Responsive — la misma pantalla a anchos menores</h2>
+    <p>El listado de clientes a ~1080px y ~840px: los KPIs se comprimen (ancho por fórmula
+      <code>(Parent.Width - gaps) / 4</code>), la grilla reparte columnas por proporción y el buscador cede ancho.
+      Nada se corta ni se superpone porque no hay coordenadas absolutas.</p></div>
+  <div class="frameWrap narrow"><div class="sizeTag">~1080px</div>
+  <div class="frame" style="height:560px">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Administración de Clientes<small>Maestro de clientes</small></div>
+      <div class="navSeg"><button class="on">Clientes</button><button>Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">MJ</span>María J.</div>
+    </div>
+    <div class="toolbar">
+      <div class="seg"><button class="on">Activos</button><button>Inactivos</button><button>Pendientes</button><button>Todos</button></div>
+      <input class="in" style="flex:1;max-width:220px" placeholder="⌕ Buscar…">
+      <div class="spacer"></div>
+      <button class="btn btnPrimary">+ Nuevo</button>
+    </div>
+    <div class="body2" style="flex-direction:column;gap:12px">
+      <div class="kpiRow">
+        <div class="kpi"><div class="lab">Activos</div><div class="val">312</div></div>
+        <div class="kpi"><div class="lab">RFC en curso</div><div class="val">9</div></div>
+        <div class="kpi"><div class="lab">Altas pend.</div><div class="val">6</div></div>
+        <div class="kpi"><div class="lab">Hoy</div><div class="val">14</div></div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="clHead gHead"><span>Cliente</span><span>CIF BCO</span><span>CIF COM</span><span>Estado</span><span>Solicitud</span><span class="num">Modif.</span></div>
+        <div class="scrollY">
+          <button class="clRow gRow"><b>Distribuidora La Colonia</b><span class="num">100234511</span><span class="num">C-88412</span><span><span class="pill pOk">Activo</span></span><span><span class="pill pWarn">RFC</span></span><span class="num">09:41</span></button>
+          <button class="clRow gRow"><b>Ferretería SINSA</b><span class="num">100311220</span><span class="num">C-90233</span><span><span class="pill pOk">Activo</span></span><span></span><span class="num">ayer</span></button>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <div style="height:18px"></div>
+  <div class="frameWrap mini"><div class="sizeTag">~840px</div>
+  <div class="frame" style="height:500px">
+    <div class="hdr">
+      <div class="brandTile">C$</div>
+      <div class="hTitle">Adm. de Clientes<small>Maestro</small></div>
+      <div class="navSeg"><button class="on">Clientes</button><button>Solicitudes</button></div>
+      <div class="spacer"></div>
+      <div class="userChip"><span class="avatar">MJ</span></div>
+    </div>
+    <div class="toolbar">
+      <div class="seg"><button class="on">Activos</button><button>Todos</button></div>
+      <input class="in" style="flex:1" placeholder="⌕ Buscar…">
+      <button class="btn btnPrimary">+ Nuevo</button>
+    </div>
+    <div class="body2" style="flex-direction:column;gap:12px">
+      <div class="card" style="flex:1">
+        <div class="clHead gHead" style="grid-template-columns:2fr 1fr 1fr .9fr"><span>Cliente</span><span>CIF BCO</span><span>Estado</span><span>Solicitud</span></div>
+        <div class="scrollY">
+          <button class="clRow gRow" style="grid-template-columns:2fr 1fr 1fr .9fr"><b>Distribuidora La Colonia</b><span class="num">100234511</span><span><span class="pill pOk">Activo</span></span><span><span class="pill pWarn">RFC</span></span></button>
+          <button class="clRow gRow" style="grid-template-columns:2fr 1fr 1fr .9fr"><b>Ferretería SINSA</b><span class="num">100311220</span><span><span class="pill pOk">Activo</span></span><span></span></button>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<div class="notes">
+  <h2>Notas de diseño — qué corrige la v2 respecto de la v1</h2>
+  <h3>Arquitectura</h3>
+  <ul>
+    <li><b>Custom API síncrona</b> <code>sanic_CHResolveChangeRequest</code> reemplaza los 4 flujos materializadores
+      y el watchdog: aprobar = aplicar, en una transacción. El estado <b>Aplicada/Fallida</b> se conoce en el acto
+      (SO3) y los errores del guard llegan con su motivo real (SO4).</li>
+    <li><b>Sin Forms conectados a tablas maestras</b>: los paneles de alta/edición (CL2, CI2) usan controles sueltos
+      con validación propia — la imposibilidad de escribir el maestro es estructural.</li>
+    <li><b>Sin Power CAT ni PCF</b>: header, navegación segmentada, grillas (galerías nativas), tabs, paneles y
+      diálogos se arman con contenedores manuales + componentes propios de <code>CH-CL-SharedComponents</code>
+      (nunca dentro de galerías).</li>
+    <li><b>Permisos</b>: la membresía AAD se resuelve una sola vez al inicio (colección cacheada) y los roles se
+      muestran en el chip del usuario; el servidor revalida siempre.</li>
+  </ul>
+  <h3>Funcional</h3>
+  <ul>
+    <li><b>Editar captura el nuevo valor</b> (CI2) — la v1 creaba RFCs de edición vacíos, sin líneas.</li>
+    <li><b>Diff actual → propuesto</b> en paneles y en el detalle del RFC (SO2/SO5): tachado rojo → verde.</li>
+    <li><b>Conflictos por registro</b>, no globales: el aviso de RFC en curso apunta al mismo registro/cliente
+      (CI1, SO5), no a cualquier RFC que toque el mismo campo en otro cliente.</li>
+    <li><b>Aprobar/Rechazar</b> exigen rol + creador≠aprobador en la UI <i>y</i> en el guard; botones con estado
+      deshabilitado real, no solo ocultos.</li>
+    <li><b>Borrar línea con confirmación</b>; enviar/cancelar/aprobar/rechazar con comentario obligatorio.</li>
+  </ul>
+  <h3>UX</h3>
+  <ul>
+    <li>Badges de estado con color en TODAS las vistas (Fallida roja, Aplicada verde, Enviada ámbar…).</li>
+    <li>Bandeja del aprobador con segmento <b>"Para mi decisión"</b> como default — lo accionable primero.</li>
+    <li>Spinner que siempre se libera; errores con el motivo del servidor, nunca "intentelo nuevamente" genérico.</li>
+    <li>Números de cuenta enmascarados (<code>•••• 3311</code>) con revelado bajo demanda.</li>
+    <li>Validación de correo no destructiva: marca el error y conserva lo tipeado (CL2 muestra el patrón).</li>
+    <li>Historial como línea de tiempo en el detalle del RFC (SO2/SO4) leyendo la bitácora.</li>
+  </ul>
+  <h3>Performance</h3>
+  <ul>
+    <li>Listados 100% delegables: búsqueda y filtros server-side; el badge "RFC en curso" sale de una consulta
+      acotada al conjunto visible, y se refresca al volver de crear una solicitud.</li>
+    <li>Paginación explícita en listas largas; columnas seleccionadas con <code>ShowColumns</code>.</li>
+  </ul>
+</div>
+</div>

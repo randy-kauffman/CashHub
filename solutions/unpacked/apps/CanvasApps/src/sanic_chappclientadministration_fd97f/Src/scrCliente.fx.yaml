@@ -1,0 +1,2939 @@
+scrCliente As screen:
+    Fill: =ThemeBg
+    LoadingSpinnerColor: =App.Theme.Colors.Primary
+    OnVisible: |-
+        =If(
+            IsBlank(gvarClienteSel),
+            Select(btnNavigatescrClientesFic),
+            
+                UpdateContext(
+                    {
+                        ctxTabFic: "Sucursales",
+                        varPanelAbiertoFic: false,
+                        varPanelModoFic: "",
+                        varPanelAccionFic: "",
+                        varDlgAccionFic: ""
+                    }
+                );
+                Reset(inpBuscarTabFic);
+                ClearCollect(
+                    colRfcEnCursoFic,
+                    Filter(
+                        'CH-Tbl-ClientDataChangeRequests',
+                        RelatedClient.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'
+                        && (
+                            'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
+                            || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted
+                            || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved
+                        )
+                    )
+                );
+                ClearCollect(colBranchesClienteFic, Filter('CH-Tbl-ClientBranches', Client.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'));
+                ClearCollect(colEmailsClienteFic, Filter('CH-Tbl-ClientEmails', Client.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'));
+                ClearCollect(colAccountsClienteFic, Filter('CH-Tbl-ClientAccounts', Client.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'));
+                ClearCollect(colSolicitudesClienteFic, Filter('CH-Tbl-ClientDataChangeRequests', RelatedClient.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'));
+                ClearCollect(colAuditClienteFic, Filter('CH-Tbl-ClientDataChangesAuditTrails', RelatedClient.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'));
+                Clear(colCuentasRevFic);
+                Clear(colCambiosPanelFic);
+                Reset(galSucursalesFic);
+                Reset(galCorreosFic);
+                Reset(galCuentasFic);
+                Reset(galSolicitudesFic);
+                Reset(galBitacoraFic)
+            
+        )
+
+    cmpAppHeaderFic As cmpAppHeader:
+        Height: =fxHeaderH
+        OnClientes: =false
+        OnSolicitudes: =Navigate(scrSolicitudes, ScreenTransition.None)
+        RolTexto: =gvarRolTexto
+        Subtitulo: ="Ficha de cliente"
+        Width: =Parent.Width
+        ZIndex: =2
+
+    cntBodyFic As groupContainer.manualLayoutContainer:
+        DropShadow: =DropShadow.Light
+        Fill: =Color.Transparent
+        Height: =Parent.Height - Self.Y
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
+        Width: =Parent.Width
+        Y: =cmpAppHeaderFic.Y + cmpAppHeaderFic.Height
+        ZIndex: =3
+
+        cntSideFic As groupContainer.manualLayoutContainer:
+            DropShadow: =DropShadow.Light
+            Fill: =Color.Transparent
+            Height: =Parent.Height - fxGutter*2
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            Width: =fxSideW
+            X: =fxGutter
+            Y: =fxGutter
+            ZIndex: =40
+
+            cntTarjetaClienteFic As groupContainer.manualLayoutContainer:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                DropShadow: =DropShadow.Light
+                Fill: =ThemeSurface
+                Height: =lblKvCuentasValFic.Y + lblKvCuentasValFic.Height + 14
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =fxCardR
+                RadiusBottomRight: =fxCardR
+                RadiusTopLeft: =fxCardR
+                RadiusTopRight: =fxCardR
+                Width: =Parent.Width
+                ZIndex: =41
+
+                cntTarjetaClienteHeadFic As groupContainer.manualLayoutContainer:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =1
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeSurface2
+                    Height: =38
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =4
+                    RadiusBottomRight: =4
+                    RadiusTopLeft: =4
+                    RadiusTopRight: =4
+                    Width: =Parent.Width
+                    ZIndex: =42
+
+                    btnVolverFic As button:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =ThemeSurface
+                        FontWeight: =FontWeight.Semibold
+                        Height: =26
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =ThemeInk2
+                        HoverFill: =ThemeSurface2
+                        OnSelect: =Navigate(scrClientes, ScreenTransition.None)
+                        PressedBorderColor: =ThemeLine
+                        PressedColor: =ThemeInk2
+                        PressedFill: =ThemeSurface2
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =8.25
+                        Text: ="‹ Volver"
+                        Width: =62
+                        X: =12
+                        Y: =(Parent.Height-26)/2
+                        ZIndex: =43
+
+                    pilEstadoClienteFic As button:
+                        BorderColor: =ThemeLineSoft
+                        BorderThickness: =If(gvarClienteSel.RecordStatus = 'CH-Ch-RecordStatus'.Inactive, 1, 0)
+                        Color: =Switch(gvarClienteSel.RecordStatus, 'CH-Ch-RecordStatus'.Active,ThemeOk, 'CH-Ch-RecordStatus'.Inactive,ThemeInk3, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarn, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarn, ThemeInk3)
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =DisplayMode.View
+                        Fill: =Switch(gvarClienteSel.RecordStatus, 'CH-Ch-RecordStatus'.Active,ThemeOkSoft, 'CH-Ch-RecordStatus'.Inactive,ThemeLineSoft, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarnSoft, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarnSoft, ThemeLineSoft)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        HoverBorderColor: =Self.BorderColor
+                        HoverFill: =Self.Fill
+                        PressedBorderColor: =Self.BorderColor
+                        PressedColor: =Self.Color
+                        PressedFill: =Self.Fill
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: =Switch(gvarClienteSel.RecordStatus, 'CH-Ch-RecordStatus'.Active,"Activo", 'CH-Ch-RecordStatus'.Inactive,"Inactivo", 'CH-Ch-RecordStatus'.PendingApproval,"Pend. aprobación", 'CH-Ch-RecordStatus'.PendingDeactivation,"Pend. desactivación", "—")
+                        Width: =Len(Switch(gvarClienteSel.RecordStatus, 'CH-Ch-RecordStatus'.Active,"Activo",'CH-Ch-RecordStatus'.Inactive,"Inactivo",'CH-Ch-RecordStatus'.PendingApproval,"Pend. aprobación",'CH-Ch-RecordStatus'.PendingDeactivation,"Pend. desactivación","—")) * 5.4 + 18
+                        X: =Parent.Width - 12 - Self.Width
+                        Y: =(Parent.Height-20)/2
+                        ZIndex: =44
+
+                lblNombreClienteFic As label:
+                    BorderColor: =ThemeLine
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =20
+                    Size: =10.88
+                    Text: =gvarClienteSel.Name
+                    Width: =Parent.Width - 28
+                    Wrap: =false
+                    X: =14
+                    Y: =cntTarjetaClienteHeadFic.Y + cntTarjetaClienteHeadFic.Height + 12
+                    ZIndex: =45
+
+                lblClienteDesdeFic As label:
+                    BorderColor: =ThemeLine
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =8.63
+                    Text: ="Cliente desde " & Lower(Text(gvarClienteSel.'Created On', "mmm yyyy"))
+                    Width: =Parent.Width - 28
+                    X: =14
+                    Y: =lblNombreClienteFic.Y + lblNombreClienteFic.Height + 2
+                    ZIndex: =46
+
+                lblKvCifBcoLabFic As label:
+                    BorderColor: =ThemeLine
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =9
+                    Text: ="CIF BCO"
+                    Width: =90
+                    X: =14
+                    Y: =lblClienteDesdeFic.Y + lblClienteDesdeFic.Height + 10
+                    ZIndex: =47
+
+                lblKvCifBcoValFic As label:
+                    Align: =Align.Right
+                    BorderColor: =ThemeLine
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =9
+                    Text: =gvarClienteSel.CIFBCO
+                    Width: =Parent.Width - 28 - Self.X
+                    X: =lblKvCifBcoLabFic.X + lblKvCifBcoLabFic.Width
+                    Y: =lblKvCifBcoLabFic.Y
+                    ZIndex: =48
+
+                lblKvCifComLabFic As label:
+                    BorderColor: =ThemeLine
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =9
+                    Text: ="CIF COM"
+                    Width: =90
+                    X: =14
+                    Y: =lblKvCifBcoLabFic.Y + lblKvCifBcoLabFic.Height + 5
+                    ZIndex: =49
+
+                lblKvCifComValFic As label:
+                    Align: =Align.Right
+                    BorderColor: =ThemeLine
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =9
+                    Text: =gvarClienteSel.CIFCOM
+                    Width: =Parent.Width - 28 - Self.X
+                    X: =lblKvCifComLabFic.X + lblKvCifComLabFic.Width
+                    Y: =lblKvCifComLabFic.Y
+                    ZIndex: =50
+
+                lblKvSucursalesLabFic As label:
+                    BorderColor: =ThemeLine
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =9
+                    Text: ="Sucursales"
+                    Width: =90
+                    X: =14
+                    Y: =lblKvCifComLabFic.Y + lblKvCifComLabFic.Height + 5
+                    ZIndex: =51
+
+                lblKvSucursalesValFic As label:
+                    Align: =Align.Right
+                    BorderColor: =ThemeLine
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =9
+                    Text: =CountRows(Filter(colBranchesClienteFic, RecordStatus = 'CH-Ch-RecordStatus'.Active)) & " activas"
+                    Width: =Parent.Width - 28 - Self.X
+                    X: =lblKvSucursalesLabFic.X + lblKvSucursalesLabFic.Width
+                    Y: =lblKvSucursalesLabFic.Y
+                    ZIndex: =52
+
+                lblKvCorreosLabFic As label:
+                    BorderColor: =ThemeLine
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =9
+                    Text: ="Correos"
+                    Width: =90
+                    X: =14
+                    Y: =lblKvSucursalesLabFic.Y + lblKvSucursalesLabFic.Height + 5
+                    ZIndex: =53
+
+                lblKvCorreosValFic As label:
+                    Align: =Align.Right
+                    BorderColor: =ThemeLine
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =9
+                    Text: =CountRows(Filter(colEmailsClienteFic, RecordStatus = 'CH-Ch-RecordStatus'.Active)) & " autorizados"
+                    Width: =Parent.Width - 28 - Self.X
+                    X: =lblKvCorreosLabFic.X + lblKvCorreosLabFic.Width
+                    Y: =lblKvCorreosLabFic.Y
+                    ZIndex: =54
+
+                lblKvCuentasLabFic As label:
+                    BorderColor: =ThemeLine
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =9
+                    Text: ="Cuentas"
+                    Width: =90
+                    X: =14
+                    Y: =lblKvCorreosLabFic.Y + lblKvCorreosLabFic.Height + 5
+                    ZIndex: =55
+
+                lblKvCuentasValFic As label:
+                    Align: =Align.Right
+                    BorderColor: =ThemeLine
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =9
+                    Text: =Text(CountRows(colAccountsClienteFic))
+                    Width: =Parent.Width - 28 - Self.X
+                    X: =lblKvCuentasLabFic.X + lblKvCuentasLabFic.Width
+                    Y: =lblKvCuentasLabFic.Y
+                    ZIndex: =56
+
+            cntAccionesClienteFic As groupContainer.manualLayoutContainer:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                DropShadow: =DropShadow.Light
+                Fill: =ThemeSurface
+                Height: =Parent.Height - Self.Y
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =fxCardR
+                RadiusBottomRight: =fxCardR
+                RadiusTopLeft: =fxCardR
+                RadiusTopRight: =fxCardR
+                Width: =Parent.Width
+                Y: =cntTarjetaClienteFic.Y + cntTarjetaClienteFic.Height + fxGap
+                ZIndex: =57
+
+                lblAccionesHeadFic As label:
+                    BorderColor: =ThemeLine
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Fill: =ThemeSurface2
+                    FontWeight: =FontWeight.Bold
+                    Height: =30
+                    Size: =7.5
+                    Text: ="ACCIONES SOBRE EL CLIENTE"
+                    Width: =Parent.Width-14
+                    X: =14
+                    ZIndex: =58
+
+                btnEditarClienteFic As button:
+                    BorderColor: =ThemeAccent
+                    BorderThickness: =1
+                    Color: =ThemeAccent
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    DisplayMode: |-
+                        =If(
+                            !IsBlank(LookUp(colMisPermisos, Name = "sanic_chtblclient" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                            && gvarClienteSel.RecordStatus = 'CH-Ch-RecordStatus'.Active
+                            && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclient" && TargetRecordID = Text(gvarClienteSel.'CH-Tbl-Client'))),
+                            DisplayMode.Edit,
+                            DisplayMode.Disabled
+                        )
+                    Fill: =ThemeSurface
+                    FontWeight: =FontWeight.Semibold
+                    Height: =26
+                    HoverBorderColor: =ThemeAccent
+                    HoverColor: =ThemeAccent
+                    HoverFill: =ThemeSurface2
+                    OnSelect: |-
+                        =UpdateContext(
+                            {
+                                varPanelModoFic: "cliente",
+                                varPanelAccionFic: "Editar",
+                                varPanelTargetIdFic: gvarClienteSel.'CH-Tbl-Client',
+                                varPanelAbiertoFic: true
+                            }
+                        );
+                        Reset(inpPanelCampoAFic);
+                        Reset(inpPanelCampoBFic);
+                        Reset(inpPanelCampoCFic);
+                        Reset(inpMotivoPanelFic);
+                        Clear(colCambiosPanelFic)
+                    PressedBorderColor: =ThemeAccent
+                    PressedColor: =ThemeAccent
+                    PressedFill: =ThemeSurface2
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =8.25
+                    Text: ="✎ Solicitar edición de datos"
+                    Width: =Parent.Width - 28
+                    X: =14
+                    Y: =lblAccionesHeadFic.Y + lblAccionesHeadFic.Height + 9
+                    ZIndex: =59
+
+                btnDesactivarClienteFic As button:
+                    BorderColor: =ThemeDangerLine
+                    BorderThickness: =1
+                    Color: =ThemeDanger
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    DisplayMode: |-
+                        =If(
+                            !IsBlank(LookUp(colMisPermisos, Name = "sanic_chtblclient" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                            && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclient" && TargetRecordID = Text(gvarClienteSel.'CH-Tbl-Client'))),
+                            DisplayMode.Edit,
+                            DisplayMode.Disabled
+                        )
+                    Fill: =ThemeSurface
+                    FontWeight: =FontWeight.Semibold
+                    Height: =26
+                    HoverBorderColor: =ThemeDangerLine
+                    HoverColor: =ThemeDanger
+                    HoverFill: =ThemeSurface2
+                    OnSelect: |-
+                        =UpdateContext(
+                            {
+                                varDlgAccionFic: If(gvarClienteSel.RecordStatus = 'CH-Ch-RecordStatus'.Inactive, "Activar", "Desactivar"),
+                                varDlgTargetTableFic: "sanic_chtblclient",
+                                varDlgTargetTableLabelFic: "Clientes",
+                                varDlgTargetTablePluralFic: "sanic_chtblclients",
+                                varDlgTargetIdFic: gvarClienteSel.'CH-Tbl-Client',
+                                varDlgTargetNombreFic: gvarClienteSel.Name
+                            }
+                        )
+                    PressedBorderColor: =ThemeDangerLine
+                    PressedColor: =ThemeDanger
+                    PressedFill: =ThemeSurface2
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =8.25
+                    Text: =If(gvarClienteSel.RecordStatus = 'CH-Ch-RecordStatus'.Inactive, "Solicitar activación", "Solicitar desactivación")
+                    Width: =Parent.Width - 28
+                    X: =14
+                    Y: =btnEditarClienteFic.Y + btnEditarClienteFic.Height + 8
+                    ZIndex: =60
+
+                cntBannerRfcClienteFic As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeWarnSoft
+                    Height: =lblBannerRfcClienteFic.Height + 14
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Visible: =!IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclient" && TargetRecordID = Text(gvarClienteSel.'CH-Tbl-Client')))
+                    Width: =Parent.Width - 28
+                    X: =14
+                    Y: =btnDesactivarClienteFic.Y + btnDesactivarClienteFic.Height + 10
+                    ZIndex: =61
+
+                    lblBannerRfcClienteFic As label:
+                        AutoHeight: =true
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeWarn
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Size: =7.5
+                        Text: ="Hay 1 solicitud en curso sobre este cliente — no se puede pedir otra edición del mismo campo hasta que se resuelva."
+                        Width: =Parent.Width - 20
+                        X: =10
+                        Y: =7
+                        ZIndex: =62
+
+        cntMainFic As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Light
+            Fill: =ThemeSurface
+            Height: =Parent.Height - fxGutter*2
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =fxCardR
+            RadiusBottomRight: =fxCardR
+            RadiusTopLeft: =fxCardR
+            RadiusTopRight: =fxCardR
+            Width: =Parent.Width - Self.X - fxGutter
+            X: =cntSideFic.X + cntSideFic.Width + fxGap
+            Y: =fxGutter
+            ZIndex: =63
+
+            cntTabsFic As groupContainer.manualLayoutContainer:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                DropShadow: =DropShadow.Light
+                Fill: =Color.Transparent
+                Height: =40
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Width: =Parent.Width
+                ZIndex: =64
+
+                btnTabSucursalesFic As button:
+                    BorderThickness: =0
+                    Color: =If(ctxTabFic = "Sucursales", ThemeAccent, ThemeInk2)
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =Color.Transparent
+                    FontWeight: =If(ctxTabFic = "Sucursales", FontWeight.Semibold, FontWeight.Normal)
+                    Height: =Parent.Height
+                    HoverFill: =ThemeSurface2
+                    OnSelect: |-
+                        =UpdateContext({ctxTabFic: "Sucursales"}); Reset(inpBuscarTabFic)
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    Text: ="Sucursales (" & CountRows(colBranchesClienteFic) & ")"
+                    Width: =Len("Sucursales") * 6.4 + 56
+                    X: =14
+                    ZIndex: =65
+
+                btnTabSolicitudesFic As button:
+                    BorderThickness: =0
+                    Color: =If(ctxTabFic = "Solicitudes", ThemeAccent, ThemeInk2)
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =Color.Transparent
+                    FontWeight: =If(ctxTabFic = "Solicitudes", FontWeight.Semibold, FontWeight.Normal)
+                    Height: =Parent.Height
+                    HoverFill: =ThemeSurface2
+                    OnSelect: |-
+                        =UpdateContext({ctxTabFic: "Solicitudes"}); Reset(inpBuscarTabFic)
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    Text: ="Solicitudes (" & CountRows(colSolicitudesClienteFic) & ")"
+                    Width: =Len("Solicitudes") * 6.4 + 56
+                    X: =btnTabCuentasFic.X + btnTabCuentasFic.Width
+                    ZIndex: =66
+
+                btnTabCuentasFic As button:
+                    BorderThickness: =0
+                    Color: =If(ctxTabFic = "Cuentas", ThemeAccent, ThemeInk2)
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =Color.Transparent
+                    FontWeight: =If(ctxTabFic = "Cuentas", FontWeight.Semibold, FontWeight.Normal)
+                    Height: =Parent.Height
+                    HoverFill: =ThemeSurface2
+                    OnSelect: |-
+                        =UpdateContext({ctxTabFic: "Cuentas"}); Reset(inpBuscarTabFic)
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    Text: ="Cuentas (" & CountRows(colAccountsClienteFic) & ")"
+                    Width: =Len("Cuentas") * 6.4 + 56
+                    X: =btnTabCorreosFic.X + btnTabCorreosFic.Width
+                    ZIndex: =67
+
+                btnTabCorreosFic As button:
+                    BorderThickness: =0
+                    Color: =If(ctxTabFic = "Correos", ThemeAccent, ThemeInk2)
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =Color.Transparent
+                    FontWeight: =If(ctxTabFic = "Correos", FontWeight.Semibold, FontWeight.Normal)
+                    Height: =Parent.Height
+                    HoverFill: =ThemeSurface2
+                    OnSelect: |-
+                        =UpdateContext({ctxTabFic: "Correos"}); Reset(inpBuscarTabFic)
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    Text: ="Correos (" & CountRows(colEmailsClienteFic) & ")"
+                    Width: =Len("Correos") * 6.4 + 56
+                    X: =btnTabSucursalesFic.X + btnTabSucursalesFic.Width
+                    ZIndex: =68
+
+                btnTabBitacoraFic As button:
+                    BorderThickness: =0
+                    Color: =If(ctxTabFic = "Bitácora", ThemeAccent, ThemeInk2)
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =Color.Transparent
+                    FontWeight: =If(ctxTabFic = "Bitácora", FontWeight.Semibold, FontWeight.Normal)
+                    Height: =Parent.Height
+                    HoverFill: =ThemeSurface2
+                    OnSelect: |-
+                        =UpdateContext({ctxTabFic: "Bitácora"}); Reset(inpBuscarTabFic)
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    Text: ="Bitácora (" & CountRows(colAuditClienteFic) & ")"
+                    Width: =Len("Bitácora") * 6.4 + 56
+                    X: =btnTabSolicitudesFic.X + btnTabSolicitudesFic.Width
+                    ZIndex: =69
+
+            cntToolbarTabFic As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =Color.Transparent
+                Height: =46
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Width: =Parent.Width
+                Y: =cntTabsFic.Y + cntTabsFic.Height
+                ZIndex: =70
+
+                inpBuscarTabFic As text:
+                    BorderColor: =ThemeLine
+                    Color: =RGBA(0, 0, 0, 1)
+                    Fill: =ThemeSurface
+                    FocusedBorderThickness: =2
+                    Height: =28
+                    HintText: |-
+                        =Switch(
+                            ctxTabFic,
+                            "Sucursales", "⌕ Buscar sucursal…",
+                            "Correos", "⌕ Buscar correo…",
+                            "Cuentas", "⌕ Buscar cuenta…",
+                            "Solicitudes", "⌕ N° de solicitud…",
+                            "⌕ Buscar…"
+                        )
+                    HoverBorderColor: =ThemeLine
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =ThemeSurface
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    Visible: =ctxTabFic <> "Bitácora"
+                    Width: =260
+                    X: =14
+                    Y: =9
+                    ZIndex: =1
+
+                lblGestionaTabFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =20
+                    Size: =7.5
+                    Text: |-
+                        ="Gestiona: " & Switch(ctxTabFic, "Sucursales","Bóveda", "Correos","Banca Empresas", "Cuentas","Banca Empresas", "") & " — no tenés rol Contributor en " & ctxTabFic
+                    Visible: =ctxTabFic in ["Sucursales","Correos","Cuentas"] && IsBlank(LookUp(colMisPermisos, Name = Switch(ctxTabFic, "Sucursales","sanic_chtblclientbranch", "Correos","sanic_chtblclientemail", "Cuentas","sanic_chtblclientaccount", "") && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                    Width: =Len(Self.Text) * 4.9
+                    X: =btnNuevoTabFic.X - 8 - Self.Width
+                    Y: =13
+                    ZIndex: =71
+
+                btnNuevoTabFic As button:
+                    BorderColor: =ThemeAccent
+                    BorderThickness: =1
+                    Color: =ThemeAccent
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    DisplayMode: |-
+                        =If(
+                            !IsBlank(
+                                LookUp(
+                                    colMisPermisos,
+                                    Name = Switch(ctxTabFic, "Sucursales","sanic_chtblclientbranch", "Correos","sanic_chtblclientemail", "Cuentas","sanic_chtblclientaccount", "")
+                                    && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor
+                                )
+                            ),
+                            DisplayMode.Edit,
+                            DisplayMode.Disabled
+                        )
+                    Fill: =ThemeSurface
+                    FontWeight: =FontWeight.Semibold
+                    Height: =28
+                    HoverBorderColor: =ThemeAccent
+                    HoverColor: =ThemeAccent
+                    HoverFill: =ThemeSurface2
+                    OnSelect: |-
+                        =UpdateContext(
+                            {
+                                varPanelModoFic: Switch(ctxTabFic, "Sucursales","sucursal", "Correos","correo", "Cuentas","cuenta", ""),
+                                varPanelAccionFic: "Alta",
+                                varPanelTargetIdFic: Blank(),
+                                varPanelAbiertoFic: true
+                            }
+                        );
+                        Reset(inpPanelCampoAFic);
+                        Reset(inpPanelCampoBFic);
+                        Reset(inpPanelCampoCFic);
+                        Reset(inpMotivoPanelFic);
+                        Clear(colCambiosPanelFic)
+                    PressedBorderColor: =ThemeAccent
+                    PressedColor: =ThemeAccent
+                    PressedFill: =ThemeSurface2
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =8.25
+                    Text: ="+ Nueva " & Switch(ctxTabFic, "Sucursales","sucursal", "Correos","correo", "Cuentas","cuenta", "")
+                    Visible: =ctxTabFic in ["Sucursales","Correos","Cuentas"]
+                    Width: =Len(Self.Text) * 5.6 + 24
+                    X: =Parent.Width - 14 - Self.Width
+                    Y: =9
+                    ZIndex: =72
+
+            cntGridSucursalesFic As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =Color.Transparent
+                Height: =Parent.Height - Self.Y
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Visible: =ctxTabFic = "Sucursales"
+                Width: =Parent.Width
+                Y: =cntToolbarTabFic.Y + cntToolbarTabFic.Height
+                ZIndex: =73
+
+                lblHSucSucursalFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="SUCURSAL"
+                    Width: =(Parent.Width - 32) * 0.5
+                    X: =16
+                    Y: =10
+                    ZIndex: =74
+
+                lblHSucEstadoFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="ESTADO"
+                    Width: =(cntGridSucursalesFic.Width - 32) * 0.25
+                    X: =lblHSucSucursalFic.X + lblHSucSucursalFic.Width
+                    Y: =10
+                    ZIndex: =75
+
+                lblHSucSolicitudFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="SOLICITUD"
+                    Width: =(cntGridSucursalesFic.Width - 32) * 0.25
+                    X: =lblHSucEstadoFic.X + lblHSucEstadoFic.Width
+                    Y: =10
+                    ZIndex: =76
+
+                shpHSucLineaFic As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    Width: =Parent.Width
+                    Y: =lblHSucSucursalFic.Y + lblHSucSucursalFic.Height + 6
+                    ZIndex: =77
+
+                galSucursalesFic As gallery.galleryVertical:
+                    '#CopilotOverlayLabel': ="Filtered"
+                    BorderColor: =App.Theme.Colors.Darker40
+                    DelayItemLoading: =true
+                    Height: =Parent.Height - Self.Y
+                    Items: |-
+                        =Filter(
+                            'CH-Tbl-ClientBranches',
+                            Client.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'
+                            && (IsBlank(inpBuscarTabFic.Text) || StartsWith(Name, inpBuscarTabFic.Text))
+                        )
+                    Layout: =Layout.Vertical
+                    LoadingSpinner: =LoadingSpinner.Data
+                    TemplateSize: =fxRowH
+                    Width: =Parent.Width
+                    Y: =shpHSucLineaFic.Y + shpHSucLineaFic.Height
+                    ZIndex: =78
+
+                    btnFilaSucursalFic As button:
+                        BorderThickness: =0
+                        Color: =ThemeInk
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                            =If(
+                                !IsBlank(LookUp(colMisPermisos, Name = "sanic_chtblclientbranch" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                                && ThisItem.RecordStatus = 'CH-Ch-RecordStatus'.Active
+                                && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclientbranch" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientBranch'))),
+                                
+                                    UpdateContext(
+                                        {
+                                            varPanelModoFic: "sucursal",
+                                            varPanelAccionFic: "Editar",
+                                            varPanelTargetIdFic: ThisItem.'CH-Tbl-ClientBranch',
+                                            varPanelAbiertoFic: true
+                                        }
+                                    );
+                                    Reset(inpPanelCampoAFic);
+                                    Reset(inpMotivoPanelFic);
+                                    Clear(colCambiosPanelFic)
+                                
+                            )
+                        PressedFill: =ThemeAccentSoft
+                        Size: =9
+                        Text: =""
+                        Width: =Parent.Width
+                        ZIndex: =1
+
+                    shpSelSucursalFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+                        Height: =Parent.TemplateHeight
+                        Width: =Parent.Width
+                        ZIndex: =2
+
+                    shpSelBarraSucursalFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeAccent
+                        Height: =Parent.TemplateHeight
+                        Visible: =ThisItem.IsSelected
+                        Width: =3
+                        ZIndex: =3
+
+                    lblSucNombreFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =9
+                        Text: =ThisItem.Name
+                        Width: =lblHSucSucursalFic.Width - 16
+                        X: =16
+                        ZIndex: =4
+
+                    pilSucEstadoFic As button:
+                        BorderThickness: =0
+                        Color: =Switch(ThisItem.RecordStatus, 'CH-Ch-RecordStatus'.Active,ThemeOk, 'CH-Ch-RecordStatus'.Inactive,ThemeInk3, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarn, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarn, ThemeInk3)
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: |-
+                            =If(
+                                !IsBlank(LookUp(colMisPermisos, Name = "sanic_chtblclientbranch" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                                && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclientbranch" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientBranch'))),
+                                DisplayMode.Edit,
+                                DisplayMode.View
+                            )
+                        Fill: =Switch(ThisItem.RecordStatus, 'CH-Ch-RecordStatus'.Active,ThemeOkSoft, 'CH-Ch-RecordStatus'.Inactive,ThemeLineSoft, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarnSoft, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarnSoft, ThemeLineSoft)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        HoverBorderColor: =Self.BorderColor
+                        HoverFill: =Self.Fill
+                        OnSelect: |-
+                            =If(
+                                Self.DisplayMode = DisplayMode.Edit,
+                                UpdateContext(
+                                    {
+                                        varDlgAccionFic: If(ThisItem.RecordStatus = 'CH-Ch-RecordStatus'.Inactive, "Activar", "Desactivar"),
+                                        varDlgTargetTableFic: "sanic_chtblclientbranch",
+                                        varDlgTargetTableLabelFic: "Sucursales",
+                                        varDlgTargetTablePluralFic: "sanic_chtblclientbranchs",
+                                        varDlgTargetIdFic: ThisItem.'CH-Tbl-ClientBranch',
+                                        varDlgTargetNombreFic: ThisItem.Name
+                                    }
+                                ),
+                                Select(Parent)
+                            )
+                        PressedBorderColor: =Self.BorderColor
+                        PressedColor: =Self.Color
+                        PressedFill: =Self.Fill
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: =Switch(ThisItem.RecordStatus, 'CH-Ch-RecordStatus'.Active,"Activa", 'CH-Ch-RecordStatus'.Inactive,"Inactiva", 'CH-Ch-RecordStatus'.PendingApproval,"Pend. aprobación", 'CH-Ch-RecordStatus'.PendingDeactivation,"Pend. desactivación", "—")
+                        Width: =100
+                        X: =lblHSucEstadoFic.X
+                        Y: =(Parent.TemplateHeight-20)/2
+                        ZIndex: =5
+
+                    pilSucRfcFic As button:
+                        BorderThickness: =0
+                        Color: =ThemeWarn
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =DisplayMode.View
+                        Fill: =ThemeWarnSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        OnSelect: =Select(Parent)
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: ="RFC en curso"
+                        Visible: =!IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclientbranch" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientBranch')))
+                        Width: =100
+                        X: =lblHSucSolicitudFic.X
+                        Y: =(Parent.TemplateHeight-20)/2
+                        ZIndex: =6
+
+                    shpSucSepFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLineSoft
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =Parent.TemplateHeight - 1
+                        ZIndex: =7
+
+            cntGridCorreosFic As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =Color.Transparent
+                Height: =Parent.Height - Self.Y
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Visible: =ctxTabFic = "Correos"
+                Width: =Parent.Width
+                Y: =cntToolbarTabFic.Y + cntToolbarTabFic.Height
+                ZIndex: =79
+
+                lblHCorCorreoFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="CORREO"
+                    Width: =(cntGridCorreosFic.Width - 32) * 0.4
+                    X: =16
+                    Y: =10
+                    ZIndex: =80
+
+                lblHCorNotifFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="NOTIFICAR SIEMPRE"
+                    Width: =(cntGridCorreosFic.Width - 32) * 0.2
+                    X: =lblHCorCorreoFic.X + lblHCorCorreoFic.Width
+                    Y: =10
+                    ZIndex: =81
+
+                lblHCorEstadoFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="ESTADO"
+                    Width: =(cntGridCorreosFic.Width - 32) * 0.2
+                    X: =lblHCorNotifFic.X + lblHCorNotifFic.Width
+                    Y: =10
+                    ZIndex: =82
+
+                lblHCorSolicitudFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="SOLICITUD"
+                    Width: =(cntGridCorreosFic.Width - 32) * 0.2
+                    X: =lblHCorEstadoFic.X + lblHCorEstadoFic.Width
+                    Y: =10
+                    ZIndex: =83
+
+                shpHCorLineaFic As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    Width: =Parent.Width
+                    Y: =lblHCorCorreoFic.Y + lblHCorCorreoFic.Height + 6
+                    ZIndex: =84
+
+                galCorreosFic As gallery.galleryVertical:
+                    '#CopilotOverlayLabel': ="Filtered"
+                    BorderColor: =App.Theme.Colors.Darker40
+                    DelayItemLoading: =true
+                    Height: =Parent.Height - Self.Y
+                    Items: |-
+                        =Filter(
+                            'CH-Tbl-ClientEmails',
+                            Client.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'
+                            && (IsBlank(inpBuscarTabFic.Text) || StartsWith('Email Address', inpBuscarTabFic.Text))
+                        )
+                    Layout: =Layout.Vertical
+                    LoadingSpinner: =LoadingSpinner.Data
+                    TemplateSize: =fxRowH
+                    Width: =Parent.Width
+                    Y: =shpHCorLineaFic.Y + shpHCorLineaFic.Height
+                    ZIndex: =85
+
+                    btnFilaCorreoFic As button:
+                        BorderThickness: =0
+                        Color: =ThemeInk
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                            =If(
+                                !IsBlank(LookUp(colMisPermisos, Name = "sanic_chtblclientemail" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                                && ThisItem.RecordStatus = 'CH-Ch-RecordStatus'.Active
+                                && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclientemail" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientEmail'))),
+                                
+                                    UpdateContext(
+                                        {
+                                            varPanelModoFic: "correo",
+                                            varPanelAccionFic: "Editar",
+                                            varPanelTargetIdFic: ThisItem.'CH-Tbl-ClientEmail',
+                                            varPanelAbiertoFic: true
+                                        }
+                                    );
+                                    Reset(inpPanelCampoAFic);
+                                    Reset(inpMotivoPanelFic);
+                                    Clear(colCambiosPanelFic)
+                                
+                            )
+                        PressedFill: =ThemeAccentSoft
+                        Size: =9
+                        Text: =""
+                        Width: =Parent.Width
+                        ZIndex: =1
+
+                    shpSelCorreoFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+                        Height: =Parent.TemplateHeight
+                        Width: =Parent.Width
+                        ZIndex: =2
+
+                    shpSelBarraCorreoFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeAccent
+                        Height: =Parent.TemplateHeight
+                        Visible: =ThisItem.IsSelected
+                        Width: =3
+                        ZIndex: =3
+
+                    lblCorDireccionFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =9
+                        Text: =ThisItem.'Email Address'
+                        Width: =lblHCorCorreoFic.Width - 16
+                        X: =16
+                        ZIndex: =4
+
+                    lblCorNotifFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =9
+                        Text: =If(ThisItem.AlwaysNotify, "Sí", "No")
+                        Width: =lblHCorNotifFic.Width
+                        X: =lblHCorNotifFic.X
+                        ZIndex: =5
+
+                    pilCorEstadoFic As button:
+                        BorderThickness: =0
+                        Color: =Switch(ThisItem.RecordStatus, 'CH-Ch-RecordStatus'.Active,ThemeOk, 'CH-Ch-RecordStatus'.Inactive,ThemeInk3, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarn, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarn, ThemeInk3)
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: |-
+                            =If(
+                                !IsBlank(LookUp(colMisPermisos, Name = "sanic_chtblclientemail" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                                && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclientemail" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientEmail'))),
+                                DisplayMode.Edit,
+                                DisplayMode.View
+                            )
+                        Fill: =Switch(ThisItem.RecordStatus, 'CH-Ch-RecordStatus'.Active,ThemeOkSoft, 'CH-Ch-RecordStatus'.Inactive,ThemeLineSoft, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarnSoft, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarnSoft, ThemeLineSoft)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        HoverBorderColor: =Self.BorderColor
+                        HoverFill: =Self.Fill
+                        OnSelect: |-
+                            =If(
+                                Self.DisplayMode = DisplayMode.Edit,
+                                UpdateContext(
+                                    {
+                                        varDlgAccionFic: If(ThisItem.RecordStatus = 'CH-Ch-RecordStatus'.Inactive, "Activar", "Desactivar"),
+                                        varDlgTargetTableFic: "sanic_chtblclientemail",
+                                        varDlgTargetTableLabelFic: "Correos",
+                                        varDlgTargetTablePluralFic: "sanic_chtblclientemails",
+                                        varDlgTargetIdFic: ThisItem.'CH-Tbl-ClientEmail',
+                                        varDlgTargetNombreFic: ThisItem.'Email Address'
+                                    }
+                                ),
+                                Select(Parent)
+                            )
+                        PressedBorderColor: =Self.BorderColor
+                        PressedColor: =Self.Color
+                        PressedFill: =Self.Fill
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: =Switch(ThisItem.RecordStatus, 'CH-Ch-RecordStatus'.Active,"Activo", 'CH-Ch-RecordStatus'.Inactive,"Inactivo", 'CH-Ch-RecordStatus'.PendingApproval,"Pend. aprobación", 'CH-Ch-RecordStatus'.PendingDeactivation,"Pend. desactivación", "—")
+                        Width: =100
+                        X: =lblHCorEstadoFic.X
+                        Y: =(Parent.TemplateHeight-20)/2
+                        ZIndex: =6
+
+                    pilCorRfcFic As button:
+                        BorderThickness: =0
+                        Color: =ThemeWarn
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =DisplayMode.View
+                        Fill: =ThemeWarnSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        OnSelect: =Select(Parent)
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: ="RFC en curso"
+                        Visible: =!IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclientemail" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientEmail')))
+                        Width: =100
+                        X: =lblHCorSolicitudFic.X
+                        Y: =(Parent.TemplateHeight-20)/2
+                        ZIndex: =7
+
+                    shpCorSepFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLineSoft
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =Parent.TemplateHeight - 1
+                        ZIndex: =8
+
+            cntGridCuentasFic As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =Color.Transparent
+                Height: =Parent.Height - Self.Y
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Visible: =ctxTabFic = "Cuentas"
+                Width: =Parent.Width
+                Y: =cntToolbarTabFic.Y + cntToolbarTabFic.Height
+                ZIndex: =86
+
+                lblHCtaNumeroFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="NÚMERO DE CUENTA"
+                    Width: =(cntGridCuentasFic.Width - 32) * 0.4
+                    X: =16
+                    Y: =10
+                    ZIndex: =87
+
+                lblHCtaMonedaFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="MONEDA"
+                    Width: =(cntGridCuentasFic.Width - 32) * 0.2
+                    X: =lblHCtaNumeroFic.X + lblHCtaNumeroFic.Width
+                    Y: =10
+                    ZIndex: =88
+
+                lblHCtaEstadoFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="ESTADO"
+                    Width: =(cntGridCuentasFic.Width - 32) * 0.2
+                    X: =lblHCtaMonedaFic.X + lblHCtaMonedaFic.Width
+                    Y: =10
+                    ZIndex: =89
+
+                lblHCtaSolicitudFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="SOLICITUD"
+                    Width: =(cntGridCuentasFic.Width - 32) * 0.2
+                    X: =lblHCtaEstadoFic.X + lblHCtaEstadoFic.Width
+                    Y: =10
+                    ZIndex: =90
+
+                shpHCtaLineaFic As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    Width: =Parent.Width
+                    Y: =lblHCtaNumeroFic.Y + lblHCtaNumeroFic.Height + 6
+                    ZIndex: =91
+
+                galCuentasFic As gallery.galleryVertical:
+                    '#CopilotOverlayLabel': ="Filtered"
+                    BorderColor: =App.Theme.Colors.Darker40
+                    DelayItemLoading: =true
+                    Height: =Parent.Height - Self.Y
+                    Items: =Filter('CH-Tbl-ClientAccounts', Client.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client')
+                    Layout: =Layout.Vertical
+                    LoadingSpinner: =LoadingSpinner.Data
+                    TemplateSize: =fxRowH
+                    Width: =Parent.Width
+                    Y: =shpHCtaLineaFic.Y + shpHCtaLineaFic.Height
+                    ZIndex: =92
+
+                    btnFilaCuentaFic As button:
+                        BorderThickness: =0
+                        Color: =ThemeInk
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                            =If(
+                                !IsBlank(LookUp(colMisPermisos, Name = "sanic_chtblclientaccount" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                                && ThisItem.'CH-Ch-RecordStatus' = 'CH-Ch-RecordStatus'.Active
+                                && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclientaccount" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientAccount'))),
+                                
+                                    UpdateContext(
+                                        {
+                                            varPanelModoFic: "cuenta",
+                                            varPanelAccionFic: "Editar",
+                                            varPanelTargetIdFic: ThisItem.'CH-Tbl-ClientAccount',
+                                            varPanelAbiertoFic: true
+                                        }
+                                    );
+                                    Reset(inpPanelCampoAFic);
+                                    Reset(inpMotivoPanelFic);
+                                    Clear(colCambiosPanelFic)
+                                
+                            )
+                        PressedFill: =ThemeAccentSoft
+                        Size: =9
+                        Text: =""
+                        Width: =Parent.Width
+                        ZIndex: =1
+
+                    shpSelCuentaFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+                        Height: =Parent.TemplateHeight
+                        Width: =Parent.Width
+                        ZIndex: =2
+
+                    shpSelBarraCuentaFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeAccent
+                        Height: =Parent.TemplateHeight
+                        Visible: =ThisItem.IsSelected
+                        Width: =3
+                        ZIndex: =3
+
+                    lblCtaNumeroFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =9
+                        Text: |-
+                            =If(
+                                ThisItem.'CH-Tbl-ClientAccount' in colCuentasRevFic.Id,
+                                ThisItem.'Numero de cuenta',
+                                "•••• " & Right(ThisItem.'Numero de cuenta', 4)
+                            )
+                        Width: =lblHCtaNumeroFic.Width - 44
+                        X: =16
+                        ZIndex: =4
+
+                    btnCtaRevelarFic As button:
+                        BorderThickness: =0
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        FontWeight: =FontWeight.Semibold
+                        Height: =24
+                        HoverFill: =Color.Transparent
+                        OnSelect: |-
+                            =If(
+                                ThisItem.'CH-Tbl-ClientAccount' in colCuentasRevFic.Id,
+                                Remove(colCuentasRevFic, LookUp(colCuentasRevFic, Id = ThisItem.'CH-Tbl-ClientAccount')),
+                                Collect(colCuentasRevFic, {Id: ThisItem.'CH-Tbl-ClientAccount'})
+                            )
+                        PressedFill: =Color.Transparent
+                        Size: =9
+                        Text: =If(ThisItem.'CH-Tbl-ClientAccount' in colCuentasRevFic.Id, "🙈", "👁")
+                        Width: =24
+                        X: =lblCtaNumeroFic.X + lblCtaNumeroFic.Width
+                        Y: =(Parent.TemplateHeight-24)/2
+                        ZIndex: =5
+
+                    lblCtaMonedaFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =9
+                        Text: =Switch(ThisItem.Moneda, 'CH-Ch-Currency'.NIO,"NIO", 'CH-Ch-Currency'.USD,"USD", 'CH-Ch-Currency'.EUR,"EUR", "—")
+                        Width: =lblHCtaMonedaFic.Width
+                        X: =lblHCtaMonedaFic.X
+                        ZIndex: =6
+
+                    pilCtaEstadoFic As button:
+                        BorderThickness: =0
+                        Color: =Switch(ThisItem.'CH-Ch-RecordStatus', 'CH-Ch-RecordStatus'.Active,ThemeOk, 'CH-Ch-RecordStatus'.Inactive,ThemeInk3, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarn, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarn, ThemeInk3)
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: |-
+                            =If(
+                                !IsBlank(LookUp(colMisPermisos, Name = "sanic_chtblclientaccount" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))
+                                && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclientaccount" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientAccount'))),
+                                DisplayMode.Edit,
+                                DisplayMode.View
+                            )
+                        Fill: =Switch(ThisItem.'CH-Ch-RecordStatus', 'CH-Ch-RecordStatus'.Active,ThemeOkSoft, 'CH-Ch-RecordStatus'.Inactive,ThemeLineSoft, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarnSoft, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarnSoft, ThemeLineSoft)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        HoverBorderColor: =Self.BorderColor
+                        HoverFill: =Self.Fill
+                        OnSelect: |-
+                            =If(
+                                Self.DisplayMode = DisplayMode.Edit,
+                                UpdateContext(
+                                    {
+                                        varDlgAccionFic: If(ThisItem.'CH-Ch-RecordStatus' = 'CH-Ch-RecordStatus'.Inactive, "Activar", "Desactivar"),
+                                        varDlgTargetTableFic: "sanic_chtblclientaccount",
+                                        varDlgTargetTableLabelFic: "Cuentas",
+                                        varDlgTargetTablePluralFic: "sanic_chtblclientaccounts",
+                                        varDlgTargetIdFic: ThisItem.'CH-Tbl-ClientAccount',
+                                        varDlgTargetNombreFic: "•••• " & Right(ThisItem.'Numero de cuenta', 4)
+                                    }
+                                ),
+                                Select(Parent)
+                            )
+                        PressedBorderColor: =Self.BorderColor
+                        PressedColor: =Self.Color
+                        PressedFill: =Self.Fill
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: =Switch(ThisItem.'CH-Ch-RecordStatus', 'CH-Ch-RecordStatus'.Active,"Activa", 'CH-Ch-RecordStatus'.Inactive,"Inactiva", 'CH-Ch-RecordStatus'.PendingApproval,"Pend. aprobación", 'CH-Ch-RecordStatus'.PendingDeactivation,"Pend. desactivación", "—")
+                        Width: =100
+                        X: =lblHCtaEstadoFic.X
+                        Y: =(Parent.TemplateHeight-20)/2
+                        ZIndex: =7
+
+                    pilCtaRfcFic As button:
+                        BorderThickness: =0
+                        Color: =ThemeWarn
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =DisplayMode.View
+                        Fill: =ThemeWarnSoft
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        OnSelect: =Select(Parent)
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: ="RFC en curso"
+                        Visible: =!IsBlank(LookUp(colRfcEnCursoFic, TargetTable = "sanic_chtblclientaccount" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientAccount')))
+                        Width: =100
+                        X: =lblHCtaSolicitudFic.X
+                        Y: =(Parent.TemplateHeight-20)/2
+                        ZIndex: =8
+
+                    shpCtaSepFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLineSoft
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =Parent.TemplateHeight - 1
+                        ZIndex: =9
+
+            cntGridSolicitudesFic As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =Color.Transparent
+                Height: =Parent.Height - Self.Y
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Visible: =ctxTabFic = "Solicitudes"
+                Width: =Parent.Width
+                Y: =cntToolbarTabFic.Y + cntToolbarTabFic.Height
+                ZIndex: =93
+
+                lblHSolNumeroFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="SOLICITUD"
+                    Width: =(cntGridSolicitudesFic.Width - 32) * 0.15
+                    X: =16
+                    Y: =10
+                    ZIndex: =94
+
+                lblHSolTablaFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="TABLA"
+                    Width: =(cntGridSolicitudesFic.Width - 32) * 0.15
+                    X: =lblHSolNumeroFic.X + lblHSolNumeroFic.Width
+                    Y: =10
+                    ZIndex: =95
+
+                lblHSolTipoFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="TIPO"
+                    Width: =(cntGridSolicitudesFic.Width - 32) * 0.15
+                    X: =lblHSolTablaFic.X + lblHSolTablaFic.Width
+                    Y: =10
+                    ZIndex: =96
+
+                lblHSolEstadoFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="ESTADO"
+                    Width: =(cntGridSolicitudesFic.Width - 32) * 0.15
+                    X: =lblHSolTipoFic.X + lblHSolTipoFic.Width
+                    Y: =10
+                    ZIndex: =97
+
+                lblHSolCreadaPorFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="CREADA POR"
+                    Width: =(cntGridSolicitudesFic.Width - 32) * 0.2
+                    X: =lblHSolEstadoFic.X + lblHSolEstadoFic.Width
+                    Y: =10
+                    ZIndex: =98
+
+                lblHSolFechaFic As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="ENVIADA"
+                    Width: =(cntGridSolicitudesFic.Width - 32) * 0.2
+                    X: =lblHSolCreadaPorFic.X + lblHSolCreadaPorFic.Width
+                    Y: =10
+                    ZIndex: =99
+
+                shpHSolLineaFic As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    Width: =Parent.Width
+                    Y: =lblHSolNumeroFic.Y + lblHSolNumeroFic.Height + 6
+                    ZIndex: =100
+
+                galSolicitudesFic As gallery.galleryVertical:
+                    '#CopilotOverlayLabel': ="Filtered"
+                    BorderColor: =App.Theme.Colors.Darker40
+                    DelayItemLoading: =true
+                    Height: =Parent.Height - Self.Y
+                    Items: |-
+                        =SortByColumns(
+                            Filter(
+                                'CH-Tbl-ClientDataChangeRequests',
+                                RelatedClient.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'
+                                && (IsBlank(inpBuscarTabFic.Text) || StartsWith(Name, inpBuscarTabFic.Text))
+                            ),
+                            "createdon",
+                            SortOrder.Descending
+                        )
+                    Layout: =Layout.Vertical
+                    LoadingSpinner: =LoadingSpinner.Data
+                    TemplateSize: =fxRowH
+                    Width: =Parent.Width
+                    Y: =shpHSolLineaFic.Y + shpHSolLineaFic.Height
+                    ZIndex: =101
+
+                    btnFilaSolicitudFic As button:
+                        BorderThickness: =0
+                        Color: =ThemeInk
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                            =Set(gvarSolicitudSel, ThisItem);
+                            Set(gvarClienteSel, ThisItem.RelatedClient);
+                            Navigate(scrSolicitud, ScreenTransition.None)
+                        PressedFill: =ThemeAccentSoft
+                        Size: =9
+                        Text: =""
+                        Width: =Parent.Width
+                        ZIndex: =1
+
+                    shpSelSolicitudFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+                        Height: =Parent.TemplateHeight
+                        Width: =Parent.Width
+                        ZIndex: =2
+
+                    shpSelBarraSolicitudFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeAccent
+                        Height: =Parent.TemplateHeight
+                        Visible: =ThisItem.IsSelected
+                        Width: =3
+                        ZIndex: =3
+
+                    lblSolNumeroFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =9
+                        Text: =ThisItem.Name
+                        Width: =lblHSolNumeroFic.Width - 16
+                        X: =16
+                        ZIndex: =4
+
+                    lblSolTablaFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =9
+                        Text: =ThisItem.TargetTableDisplayName
+                        Width: =lblHSolTablaFic.Width
+                        X: =lblHSolTablaFic.X
+                        ZIndex: =5
+
+                    pilSolTipoFic As button:
+                        BorderThickness: =0
+                        Color: =Switch(ThisItem.Type, 'Type (CH-Tbl-ClientDataChangeRequests)'.Update,ThemeInfo, 'Type (CH-Tbl-ClientDataChangeRequests)'.Deactivate,ThemeDanger, 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,ThemeAccent, 'Type (CH-Tbl-ClientDataChangeRequests)'.Activate,ThemeOk, ThemeInk3)
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =DisplayMode.View
+                        Fill: =Switch(ThisItem.Type, 'Type (CH-Tbl-ClientDataChangeRequests)'.Update,ThemeInfoSoft, 'Type (CH-Tbl-ClientDataChangeRequests)'.Deactivate,ThemeDangerSoft, 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,ThemeAccentSoft, 'Type (CH-Tbl-ClientDataChangeRequests)'.Activate,ThemeOkSoft, ThemeLineSoft)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        OnSelect: =Select(Parent)
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: =Switch(ThisItem.Type, 'Type (CH-Tbl-ClientDataChangeRequests)'.Update,"Edición", 'Type (CH-Tbl-ClientDataChangeRequests)'.Deactivate,"Desactivación", 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,"Alta", 'Type (CH-Tbl-ClientDataChangeRequests)'.Activate,"Activación", "—")
+                        Width: =90
+                        X: =lblHSolTipoFic.X
+                        Y: =(Parent.TemplateHeight-20)/2
+                        ZIndex: =6
+
+                    pilSolEstadoFic As button:
+                        BorderThickness: =0
+                        Color: =Switch(ThisItem.'Change Status', 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,ThemeInk3, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,ThemeWarn, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved,ThemeInfo, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected,ThemeDanger, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied,ThemeOk, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed,ThemeDanger, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled,ThemeInk3, ThemeInk3)
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =DisplayMode.View
+                        Fill: =Switch(ThisItem.'Change Status', 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,ThemeLineSoft, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,ThemeWarnSoft, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved,ThemeInfoSoft, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected,ThemeDangerSoft, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied,ThemeOkSoft, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed,ThemeDangerSoft, 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled,ThemeLineSoft, ThemeLineSoft)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        OnSelect: =Select(Parent)
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: =Switch(ThisItem.'Change Status', 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,"Borrador", 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,"Enviada", 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved,"Aprobada", 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected,"Rechazada", 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied,"Aplicada", 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed,"Fallida", 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled,"Cancelada", "—")
+                        Width: =90
+                        X: =lblHSolEstadoFic.X
+                        Y: =(Parent.TemplateHeight-20)/2
+                        ZIndex: =7
+
+                    lblSolCreadaPorFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =8.63
+                        Text: =ThisItem.'Created By'.'Full Name'
+                        Width: =lblHSolCreadaPorFic.Width
+                        X: =lblHSolCreadaPorFic.X
+                        ZIndex: =8
+
+                    lblSolFechaFic As label:
+                        Align: =Align.Right
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        OnSelect: =Select(Parent)
+                        Size: =9
+                        Text: =Text(ThisItem.'Created On', FmtFecha)
+                        Width: =lblHSolFechaFic.Width - 16
+                        X: =lblHSolFechaFic.X
+                        ZIndex: =9
+
+                    shpSolSepFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLineSoft
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =Parent.TemplateHeight - 1
+                        ZIndex: =10
+
+            cntGridBitacoraFic As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =Color.Transparent
+                Height: =Parent.Height - Self.Y
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Visible: =ctxTabFic = "Bitácora"
+                Width: =Parent.Width
+                Y: =cntToolbarTabFic.Y + cntToolbarTabFic.Height
+                ZIndex: =102
+
+                lblHBitFechaFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="FECHA"
+                    Width: =(cntGridBitacoraFic.Width - 32) * 0.18
+                    X: =16
+                    Y: =10
+                    ZIndex: =103
+
+                lblHBitOperacionFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="OPERACIÓN"
+                    Width: =(cntGridBitacoraFic.Width - 32) * 0.16
+                    X: =lblHBitFechaFic.X + lblHBitFechaFic.Width
+                    Y: =10
+                    ZIndex: =104
+
+                lblHBitResultadoFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="RESULTADO"
+                    Width: =(cntGridBitacoraFic.Width - 32) * 0.14
+                    X: =lblHBitOperacionFic.X + lblHBitOperacionFic.Width
+                    Y: =10
+                    ZIndex: =105
+
+                lblHBitMensajeFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =24
+                    Size: =7.5
+                    Text: ="MENSAJE"
+                    Width: =(cntGridBitacoraFic.Width - 32) * 0.52
+                    X: =lblHBitResultadoFic.X + lblHBitResultadoFic.Width
+                    Y: =10
+                    ZIndex: =106
+
+                shpHBitLineaFic As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    Width: =Parent.Width
+                    Y: =lblHBitFechaFic.Y + lblHBitFechaFic.Height + 6
+                    ZIndex: =107
+
+                galBitacoraFic As gallery.galleryVertical:
+                    '#CopilotOverlayLabel': ="Filtered"
+                    BorderColor: =App.Theme.Colors.Darker40
+                    DelayItemLoading: =true
+                    Height: =Parent.Height - Self.Y
+                    Items: |-
+                        =SortByColumns(
+                            Filter('CH-Tbl-ClientDataChangesAuditTrails', RelatedClient.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'),
+                            "createdon",
+                            SortOrder.Descending
+                        )
+                    Layout: =Layout.Vertical
+                    LoadingSpinner: =LoadingSpinner.Data
+                    TemplatePadding: =
+                    TemplateSize: =60
+                    Width: =Parent.Width
+                    Y: =shpHBitLineaFic.Y + shpHBitLineaFic.Height
+                    ZIndex: =108
+
+                    lblBitFechaFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        Size: =9
+                        Text: =Text(ThisItem.'Created On', FmtFecha)
+                        Width: =lblHBitFechaFic.Width - 16
+                        X: =16
+                        ZIndex: =1
+
+                    lblBitOperacionFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight
+                        Size: =9
+                        Text: =Switch(ThisItem.OpeationType, 'OpeationType (CH-Tbl-ClientDataChangesAuditTrails)'.Create,"Alta", 'OpeationType (CH-Tbl-ClientDataChangesAuditTrails)'.Update,"Edición", 'OpeationType (CH-Tbl-ClientDataChangesAuditTrails)'.Deactivate,"Desactivación", 'OpeationType (CH-Tbl-ClientDataChangesAuditTrails)'.Activate,"Activación", "—")
+                        Width: =lblHBitOperacionFic.Width
+                        X: =lblHBitOperacionFic.X
+                        ZIndex: =2
+
+                    pilBitResultadoFic As button:
+                        BorderThickness: =0
+                        Color: =If(ThisItem.Result, ThemeOk, ThemeDanger)
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =DisplayMode.View
+                        Fill: =If(ThisItem.Result, ThemeOkSoft, ThemeDangerSoft)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        RadiusBottomLeft: =12
+                        RadiusBottomRight: =12
+                        RadiusTopLeft: =12
+                        RadiusTopRight: =12
+                        Size: =7.88
+                        Text: =If(ThisItem.Result, "Éxito", "Fallo")
+                        Width: =80
+                        X: =lblHBitResultadoFic.X
+                        Y: =(Parent.TemplateHeight-20)/2
+                        ZIndex: =3
+
+                    lblBitMensajeFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Height: =Parent.TemplateHeight - 16
+                        Size: =8.63
+                        Text: =ThisItem.Message
+                        Width: =lblHBitMensajeFic.Width - 16
+                        X: =lblHBitMensajeFic.X
+                        Y: =8
+                        ZIndex: =4
+
+                    shpBitSepFic As rectangle:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Fill: =ThemeLineSoft
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =Parent.TemplateHeight - 1
+                        ZIndex: =5
+
+    cntPanelFic As groupContainer.manualLayoutContainer:
+        DropShadow: =DropShadow.Light
+        Fill: =Color.Transparent
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
+        Visible: =varPanelAbiertoFic
+        Width: =Parent.Width
+        ZIndex: =4
+
+        shpVeloPanelFic As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeOverlay
+            Height: =Parent.Height
+            Visible: =varPanelAbiertoFic
+            Width: =Parent.Width
+            ZIndex: =113
+
+        btnVeloClicPanelFic As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            Fill: =Color.Transparent
+            FontWeight: =FontWeight.Semibold
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            OnSelect: |-
+                =UpdateContext({varPanelAbiertoFic: false})
+            PressedFill: =Color.Transparent
+            Size: =9
+            Text: =""
+            Visible: =varPanelAbiertoFic
+            Width: =shpVeloPanelFic.Width - fxPanelW
+            ZIndex: =114
+
+        cntPanelCardFic As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =Parent.Height
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =4
+            RadiusBottomRight: =4
+            RadiusTopLeft: =4
+            RadiusTopRight: =4
+            Visible: =varPanelAbiertoFic
+            Width: =fxPanelW
+            X: =Parent.Width - fxPanelW
+            ZIndex: =115
+
+            cntPanelHeadFic As groupContainer.manualLayoutContainer:
+                BorderColor: =ThemeLine
+                BorderStyle: =BorderStyle.None
+                BorderThickness: =1
+                Fill: =Color.Transparent
+                Height: =84
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Width: =Parent.Width
+                ZIndex: =116
+
+                lblPanelTituloFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =20
+                    Size: =10.88
+                    Text: |-
+                        =Switch(
+                            varPanelModoFic,
+                            "cliente", "Solicitar edición de datos del cliente",
+                            "sucursal", If(varPanelAccionFic = "Alta", "Solicitar alta de sucursal", "Solicitar edición de sucursal"),
+                            "correo", If(varPanelAccionFic = "Alta", "Solicitar alta de correo autorizado", "Solicitar edición de correo autorizado"),
+                            "cuenta", If(varPanelAccionFic = "Alta", "Solicitar alta de cuenta bancaria", "Solicitar edición de cuenta bancaria"),
+                            ""
+                        )
+                    Width: =Parent.Width - 60
+                    X: =20
+                    Y: =16
+                    ZIndex: =117
+
+                lblPanelSubFic As label:
+                    AutoHeight: =true
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =28
+                    Size: =8.63
+                    Text: |-
+                        =gvarClienteSel.Name &
+                          If(
+                              varPanelAccionFic = "Editar",
+                              Switch(
+                                  varPanelModoFic,
+                                  "sucursal", " · sucursal " & LookUp('CH-Tbl-ClientBranches', 'CH-Tbl-ClientBranch' = varPanelTargetIdFic).Name,
+                                  "correo", " · correo " & LookUp('CH-Tbl-ClientEmails', 'CH-Tbl-ClientEmail' = varPanelTargetIdFic).'Email Address',
+                                  "cuenta", " · cuenta •••• " & Right(LookUp('CH-Tbl-ClientAccounts', 'CH-Tbl-ClientAccount' = varPanelTargetIdFic).'Numero de cuenta', 4),
+                                  ""
+                              ),
+                              ""
+                          ) & ". Los cambios se aplican solo cuando otro miembro de " &
+                          Switch(varPanelModoFic, "sucursal","Bóveda", "Banca de Empresas") & " apruebe la solicitud."
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblPanelTituloFic.Y + lblPanelTituloFic.Height + 2
+                    ZIndex: =118
+
+                icoPanelCerrarFic As icon:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk3
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(244, 244, 244, 1)
+                    Height: =18
+                    HoverColor: =ThemeInk
+                    Icon: =Icon.Cancel
+                    OnSelect: |-
+                        =UpdateContext({varPanelAbiertoFic: false})
+                    Width: =18
+                    X: =Parent.Width - 30
+                    Y: =18
+                    ZIndex: =119
+
+            cntPanelBodyFic As groupContainer.manualLayoutContainer:
+                Fill: =Color.Transparent
+                Height: =Parent.Height - Self.Y - 64
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Width: =Parent.Width
+                Y: =cntPanelHeadFic.Y + cntPanelHeadFic.Height
+                ZIndex: =120
+
+                lblCampoALabelFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: |-
+                        =Switch(
+                            varPanelModoFic,
+                            "cliente", "Nombre",
+                            "sucursal", "Nombre de la sucursal",
+                            "correo", "Dirección de correo",
+                            "cuenta", "Número de cuenta",
+                            ""
+                        )
+                    Width: =Parent.Width - 40
+                    X: =20
+                    ZIndex: =121
+
+                lblCampoAActualFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =8.63
+                    Text: |-
+                        =Switch(
+                            varPanelModoFic,
+                            "cliente", "Actual: " & gvarClienteSel.Name,
+                            "sucursal", "Actual: " & LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=varPanelTargetIdFic).Name,
+                            "correo", "Actual: " & LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).'Email Address',
+                            "cuenta", "Actual: •••• " & Right(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).'Numero de cuenta', 4),
+                            ""
+                        )
+                    Visible: =varPanelAccionFic = "Editar"
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblCampoALabelFic.Y + lblCampoALabelFic.Height + 2
+                    ZIndex: =122
+
+                inpPanelCampoAFic As text:
+                    BorderColor: =If(lblCampoAErrorFic.Visible, ThemeDanger, ThemeLine)
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: |-
+                        =Switch(
+                            varPanelModoFic,
+                            "cliente", If(varPanelAccionFic = "Editar", gvarClienteSel.Name, ""),
+                            "sucursal", If(varPanelAccionFic = "Editar", LookUp('CH-Tbl-ClientBranches', 'CH-Tbl-ClientBranch' = varPanelTargetIdFic).Name, ""),
+                            "correo", If(varPanelAccionFic = "Editar", LookUp('CH-Tbl-ClientEmails', 'CH-Tbl-ClientEmail' = varPanelTargetIdFic).'Email Address', ""),
+                            "cuenta", If(varPanelAccionFic = "Editar", LookUp('CH-Tbl-ClientAccounts', 'CH-Tbl-ClientAccount' = varPanelTargetIdFic).'Numero de cuenta', ""),
+                            ""
+                        )
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =ThemeSurface
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HoverBorderColor: =Self.BorderColor
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =ThemeSurface
+                    OnChange: |-
+                        =ClearCollect(
+                            colCambiosPanelFic,
+                            Filter(
+                                Switch(
+                                    varPanelModoFic,
+                                    "cliente", Table(
+                                        {Campo: "Nombre", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "CIFBCO", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFBCO, ""), ValorNuevo: Trim(inpPanelCampoBFic.Text)},
+                                        {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)}
+                                    ),
+                                    "sucursal", Table(
+                                        {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=varPanelTargetIdFic).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
+                                    ),
+                                    "correo", Table(
+                                        {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).'Email Address', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "Sí", "No")}
+                                    ),
+                                    /* cuenta */ Table(
+                                        {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
+                                    )
+                                ),
+                                ValorViejo <> ValorNuevo && !IsBlank(ValorNuevo)
+                            )
+                        )
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblCampoAActualFic.Y + lblCampoAActualFic.Height + 4
+                    ZIndex: =123
+
+                lblCampoAErrorFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeDanger
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =14
+                    Size: =8.25
+                    Text: |-
+                        ="El formato del correo no es válido (ej: usuario@dominio.com)."
+                    Visible: |-
+                        =varPanelModoFic = "correo"
+                            && !IsBlank(inpPanelCampoAFic.Text)
+                            && !IsMatch(inpPanelCampoAFic.Text, "^[^@\s]+@[^@\s]+\.[^@\s]+$")
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =inpPanelCampoAFic.Y + inpPanelCampoAFic.Height + 3
+                    ZIndex: =124
+
+                lblCampoBLabelFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: |-
+                        =Switch(
+                            varPanelModoFic,
+                            "cliente", "CIF BCO",
+                            "correo", "Notificar siempre",
+                            "cuenta", "Moneda",
+                            ""
+                        )
+                    Visible: =varPanelModoFic <> "sucursal"
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblCampoAErrorFic.Y + lblCampoAErrorFic.Height + 12
+                    ZIndex: =125
+
+                lblCampoBActualFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =8.63
+                    Text: |-
+                        =Switch(
+                            varPanelModoFic,
+                            "cliente", "Actual: " & gvarClienteSel.CIFBCO,
+                            "correo", "Actual: " & If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).AlwaysNotify,"Sí","No"),
+                            "cuenta", "Actual: " & Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).Moneda, 'CH-Ch-Currency'.NIO,"NIO", 'CH-Ch-Currency'.USD,"USD", 'CH-Ch-Currency'.EUR,"EUR", "—"),
+                            ""
+                        )
+                    Visible: =varPanelModoFic <> "sucursal" && varPanelAccionFic = "Editar"
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblCampoBLabelFic.Y + lblCampoBLabelFic.Height + 2
+                    ZIndex: =126
+
+                inpPanelCampoBFic As text:
+                    BorderColor: =ThemeLine
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: =If(varPanelAccionFic = "Editar", gvarClienteSel.CIFBCO, "")
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =ThemeSurface
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HoverBorderColor: =ThemeLine
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =ThemeSurface
+                    OnChange: |-
+                        =ClearCollect(
+                            colCambiosPanelFic,
+                            Filter(
+                                Switch(
+                                    varPanelModoFic,
+                                    "cliente", Table(
+                                        {Campo: "Nombre", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "CIFBCO", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFBCO, ""), ValorNuevo: Trim(inpPanelCampoBFic.Text)},
+                                        {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)}
+                                    ),
+                                    "sucursal", Table(
+                                        {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=varPanelTargetIdFic).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
+                                    ),
+                                    "correo", Table(
+                                        {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).'Email Address', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "Sí", "No")}
+                                    ),
+                                    /* cuenta */ Table(
+                                        {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
+                                    )
+                                ),
+                                ValorViejo <> ValorNuevo && !IsBlank(ValorNuevo)
+                            )
+                        )
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    Visible: =varPanelModoFic = "cliente"
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblCampoBActualFic.Y + lblCampoBActualFic.Height + 4
+                    ZIndex: =127
+
+                drpPanelCampoBFic As dropdown:
+                    BorderColor: =ThemeLine
+                    ChevronBackground: =App.Theme.Colors.Primary
+                    ChevronDisabledBackground: =RGBA(166, 166, 166, 1)
+                    ChevronDisabledFill: =RGBA(244, 244, 244, 1)
+                    ChevronFill: =App.Theme.Colors.PrimaryForeground
+                    ChevronHoverBackground: =App.Theme.Colors.Darker10
+                    ChevronHoverFill: =App.Theme.Colors.PrimaryForeground
+                    Default: |-
+                        =If(
+                            varPanelAccionFic <> "Editar",
+                            Blank(),
+                            If(
+                                varPanelModoFic = "correo",
+                                If(LookUp('CH-Tbl-ClientEmails', 'CH-Tbl-ClientEmail' = varPanelTargetIdFic).AlwaysNotify, "Yes", "No"),
+                                Switch(
+                                    LookUp('CH-Tbl-ClientAccounts', 'CH-Tbl-ClientAccount' = varPanelTargetIdFic).Moneda,
+                                    'CH-Ch-Currency'.NIO, "NIO",
+                                    'CH-Ch-Currency'.USD, "USD",
+                                    'CH-Ch-Currency'.EUR, "EUR"
+                                )
+                            )
+                        )
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =ThemeSurface
+                    Height: =34
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =ThemeSurface
+                    Items: |-
+                        =If(varPanelModoFic = "correo",
+                            ForAll(Choices('AlwaysNotify (CH-Tbl-ClientEmails)'), {Value: Text(ThisRecord.Value)}),
+                            ForAll(Choices('CH-Ch-Currency'), {Value: Text(ThisRecord.Value)})
+                        )
+                    OnChange: |-
+                        =ClearCollect(
+                            colCambiosPanelFic,
+                            Filter(
+                                Switch(
+                                    varPanelModoFic,
+                                    "cliente", Table(
+                                        {Campo: "Nombre", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "CIFBCO", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFBCO, ""), ValorNuevo: Trim(inpPanelCampoBFic.Text)},
+                                        {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)}
+                                    ),
+                                    "sucursal", Table(
+                                        {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=varPanelTargetIdFic).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
+                                    ),
+                                    "correo", Table(
+                                        {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).'Email Address', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "Sí", "No")}
+                                    ),
+                                    Table(
+                                        {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
+                                    )
+                                ),
+                                ValorViejo <> ValorNuevo && !IsBlank(ValorNuevo)
+                            )
+                        )
+                    PressedColor: =App.Theme.Colors.PrimaryForeground
+                    PressedFill: =App.Theme.Colors.Darker30
+                    SelectionColor: =App.Theme.Colors.PrimaryForeground
+                    SelectionFill: =App.Theme.Colors.Primary
+                    Size: =9
+                    Visible: =varPanelModoFic = "correo" || varPanelModoFic = "cuenta"
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblCampoBActualFic.Y + lblCampoBActualFic.Height + 4
+                    ZIndex: =128
+
+                lblCampoBErrorFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeDanger
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =14
+                    Size: =8.25
+                    Text: =""
+                    Visible: =varPanelModoFic <> "sucursal"
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =inpPanelCampoBFic.Y + inpPanelCampoBFic.Height + 3
+                    ZIndex: =129
+
+                lblCampoCLabelFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: ="CIF COM"
+                    Visible: =varPanelModoFic = "cliente"
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblCampoBErrorFic.Y + lblCampoBErrorFic.Height + 12
+                    ZIndex: =130
+
+                lblCampoCActualFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =8.63
+                    Text: |-
+                        ="Actual: " & gvarClienteSel.CIFCOM
+                    Visible: =varPanelModoFic = "cliente" && varPanelAccionFic = "Editar"
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblCampoCLabelFic.Y + lblCampoCLabelFic.Height + 2
+                    ZIndex: =131
+
+                inpPanelCampoCFic As text:
+                    BorderColor: =ThemeLine
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: =If(varPanelAccionFic = "Editar", gvarClienteSel.CIFCOM, "")
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =ThemeSurface
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HoverBorderColor: =ThemeLine
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =ThemeSurface
+                    OnChange: |-
+                        =ClearCollect(
+                            colCambiosPanelFic,
+                            Filter(
+                                Switch(
+                                    varPanelModoFic,
+                                    "cliente", Table(
+                                        {Campo: "Nombre", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "CIFBCO", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFBCO, ""), ValorNuevo: Trim(inpPanelCampoBFic.Text)},
+                                        {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)}
+                                    ),
+                                    "sucursal", Table(
+                                        {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=varPanelTargetIdFic).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
+                                    ),
+                                    "correo", Table(
+                                        {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).'Email Address', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "Sí", "No")}
+                                    ),
+                                    /* cuenta */ Table(
+                                        {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                        {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
+                                    )
+                                ),
+                                ValorViejo <> ValorNuevo && !IsBlank(ValorNuevo)
+                            )
+                        )
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    Visible: =varPanelModoFic = "cliente"
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblCampoCActualFic.Y + lblCampoCActualFic.Height + 4
+                    ZIndex: =132
+
+                lblMotivoLabelPanelFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: ="Motivo"
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: |-
+                        =Switch(
+                            varPanelModoFic,
+                            "cliente", inpPanelCampoCFic.Y + inpPanelCampoCFic.Height + 12,
+                            "sucursal", lblCampoAErrorFic.Y + lblCampoAErrorFic.Height + 12,
+                            lblCampoBErrorFic.Y + lblCampoBErrorFic.Height + 12
+                        )
+                    ZIndex: =133
+
+                inpMotivoPanelFic As text:
+                    BorderColor: =ThemeLine
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =ThemeSurface
+                    FocusedBorderThickness: =2
+                    Height: =56
+                    HoverBorderColor: =ThemeLine
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =ThemeSurface
+                    Mode: =TextMode.MultiLine
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblMotivoLabelPanelFic.Y + lblMotivoLabelPanelFic.Height + 4
+                    ZIndex: =134
+
+                lblCambiosHeadFic As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =9
+                    Text: ="Cambios que viajan en la solicitud (" & CountRows(colCambiosPanelFic) & ")"
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =inpMotivoPanelFic.Y + inpMotivoPanelFic.Height + 14
+                    ZIndex: =135
+
+                cntCambiosPanelFic As groupContainer.manualLayoutContainer:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =1
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeSurface
+                    Height: =lblCambiosListHeadFic.Height + CountRows(colCambiosPanelFic) * fxRowHChica + 10
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =lblCambiosHeadFic.Y + lblCambiosHeadFic.Height + 6
+                    ZIndex: =136
+
+                    lblCambiosListHeadFic As label:
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Fill: =ThemeSurface2
+                        FontWeight: =FontWeight.Bold
+                        Height: =22
+                        Size: =7.5
+                        Text: ="CAMPO · ACTUAL → PROPUESTO"
+                        Width: =Parent.Width - 14
+                        X: =14
+                        ZIndex: =137
+
+                    galCambiosPanelFic As gallery.galleryVertical:
+                        '#CopilotOverlayLabel': ="Filtered"
+                        BorderColor: =App.Theme.Colors.Darker40
+                        DelayItemLoading: =true
+                        Height: =Parent.Height - Self.Y
+                        Items: =colCambiosPanelFic
+                        Layout: =Layout.Vertical
+                        LoadingSpinner: =LoadingSpinner.Data
+                        TemplatePadding: =
+                        TemplateSize: =fxRowHChica
+                        Width: =Parent.Width
+                        Y: =lblCambiosListHeadFic.Y + lblCambiosListHeadFic.Height
+                        ZIndex: =138
+
+                        lblCambioCampoFic As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =RGBA(0, 0, 0, 1)
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.TemplateHeight
+                            Size: =9
+                            Text: =ThisItem.Campo
+                            Width: =Parent.Width * 0.32
+                            X: =10
+                            ZIndex: =1
+
+                        lblCambioViejoFic As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.TemplateHeight
+                            Size: =8.25
+                            Strikethrough: =true
+                            Text: =ThisItem.ValorViejo
+                            Width: =Parent.Width * 0.3
+                            X: =lblCambioCampoFic.X + lblCambioCampoFic.Width
+                            ZIndex: =2
+
+                        lblCambioFlechaFic As label:
+                            Align: =Align.Center
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeInk3
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            Height: =Parent.TemplateHeight
+                            Size: =8.25
+                            Text: ="→"
+                            Width: =18
+                            X: =lblCambioViejoFic.X + lblCambioViejoFic.Width
+                            ZIndex: =3
+
+                        lblCambioNuevoFic As label:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Color: =ThemeOk
+                            DisabledColor: =RGBA(166, 166, 166, 1)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =Parent.TemplateHeight
+                            Size: =8.25
+                            Text: =ThisItem.ValorNuevo
+                            Width: =Parent.Width - Self.X - 10
+                            X: =lblCambioFlechaFic.X + lblCambioFlechaFic.Width
+                            ZIndex: =4
+
+                cntBannerPanelFic As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeInfoSoft
+                    Height: =lblBannerPanelFic.Height + 14
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Visible: =varPanelAccionFic = "Editar" && CountRows(colCambiosPanelFic) < Switch(varPanelModoFic, "cliente", 3, "sucursal", 1, 2)
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =cntCambiosPanelFic.Y + cntCambiosPanelFic.Height + 10
+                    ZIndex: =139
+
+                    lblBannerPanelFic As label:
+                        AutoHeight: =true
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeInfo
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Size: =8.63
+                        Text: |-
+                            =With(
+                                {
+                                    _camposModo: Switch(
+                                        varPanelModoFic,
+                                        "cliente", ["Nombre", "CIFBCO", "CIFCOM"],
+                                        "sucursal", ["Sucursal"],
+                                        "correo", ["Correo electronico", "Notificar siempre"],
+                                        ["Numero de cuenta", "Moneda"]
+                                    )
+                                },
+                                If(
+                                    CountRows(colCambiosPanelFic) = 0,
+                                    "Ningún campo cambió todavía — no hay nada para enviar.",
+                                    With(
+                                        {_sinCambiar: Filter(_camposModo, !(Value in colCambiosPanelFic.Campo))},
+                                        Concat(_sinCambiar, """" & Value & """", ", ") &
+                                            If(CountRows(_sinCambiar) = 1, " no cambió — no genera línea.", " no cambiaron — no generan línea.")
+                                    )
+                                )
+                            )
+                        Width: =Parent.Width - 20
+                        X: =10
+                        Y: =7
+                        ZIndex: =140
+
+                cntBannerPanelConflictoFic As groupContainer.manualLayoutContainer:
+                    DropShadow: =DropShadow.Light
+                    Fill: =ThemeWarnSoft
+                    Height: =lblBannerPanelConflictoFic.Height + 14
+                    LayoutGridColumnMinWidth: =0
+                    LayoutGridColumns: =6
+                    LayoutGridRowMinHeight: =0
+                    LayoutGridRows: =6
+                    RadiusBottomLeft: =9
+                    RadiusBottomRight: =9
+                    RadiusTopLeft: =9
+                    RadiusTopRight: =9
+                    Visible: |-
+                        =!IsBlank(
+                            LookUp(
+                                colRfcEnCursoFic,
+                                TargetTable = Switch(varPanelModoFic, "cliente","sanic_chtblclient", "sucursal","sanic_chtblclientbranch", "correo","sanic_chtblclientemail", "sanic_chtblclientaccount")
+                                && TargetRecordID = Text(varPanelTargetIdFic)
+                            )
+                        )
+                    Width: =Parent.Width - 40
+                    X: =20
+                    Y: =cntBannerPanelFic.Y + If(cntBannerPanelFic.Visible, cntBannerPanelFic.Height, 0) + 8
+                    ZIndex: =141
+
+                    lblBannerPanelConflictoFic As label:
+                        AutoHeight: =true
+                        BorderColor: =App.Theme.Colors.Darker40
+                        Color: =ThemeWarn
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        Size: =8.63
+                        Text: ="Ya hay una solicitud en curso sobre este registro — el envío se bloqueará hasta que se resuelva."
+                        Width: =Parent.Width - 20
+                        X: =10
+                        Y: =7
+                        ZIndex: =142
+
+            cntPanelFootFic As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =Color.Transparent
+                Height: =64
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =4
+                RadiusBottomRight: =4
+                RadiusTopLeft: =4
+                RadiusTopRight: =4
+                Width: =Parent.Width
+                Y: =Parent.Height - 64
+                ZIndex: =143
+
+                btnPanelCancelarFic As button:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =1
+                    Color: =ThemeInk2
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    Fill: =Color.Transparent
+                    FontWeight: =FontWeight.Semibold
+                    Height: =32
+                    HoverBorderColor: =ThemeLine
+                    HoverColor: =ThemeInk2
+                    HoverFill: =ThemeSurface2
+                    OnSelect: |-
+                        =UpdateContext({varPanelAbiertoFic: false})
+                    PressedBorderColor: =ThemeLine
+                    PressedColor: =ThemeInk2
+                    PressedFill: =ThemeSurface2
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    Text: ="Cancelar"
+                    Width: =100
+                    X: =btnPanelConfirmarFic.X - 8 - Self.Width
+                    Y: =16
+                    ZIndex: =144
+
+                btnPanelConfirmarFic As button:
+                    BorderThickness: =0
+                    Color: =ThemeSurface
+                    DisabledBorderColor: =Color.Transparent
+                    DisabledColor: =ThemeInk3
+                    DisabledFill: =ThemeLineSoft
+                    DisplayMode: |-
+                        =If(
+                            !varPanelCargandoFic
+                            && CountRows(colCambiosPanelFic) > 0
+                            && !lblCampoAErrorFic.Visible
+                            && !IsBlank(Trim(inpMotivoPanelFic.Text))
+                            && IsBlank(
+                                LookUp(
+                                    colRfcEnCursoFic,
+                                    TargetTable = Switch(varPanelModoFic, "cliente","sanic_chtblclient", "sucursal","sanic_chtblclientbranch", "correo","sanic_chtblclientemail", "sanic_chtblclientaccount")
+                                    && TargetRecordID = Text(varPanelTargetIdFic)
+                                )
+                            ),
+                            DisplayMode.Edit,
+                            DisplayMode.Disabled
+                        )
+                    Fill: =ThemeAccent
+                    FontWeight: =FontWeight.Semibold
+                    Height: =32
+                    HoverFill: =ThemeAccentDark
+                    OnSelect: |-
+                        =UpdateContext({varPanelCargandoFic: true});
+                        Set(varRfcErrorFic, "");
+                        IfError(
+                            
+                                // 1. Cabecera en Draft.
+                                Clear(colNuevoRfcFic);
+                                Collect(
+                                    colNuevoRfcFic,
+                                    Patch(
+                                        'CH-Tbl-ClientDataChangeRequests',
+                                        Defaults('CH-Tbl-ClientDataChangeRequests'),
+                                        {
+                                            'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,
+                                            Type: If(varPanelAccionFic = "Alta", 'Type (CH-Tbl-ClientDataChangeRequests)'.Create, 'Type (CH-Tbl-ClientDataChangeRequests)'.Update),
+                                            TargetTable: Switch(varPanelModoFic, "cliente","sanic_chtblclient", "sucursal","sanic_chtblclientbranch", "correo","sanic_chtblclientemail", "sanic_chtblclientaccount"),
+                                            TargetTableDisplayName: Switch(varPanelModoFic, "cliente","Clientes", "sucursal","Sucursales", "correo","Correos", "Cuentas"),
+                                            TargetTablePluralName: Switch(varPanelModoFic, "cliente","sanic_chtblclients", "sucursal","sanic_chtblclientbranchs", "correo","sanic_chtblclientemails", "sanic_chtblclientaccounts"),
+                                            TargetRecordID: If(varPanelAccionFic = "Alta", Blank(), Text(varPanelTargetIdFic)),
+                                            RelatedClient: gvarClienteSel,
+                                            Reason: Trim(inpMotivoPanelFic.Text)
+                                        }
+                                    )
+                                );
+                                // 2. Una linea por cada fila de colCambiosPanelFic, con la cabecera TODAVIA en Draft.
+                                ForAll(
+                                    colCambiosPanelFic As Cambio,
+                                    Patch(
+                                        'CH-Tbl-ClientDataChangeRequestLines',
+                                        Defaults('CH-Tbl-ClientDataChangeRequestLines'),
+                                        {
+                                            ChangeRequestID: Last(colNuevoRfcFic),
+                                            'Field Definition': LookUp(
+                                                'CH-Tbl-ClientTableLogicalFieldNames',
+                                                Table = Switch(varPanelModoFic, "cliente","sanic_chtblclient", "sucursal","sanic_chtblclientbranch", "correo","sanic_chtblclientemail", "sanic_chtblclientaccount")
+                                                && Name = Cambio.Campo
+                                            ),
+                                            OldValue: Cambio.ValorViejo,
+                                            NewValue: Cambio.ValorNuevo
+                                        }
+                                    )
+                                );
+                                // 3. Cabecera a Submitted (unica transicion humana que ChangeRequestApprovalGuard permite tras Draft).
+                                Patch(
+                                    'CH-Tbl-ClientDataChangeRequests',
+                                    Last(colNuevoRfcFic),
+                                    {'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted}
+                                );
+                                // 4. Refresco y cierre.
+                                Refresh('CH-Tbl-ClientDataChangeRequests');
+                                Refresh('CH-Tbl-ClientDataChangeRequestLines');
+                                ClearCollect(
+                                    colRfcEnCursoFic,
+                                    Filter(
+                                        'CH-Tbl-ClientDataChangeRequests',
+                                        RelatedClient.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'
+                                        && (
+                                            'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
+                                            || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted
+                                            || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved
+                                        )
+                                    )
+                                );
+                                UpdateContext({varPanelAbiertoFic: false, varPanelCargandoFic: false});
+                                Notify("Solicitud creada y enviada a aprobación.", NotificationType.Success)
+                            ,
+                            UpdateContext({varPanelCargandoFic: false});
+                            Set(varRfcErrorFic, FirstError.Message);
+                            Notify("No se pudo crear la solicitud: " & FirstError.Message, NotificationType.Error)
+                        )
+                    PressedFill: =App.Theme.Colors.Darker40
+                    RadiusBottomLeft: =8
+                    RadiusBottomRight: =8
+                    RadiusTopLeft: =8
+                    RadiusTopRight: =8
+                    Size: =9
+                    Text: =If(varPanelCargandoFic, "Aplicando…", "Crear y enviar solicitud")
+                    Width: =200
+                    X: =Parent.Width - 20 - Self.Width
+                    Y: =16
+                    ZIndex: =145
+
+    cmpConfirmDialogFic As cmpConfirmDialog:
+        Cargando: =varDlgCargandoFic
+        Mostrar: =!IsBlank(varDlgAccionFic)
+        OkHabilitado: =!IsBlank(Trim(cmpConfirmDialogFic.CampoTexto))
+        OnCancelar: |-
+            =UpdateContext({varDlgAccionFic: "", varDlgCargandoFic: false})
+        OnOk: |-
+            =UpdateContext({varDlgCargandoFic: true});
+            IfError(
+                
+                    Patch(
+                        'CH-Tbl-ClientDataChangeRequests',
+                        Defaults('CH-Tbl-ClientDataChangeRequests'),
+                        {
+                            'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted,
+                            Type: If(varDlgAccionFic = "Activar", 'Type (CH-Tbl-ClientDataChangeRequests)'.Activate, 'Type (CH-Tbl-ClientDataChangeRequests)'.Deactivate),
+                            TargetTable: varDlgTargetTableFic,
+                            TargetTableDisplayName: varDlgTargetTableLabelFic,
+                            TargetTablePluralName: varDlgTargetTablePluralFic,
+                            TargetRecordID: Text(varDlgTargetIdFic),
+                            RelatedClient: gvarClienteSel,
+                            Reason: Trim(cmpConfirmDialogFic.CampoTexto)
+                        }
+                    );
+                    Refresh('CH-Tbl-ClientDataChangeRequests');
+                    ClearCollect(
+                        colRfcEnCursoFic,
+                        Filter(
+                            'CH-Tbl-ClientDataChangeRequests',
+                            RelatedClient.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'
+                            && (
+                                'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
+                                || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted
+                                || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved
+                            )
+                        )
+                    );
+                    UpdateContext({varDlgAccionFic: "", varDlgCargandoFic: false});
+                    Notify("Solicitud creada y enviada a aprobación.", NotificationType.Success)
+                ,
+                UpdateContext({varDlgCargandoFic: false});
+                Notify("No se pudo crear la solicitud: " & FirstError.Message, NotificationType.Error)
+            )
+        PlaceholderCampo: |-
+            =Switch(
+                varDlgTargetTableFic,
+                "sanic_chtblclient", "Ej: cierre de operaciones del cliente…",
+                "sanic_chtblclientbranch", "Ej: cierre de la plaza por mudanza del cliente…",
+                "sanic_chtblclientemail", "Ej: la casilla dejó de usarse para este cliente…",
+                "sanic_chtblclientaccount", "Ej: la cuenta fue cancelada por el banco…",
+                "Ej: motivo de la solicitud…"
+            )
+        Texto: |-
+            =With(
+                {
+                    _esFem: varDlgTargetTableFic in ["sanic_chtblclientbranch", "sanic_chtblclientaccount"],
+                    _sujeto: Switch(
+                        varDlgTargetTableFic,
+                        "sanic_chtblclient", "El cliente",
+                        "sanic_chtblclientbranch", "La sucursal",
+                        "sanic_chtblclientemail", "El correo",
+                        "sanic_chtblclientaccount", "La cuenta",
+                        "El registro"
+                    )
+                },
+                "Se creará una solicitud tipo **" & If(varDlgAccionFic = "Activar", "Activación", "Desactivación") &
+                    "** para " & gvarClienteSel.Name & " · " & varDlgTargetNombreFic & ". " & _sujeto & " sigue **" &
+                    If(varDlgAccionFic = "Desactivar", "Activ", "Inactiv") & If(_esFem, "a", "o") &
+                    "** hasta que un Approver de " & If(varDlgTargetTableFic = "sanic_chtblclientbranch", "Bóveda", "Banca Empresas") & " apruebe."
+            )
+        TextoOk: ="Crear y enviar solicitud"
+        Titulo: |-
+            =With(
+                {
+                    _art: Switch(
+                        varDlgTargetTableFic,
+                        "sanic_chtblclient", "el cliente",
+                        "sanic_chtblclientbranch", "la sucursal",
+                        "sanic_chtblclientemail", "el correo",
+                        "sanic_chtblclientaccount", "la cuenta",
+                        "el registro"
+                    )
+                },
+                If(
+                    varDlgAccionFic = "Activar",
+                    "¿Solicitar la activación de " & _art & " " & varDlgTargetNombreFic & "?",
+                    "¿Solicitar la desactivación de " & _art & " " & varDlgTargetNombreFic & "?"
+                )
+            )
+        Tono: =If(varDlgAccionFic = "Activar", "ok", "danger")
+        Visible: =!IsBlank(varDlgAccionFic)
+        ZIndex: =5
+
+    btnNavigatescrClientesFic As button:
+        BorderColor: =App.Theme.Colors.Primary
+        Color: =App.Theme.Colors.PrimaryForeground
+        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        DisabledFill: =RGBA(244, 244, 244, 1)
+        Fill: =App.Theme.Colors.Primary
+        Font: =App.Theme.Font
+        FontWeight: =FontWeight.Semibold
+        HoverBorderColor: =App.Theme.Colors.Darker10
+        HoverColor: =App.Theme.Colors.PrimaryForeground
+        HoverFill: =App.Theme.Colors.Darker10
+        OnSelect: =Navigate(scrClientes, ScreenTransition.None)
+        PressedBorderColor: =App.Theme.Colors.Darker40
+        PressedColor: =Self.Color
+        PressedFill: =App.Theme.Colors.Darker40
+        Size: =15
+        Text: ="Button"
+        Visible: =false
+        X: =40
+        Y: =40
+        ZIndex: =6
+

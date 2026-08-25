@@ -27,6 +27,7 @@ y más corta, pensada para consultarse mientras se trabaja sobre el código.
 
 | Documento | Qué responde |
 |---|---|
+| [`inventario-componentes.md`](inventario-componentes.md) | Inventario exhaustivo de TODO componente (tablas, campos, relaciones, option sets, variables de entorno, roles, plugin assembly/classes, Custom APIs, Canvas Apps, Cloud Flows) con estado de revisión por fila — base de trabajo para decidir qué se elimina, modifica o confirma. |
 | [`modelo-de-datos.md`](modelo-de-datos.md) | Las 38 tablas Dataverse agrupadas por dominio funcional: propósito, campos clave, relaciones, diagrama ER. |
 | [`roles-y-seguridad.md`](roles-y-seguridad.md) | Los 6 roles de seguridad `CH-SR-*`, matriz rol × entidad, grupos AAD, y las brechas de seguridad conocidas. |
 | [`variables-de-entorno.md`](variables-de-entorno.md) | Las 19 variables `sanic_CHEV*`: tipo, default, quién las consume y cuáles no se usan hoy. |

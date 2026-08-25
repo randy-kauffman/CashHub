@@ -35,18 +35,34 @@ refleja el ambiente real, el sistema no está procesando correos entrantes.
 | 10 | `CH-Flow-Replytoclientemail` | Instantáneo `PowerAppV2` | Activado | Office 365 Outlook (`runtimeSource: invoker`) | `ReplyToV3` sobre el correo original. |
 | 11 | `CH-Flow-ProcessXMLFiles` | Instantáneo `PowerAppV2` | Activado | OneDrive for Business, Dataverse | Procesa XML de máquina contadora, crea/actualiza `XMLReading`/`XMLReadingDetail`. |
 | 12 | `CH-Flow-DownloadData` | Instantáneo `PowerAppV2` | Activado | OneDrive for Business | Genera CSV desde datos recibidos, sube a OneDrive, devuelve link. |
-| 13 | `CH-Flow-Activaterow` | Webhook Dataverse (RFC `Approved` + tipo `Activate`) | Activado | Dataverse | Setea `sanic_recordstatus = Active` en Client/ClientBranch/ClientEmail según tabla objetivo. |
-| 14 | `CH-Flow-Deactivaterow` | Webhook Dataverse (RFC `Approved` + tipo `Deactivate`) | Activado | Dataverse | Igual que `Activaterow` pero setea `Inactive`. |
-| 15 | `CH-Flow-Applyclientdatachanges` | Webhook Dataverse (RFC `Approved` + tipo `Update`) | Activado | Dataverse | Aplica cada línea (`CRL`) campo por campo con `Switch` por tipo de dato. |
-| 16 | `CH-Flow-Createclientdata` | Webhook Dataverse (RFC `Approved` + tipo `Create`) | Activado | Dataverse | Crea un registro nuevo acumulando todas las propiedades de las líneas del RFC. |
-| 17 | `CH-Flow-Notifyreviewers` | Webhook Dataverse (RFC `Submitted`) | Activado | Dataverse (x2 conn. refs.), Teams | Adaptive Card a Teams para los aprobadores; crea el chat si no existe. |
-| 18 | `CH-Flow-NotifywhenRFCimplementationfinish` | Webhook Dataverse (RFC `Failed`/`Applied`/`Rejected`) | Activado | Dataverse, Teams | Mensaje directo por Teams al creador y al aprobador con el resultado final. |
-| 19 | `CH-Flow-CreateaTeamschatgroupbasedonOffice365Group` | Instantáneo `Button` (child flow) | Activado | Office 365 Groups, Teams, Office 365 Users | Crea chat grupal de Teams a partir de un grupo AAD. |
+| 13 | `CH-Flow-Activaterow` | Webhook Dataverse (RFC `Approved` + tipo `Activate`) | **RETIRADO (2026-08-25)** | Dataverse | Setea `sanic_recordstatus = Active` en Client/ClientBranch/ClientEmail según tabla objetivo. Reemplazado por la Custom API `sanic_CHResolveChangeRequest`. |
+| 14 | `CH-Flow-Deactivaterow` | Webhook Dataverse (RFC `Approved` + tipo `Deactivate`) | **RETIRADO (2026-08-25)** | Dataverse | Igual que `Activaterow` pero setea `Inactive`. Reemplazado por la misma Custom API. |
+| 15 | `CH-Flow-Applyclientdatachanges` | Webhook Dataverse (RFC `Approved` + tipo `Update`) | **RETIRADO (2026-08-25)** | Dataverse | Aplica cada línea (`CRL`) campo por campo con `Switch` por tipo de dato. Reemplazado por la misma Custom API (un solo `Update` por RFC, no uno por campo). |
+| 16 | `CH-Flow-Createclientdata` | Webhook Dataverse (RFC `Approved` + tipo `Create`) | **RETIRADO (2026-08-25)** | Dataverse | Crea un registro nuevo acumulando todas las propiedades de las líneas del RFC. Reemplazado por la misma Custom API. |
+| 17 | `CH-Flow-Notifyreviewers` | Webhook Dataverse (RFC `Submitted`) | Activado — **vigente, sin cambios** | Dataverse (x2 conn. refs.), Teams | Adaptive Card a Teams para los aprobadores; crea el chat si no existe. Sigue escuchando exactamente la misma transición que produce la app v2. |
+| 18 | `CH-Flow-NotifywhenRFCimplementationfinish` | Webhook Dataverse (RFC `Failed`/`Applied`/`Rejected`) | Activado — **vigente, sin cambios** | Dataverse, Teams | Mensaje directo por Teams al creador y al aprobador con el resultado final. Desde la migración, es la Custom API `sanic_CHResolveChangeRequest` la que escribe `Applied`/`Rejected` (síncrono); este flujo sigue disparando igual porque ve la misma transición de estado. |
+| 19 | `CH-Flow-CreateaTeamschatgroupbasedonOffice365Group` | Instantáneo `Button` (child flow) | Activado — vigente | Office 365 Groups, Teams, Office 365 Users | Crea chat grupal de Teams a partir de un grupo AAD. |
+| — | `CH-Flow-RFCWatchdog` (no listado arriba: no aparece en el export de `solutions/unpacked/flow/`, pero existió y se referencia en docs anteriores) | Recurrence 15 min | **RETIRADO (2026-08-25)** | Dataverse | Cerraba RFC huérfanos en `Approved`. Sin objeto desde que la resolución es síncrona: ya no existe la ventana `Approved` que vigilaba. |
 
-Los 5 webhooks (`Activaterow`, `Deactivaterow`, `Applyclientdatachanges`,
-`Createclientdata`, `Notifyreviewers`, `NotifywhenRFCimplementationfinish` — 6 en
-total) usan `SubscribeWebhookTrigger` sobre `sanic_chtblclientdatachangerequest`,
-disparadores nativos de Dataverse (no polling).
+**Migración 2026-08-25**: los 4 webhooks de materialización (`Activaterow`,
+`Deactivaterow`, `Applyclientdatachanges`, `Createclientdata`) y el
+`RFCWatchdog` fueron **retirados** — reemplazados por la Custom API
+transaccional `sanic_CHResolveChangeRequest` (`ResolveChangeRequestPlugin`
+en `CashHub.Plugins`), invocada directo por la app v2
+`CH-App-ClientAdministration v2` al Aprobar/Rechazar. Quedan desactivados
+pero no eliminados de la solución — ver
+[docs/clientadmin-rebuild/08-integracion-y-deploy.md](../clientadmin-rebuild/08-integracion-y-deploy.md)
+y [docs/procesos/01-administracion-datos-clientes.md](../procesos/01-administracion-datos-clientes.md)
+§5/§7 para el detalle. Los 2 webhooks de notificación
+(`Notifyreviewers`, `NotifywhenRFCimplementationfinish`) siguen **vigentes,
+sin cambios de trigger** — ven las mismas transiciones de
+`sanic_changestatus` de siempre, solo que ahora `Applied`/`Rejected` los
+escribe la Custom API en vez de un flujo aplicador.
+
+Los webhooks activos (`Notifyreviewers`, `NotifywhenRFCimplementationfinish`)
+usan `SubscribeWebhookTrigger` sobre `sanic_chtblclientdatachangerequest`,
+disparadores nativos de Dataverse (no polling) — igual que los 4 retirados
+cuando estaban en uso.
 
 ## 3. Cadena real de orquestación
 
@@ -125,21 +141,25 @@ flowchart TD
         DD --> CSV["Archivo de carga masiva\n(descarga manual, sube a IBS Branch fuera del sistema)"]
     end
 
-    subgraph RFC["Subsistema RFC: cambios de datos de cliente (cadena real de flujos)"]
-        SUBMIT["RFC Submitted"] -->|webhook| NR["Notifyreviewers"]
+    subgraph RFC["Subsistema RFC: cambios de datos de cliente (migrado 2026-08-25)"]
+        SUBMIT["RFC Submitted"] -->|webhook, vigente| NR["Notifyreviewers"]
         NR -->|Run a Child Flow, si falta chat| TEAMS_GRP["CreateaTeamschatgroupbasedonOffice365Group"]
         NR -->|Adaptive Card| TEAMS["Microsoft Teams"]
-        TEAMS -->|aprobador aprueba| APPROVED["RFC Approved + tipo"]
-        APPROVED -->|Create, webhook| CCD["Createclientdata"]
-        APPROVED -->|Update, webhook| ACDC["Applyclientdatachanges"]
-        APPROVED -->|Activate, webhook| ACT["Activaterow"]
-        APPROVED -->|Deactivate, webhook| DEACT["Deactivaterow"]
-        CCD --> DONE["RFC Applied/Failed/Rejected"]
-        ACDC --> DONE
-        ACT --> DONE
-        DEACT --> DONE
-        DONE -->|webhook| NF["NotifywhenRFCimplementationfinish"]
+        TEAMS -->|aprobador decide en CH-App-ClientAdministration v2| API["Custom API sanic_CHResolveChangeRequest\n(ResolveChangeRequestPlugin, SÍNCRONA)"]
+        API --> DONE["RFC Applied/Rejected\n(directo desde Submitted)"]
+        DONE -->|webhook, vigente| NF["NotifywhenRFCimplementationfinish"]
         NF -->|mensaje directo| TEAMS
+
+        CCD["Createclientdata (RETIRADO)"]
+        ACDC["Applyclientdatachanges (RETIRADO)"]
+        ACT["Activaterow (RETIRADO)"]
+        DEACT["Deactivaterow (RETIRADO)"]
+        WD["RFCWatchdog (RETIRADO)"]
+        API -.reemplaza.-> CCD
+        API -.reemplaza.-> ACDC
+        API -.reemplaza.-> ACT
+        API -.reemplaza.-> DEACT
+        API -.hace innecesario.-> WD
     end
 ```
 
@@ -172,8 +192,8 @@ apuntando al mismo conector Dataverse dentro del mismo flujo (`sanic_CHCRDataver
 | `Ch-Flow-VR02` | Un único `Response` con `"validationresult": "Pass"` hardcodeado, sin `If` — no valida el dominio/formato del email del remitente pese a ser su propósito declarado. | `.json`, acción `Respond_to_a_Power_App_or_flow` |
 | `CH-Flow-VR04` | `Condition` correcto (`equals(toLower(text_1), toLower(text))`) pero **ambas ramas** (`then` y `else`) responden `"Pass"` — la validación de extensión de adjunto nunca puede fallar. | `.json`, acción `Condition` con `actions`/`else.actions` idénticas |
 | `ExtractedTablesFromExcel` | El `.xlsx` temporal creado en OneDrive `/tmp` nunca se borra (no hay acción `DeleteFile`). | `.json` |
-| `Createclientdata` / `Applyclientdatachanges` | El caso `OptionSet` (`159460005`) del `Switch` por tipo de dato tiene acciones vacías en ambos flujos — un RFC que cambie un campo Option Set no actualiza esa columna, sin generar error visible. | `.json`, `Switch` de conversión de tipo |
-| `Activaterow` | La acción que pone el registro en estado **Active** se llama literalmente `Actualizar_cliente_a_INACTIVE` (copiada de `Deactivaterow` sin renombrar). El valor seteado (`159460000`=Active) es correcto; el nombre de la acción es engañoso. | `.json`, nombre de acción |
+| `Createclientdata` / `Applyclientdatachanges` **(RETIRADOS 2026-08-25 — referencia histórica)** | El caso `OptionSet` (`159460005`) del `Switch` por tipo de dato tiene acciones vacías en ambos flujos — un RFC que cambie un campo Option Set no actualiza esa columna, sin generar error visible. Reemplazados por `sanic_CHResolveChangeRequest`, cuyo `FieldValueConverter` cubre las 7 conversiones de tipo con tests — el bug no tiene forma de repetirse en el camino vivo. | `.json`, `Switch` de conversión de tipo |
+| `Activaterow` **(RETIRADO 2026-08-25 — referencia histórica)** | La acción que pone el registro en estado **Active** se llama literalmente `Actualizar_cliente_a_INACTIVE` (copiada de `Deactivaterow` sin renombrar). El valor seteado (`159460000`=Active) era correcto; el nombre de la acción era engañoso. | `.json`, nombre de acción |
 
 **Manejo de errores**: salvo el patrón "`Response` con `runAfter` en
 `Failed`/`Skipped`/`TimedOut`" de `VR01`/`VR03`/`VR04`/`VR05` y

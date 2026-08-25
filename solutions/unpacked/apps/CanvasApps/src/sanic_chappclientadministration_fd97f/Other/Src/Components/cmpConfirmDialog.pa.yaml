@@ -1,0 +1,296 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpConfirmDialog:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      CampoTexto:
+        PropertyKind: Output
+        DisplayName: CampoTexto
+        Description: A custom property
+        DataType: Text
+      Cargando:
+        PropertyKind: Input
+        DisplayName: Cargando
+        Description: A custom property
+        DataType: Boolean
+        Default: =false
+      EtiquetaCampo:
+        PropertyKind: Input
+        DisplayName: EtiquetaCampo
+        Description: A custom property
+        DataType: Text
+        Default: ="Motivo de la solicitud"
+      Mostrar:
+        PropertyKind: Input
+        DisplayName: Mostrar
+        Description: A custom property
+        DataType: Boolean
+        Default: =false
+      MostrarCampo:
+        PropertyKind: Input
+        DisplayName: MostrarCampo
+        Description: A custom property
+        DataType: Boolean
+        Default: =true
+      OkHabilitado:
+        PropertyKind: Input
+        DisplayName: OkHabilitado
+        Description: A custom property
+        DataType: Boolean
+        Default: =true
+      OnCancelar:
+        PropertyKind: Event
+        DisplayName: OnCancelar
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      OnOk:
+        PropertyKind: Event
+        DisplayName: OnOk
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      PlaceholderCampo:
+        PropertyKind: Input
+        DisplayName: PlaceholderCampo
+        Description: A custom property
+        DataType: Text
+        Default: =""
+      Texto:
+        PropertyKind: Input
+        DisplayName: Texto
+        Description: A custom property
+        DataType: Text
+        Default: =""
+      TextoCancelar:
+        PropertyKind: Input
+        DisplayName: TextoCancelar
+        Description: A custom property
+        DataType: Text
+        Default: ="Cancelar"
+      TextoOk:
+        PropertyKind: Input
+        DisplayName: TextoOk
+        Description: A custom property
+        DataType: Text
+        Default: ="Confirmar"
+      Titulo:
+        PropertyKind: Input
+        DisplayName: Titulo
+        Description: A custom property
+        DataType: Text
+        Default: =""
+      Tono:
+        PropertyKind: Input
+        DisplayName: Tono
+        Description: A custom property
+        DataType: Text
+        Default: ="info"
+      ValorCampo:
+        PropertyKind: Input
+        DisplayName: ValorCampo
+        Description: A custom property
+        DataType: Text
+        Default: =""
+    Properties:
+      CampoTexto: =inpCampoDlg.Text
+    Children:
+      - cntFondoDlg:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Fill: =ThemeOverlay
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =cmpConfirmDialog.Mostrar
+            Width: =Parent.Width
+          Children:
+            - btnBloqueoDlg:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderStyle: =BorderStyle.None
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  Height: =Parent.Height
+                  HoverFill: =Color.Transparent
+                  PressedFill: =Color.Transparent
+                  TabIndex: =-1
+                  Text: =""
+                  Width: =Parent.Width
+            - cntCardDlg:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.Regular
+                  Fill: =ThemeSurface
+                  Height: =lblCampoLblDlg.Y + lblCampoLblDlg.Height + If(cmpConfirmDialog.MostrarCampo, inpCampoDlg.Height + 12, 0) + 66
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Width: =fxDlgW
+                  X: =(Parent.Width - fxDlgW)/2
+                  Y: =(Parent.Height - Self.Height)/2
+                Children:
+                  - icoTonoDlg:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        Color: |-
+                          =Switch(
+                              cmpConfirmDialog.Tono,
+                              "danger", ThemeDanger,
+                              "warn", ThemeWarn,
+                              "ok", ThemeOk,
+                              ThemeInfo
+                          )
+                        Height: =34
+                        Icon: |-
+                          =Switch(
+                              cmpConfirmDialog.Tono,
+                              "danger", Icon.Warning,
+                              "warn", Icon.Warning,
+                              "ok", Icon.CheckBadge,
+                              Icon.Information
+                          )
+                        Width: =34
+                        X: =22
+                        Y: =20
+                  - lblTitDlg:
+                      Control: Label@2.5.1
+                      Properties:
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =24
+                        Size: =10.88
+                        Text: =cmpConfirmDialog.Titulo
+                        Width: =Parent.Width - icoTonoDlg.Width - 76
+                        X: =icoTonoDlg.X + icoTonoDlg.Width + 12
+                        Y: =22
+                  - icoXDlg:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        Color: =ThemeInk3
+                        DisplayMode: =If(cmpConfirmDialog.Cargando, DisplayMode.Disabled, DisplayMode.Edit)
+                        Height: =18
+                        HoverColor: =ThemeInk
+                        Icon: =Icon.Cancel
+                        OnSelect: =cmpConfirmDialog.OnCancelar()
+                        Width: =18
+                        X: =Parent.Width - 30
+                        Y: =22
+                  - lblTxtDlg:
+                      Control: Label@2.5.1
+                      Properties:
+                        AutoHeight: =true
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        Size: =9
+                        Text: =cmpConfirmDialog.Texto
+                        Width: =lblTitDlg.Width
+                        X: =lblTitDlg.X
+                        Y: =lblTitDlg.Y + lblTitDlg.Height + 2
+                  - lblCampoLblDlg:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =8.25
+                        Text: =cmpConfirmDialog.EtiquetaCampo
+                        Visible: =cmpConfirmDialog.MostrarCampo
+                        Width: =lblTitDlg.Width
+                        X: =lblTitDlg.X
+                        Y: =lblTxtDlg.Y + lblTxtDlg.Height + 10
+                  - inpCampoDlg:
+                      Control: Classic/TextInput@2.3.2
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Default: =cmpConfirmDialog.ValorCampo
+                        DisplayMode: =If(cmpConfirmDialog.Cargando, DisplayMode.Disabled, DisplayMode.Edit)
+                        Fill: =ThemeSurface2
+                        FocusedBorderThickness: =2
+                        Font: =Font.'Open Sans'
+                        Height: =64
+                        HintText: =cmpConfirmDialog.PlaceholderCampo
+                        HoverBorderColor: =ThemeLine
+                        HoverFill: =ThemeSurface2
+                        Mode: =TextMode.MultiLine
+                        Size: =9
+                        Visible: =cmpConfirmDialog.MostrarCampo
+                        Width: =lblTitDlg.Width
+                        X: =lblTitDlg.X
+                        Y: =lblCampoLblDlg.Y + lblCampoLblDlg.Height + 4
+                  - spnCargaDlg:
+                      Control: Spinner@1.4.6
+                      Properties:
+                        Height: =18
+                        Visible: =cmpConfirmDialog.Cargando
+                        Width: =18
+                        X: =Parent.Width/2 - 9
+                        Y: =Parent.Height - 56
+                  - btnCancelDlg:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =If(cmpConfirmDialog.Cargando, DisplayMode.Disabled, DisplayMode.Edit)
+                        Fill: =Color.Transparent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =ThemeInk2
+                        HoverFill: =ThemeSurface2
+                        OnSelect: =cmpConfirmDialog.OnCancelar()
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: =cmpConfirmDialog.TextoCancelar
+                        Width: =110
+                        X: =btnOkDlg.X - 8 - Self.Width
+                        Y: =Parent.Height - 50
+                  - btnOkDlg:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorFade(Self.Fill, -15%)
+                        BorderThickness: =0
+                        Color: =ThemeSurface
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =If(cmpConfirmDialog.OkHabilitado && !cmpConfirmDialog.Cargando, DisplayMode.Edit, DisplayMode.Disabled)
+                        Fill: =Switch(cmpConfirmDialog.Tono, "danger", ThemeDanger, "ok", ThemeOk, ThemeAccent)
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverColor: =ThemeSurface
+                        OnSelect: =cmpConfirmDialog.OnOk()
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: =If(cmpConfirmDialog.Cargando, "Aplicando…", cmpConfirmDialog.TextoOk)
+                        Width: =150
+                        X: =Parent.Width - 22 - Self.Width
+                        Y: =Parent.Height - 50

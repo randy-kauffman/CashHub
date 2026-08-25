@@ -1,0 +1,1716 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrSolicitud:
+    Properties:
+      Fill: =ThemeBg
+      LoadingSpinnerColor: =ThemeAccent
+      OnVisible: |-
+        =// --- 0) Estado local a default (gotcha 8.3: nunca arrastrar estado de la visita anterior) ---
+        UpdateContext({
+            ctxErrorDet: Blank(),
+            ctxCargandoDet: false,
+            ctxMostrarDlgDet: false,
+            ctxModoDlgDet: "confirmar",
+            ctxAccionDet: "",
+            ctxPanelAgregarDet: false,
+            ctxErrorPanelDet: Blank(),
+            // Fallback de 01 §7.6 mientras sanic_CHResolveChangeRequest no esté desplegada como
+            // datasource Environment. Cambiar a "true" el día que exista — ver Notas.
+            ctxResolveApiListoDet: true
+        });
+        Reset(drpCampoDet);
+        Reset(inpValorNuevoDet);
+        // --- 1) Líneas del RFC ---
+        ClearCollect(
+            colLineasDet,
+            Filter(
+                'CH-Tbl-ClientDataChangeRequestLines',
+                ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest'
+            )
+        );
+        ClearCollect(
+            colCatalogoDet,
+            Filter('CH-Tbl-ClientTableLogicalFieldNames', Table = gvarSolicitudSel.TargetTable && IsAllowed)
+        );
+        // --- 2) Valor ACTUAL del registro objetivo, en vivo — UN SOLO LookUp con ShowColumns.
+        //     Gotcha 8.9 aplicado tambien a COLUMNAS: Power Fx no indirecciona un nombre de columna
+        //     por variable, asi que el Switch de tabla trae explicitamente solo lo necesario por
+        //     tabla (ClearCollect+If con else explicito, gotcha 8.13; en Create no hay registro aun).
+        If(
+            gvarSolicitudSel.Type <> 'Type (CH-Tbl-ClientDataChangeRequests)'.Create
+                && !IsBlank(gvarSolicitudSel.TargetRecordID),
+            Switch(
+                gvarSolicitudSel.TargetTable,
+                "sanic_chtblclient",
+                With({_r: LookUp('CH-Tbl-Clients', 'CH-Tbl-Client' = GUID(gvarSolicitudSel.TargetRecordID))},
+                    ClearCollect(colTargetRecordDet,
+                        {LogicalName: "sanic_name", Valor: _r.Name},
+                        {LogicalName: "sanic_cifbco", Valor: Text(_r.CIFBCO)},
+                        {LogicalName: "sanic_cifcom", Valor: Text(_r.CIFCOM)}
+                    )
+                ),
+                "sanic_chtblclientbranch",
+                With({_r: LookUp('CH-Tbl-ClientBranches', 'CH-Tbl-ClientBranch' = GUID(gvarSolicitudSel.TargetRecordID))},
+                    ClearCollect(colTargetRecordDet,
+                        {LogicalName: "sanic_name", Valor: _r.Name}
+                    )
+                ),
+                "sanic_chtblclientemail",
+                With({_r: LookUp('CH-Tbl-ClientEmails', 'CH-Tbl-ClientEmail' = GUID(gvarSolicitudSel.TargetRecordID))},
+                    ClearCollect(colTargetRecordDet,
+                        {LogicalName: "emailaddress", Valor: _r.'Email Address'},
+                        {LogicalName: "sanic_alwaysnotify", Valor: If(_r.AlwaysNotify, "Sí", "No")}
+                    )
+                ),
+                "sanic_chtblclientaccount",
+                With({_r: LookUp('CH-Tbl-ClientAccounts', 'CH-Tbl-ClientAccount' = GUID(gvarSolicitudSel.TargetRecordID))},
+                    ClearCollect(colTargetRecordDet,
+                        {LogicalName: "sanic_name", Valor: _r.'Numero de cuenta'},
+                        {LogicalName: "sanic_currency", Valor: Text(_r.Moneda)}
+                    )
+                ),
+                Clear(colTargetRecordDet)
+            ),
+            Clear(colTargetRecordDet)
+        );
+        // --- 3) Auditoria real (solo existe si el RFC ya paso por la Custom API) ---
+        ClearCollect(
+            colAuditoriaDet,
+            Sort(
+                Filter(
+                    'CH-Tbl-ClientDataChangesAuditTrails',
+                    RelatedRFC.'CH-Tbl-ClientDataChangeRequest' = gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest'
+                ),
+                'Created On', SortOrder.Descending
+            )
+        );
+        // --- 4) Historial unificado (real + sintetico) — ver Notas sobre por que no hay "Enviada" ---
+        ClearCollect(
+            colTimelineDet,
+            {
+                Titulo: "Creada (Borrador)",
+                SubTitulo: Text(gvarSolicitudSel.'Created On', FmtFecha) & " · " & gvarSolicitudSel.'Created By'.'Full Name',
+                Texto: "",
+                Tono: "neutro",
+                Orden: gvarSolicitudSel.'Created On'
+            }
+        );
+        ForAll(
+            colAuditoriaDet As A,
+            Collect(
+                colTimelineDet,
+                {
+                    Titulo: If(A.Result, "Aplicada", "Falló la aplicación"),
+                    SubTitulo: Text(A.'Created On', FmtFecha) & " · " & A.'Created By'.'Full Name',
+                    Texto: A.Message,
+                    Tono: If(A.Result, "ok", "danger"),
+                    Orden: A.'Created On'
+                }
+            )
+        );
+        If(
+            gvarSolicitudSel.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled,
+            Collect(
+                colTimelineDet,
+                {
+                    Titulo: "Cancelada",
+                    SubTitulo: Text(gvarSolicitudSel.SolvedOn, FmtFecha) & " · " & gvarSolicitudSel.SolvedBy.'Full Name',
+                    Texto: Coalesce(gvarSolicitudSel.ReasonForDecision, ""),
+                    Tono: "neutro",
+                    Orden: gvarSolicitudSel.SolvedOn
+                }
+            )
+        );
+        // --- 5) Conflictos por REGISTRO (mismo campo + mismo TargetRecordID + otro RFC en curso) ---
+        //     Solo tiene sentido para el creador en Draft (SO5) — se acota para no pagar este Filter
+        //     caro (no delegable — ver Notas de performance) en los demas estados.
+        Clear(colConflictosDet);
+        If(
+            gvarSolicitudSel.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
+                && gvarSolicitudSel.'Created By'.User = gvarUser.User,
+            ForAll(
+                colLineasDet As L,
+                Collect(
+                    colConflictosDet,
+                    Filter(
+                        'CH-Tbl-ClientDataChangeRequestLines',
+                        ChangeRequestID.TargetRecordID = gvarSolicitudSel.TargetRecordID
+                            && ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' <> gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest'
+                            && (ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Draft
+                                || ChangeStatus = 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted)
+                            && 'Field Definition'.'CH-Tbl-ClientTableLogicalFieldName' = L.'Field Definition'.'CH-Tbl-ClientTableLogicalFieldName'
+                    )
+                )
+            )
+        );
+    Children:
+      - cmpAppHeaderDet:
+          Control: CanvasComponent
+          ComponentName: cmpAppHeader
+          Properties:
+            Activo: ="Solicitudes"
+            Height: =fxHeaderH
+            OnClientes: =Navigate(scrClientes, ScreenTransition.None)
+            OnSolicitudes: =Navigate(scrSolicitudes, ScreenTransition.None)
+            RolTexto: =gvarRolTexto
+            Subtitulo: ="Detalle de solicitud"
+            Titulo: ="Administración de Clientes"
+            Width: =Parent.Width
+      - cntCuerpoDet:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Height: =Parent.Height - fxHeaderH
+            Width: =Parent.Width
+            Y: =fxHeaderH
+          Children:
+            - cntCardPrincipalDet:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  Height: =Parent.Height - fxGutter*2
+                  RadiusBottomLeft: =fxCardR
+                  RadiusBottomRight: =fxCardR
+                  RadiusTopLeft: =fxCardR
+                  RadiusTopRight: =fxCardR
+                  Width: =(Parent.Width - fxGutter*2 - fxGap) * 0.62
+                  X: =fxGutter
+                  Y: =fxGutter
+                Children:
+                  - cntBarraDet:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Fill: =ThemeSurface2
+                        Height: =44
+                        RadiusBottomLeft: =0
+                        RadiusBottomRight: =0
+                        RadiusTopLeft: =fxCardR - 1
+                        RadiusTopRight: =fxCardR - 1
+                        Width: =Parent.Width
+                      Children:
+                        - btnVolverDet:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeLine
+                              BorderThickness: =1
+                              Color: =ThemeInk2
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              Fill: =ThemeSurface
+                              Font: =Font.'Open Sans'
+                              Height: =26
+                              HoverFill: =ThemeSurface2
+                              OnSelect: =Navigate(scrSolicitudes, ScreenTransition.None)
+                              RadiusBottomLeft: =7
+                              RadiusBottomRight: =7
+                              RadiusTopLeft: =7
+                              RadiusTopRight: =7
+                              Size: =8.25
+                              Text: ="‹ Volver"
+                              Width: =74
+                              X: =12
+                              Y: =(Parent.Height - 26)/2
+                        - lblTituloBarraDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =Parent.Height
+                              Size: =9.75
+                              Text: |-
+                                =gvarSolicitudSel.Name & " · " &
+                                    Switch(
+                                        gvarSolicitudSel.Type,
+                                        'Type (CH-Tbl-ClientDataChangeRequests)'.Update,     "Edición de " & Lower(Coalesce(gvarSolicitudSel.TargetTableDisplayName, gvarSolicitudSel.TargetTable)),
+                                        'Type (CH-Tbl-ClientDataChangeRequests)'.Deactivate, "Desactivación de " & Lower(Coalesce(gvarSolicitudSel.TargetTableDisplayName, gvarSolicitudSel.TargetTable)),
+                                        'Type (CH-Tbl-ClientDataChangeRequests)'.Create,     "Alta de " & Lower(Coalesce(gvarSolicitudSel.TargetTableDisplayName, gvarSolicitudSel.TargetTable)),
+                                        'Type (CH-Tbl-ClientDataChangeRequests)'.Activate,   "Activación de " & Lower(Coalesce(gvarSolicitudSel.TargetTableDisplayName, gvarSolicitudSel.TargetTable)),
+                                        "Solicitud de cambio"
+                                    )
+                              Width: =Parent.Width - Self.X - pilEstadoBarraDet.Width - 26
+                              X: =btnVolverDet.X + btnVolverDet.Width + 10
+                        - pilEstadoBarraDet:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeLineSoft
+                              BorderThickness: =0
+                              Color: |-
+                                =Switch(
+                                    gvarSolicitudSel.'Change Status',
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,     ThemeInk3,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted, ThemeWarn,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved,  ThemeInfo,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected,  ThemeDanger,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied,   ThemeOk,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed,    ThemeDanger,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled,  ThemeInk3,
+                                    ThemeInk3
+                                )
+                              DisplayMode: =DisplayMode.View
+                              Fill: |-
+                                =Switch(
+                                    gvarSolicitudSel.'Change Status',
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,     ThemeLineSoft,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted, ThemeWarnSoft,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved,  ThemeInfoSoft,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected,  ThemeDangerSoft,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied,   ThemeOkSoft,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed,    ThemeDangerSoft,
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled,  ThemeLineSoft,
+                                    ThemeLineSoft
+                                )
+                              Font: =Font.'Open Sans'
+                              Height: =20
+                              HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                              HoverColor: =Self.Color
+                              HoverFill: =ColorFade(Self.Fill, 20%)
+                              PressedBorderColor: =Self.Fill
+                              PressedColor: =Self.Fill
+                              PressedFill: =Self.Color
+                              RadiusBottomLeft: =12
+                              RadiusBottomRight: =12
+                              RadiusTopLeft: =12
+                              RadiusTopRight: =12
+                              Size: =7.88
+                              Text: |-
+                                =Switch(
+                                    gvarSolicitudSel.'Change Status',
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,     "Borrador",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted, "Enviada",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved,  "Aprobada",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Rejected,  "Rechazada",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Applied,   "Aplicada",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Failed,    "Fallida",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled,  "Cancelada",
+                                    "—"
+                                )
+                              Width: =Len(Self.Text) * 5.4 + 18
+                              X: =Parent.Width - 16 - Self.Width
+                              Y: =(Parent.Height - 20)/2
+                  - shpLineaBarraDet:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        Fill: =ThemeLineSoft
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =cntBarraDet.Y + cntBarraDet.Height
+                  - cntKvDet:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Fill: =Color.Transparent
+                        Height: =lblVMotivoDet.Y + lblVMotivoDet.Height + 12
+                        Width: =Parent.Width
+                        Y: =shpLineaBarraDet.Y + 1
+                      Children:
+                        - lblKClienteDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              Height: =18
+                              Size: =9
+                              Text: ="Cliente"
+                              Width: =78
+                              X: =16
+                              Y: =14
+                        - lblVClienteDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
+                              Size: =9
+                              Text: =Coalesce(gvarClienteSel.Name, "—")
+                              Width: =Parent.Width/2 - 106
+                              X: =98
+                              Y: =14
+                        - lblKRegistroDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              Height: =18
+                              Size: =9
+                              Text: =If(gvarSolicitudSel.TargetTable = "sanic_chtblclient", "Tabla", "Registro")
+                              Width: =78
+                              X: =Parent.Width/2 + 8
+                              Y: =14
+                        - lblVRegistroDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
+                              Size: =9
+                              Text: |-
+                                =If(
+                                    gvarSolicitudSel.Type = 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,
+                                    "(registro nuevo — se crea al aprobar)",
+                                    Coalesce(
+                                        LookUp(
+                                            colTargetRecordDet,
+                                            LogicalName = If(
+                                                gvarSolicitudSel.TargetTable = "sanic_chtblclientemail",
+                                                "emailaddress",
+                                                "sanic_name"
+                                            )
+                                        ).Valor,
+                                        "—"
+                                    )
+                                )
+                              Width: =Parent.Width/2 - 106
+                              X: =Parent.Width/2 + 90
+                              Y: =14
+                        - lblKCreadaPorDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              Height: =18
+                              Size: =9
+                              Text: ="Creada por"
+                              Width: =78
+                              X: =16
+                              Y: =40
+                        - lblVCreadaPorDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
+                              Size: =9
+                              Text: =gvarSolicitudSel.'Created By'.'Full Name'
+                              Width: =Parent.Width/2 - 106
+                              X: =98
+                              Y: =40
+                        - lblKFechaDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              Height: =18
+                              Size: =9
+                              Text: |-
+                                =Switch(
+                                    gvarSolicitudSel.'Change Status',
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft, "Creada",
+                                    'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted, "Enviada",
+                                    "Resuelta"
+                                )
+                              Width: =78
+                              X: =Parent.Width/2 + 8
+                              Y: =40
+                        - lblVFechaDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
+                              Size: =9
+                              Text: |-
+                                =Text(
+                                    If(
+                                        gvarSolicitudSel.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,
+                                        gvarSolicitudSel.'Created On',
+                                        Coalesce(gvarSolicitudSel.SolvedOn, gvarSolicitudSel.'Created On')
+                                    ),
+                                    FmtFecha
+                                )
+                              Width: =Parent.Width/2 - 106
+                              X: =Parent.Width/2 + 90
+                              Y: =40
+                        - lblKMotivoDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              Height: =18
+                              Size: =9
+                              Text: ="Motivo"
+                              Width: =78
+                              X: =16
+                              Y: =66
+                        - lblVMotivoDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              AutoHeight: =true
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Size: =9
+                              Text: =Coalesce(gvarSolicitudSel.Reason, "—")
+                              Width: =Parent.Width - 114
+                              X: =98
+                              Y: =66
+                  - shpLineaKvDet:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        Fill: =ThemeLine
+                        Height: =1
+                        Width: =Parent.Width
+                        Y: =cntKvDet.Y + cntKvDet.Height
+                  - cntBackendPendienteDet:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Fill: =ThemeWarnSoft
+                        Height: =lblBackendPendienteDet.Height + 18
+                        RadiusBottomLeft: =9
+                        RadiusBottomRight: =9
+                        RadiusTopLeft: =9
+                        RadiusTopRight: =9
+                        Visible: |-
+                          =!ctxResolveApiListoDet
+                              && gvarSolicitudSel.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted
+                              && !IsBlank(LookUp(colMisPermisos, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSolicitudSel.TargetTable))
+                              && gvarSolicitudSel.'Created By'.User <> gvarUser.User
+                        Width: =Parent.Width - 24
+                        X: =12
+                        Y: =shpLineaKvDet.Y + 1 + 10
+                      Children:
+                        - lblBackendPendienteDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              AutoHeight: =true
+                              Color: =ThemeWarn
+                              Font: =Font.'Open Sans'
+                              Size: =8.63
+                              Text: |-
+                                ="Backend pendiente: la Custom API sanic_CHResolveChangeRequest todavía no está desplegada."
+                              Width: =Parent.Width - 26
+                              X: =13
+                              Y: =9
+                  - cntErrorDet:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Fill: =ThemeDangerSoft
+                        Height: =lblErrorDet.Height + 46
+                        RadiusBottomLeft: =9
+                        RadiusBottomRight: =9
+                        RadiusTopLeft: =9
+                        RadiusTopRight: =9
+                        Visible: =!IsBlank(ctxErrorDet)
+                        Width: =Parent.Width - 24
+                        X: =12
+                        Y: =cntBackendPendienteDet.Y + If(cntBackendPendienteDet.Visible, cntBackendPendienteDet.Height + 10, 0)
+                      Children:
+                        - lblErrorDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              AutoHeight: =true
+                              Color: =ThemeDanger
+                              Font: =Font.'Open Sans'
+                              Size: =8.63
+                              Text: |-
+                                ="No se pudo completar la acción: " & ctxErrorDet
+                              Width: =Parent.Width - 26
+                              X: =13
+                              Y: =9
+                        - btnActualizarErrorDet:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeAccent
+                              BorderThickness: =1
+                              Color: =ThemeAccent
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              Fill: =ThemeSurface
+                              Font: =Font.'Open Sans'
+                              Height: =26
+                              HoverFill: =ThemeAccentSoft
+                              OnSelect: |-
+                                =Set(
+                                    gvarSolicitudSel,
+                                    LookUp('CH-Tbl-ClientDataChangeRequests', 'CH-Tbl-ClientDataChangeRequest' = gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest')
+                                );
+                                Set(gvarClienteSel, gvarSolicitudSel.RelatedClient);
+                                UpdateContext({ctxErrorDet: Blank()});
+                                ClearCollect(
+                                    colLineasDet,
+                                    Filter(
+                                        'CH-Tbl-ClientDataChangeRequestLines',
+                                        ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest'
+                                    )
+                                );
+                                ClearCollect(
+                                    colAuditoriaDet,
+                                    Sort(
+                                        Filter(
+                                            'CH-Tbl-ClientDataChangesAuditTrails',
+                                            RelatedRFC.'CH-Tbl-ClientDataChangeRequest' = gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest'
+                                        ),
+                                        'Created On', SortOrder.Descending
+                                    )
+                                );
+                                ClearCollect(
+                                    colTimelineDet,
+                                    {
+                                        Titulo: "Creada (Borrador)",
+                                        SubTitulo: Text(gvarSolicitudSel.'Created On', FmtFecha) & " · " & gvarSolicitudSel.'Created By'.'Full Name',
+                                        Texto: "",
+                                        Tono: "neutro",
+                                        Orden: gvarSolicitudSel.'Created On'
+                                    }
+                                );
+                                ForAll(
+                                    colAuditoriaDet As A,
+                                    Collect(
+                                        colTimelineDet,
+                                        {
+                                            Titulo: If(A.Result, "Aplicada", "Falló la aplicación"),
+                                            SubTitulo: Text(A.'Created On', FmtFecha) & " · " & A.'Created By'.'Full Name',
+                                            Texto: A.Message,
+                                            Tono: If(A.Result, "ok", "danger"),
+                                            Orden: A.'Created On'
+                                        }
+                                    )
+                                )
+                              Size: =8.25
+                              Text: ="↻ Actualizar detalle"
+                              Width: =140
+                              X: =13
+                              Y: =lblErrorDet.Y + lblErrorDet.Height + 8
+                  - cntToolbarLineasDet:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Fill: =Color.Transparent
+                        Height: =34
+                        Visible: |-
+                          =gvarSolicitudSel.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
+                           && gvarSolicitudSel.'Created By'.User = gvarUser.User
+                        Width: =Parent.Width
+                        Y: =cntErrorDet.Y + If(cntErrorDet.Visible, cntErrorDet.Height + 10, 0)
+                      Children:
+                        - btnAgregarCambioDet:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeAccent
+                              BorderThickness: =1
+                              Color: =ThemeAccent
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              Fill: =ThemeSurface
+                              Font: =Font.'Open Sans'
+                              Height: =26
+                              HoverFill: =ThemeSurface2
+                              OnSelect: |-
+                                =UpdateContext({ctxPanelAgregarDet: true, ctxErrorPanelDet: Blank()}); Reset(drpCampoDet); Reset(inpValorNuevoDet)
+                              RadiusBottomLeft: =7
+                              RadiusBottomRight: =7
+                              RadiusTopLeft: =7
+                              RadiusTopRight: =7
+                              Size: =8.25
+                              Text: ="+ Agregar cambio"
+                              Width: =120
+                              X: =12
+                              Y: =4
+                        - btnQuitarCambioDet:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeDangerLine
+                              BorderThickness: =1
+                              Color: =ThemeDanger
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              DisplayMode: =If(IsBlank(galLineasDet.Selected), DisplayMode.Disabled, DisplayMode.Edit)
+                              Fill: =ThemeSurface
+                              Font: =Font.'Open Sans'
+                              Height: =26
+                              HoverFill: =ThemeSurface2
+                              OnSelect: |-
+                                =UpdateContext({ctxAccionDet: "quitarlinea", ctxModoDlgDet: "confirmar", ctxMostrarDlgDet: true})
+                              RadiusBottomLeft: =7
+                              RadiusBottomRight: =7
+                              RadiusTopLeft: =7
+                              RadiusTopRight: =7
+                              Size: =8.25
+                              Text: |-
+                                ="🗑 Quitar cambio…"
+                              Width: =130
+                              X: =btnAgregarCambioDet.X + btnAgregarCambioDet.Width + 8
+                              Y: =4
+                        - lblContadorLineasDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              Height: =26
+                              Size: =8.63
+                              Text: =CountRows(colLineasDet) & " cambios en la solicitud"
+                              Width: =160
+                              X: =Parent.Width - 16 - Self.Width
+                              Y: =4
+                  - cntGrillaLineasDet:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Height: =cntAccionesDet.Y - Self.Y - (If(cntConflictoDet.Visible, cntConflictoDet.Height + 10, 0))
+                        Visible: =IsBlank(ctxErrorDet)
+                        Width: =Parent.Width
+                        Y: =cntToolbarLineasDet.Y + If(cntToolbarLineasDet.Visible, cntToolbarLineasDet.Height, 0)
+                      Children:
+                        - lblHdrCampoDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =20
+                              Size: =7.5
+                              Text: ="CAMPO"
+                              Width: =(Parent.Width - 32) * 0.28
+                              X: =16
+                              Y: =8
+                        - lblHdrActualDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =20
+                              Size: =7.5
+                              Text: ="VALOR ACTUAL"
+                              Width: =(Parent.Width - 32) * 0.28
+                              X: =lblHdrCampoDet.X + lblHdrCampoDet.Width
+                              Y: =8
+                        - lblHdrPropuestoDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =20
+                              Size: =7.5
+                              Text: ="VALOR PROPUESTO"
+                              Width: =(Parent.Width - 32) * 0.28
+                              X: =lblHdrActualDet.X + lblHdrActualDet.Width
+                              Y: =8
+                        - lblHdrEstadoLinDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =20
+                              Size: =7.5
+                              Text: ="ESTADO"
+                              Width: =(Parent.Width - 32) * 0.16
+                              X: =lblHdrPropuestoDet.X + lblHdrPropuestoDet.Width
+                              Y: =8
+                        - shpHdrLineaLinDet:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =ThemeLine
+                              Height: =1
+                              Width: =Parent.Width
+                              Y: =30
+                        - galLineasDet:
+                            Control: Gallery@2.15.0
+                            Variant: Vertical
+                            Properties:
+                              Height: =Parent.Height - Self.Y
+                              Items: =colLineasDet
+                              TemplatePadding: =0
+                              TemplateSize: =fxRowHChica
+                              Width: =Parent.Width
+                              Y: =shpHdrLineaLinDet.Y + shpHdrLineaLinDet.Height
+                            Children:
+                              - shpSelLinDet:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+                                    Height: =fxRowHChica
+                                    Width: =galLineasDet.Width
+                              - shpSelBarraLinDet:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeAccent
+                                    Height: =fxRowHChica
+                                    Visible: =ThisItem.IsSelected
+                                    Width: =3
+                              - btnFilaLinDet:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderThickness: =0
+                                    Fill: =Color.Transparent
+                                    Font: =Font.'Open Sans'
+                                    Height: =fxRowHChica
+                                    HoverFill: =ThemeSurface2
+                                    OnSelect: =Select(Parent)
+                                    PressedFill: =ThemeAccentSoft
+                                    Size: =13
+                                    Text: =""
+                                    Width: =galLineasDet.Width
+                              - lblCampoLinDet:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =fxRowHChica
+                                    OnSelect: =Select(Parent)
+                                    Size: =9
+                                    Text: =ThisItem.'Field Definition'.Name
+                                    Width: =lblHdrCampoDet.Width
+                                    X: =lblHdrCampoDet.X
+                              - lblActualLinDet:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    Height: =fxRowHChica
+                                    OnSelect: =Select(Parent)
+                                    Size: =9
+                                    Strikethrough: =true
+                                    Text: |-
+                                      =Coalesce(
+                                          LookUp(colTargetRecordDet, LogicalName = ThisItem.'Field Definition'.LogicalName).Valor,
+                                          Coalesce(ThisItem.OldValue, "—")
+                                      )
+                                    Width: =lblHdrActualDet.Width
+                                    X: =lblHdrActualDet.X
+                              - lblPropuestoLinDet:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeOk
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =fxRowHChica
+                                    OnSelect: =Select(Parent)
+                                    Size: =9
+                                    Text: =Coalesce(ThisItem.NewValue, "—")
+                                    Width: =lblHdrPropuestoDet.Width
+                                    X: =lblHdrPropuestoDet.X
+                              - pilEstadoLinDet:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderColor: =ThemeLineSoft
+                                    BorderThickness: =0
+                                    Color: |-
+                                      =Switch(
+                                          ThisItem.ChangeStatus,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Draft,     ThemeInk3,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted, ThemeWarn,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved,  ThemeInfo,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Denied,    ThemeDanger,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Applied,   ThemeOk,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Failed,    ThemeDanger,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Canceled,  ThemeInk3,
+                                          ThemeInk3
+                                      )
+                                    Fill: |-
+                                      =Switch(
+                                          ThisItem.ChangeStatus,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Draft,     ThemeLineSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted, ThemeWarnSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved,  ThemeInfoSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Denied,    ThemeDangerSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Applied,   ThemeOkSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Failed,    ThemeDangerSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Canceled,  ThemeLineSoft,
+                                          ThemeLineSoft
+                                      )
+                                    Font: =Font.'Open Sans'
+                                    Height: =20
+                                    HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                                    HoverColor: =Self.Color
+                                    HoverFill: |-
+                                      =Switch(
+                                          ThisItem.ChangeStatus,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Draft,     ThemeLineSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted, ThemeWarnSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved,  ThemeInfoSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Denied,    ThemeDangerSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Applied,   ThemeOkSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Failed,    ThemeDangerSoft,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Canceled,  ThemeLineSoft,
+                                          ThemeLineSoft
+                                      )
+                                    OnSelect: =Select(Parent)
+                                    PressedBorderColor: =Self.Fill
+                                    PressedColor: =Self.Fill
+                                    PressedFill: =Self.Fill
+                                    Size: =7.88
+                                    Text: |-
+                                      =Switch(
+                                          ThisItem.ChangeStatus,
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Draft,     "Borrador",
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted, "Enviada",
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Approved,  "Aprobada",
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Denied,    "Rechazada",
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Applied,   "Aplicada",
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Failed,    "Fallida",
+                                          'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Canceled,  "Cancelada",
+                                          "—"
+                                      )
+                                    Width: =84
+                                    X: =lblHdrEstadoLinDet.X
+                                    Y: =(fxRowHChica - 20)/2
+                              - shpSepLinDet:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeLineSoft
+                                    Height: =1
+                                    Width: =galLineasDet.Width - 32
+                                    X: =16
+                                    Y: =fxRowHChica - 1
+                        - lblVacioLineasDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              Height: =36
+                              Size: =9.38
+                              Text: ="Esta solicitud todavía no tiene cambios."
+                              Visible: =CountRows(colLineasDet) = 0
+                              Width: =Parent.Width
+                              Y: =galLineasDet.Y + 40
+                  - cntConflictoDet:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Fill: =ThemeWarnSoft
+                        Height: =lblConflictoDet.Height + 18
+                        RadiusBottomLeft: =9
+                        RadiusBottomRight: =9
+                        RadiusTopLeft: =9
+                        RadiusTopRight: =9
+                        Visible: =!IsEmpty(colConflictosDet)
+                        Width: =Parent.Width - 24
+                        X: =12
+                        Y: =cntAccionesDet.Y - Self.Height - 10
+                      Children:
+                        - lblConflictoDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              AutoHeight: =true
+                              Color: =ThemeWarn
+                              Font: =Font.'Open Sans'
+                              Size: =8.63
+                              Text: |-
+                                =With(
+                                    {primero: First(colConflictosDet)},
+                                    "⚠ Otra solicitud en curso (" & primero.ChangeRequestID.Name & ", de " &
+                                        primero.ChangeRequestID.'Created By'.'Full Name' &
+                                        ") ya propone cambios sobre este mismo registro. Revisala antes de enviar para no pisarse." &
+                                        If(CountRows(colConflictosDet) > 1, " (+" & (CountRows(colConflictosDet) - 1) & " más)", "")
+                                )
+                              Width: =Parent.Width - 26
+                              X: =13
+                              Y: =9
+                  - cntAccionesDet:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Fill: =Color.Transparent
+                        Height: =52
+                        Width: =Parent.Width
+                        Y: =Parent.Height - 52
+                      Children:
+                        - btnEnviarDet:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeAccent
+                              BorderStyle: =BorderStyle.None
+                              Color: =ThemeSurface
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              Fill: =ThemeAccent
+                              Font: =Font.'Open Sans'
+                              Height: =32
+                              HoverFill: =ThemeAccentDark
+                              OnSelect: |-
+                                =UpdateContext({ctxAccionDet: "enviar", ctxModoDlgDet: "confirmar", ctxMostrarDlgDet: true})
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              Size: =9
+                              Text: ="Enviar a aprobación…"
+                              Visible: |-
+                                =gvarSolicitudSel.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft
+                                     && gvarSolicitudSel.'Created By'.User = gvarUser.User
+                              Width: =150
+                              X: =Parent.Width - 16 - Self.Width
+                              Y: =10
+                        - btnCancelarSolicitudDet:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeLine
+                              BorderThickness: =1
+                              Color: =ThemeInk2
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              Fill: =Color.Transparent
+                              Font: =Font.'Open Sans'
+                              Height: =32
+                              HoverFill: =ThemeSurface2
+                              OnSelect: |-
+                                =UpdateContext({ctxAccionDet: "cancelar", ctxModoDlgDet: "confirmar", ctxMostrarDlgDet: true})
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              Size: =9
+                              Text: ="Cancelar solicitud…"
+                              Visible: =btnEnviarDet.Visible
+                              Width: =150
+                              X: =btnEnviarDet.X - 8 - Self.Width
+                              Y: =10
+                        - btnAprobarDet:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeOk
+                              BorderStyle: =BorderStyle.None
+                              Color: =ThemeSurface
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              DisplayMode: =If(ctxResolveApiListoDet, DisplayMode.Edit, DisplayMode.Disabled)
+                              Fill: =ThemeOk
+                              Font: =Font.'Open Sans'
+                              Height: =32
+                              HoverFill: =RGBA(11, 97, 48, 1)
+                              OnSelect: |-
+                                =UpdateContext({ctxAccionDet: "aprobar", ctxModoDlgDet: "confirmar", ctxMostrarDlgDet: true})
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              Size: =9
+                              Text: ="Aprobar…"
+                              Visible: |-
+                                =gvarSolicitudSel.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted
+                                    && !IsBlank(LookUp(colMisPermisos, Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Approver && Name = gvarSolicitudSel.TargetTable))
+                                    && gvarSolicitudSel.'Created By'.User <> gvarUser.User
+                              Width: =110
+                              X: =Parent.Width - 16 - Self.Width
+                              Y: =10
+                        - btnRechazarDet:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeDanger
+                              BorderStyle: =BorderStyle.None
+                              Color: =ThemeSurface
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              DisplayMode: =btnAprobarDet.DisplayMode
+                              Fill: =ThemeDanger
+                              Font: =Font.'Open Sans'
+                              Height: =32
+                              HoverFill: =RGBA(153, 30, 24, 1)
+                              OnSelect: |-
+                                =UpdateContext({ctxAccionDet: "rechazar", ctxModoDlgDet: "confirmar", ctxMostrarDlgDet: true})
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              Size: =9
+                              Text: ="Rechazar…"
+                              Visible: =btnAprobarDet.Visible
+                              Width: =110
+                              X: =btnAprobarDet.X - 8 - Self.Width
+                              Y: =10
+            - cntCardLateralDet:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  Height: =cntCardPrincipalDet.Height
+                  RadiusBottomLeft: =fxCardR
+                  RadiusBottomRight: =fxCardR
+                  RadiusTopLeft: =fxCardR
+                  RadiusTopRight: =fxCardR
+                  Width: =Parent.Width - Self.X - fxGutter
+                  X: =cntCardPrincipalDet.X + cntCardPrincipalDet.Width + fxGap
+                  Y: =fxGutter
+                Children:
+                  - lblTituloLateralDet:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        Size: =11
+                        Text: =If(cntQuienApruebaDet.Visible, "¿Quién aprueba?", "Historial de la solicitud")
+                        Width: =Parent.Width - 32
+                        X: =16
+                        Y: =12
+                  - cntHistorialDet:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Height: =Parent.Height - Self.Y
+                        Visible: =!cntQuienApruebaDet.Visible
+                        Width: =Parent.Width
+                        Y: =lblTituloLateralDet.Y + lblTituloLateralDet.Height + 6
+                      Children:
+                        - galHistorialDet:
+                            Control: Gallery@2.15.0
+                            Variant: Vertical
+                            Properties:
+                              Height: =Parent.Height
+                              Items: =Sort(colTimelineDet, Orden, SortOrder.Descending)
+                              TemplateSize: =fxRowHHist
+                              Width: =Parent.Width
+                            Children:
+                              - shpDotHistDet:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: |-
+                                      =Switch(
+                                          ThisItem.Tono,
+                                          "ok",     ThemeOk,
+                                          "warn",   ThemeWarn,
+                                          "danger", ThemeDanger,
+                                          "info",   ThemeInfo,
+                                          "accent", ThemeAccent,
+                                          /* neutro */ ThemeInk3
+                                      )
+                                    Height: =9
+                                    Width: =9
+                                    Y: =6
+                              - lblTitHistDet:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =16
+                                    Size: =9.75
+                                    Text: =ThisItem.Titulo
+                                    Width: =Parent.Width - 20
+                                    X: =20
+                              - lblSubHistDet:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    Height: =14
+                                    Size: =7.88
+                                    Text: =ThisItem.SubTitulo
+                                    Width: =Parent.Width - 20
+                                    X: =20
+                                    Y: =16
+                              - lblTxtHistDet:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    Size: =8.63
+                                    Text: =ThisItem.Texto
+                                    Visible: =!IsBlank(ThisItem.Texto)
+                                    Width: =Parent.Width - 20
+                                    X: =20
+                                    Y: =30
+                              - shpSepHistDet:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeLineSoft
+                                    Height: =1
+                                    Width: =Parent.Width
+                                    Y: =77
+                        - lblVacioHistorialDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              Height: =36
+                              Size: =9.38
+                              Text: ="Sin eventos registrados."
+                              Visible: =CountRows(colTimelineDet) = 0
+                              Width: =Parent.Width
+                              Y: =40
+                  - cntQuienApruebaDet:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Height: =cntHistorialDet.Height
+                        Visible: =gvarSolicitudSel.'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft && gvarSolicitudSel.'Created By'.User = gvarUser.User
+                        Width: =cntHistorialDet.Width
+                        Y: =cntHistorialDet.Y
+                      Children:
+                        - cntBannerQuienApruebaDet:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =ThemeInfoSoft
+                              Height: =lblBannerQuienApruebaDet.Height + 18
+                              RadiusBottomLeft: =9
+                              RadiusBottomRight: =9
+                              RadiusTopLeft: =9
+                              RadiusTopRight: =9
+                              Width: =Parent.Width - 32
+                              X: =16
+                            Children:
+                              - lblBannerQuienApruebaDet:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    AutoHeight: =true
+                                    Color: =ThemeInfo
+                                    Font: =Font.'Open Sans'
+                                    Size: =8.63
+                                    Text: |-
+                                      =With(
+                                          {area: LookUp(fxAreaPorTabla, Tabla = gvarSolicitudSel.TargetTable).Area},
+                                          "Esta solicitud la decide un Approver de " &
+                                              Coalesce(gvarSolicitudSel.TargetTableDisplayName, gvarSolicitudSel.TargetTable) &
+                                              If(!IsBlank(area), " (" & area & ").", ".") &
+                                              " Vos no podés aprobar tu propia solicitud — lo valida también el servidor."
+                                      )
+                                    Width: =Parent.Width - 26
+                                    X: =13
+                                    Y: =9
+                        - lblSecLabQuienApruebaDet:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =16
+                              Size: =7.88
+                              Text: ="AL ENVIAR"
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =cntBannerQuienApruebaDet.Y + cntBannerQuienApruebaDet.Height + 10
+                        - cntTl1QuienApruebaDet:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =Color.Transparent
+                              Height: =40
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =lblSecLabQuienApruebaDet.Y + lblSecLabQuienApruebaDet.Height + 6
+                            Children:
+                              - lblSubTl1QuienApruebaDet:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    Height: =24
+                                    Size: =8.25
+                                    Text: ="Adaptive Card en Teams con el detalle y link directo"
+                                    Width: =Parent.Width - 20
+                                    X: =20
+                                    Y: =16
+                              - lblTitTl1QuienApruebaDet:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =16
+                                    Size: =9.75
+                                    Text: ="Se notifica al chat de Approvers"
+                                    Width: =Parent.Width - 20
+                                    X: =20
+                              - shpDotTl1QuienApruebaDet:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeInfo
+                                    Height: =9
+                                    Width: =9
+                                    Y: =6
+                        - cntTl2QuienApruebaDet:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =Color.Transparent
+                              Height: =40
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =cntTl1QuienApruebaDet.Y + cntTl1QuienApruebaDet.Height
+                            Children:
+                              - lblTitTl2QuienApruebaDet:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =16
+                                    Size: =9.75
+                                    Text: ="Queda bloqueada la edición de líneas"
+                                    Width: =Parent.Width - 20
+                                    X: =20
+                              - lblSubTl2QuienApruebaDet:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    Height: =24
+                                    Size: =8.25
+                                    Text: ="hasta que se resuelva o se cancele"
+                                    Width: =Parent.Width - 20
+                                    X: =20
+                                    Y: =16
+                              - shpDotTl2QuienApruebaDet:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeInfo
+                                    Height: =9
+                                    Width: =9
+                                    Y: =6
+      - cmpConfirmDialogDet:
+          Control: CanvasComponent
+          ComponentName: cmpConfirmDialog
+          Properties:
+            Cargando: =ctxCargandoDet
+            EtiquetaCampo: =Switch(ctxAccionDet, "cancelar", "Motivo de la cancelación", "Comentario de la decisión")
+            Height: =Parent.Height
+            Mostrar: =ctxMostrarDlgDet
+            MostrarCampo: |-
+              =If(
+                  ctxModoDlgDet = "resultado", false,
+                  ctxAccionDet = "aprobar" || ctxAccionDet = "rechazar" || ctxAccionDet = "cancelar"
+              )
+            OkHabilitado: |-
+              =If(
+                  ctxModoDlgDet = "resultado", true,
+                  If(
+                      ctxAccionDet = "aprobar" || ctxAccionDet = "rechazar" || ctxAccionDet = "cancelar",
+                      Len(Trim(cmpConfirmDialogDet.CampoTexto)) > 0,
+                      true
+                  )
+              )
+            OnCancelar: |-
+              =UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: "", ctxModoDlgDet: "confirmar"})
+            OnOk: |-
+              =If(
+                  ctxModoDlgDet = "resultado",
+                  UpdateContext({ctxMostrarDlgDet: false, ctxModoDlgDet: "confirmar", ctxAccionDet: ""}),
+                  ctxAccionDet = "aprobar" || ctxAccionDet = "rechazar",
+                  UpdateContext({ctxCargandoDet: true, ctxErrorDet: Blank()});
+                   IfError(
+                       Environment.sanic_CHResolveChangeRequest({
+                           ChangeRequestId: gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest',
+                           Decision: If(ctxAccionDet = "aprobar", "Approve", "Reject"),
+                           Comment: Trim(cmpConfirmDialogDet.CampoTexto)
+                       });
+                       Set(
+                           gvarSolicitudSel,
+                           LookUp('CH-Tbl-ClientDataChangeRequests', 'CH-Tbl-ClientDataChangeRequest' = gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest')
+                       );
+                       UpdateContext({ctxModoDlgDet: "resultado", ctxCargandoDet: false})
+                       ,
+                       UpdateContext({ctxErrorDet: FirstError.Message, ctxCargandoDet: false, ctxMostrarDlgDet: false})
+                  ),
+                  ctxAccionDet = "enviar",
+                  UpdateContext({ctxCargandoDet: true, ctxErrorDet: Blank()});
+                  IfError(
+                      With(
+                          {fresco: LookUp('CH-Tbl-ClientDataChangeRequests', 'CH-Tbl-ClientDataChangeRequest' = gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest')},
+                          If(
+                              fresco.'Change Status' <> 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,
+                              UpdateContext({ctxErrorDet: "La solicitud ya no está en Borrador — alguien la modificó. Actualizá el detalle."}),
+                              ForAll(
+                                  colLineasDet As Linea,
+                                  Patch('CH-Tbl-ClientDataChangeRequestLines', Linea, {ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Submitted})
+                              );
+                              Patch('CH-Tbl-ClientDataChangeRequests', fresco, {'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted});
+                              Set(gvarSolicitudSel, LookUp('CH-Tbl-ClientDataChangeRequests', 'CH-Tbl-ClientDataChangeRequest' = fresco.'CH-Tbl-ClientDataChangeRequest'));
+                              Notify("Solicitud enviada a aprobación.", NotificationType.Success);
+                              UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: ""})
+                          )
+                      ),
+                      UpdateContext({ctxErrorDet: FirstError.Message})
+                  );
+                  UpdateContext({ctxCargandoDet: false}),
+                  ctxAccionDet = "cancelar",
+                  UpdateContext({ctxCargandoDet: true, ctxErrorDet: Blank()});
+                  IfError(
+                      With(
+                          {fresco: LookUp('CH-Tbl-ClientDataChangeRequests', 'CH-Tbl-ClientDataChangeRequest' = gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest')},
+                          If(
+                              fresco.'Change Status' <> 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Draft,
+                              UpdateContext({ctxErrorDet: "La solicitud ya no está en Borrador — alguien la modificó. Actualizá el detalle."}),
+                              ForAll(
+                                  colLineasDet As Linea,
+                                  Patch(
+                                      'CH-Tbl-ClientDataChangeRequestLines', Linea,
+                                      {ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Canceled, SolvedBy: gvarUser, SolvedOn: Now()}
+                                  )
+                              );
+                              Patch(
+                                  'CH-Tbl-ClientDataChangeRequests', fresco,
+                                  {
+                                      'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Canceled,
+                                      SolvedBy: gvarUser,
+                                      SolvedOn: Now(),
+                                      ReasonForDecision: Trim(cmpConfirmDialogDet.CampoTexto)
+                                  }
+                              );
+                              Set(gvarSolicitudSel, LookUp('CH-Tbl-ClientDataChangeRequests', 'CH-Tbl-ClientDataChangeRequest' = fresco.'CH-Tbl-ClientDataChangeRequest'));
+                              Notify("Solicitud cancelada.", NotificationType.Success);
+                              UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: ""})
+                          )
+                      ),
+                      UpdateContext({ctxErrorDet: FirstError.Message})
+                  );
+                  UpdateContext({ctxCargandoDet: false}),
+                  ctxAccionDet = "quitarlinea",
+                  UpdateContext({ctxCargandoDet: true, ctxErrorDet: Blank()});
+                  IfError(
+                      Remove('CH-Tbl-ClientDataChangeRequestLines', galLineasDet.Selected);
+                      ClearCollect(
+                          colLineasDet,
+                          Filter('CH-Tbl-ClientDataChangeRequestLines', ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest')
+                      );
+                      Notify("Cambio eliminado de la solicitud.", NotificationType.Success);
+                      UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: ""})
+                      ,
+                      UpdateContext({ctxErrorDet: FirstError.Message})
+                  );
+                  UpdateContext({ctxCargandoDet: false})
+              )
+            PlaceholderCampo: =""
+            Texto: |-
+              =If(
+                  ctxModoDlgDet = "resultado",
+                  If(
+                      ctxAccionDet = "aprobar",
+                      "El cambio se aplicó al maestro. La bitácora registró el resultado y se notificó a " &
+                          gvarSolicitudSel.'Created By'.'Full Name' & ".",
+                      "La solicitud quedó rechazada. Se notificó a " & gvarSolicitudSel.'Created By'.'Full Name' & "."
+                  ),
+                  Switch(
+                      ctxAccionDet,
+                      "aprobar", "Se aprobará " & gvarSolicitudSel.Name & " y el cambio se aplicará al maestro de inmediato (Custom API síncrona y transaccional).",
+                      "rechazar", "Se rechazará " & gvarSolicitudSel.Name & ". El creador será notificado.",
+                      "enviar", "Una vez enviada no vas a poder editar esta solicitud. ¿Confirmás el envío?",
+                      "cancelar", "Se cancelará " & gvarSolicitudSel.Name & ". Esta acción no se puede deshacer.",
+                      "quitarlinea", "Se eliminará el cambio sobre «" & galLineasDet.Selected.'Field Definition'.Name & "» de esta solicitud.",
+                      ""
+                  )
+              )
+            TextoCancelar: ="Cancelar"
+            TextoOk: |-
+              =If(
+                  ctxModoDlgDet = "resultado", "Entendido",
+                  Switch(
+                      ctxAccionDet,
+                      "aprobar", "Aprobar",
+                      "rechazar", "Rechazar",
+                      "enviar", "Enviar",
+                      "cancelar", "Cancelar solicitud",
+                      "quitarlinea", "Quitar",
+                      "Confirmar"
+                  )
+              )
+            Titulo: |-
+              =If(
+                  ctxModoDlgDet = "resultado",
+                  "Solicitud " & gvarSolicitudSel.Name & " " & If(ctxAccionDet = "aprobar", "aplicada", "rechazada"),
+                  Switch(
+                      ctxAccionDet,
+                      "aprobar", "Confirmar aprobación de RFC",
+                      "rechazar", "Confirmar rechazo de RFC",
+                      "enviar", "Confirmar envío de RFC",
+                      "cancelar", "Cancelar solicitud",
+                      "quitarlinea", "Quitar cambio de la solicitud",
+                      ""
+                  )
+              )
+            Tono: =Switch(ctxAccionDet, "aprobar", "ok", "enviar", "info", "info-tono-default", "info", "rechazar", "danger", "cancelar", "danger", "quitarlinea", "danger", "info")
+            ValorCampo: =""
+            Visible: =ctxMostrarDlgDet
+            Width: =Parent.Width
+      - shpVeloPanelDet:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =ThemeOverlay
+            Height: =Parent.Height
+            OnSelect: =ctxPanelAgregarDet
+            Visible: =ctxPanelAgregarDet
+            Width: =Parent.Width
+      - btnVeloClicPanelDet:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Fill: =Color.Transparent
+            Font: =Font.'Open Sans'
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            OnSelect: |-
+              =UpdateContext({ctxPanelAgregarDet: false})
+            Text: =""
+            Visible: =ctxPanelAgregarDet
+            Width: =cntPanelDet.X
+      - cntPanelDet:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =Parent.Height
+            Visible: =ctxPanelAgregarDet
+            Width: =fxPanelW
+            X: =Parent.Width - fxPanelW
+          Children:
+            - cntPanelHeadDet:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Fill: =Color.Transparent
+                  Height: =64
+                  Width: =Parent.Width
+                Children:
+                  - lblTituloPanelDet:
+                      Control: Label@2.5.1
+                      Properties:
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =20
+                        Size: =12.5
+                        Text: ="Agregar cambio"
+                        Width: =Parent.Width - 60
+                        X: =20
+                        Y: =16
+                  - lblSubPanelDet:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        Height: =16
+                        Size: =11
+                        Text: ="Elegí un campo permitido y escribí el valor propuesto"
+                        Width: =Parent.Width - 60
+                        X: =20
+                        Y: =36
+                  - icoCerrarPanelDet:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        Color: =ThemeInk3
+                        Height: =18
+                        HoverColor: =ThemeInk
+                        Icon: =Icon.Cancel
+                        OnSelect: |-
+                          =UpdateContext({ctxPanelAgregarDet: false})
+                        Width: =18
+                        X: =Parent.Width - 34
+                        Y: =18
+            - cntPanelBodyDet:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Fill: =Color.Transparent
+                  Height: =Parent.Height - 128
+                  Width: =Parent.Width
+                  Y: =64
+                Children:
+                  - lblCampoLabelDet:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =8.25
+                        Text: ="Campo"
+                        Width: =Parent.Width - 40
+                        X: =20
+                  - drpCampoDet:
+                      Control: Classic/DropDown@2.3.1
+                      Properties:
+                        BorderColor: =ThemeLine
+                        Fill: =ThemeSurface
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        Items: |-
+                          =With(
+                              {_yaUsados: ForAll(colLineasDet As L, {Value: Text(L.'Field Definition'.LogicalName)})},
+                              Filter(colCatalogoDet, !(LogicalName in _yaUsados))
+                          )
+                        Items.Value: =sanic_logicalname
+                        OnChange: |-
+                          =UpdateContext({ctxErrorPanelDet: Blank()})
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblCampoLabelDet.Y + lblCampoLabelDet.Height + 4
+                  - lblValorActualLabelDet:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =8.25
+                        Text: ="Valor actual"
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =drpCampoDet.Y + drpCampoDet.Height + 13
+                  - lblValorActualDet:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        Height: =20
+                        Size: =9
+                        Text: |-
+                          =If(
+                              IsBlank(drpCampoDet.Selected),
+                              "—",
+                              If(
+                                  IsBlank(colTargetRecordDet) || CountRows(colTargetRecordDet) = 0,
+                                  "(sin registro objetivo)",
+                                  Coalesce(
+                                      LookUp(colTargetRecordDet, LogicalName = drpCampoDet.Selected.LogicalName).Valor,
+                                      "—"
+                                  )
+                              )
+                          )
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblValorActualLabelDet.Y + lblValorActualLabelDet.Height + 4
+                  - lblValorNuevoLabelDet:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =8.25
+                        Text: ="Valor propuesto"
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblValorActualDet.Y + lblValorActualDet.Height + 13
+                  - inpValorNuevoDet:
+                      Control: Classic/TextInput@2.3.2
+                      Properties:
+                        BorderColor: =If(!IsBlank(ctxErrorPanelDet), ThemeDanger, ThemeLine)
+                        Default: =""
+                        Fill: =ThemeSurface2
+                        Font: =Font.'Open Sans'
+                        Height: =36
+                        MaxLength: =100
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblValorNuevoLabelDet.Y + lblValorNuevoLabelDet.Height + 4
+                  - lblValorNuevoErrorDet:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeDanger
+                        Font: =Font.'Open Sans'
+                        Height: =16
+                        Size: =8.25
+                        Text: =ctxErrorPanelDet
+                        Visible: =!IsBlank(ctxErrorPanelDet)
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =inpValorNuevoDet.Y + inpValorNuevoDet.Height + 4
+            - cntPanelFootDet:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Fill: =Color.Transparent
+                  Height: =64
+                  Width: =Parent.Width
+                  Y: =Parent.Height - 64
+                Children:
+                  - btnCancelarPanelDet:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                          =UpdateContext({ctxPanelAgregarDet: false})
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Cancelar"
+                        Width: =100
+                        X: =btnConfirmarPanelDet.X - 8 - Self.Width
+                        Y: =16
+                  - btnConfirmarPanelDet:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeAccent
+                        BorderStyle: =BorderStyle.None
+                        Color: =ThemeSurface
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =If(IsBlank(drpCampoDet.Selected), DisplayMode.Disabled, DisplayMode.Edit)
+                        Fill: =ThemeAccent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverFill: =ThemeAccentDark
+                        OnSelect: |-
+                          =UpdateContext({ctxErrorPanelDet: Blank()});
+                          If(
+                              IsBlank(drpCampoDet.Selected),
+                              UpdateContext({ctxErrorPanelDet: "Elegí un campo."}),
+                              Len(Trim(inpValorNuevoDet.Text)) = 0,
+                              UpdateContext({ctxErrorPanelDet: "Escribí el valor propuesto."}),
+                              IfError(
+                                  Patch(
+                                      'CH-Tbl-ClientDataChangeRequestLines',
+                                      Defaults('CH-Tbl-ClientDataChangeRequestLines'),
+                                      {
+                                          ChangeRequestID: gvarSolicitudSel,
+                                          'Field Definition': drpCampoDet.Selected,
+                                          OldValue: Left(lblValorActualDet.Text, 100),
+                                          NewValue: Left(Trim(inpValorNuevoDet.Text), 100),
+                                          ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Draft
+                                      }
+                                  );
+                                  ClearCollect(
+                                      colLineasDet,
+                                      Filter('CH-Tbl-ClientDataChangeRequestLines', ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest')
+                                  );
+                                  Reset(drpCampoDet);
+                                  Reset(inpValorNuevoDet);
+                                  UpdateContext({ctxPanelAgregarDet: false})
+                                  ,
+                                  UpdateContext({ctxErrorPanelDet: FirstError.Message})
+                              )
+                          )
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: ="Agregar"
+                        Width: =110
+                        X: =Parent.Width - 20 - Self.Width
+                        Y: =16

@@ -1,0 +1,224 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpAppHeader:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      Activo:
+        PropertyKind: Input
+        DisplayName: Activo
+        Description: A custom property
+        DataType: Text
+        Default: ="Clientes"
+      OnClientes:
+        PropertyKind: Event
+        DisplayName: OnClientes
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      OnSolicitudes:
+        PropertyKind: Event
+        DisplayName: OnSolicitudes
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      RolTexto:
+        PropertyKind: Input
+        DisplayName: RolTexto
+        Description: A custom property
+        DataType: Text
+        Default: =""
+      Subtitulo:
+        PropertyKind: Input
+        DisplayName: Subtitulo
+        Description: A custom property
+        DataType: Text
+        Default: ="Maestro de clientes"
+      Titulo:
+        PropertyKind: Input
+        DisplayName: Titulo
+        Description: A custom property
+        DataType: Text
+        Default: ="Administración de Clientes"
+    Children:
+      - shpFondoHdr:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =ThemeSurface
+            Height: =Parent.Height
+            Width: =Parent.Width
+      - shpLineaHdr:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Width: =Parent.Width
+            Y: =Parent.Height-1
+      - btnMarcaHdr:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =ThemeSurface
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =34
+            RadiusBottomLeft: =9
+            RadiusBottomRight: =9
+            RadiusTopLeft: =9
+            RadiusTopRight: =9
+            Size: =11
+            Text: ="C$"
+            Width: =34
+            X: =fxGutter
+            Y: =(Parent.Height-34)/2
+      - cntNavHdr:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface2
+            Height: =32
+            RadiusBottomLeft: =16
+            RadiusBottomRight: =16
+            RadiusTopLeft: =16
+            RadiusTopRight: =16
+            Width: =200
+            X: =lblTituloHdr.X + 230
+            Y: =(Parent.Height-32)/2
+          Children:
+            - btnNavClientesHdr:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =If(cmpAppHeader.Activo = "Clientes", ThemeAccent, ThemeInk2)
+                  Fill: =If(cmpAppHeader.Activo = "Clientes", ThemeSurface, Color.Transparent)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =If(cmpAppHeader.Activo = "Clientes", FontWeight.Semibold, FontWeight.Normal)
+                  Height: =26
+                  HoverFill: =If(cmpAppHeader.Activo = "Clientes", ThemeSurface, ThemeSurface2)
+                  OnSelect: =cmpAppHeader.OnClientes()
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =9
+                  Text: ="Clientes"
+                  Width: =(Parent.Width - 6)/2
+                  X: =3
+                  Y: =3
+            - btnNavSolicitudesHdr:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =If(cmpAppHeader.Activo = "Solicitudes", ThemeAccent, ThemeInk2)
+                  Fill: =If(cmpAppHeader.Activo = "Solicitudes", ThemeSurface, Color.Transparent)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =If(cmpAppHeader.Activo = "Solicitudes", FontWeight.Semibold, FontWeight.Normal)
+                  Height: =26
+                  HoverFill: =If(cmpAppHeader.Activo = "Solicitudes", ThemeSurface, ThemeSurface2)
+                  OnSelect: =cmpAppHeader.OnSolicitudes()
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =9
+                  Text: ="Solicitudes"
+                  Width: =(Parent.Width - 6)/2
+                  X: =btnNavClientesHdr.X + btnNavClientesHdr.Width
+                  Y: =3
+      - lblTituloHdr:
+          Control: Label@2.5.1
+          Properties:
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            Size: =10.5
+            Text: =cmpAppHeader.Titulo
+            Width: =220
+            X: =btnMarcaHdr.X + btnMarcaHdr.Width + 12
+            Y: =10
+      - lblSubHdr:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ThemeInk3
+            Font: =Font.'Open Sans'
+            Height: =16
+            Size: =8.25
+            Text: =cmpAppHeader.Subtitulo
+            Width: =220
+            X: =lblTituloHdr.X
+            Y: =lblTituloHdr.Y + 18
+      - cntUserHdr:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface2
+            Height: =32
+            RadiusBottomLeft: =16
+            RadiusBottomRight: =16
+            RadiusTopLeft: =16
+            RadiusTopRight: =16
+            Width: =pilRolHdr.X + pilRolHdr.Width + 4
+            X: =Parent.Width - fxGutter - Self.Width
+            Y: =(Parent.Height-32)/2
+          Children:
+            - btnAvatarHdr:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =ThemeAccent
+                  DisplayMode: =DisplayMode.View
+                  Fill: =ThemeAccentSoft
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Bold
+                  Height: =26
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =7.88
+                  Text: =UsuarioIniciales
+                  Width: =26
+                  X: =4
+                  Y: =3
+            - lblUsuarioHdr:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk2
+                  Font: =Font.'Open Sans'
+                  Height: =Parent.Height
+                  Size: =8.63
+                  Text: =UsuarioNombre
+                  Width: =Len(UsuarioNombre) * 5.6
+                  X: =btnAvatarHdr.X + btnAvatarHdr.Width + 8
+            - pilRolHdr:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =ThemeInfo
+                  DisplayMode: =DisplayMode.View
+                  Fill: =ThemeInfoSoft
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Bold
+                  Height: =18
+                  RadiusBottomLeft: =9
+                  RadiusBottomRight: =9
+                  RadiusTopLeft: =9
+                  RadiusTopRight: =9
+                  Size: =7.5
+                  Text: =cmpAppHeader.RolTexto
+                  Width: =Len(cmpAppHeader.RolTexto) * 5.2 + 16
+                  X: =lblUsuarioHdr.X + lblUsuarioHdr.Width + 8
+                  Y: =(Parent.Height-18)/2
