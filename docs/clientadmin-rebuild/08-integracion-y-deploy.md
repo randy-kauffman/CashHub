@@ -106,21 +106,29 @@ encabezado del script para el detalle completo de marcadores por tabla y las fas
 
 ## 5. Pendientes conocidos
 
-1. **Borrar los 3 datasources de muestra de la v1 en Studio**: `ComboBoxSample`,
-   `DropDownSample`, `CustomGallerySample` (confirmados en
-   `solutions/unpacked/apps/CanvasApps/src/sanic_chappclientadministration_fd97f/DataSources/`
-   — cero uso real, deuda identificada en `00-analisis-y-plan.md` §2.3/U7). No se
-   eliminan solos al empaquetar; hay que sacarlos a mano desde el panel Datos antes del
-   próximo `pac canvas pack` para que dejen de viajar en el `.msapp`.
+1. ~~Borrar los 3 datasources de muestra en Studio~~ — **RESUELTO COMO NO-ACCIÓN
+   (2026-08-25)**: `ComboBoxSample`/`DropDownSample`/`CustomGallerySample` NO son
+   basura de la v1 sino datos de plantilla que Studio auto-agrega con los controles
+   clásicos (galería/dropdown) — TODAS las apps v2 del proyecto los cargan
+   (verificado en digitización y reception). Removerlos por cirugía de fuente
+   arriesga el `.msapp` sin ganancia: Studio los re-agrega al insertar el próximo
+   control. Se aceptan como equipaje inerte del formato.
 2. **Los 4 flujos materializadores + `CH-Flow-RFCWatchdog` pueden ELIMINARSE de la
    solución en una limpieza futura.** Hoy quedan desactivados pero presentes en
    `CashHubCore`/`CashHubFlow` — no estorban mientras sigan OFF, pero no cumplen
    ninguna función y son candidatos directos a una poda de solución (sacarlos de
    `CashHubFlow`, re-exportar, confirmar que ningún otro componente los referencia).
-3. **Re-exportar `CashHubApps` y `CashHubCore` al repo.** El `solutions/unpacked/`
-   versionado todavía referencia metadata previa a este deploy (la app v1 y los 4
-   flujos activos) — el ambiente vivo ya está en `CashHubApps 1.33.0.0` con el backend
-   nuevo, pero el snapshot local no lo refleja hasta el próximo `pac solution export`.
+3. ~~Re-exportar `CashHubApps` al repo~~ — **RESUELTO (2026-08-25)**: fuente de la
+   app v2 sincronizado post-debugging (export fresco verificado idéntico) y
+   `solutions/unpacked/apps/Other/Solution.xml` actualizado a `1.33.0.0`. Queda
+   pendiente solo el re-export completo de `CashHubCore`/`CashHubFlow` (metadata de
+   flujos con statecode desactivado) para una limpieza futura.
+5. **GAP S2 — CERRADO (2026-08-25)**: `prvReadsanic_CHTblClientAccount` (Global)
+   agregado a `CH-SR-ClientAdminContributor` y `CH-SR-ClientAdminApprover` — en los
+   XML del repo (`solutions/unpacked/core/Roles/`) y aplicado en vivo vía
+   `AddPrivilegesRole` (verificado `privilegedepthmask = 8` en ambos roles). La tab
+   Cuentas de la ficha ya no depende de privilegios de plataforma. Solo lectura:
+   la escritura del maestro sigue siendo exclusiva de la Custom API como sistema.
 4. **QA funcional en vivo con usuarios reales** de los dos roles (Contributor y
    Approver) sobre la app v2 — el estrés valida volumen y guards, no reemplaza una
    pasada de UX con gente real tocando los 5 flujos de pantalla.
