@@ -1,3 +1,5 @@
+using CashHub.Validation.Security;
+
 namespace CashHub.Plugins
 {
     /// <summary>Nombres lógicos y valores de option sets del esquema CashHub.</summary>
@@ -84,7 +86,7 @@ namespace CashHub.Plugins
             /// app se trae 500 corridas y filtra en el cliente, y a partir de la 501
             /// deja de encontrar las nuevas SIN dar error.
             /// </summary>
-            public const string ReceivedEmailLookup = "sanic_ReceivedEmail";
+            public const string ReceivedEmailLookup = "sanic_receivedemail";
             public const string SourceType = "sanic_sourcetype";
 
             public const int ResultPass = 159460000;
@@ -141,8 +143,154 @@ namespace CashHub.Plugins
             public const string TargetTable = "sanic_targettable";
             public const string CreatedBy = "createdby";
 
+            /// <summary>Option set sanic_type (verificado contra el Entity.xml): Update/Deactivate/Create/Activate.</summary>
+            public const string Type = "sanic_type";
+
+            /// <summary>GUID en TEXTO del registro maestro objetivo (Create lo llena al aplicarse).</summary>
+            public const string TargetRecordId = "sanic_targetrecordid";
+
+            /// <summary>Lookup a sanic_chtblclient. Denormalizado en TODO RFC (aunque la tabla
+            /// objetivo sea Branch/Email/Account) para trazabilidad; en Create de cliente,
+            /// ResolveChangeRequestPlugin lo estampa con el cliente recien creado.</summary>
+            public const string RelatedClient = "sanic_relatedclient";
+
+            public const string SolvedBy = "sanic_solvedby";
+            public const string SolvedOn = "sanic_solvedon";
+            public const string ApplyNotes = "sanic_applynotes";
+            public const string ApplyOn = "sanic_applyon";
+
             /// <summary>Pre-image registrada con sanic_changestatus, sanic_targettable y createdby (solo Update).</summary>
             public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Linea de RFC: UN campo a cambiar (sanic_chtblclientdatachangerequestline).</summary>
+        internal static class ChangeRequestLine
+        {
+            public const string LogicalName = "sanic_chtblclientdatachangerequestline";
+            public const string Id = "sanic_chtblclientdatachangerequestlineid";
+            public const string ChangeRequestLookup = "sanic_changerequestid";
+            public const string FieldDefinitionLookup = "sanic_fielddefinition";
+            public const string OldValue = "sanic_oldvalue";
+            public const string NewValue = "sanic_newvalue";
+            public const string LineStatus = "sanic_changestatus";
+            public const string CreatedBy = "createdby";
+
+            /// <summary>PreImage del guard (Update/Delete): sanic_changerequestid + sanic_fielddefinition.</summary>
+            public const string PreImageName = "PreImage";
+        }
+
+        /// <summary>Catalogo de campos editables por RFC (sanic_chtblclienttablelogicalfieldname).</summary>
+        internal static class FieldDefinition
+        {
+            public const string LogicalName = "sanic_chtblclienttablelogicalfieldname";
+            public const string Id = "sanic_chtblclienttablelogicalfieldnameid";
+            public const string Table = "sanic_table";
+            public const string LogicalNameField = "sanic_logicalname";
+            public const string DataType = "sanic_datatype";
+            public const string OptionSetMap = "sanic_optionsetmap";
+            public const string LookupTargetTable = "sanic_lookuptargettable";
+            public const string IsAllowed = "sanic_isallowed";
+        }
+
+        /// <summary>Bitacora de cambios de datos de cliente (sanic_chtblclientdatachangesaudittrail).</summary>
+        internal static class ChangeRequestAuditTrail
+        {
+            public const string LogicalName = "sanic_chtblclientdatachangesaudittrail";
+            public const string Message = "sanic_message";
+
+            /// <summary>Typo REAL del esquema publicado (falta la 'r' de "Operation"). NO corregir.</summary>
+            public const string OperationType = "sanic_opeationtype";
+
+            public const string RelatedClient = "sanic_relatedclient";
+            public const string RelatedCrl = "sanic_relatedcrl";
+            public const string RelatedRfc = "sanic_relatedrfc";
+
+            /// <summary>bit (Two Options): true=Success, false=Fail. NO es OptionSetValue.</summary>
+            public const string Result = "sanic_result";
+
+            // Option set sanic_opeationtype (verificado contra el Entity.xml): OJO, el
+            // ORDEN NO coincide con ChangeRequest.Type (alli Update=0/Deactivate=1/
+            // Create=2/Activate=3) salvo en Activate. ResolveChangeRequestPlugin mapea
+            // explicitamente (MapOperationType) — castear el valor crudo del RFC
+            // escribiria la operacion equivocada en la bitacora.
+            public const int OperationCreate = 159460000;
+            public const int OperationUpdate = 159460001;
+            public const int OperationDeactivate = 159460002;
+            public const int OperationActivate = 159460003;
+
+            /// <summary>
+            /// Traduce el sanic_type crudo del RFC (ChangeRequestResolution.Type*) al valor
+            /// de sanic_opeationtype (Operation*) de la bitacora. Los ordenes NO coinciden
+            /// (ver comentario arriba) — castear el valor crudo escribiria la operacion
+            /// equivocada.
+            /// </summary>
+            public static int MapOperationType(int type)
+            {
+                switch (type)
+                {
+                    case ChangeRequestResolution.TypeCreate:
+                        return OperationCreate;
+                    case ChangeRequestResolution.TypeUpdate:
+                        return OperationUpdate;
+                    case ChangeRequestResolution.TypeDeactivate:
+                        return OperationDeactivate;
+                    case ChangeRequestResolution.TypeActivate:
+                        return OperationActivate;
+                    default:
+                        throw new System.ArgumentOutOfRangeException(
+                            nameof(type), type, "sanic_type desconocido; no se puede mapear a sanic_opeationtype.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// sanic_recordstatus: columna GEMELA (mismo nombre, mismo option set global
+        /// sanic_chchrecordstatus) en las 4 tablas maestras de cliente (Client/
+        /// ClientBranch/ClientEmail/ClientAccount). Vive aca — no en cada tabla — porque
+        /// ResolveChangeRequestPlugin resuelve la tabla objetivo DINAMICAMENTE desde el
+        /// RFC (sanic_targettable), sin switch de 4 tablas hardcodeado (mata L6).
+        /// </summary>
+        internal static class MasterRecordStatus
+        {
+            public const string FieldName = "sanic_recordstatus";
+
+            public const int Active = 159460000;
+            public const int Inactive = 159460001;
+            public const int PendingApproval = 159460002;
+            public const int PendingDeactivation = 159460003;
+        }
+
+        /// <summary>Nombre logico de la tabla Client — el UNICO caso donde ChangeRequest.RelatedClient se re-estampa (Create).</summary>
+        internal static class Client
+        {
+            public const string LogicalName = "sanic_chtblclient";
+        }
+
+        /// <summary>Custom API sanic_CHResolveChangeRequest: reemplaza los 4 flujos materializadores de RFC.</summary>
+        internal static class ResolveChangeRequestApi
+        {
+            public const string MessageName = "sanic_CHResolveChangeRequest";
+
+            public const string InChangeRequestId = "ChangeRequestId";
+            public const string InDecision = "Decision";
+            public const string InComment = "Comment";
+
+            public const string DecisionApprove = "Approve";
+            public const string DecisionReject = "Reject";
+
+            /// <summary>
+            /// "Failed" es un valor DOCUMENTADO del contrato, no una salida que este plugin
+            /// pueda devolver: cualquier fallo de negocio o tecnico lanza
+            /// InvalidPluginExecutionException y aborta TODA la transaccion (mata L4 — un
+            /// "Outcome: Failed" con un Update parcial ya aplicado seria exactamente el
+            /// mismo exito-disfrazado que el flujo viejo). Se deja documentado para que el
+            /// consumidor (la app) sepa que un fault de la Custom API equivale a "Failed".
+            /// </summary>
+            public const string OutOutcome = "Outcome";
+            public const string OutMessage = "Message";
+
+            public const string OutcomeApplied = "Applied";
+            public const string OutcomeRejected = "Rejected";
         }
 
         /// <summary>Permiso de cambio de datos de cliente: mapea tabla objetivo -> grupo AAD por tipo.</summary>
