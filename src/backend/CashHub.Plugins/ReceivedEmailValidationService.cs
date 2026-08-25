@@ -63,7 +63,7 @@ namespace CashHub.Plugins
             }
 
             _tracing.Trace("Validate[{0}]: etapa 6 — persistiendo run y hallazgos.", receivedEmailId);
-            var runId = PersistRun(receivedEmailId, started, result, ruleIdsByKey);
+            var runId = PersistRun(receivedEmailId, trackingId, started, result, ruleIdsByKey);
 
             Guid? declarationId = null;
             if (result.Passed && context.ResolvedClientId != null && context.Workbook != null)
@@ -71,7 +71,7 @@ namespace CashHub.Plugins
                 _tracing.Trace("Validate[{0}]: etapa 7 — validación en verde, materializando declaración.",
                     receivedEmailId);
                 declarationId = new DeclarationMaterializer(_service, _tracing)
-                    .Materialize(receivedEmailId, context.Workbook, context.ResolvedClientId.Value);
+                    .Materialize(receivedEmailId, trackingId, context.Workbook, context.ResolvedClientId.Value);
             }
 
             _tracing.Trace("Validate[{0}]: etapa 8 — clasificando al remitente.", receivedEmailId);
@@ -235,12 +235,14 @@ namespace CashHub.Plugins
             return dep != null && keyById.TryGetValue(dep.Id, out var key) ? key : null;
         }
 
-        private Guid PersistRun(Guid emailId, DateTime started, RunResult result,
+        private Guid PersistRun(Guid emailId, string trackingId, DateTime started, RunResult result,
             Dictionary<string, Guid> ruleIdsByKey)
         {
             var run = new Entity(Schema.Run.LogicalName)
             {
-                [Schema.Run.Name] = $"Validacion de correo {emailId:D}",
+                // El nombre usa el numero de gestion (Email-N), no el GUID: es lo que
+                // el operador ve en apps y vistas.
+                [Schema.Run.Name] = $"Validacion de {trackingId}",
                 [Schema.Run.Start] = started,
                 [Schema.Run.End] = DateTime.UtcNow,
                 [Schema.Run.Result] = new OptionSetValue(result.Passed ? Schema.Run.ResultPass : Schema.Run.ResultFail),

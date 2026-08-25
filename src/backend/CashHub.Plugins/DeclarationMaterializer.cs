@@ -93,7 +93,7 @@ namespace CashHub.Plugins
             _tracing = tracing;
         }
 
-        public Guid Materialize(Guid emailId, WorkbookModel workbook, Guid clientId)
+        public Guid Materialize(Guid emailId, string trackingId, WorkbookModel workbook, Guid clientId)
         {
             var deposits = workbook.Table(DepositsTable)
                 ?? throw new InvalidPluginExecutionException(
@@ -107,7 +107,9 @@ namespace CashHub.Plugins
 
             var declarationId = _service.Create(new Entity(Decl.Entity)
             {
-                [Decl.Name] = $"Declaracion {DateTime.UtcNow:yyyy-MM-dd HH:mm} correo {emailId:D}",
+                // Numero de gestion (Email-N) en el nombre, no el GUID: es lo que el
+                // operador ve en apps y vistas.
+                [Decl.Name] = $"Declaracion {DateTime.UtcNow:yyyy-MM-dd HH:mm} {trackingId}",
                 [Decl.Client] = new EntityReference("sanic_chtblclient", clientId),
                 [Decl.SourceEntity] = Schema.ReceivedEmail.LogicalName,
                 [Decl.SourceRecordId] = emailId.ToString("D"),
@@ -135,13 +137,16 @@ namespace CashHub.Plugins
                         StringComparison.OrdinalIgnoreCase))
                     .Sum(r => { r[Deposits.Total]!.TryDecimal(out var t); return t; });
 
-                // sanic_totaldeposits NO se escribe: es un rollup que Dataverse calcula solo
-                // (las escrituras a rollups se ignoran en silencio).
+                // sanic_totaldeposits era un rollup SIN definicion de agregacion
+                // (FormulaDefinition null: nunca calculo, siempre 0). Se reemplazo por
+                // una columna entera simple que escribe este materializador — mismo
+                // patron que el resto de los totales materializados del proyecto.
                 var bagId = _service.Create(new Entity(Bag.Entity)
                 {
                     [Bag.Name] = group.Key,
                     [Bag.Number] = group.Key,
                     [Bag.Declaration] = new EntityReference(Decl.Entity, declarationId),
+                    [Bag.TotalDeposits] = group.Count(),
                     [Bag.TotalNio] = Total("NIO"),
                     [Bag.TotalUsd] = Total("USD"),
                     [Bag.TotalEur] = Total("EUR")
