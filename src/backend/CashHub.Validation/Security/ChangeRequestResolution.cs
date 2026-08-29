@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace CashHub.Validation.Security
 {
@@ -112,5 +113,130 @@ namespace CashHub.Validation.Security
         /// dependen de lineas.
         /// </summary>
         public static bool RequiresLines(int type) => type == TypeUpdate || type == TypeCreate;
+
+        /// <summary>
+        /// Campos que NINGUN registro de la tabla puede tener vacios, ni al nacer ni despues.
+        ///
+        /// sanic_taxid es el TERCER identificador de cliente (junto a sanic_cifbco y
+        /// sanic_cifcom) y es UNICO — tiene la alternate key sanic_KeyTaxId. En Dataverse
+        /// quedo deliberadamente con RequiredLevel=None: ApplicationRequired no se enforcea
+        /// a nivel SDK (o sea, no frenaria a este mismo plugin, que es por donde se crean y
+        /// editan los clientes) y ademas volveria no-guardables a los ~4999 clientes
+        /// historicos desde los formularios model-driven. La obligatoriedad vive aca, que
+        /// es el unico punto por el que pasan TODAS las altas y ediciones.
+        /// </summary>
+        private static readonly Dictionary<string, string[]> RequiredFieldsByTable =
+            new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["sanic_chtblclient"] = new[] { "sanic_taxid" },
+            };
+
+        /// <summary>
+        /// Columnas obligatorias de <paramref name="targetTable"/>. El plugin las usa para
+        /// saber que traer del maestro antes de evaluar un Update. Vacio si la tabla no
+        /// tiene requisitos.
+        /// </summary>
+        public static IReadOnlyList<string> RequiredFieldsFor(string? targetTable)
+        {
+            if (string.IsNullOrWhiteSpace(targetTable)
+                || !RequiredFieldsByTable.TryGetValue(targetTable!, out var required))
+            {
+                return Array.Empty<string>();
+            }
+
+            return required;
+        }
+
+        /// <summary>
+        /// Devuelve los campos obligatorios que quedarian vacios DESPUES de aplicar el RFC.
+        /// Vacio si el tipo no escribe campos, si la tabla no tiene requisitos, o si estan
+        /// todos cubiertos.
+        ///
+        /// La regla se evalua sobre el ESTADO FINAL del maestro, no sobre el contenido del
+        /// RFC:
+        /// <code>
+        /// satisfecho = si el RFC trae linea del campo -> el valor no es blanco
+        ///              si no                          -> Update y el maestro YA lo tiene
+        /// </code>
+        /// Editar un cliente que ya tiene taxid no obliga a repetirlo (el panel de edicion
+        /// filtra los valores que no cambiaron: esa linea jamas se crearia). Editar uno de
+        /// los historicos sin taxid EXIGE completarlo en la misma solicitud — asi el dato
+        /// converge sin dejar a nadie sin poder operar.
+        ///
+        /// Una linea explicita en blanco NUNCA satisface, tenga o no el maestro el valor:
+        /// pisaria con vacio un dato bueno.
+        ///
+        /// Activate/Deactivate quedan fuera: solo mueven sanic_recordstatus, no escriben
+        /// campos. Bloquearlos dejaria basura historica imposible de desactivar.
+        /// </summary>
+        /// <param name="type">sanic_type de la cabecera.</param>
+        /// <param name="targetTable">sanic_targettable de la cabecera.</param>
+        /// <param name="lineValues">Pares (logical name, sanic_newvalue) de las lineas del RFC.</param>
+        /// <param name="currentValues">Pares (logical name, valor actual) del maestro. Solo se consulta en Update.</param>
+        public static IReadOnlyList<string> MissingRequiredFields(
+            int type,
+            string? targetTable,
+            IEnumerable<KeyValuePair<string, string?>>? lineValues,
+            IEnumerable<KeyValuePair<string, string?>>? currentValues)
+        {
+            if (type != TypeCreate && type != TypeUpdate)
+            {
+                return Array.Empty<string>();
+            }
+
+            var required = RequiredFieldsFor(targetTable);
+            if (required.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            // Lineas del RFC: se distingue "no vino" de "vino en blanco".
+            var linePresent = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var lineFilled = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (lineValues != null)
+            {
+                foreach (var line in lineValues)
+                {
+                    if (string.IsNullOrWhiteSpace(line.Key))
+                    {
+                        continue;
+                    }
+
+                    linePresent.Add(line.Key);
+                    if (!string.IsNullOrWhiteSpace(line.Value))
+                    {
+                        lineFilled.Add(line.Key);
+                    }
+                }
+            }
+
+            // Valor ya presente en el maestro (solo cuenta en Update: en un alta no hay).
+            var masterFilled = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (type == TypeUpdate && currentValues != null)
+            {
+                foreach (var current in currentValues)
+                {
+                    if (!string.IsNullOrWhiteSpace(current.Key) && !string.IsNullOrWhiteSpace(current.Value))
+                    {
+                        masterFilled.Add(current.Key);
+                    }
+                }
+            }
+
+            var missing = new List<string>();
+            foreach (var field in required)
+            {
+                var satisfied = linePresent.Contains(field)
+                    ? lineFilled.Contains(field)
+                    : masterFilled.Contains(field);
+
+                if (!satisfied)
+                {
+                    missing.Add(field);
+                }
+            }
+
+            return missing;
+        }
     }
 }

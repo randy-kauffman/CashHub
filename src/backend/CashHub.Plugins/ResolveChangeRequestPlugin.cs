@@ -288,6 +288,8 @@ namespace CashHub.Plugins
 
             var entity = new Entity(targetTable, targetId);
             ApplyLineValues(system, tracing, targetTable, lines, entity);
+            EnsureRequiredFields(
+                system, tracing, ChangeRequestResolution.TypeUpdate, targetTable, targetId, entity);
 
             // UN SOLO Update con TODOS los campos convertidos: atomicidad real (mata L1 —
             // Applyclientdatachanges hacia un UpdateOnlyRecord POR CAMPO, sin rollback si
@@ -302,12 +304,81 @@ namespace CashHub.Plugins
         {
             var entity = new Entity(targetTable);
             ApplyLineValues(system, tracing, targetTable, lines, entity);
+
+            EnsureRequiredFields(
+                system, tracing, ChangeRequestResolution.TypeCreate, targetTable, null, entity);
+
             entity[Schema.MasterRecordStatus.FieldName] = new OptionSetValue(Schema.MasterRecordStatus.Active);
 
             var newId = system.Create(entity);
             tracing.Trace("ResolveChangeRequest: 5. Create aplicado sobre {0} -> {1} ({2} campos + recordstatus Active).",
                 targetTable, newId, entity.Attributes.Count);
             return newId;
+        }
+
+        /// <summary>
+        /// Bloquea la materializacion si algun campo obligatorio de la tabla quedaria vacio
+        /// DESPUES de aplicar el RFC. Se evalua sobre <paramref name="entity"/>, que ya trae
+        /// los pares logical name -> valor convertido por <see cref="ApplyLineValues"/>: no
+        /// hace falta re-resolver el catalogo.
+        ///
+        /// En Update se consulta el maestro para no exigir que el RFC repita un valor que el
+        /// registro ya tiene (el panel de edicion filtra los valores que no cambiaron, asi
+        /// que esa linea jamas se crearia). El unico Retrieve extra ocurre cuando la tabla
+        /// TIENE requisitos — para sucursales, correos y cuentas no se paga nada.
+        /// </summary>
+        private static void EnsureRequiredFields(
+            IOrganizationService system, ITracingService tracing,
+            int type, string targetTable, Guid? targetId, Entity entity)
+        {
+            var required = ChangeRequestResolution.RequiredFieldsFor(targetTable);
+            if (required.Count == 0)
+            {
+                return;
+            }
+
+            var provided = new List<KeyValuePair<string, string?>>(entity.Attributes.Count);
+            foreach (var attr in entity.Attributes)
+            {
+                provided.Add(new KeyValuePair<string, string?>(attr.Key, attr.Value?.ToString()));
+            }
+
+            List<KeyValuePair<string, string?>>? current = null;
+            if (type == ChangeRequestResolution.TypeUpdate && targetId.HasValue)
+            {
+                var columns = new string[required.Count];
+                for (var i = 0; i < required.Count; i++)
+                {
+                    columns[i] = required[i];
+                }
+
+                var master = system.Retrieve(targetTable, targetId.Value, new ColumnSet(columns));
+                current = new List<KeyValuePair<string, string?>>(required.Count);
+                foreach (var field in required)
+                {
+                    var raw = master.Contains(field) ? master[field] : null;
+                    current.Add(new KeyValuePair<string, string?>(field, raw?.ToString()));
+                }
+            }
+
+            var missing = ChangeRequestResolution.MissingRequiredFields(type, targetTable, provided, current);
+            if (missing.Count == 0)
+            {
+                return;
+            }
+
+            var faltantes = string.Join(", ", missing);
+            var operacion = type == ChangeRequestResolution.TypeCreate ? "alta" : "edicion";
+            tracing.Trace("ResolveChangeRequest: 5. {0} de {1} RECHAZADA — campos obligatorios vacios: {2}.",
+                operacion, targetTable, faltantes);
+
+            throw new InvalidPluginExecutionException(
+                type == ChangeRequestResolution.TypeCreate
+                    ? $"El alta de '{targetTable}' exige {faltantes}, pero la solicitud no trae ese dato " +
+                      "(o viene vacio). Agregue la linea correspondiente al RFC y vuelva a enviarlo."
+                    : $"El registro de '{targetTable}' no tiene {faltantes} y la solicitud tampoco lo completa. " +
+                      "Ningun cliente puede quedar sin ese dato: agregue la linea correspondiente al RFC " +
+                      "(junto con el resto de los cambios) y vuelva a enviarlo.");
         }
 
         private static void ApplyRecordStatusChange(

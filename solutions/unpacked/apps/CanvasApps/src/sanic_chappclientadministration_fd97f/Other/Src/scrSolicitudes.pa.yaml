@@ -12,15 +12,15 @@ Screens:
       Fill: =ThemeBg
       OnVisible: |-
         =// ============ 1) Estado a default (gotcha 8.3: nada arrastra la visita anterior) ============
-        Reset(inpBusqSol);
-        Reset(drpTablaSol);
+        //Reset(inpBusqSol);
+        //Reset(drpTablaSol);
         UpdateContext({
             ctxFilasPag: 25,
-            ctxOrdenDesc: true,
-            ctxPagina: 1,
-            ctxBusqueda: "",
-            ctxBusqClienteGuid: GUID("00000000-0000-0000-0000-000000000000"),
-            ctxTabla: "",
+            ctxOrdenDesc: Coalesce(ctxOrdenDesc,true),
+            ctxPagina: Coalesce(ctxPagina,1),
+            ctxBusqueda: Trim(Coalesce(ctxBusqueda," ")),
+            ctxBusqClienteGuid: Coalesce(ctxBusqClienteGuid,GUID("00000000-0000-0000-0000-000000000000")),
+            ctxTabla: Trim(Coalesce(ctxTabla," ")),
             // ¿De qué tablas objetivo soy Approver? (colMisPermisos viene de App.OnStart; los
             // literales son el LOGICAL NAME de la entidad - D6 de 01 RESUELTA, ver 02 DC3 / 03
             // hallazgo crítico #3)
@@ -32,7 +32,7 @@ Screens:
         // Segmento default: "Para mi decisión" si soy Approver de algo; si no, "Mías".
         // (Va en un UpdateContext SEPARADO: un UpdateContext no puede leer claves que setea él mismo.)
         UpdateContext({
-            ctxSegmento: If(ctxApruebaCliente || ctxApruebaSucursal || ctxApruebaCorreo || ctxApruebaCuenta, "mi", "mias")
+            ctxSegmento: Coalesce(ctxSegmento,If(ctxApruebaCliente || ctxApruebaSucursal || ctxApruebaCorreo || ctxApruebaCuenta, "mi", "mias"))
         });
         // ============ 2) BLOQUE-COMPLETO (cola + contadores + grilla) ============
         // --- 2a. Cola "para mi decisión" - SIEMPRE se materializa (alimenta KPI 1, el contador del
@@ -102,7 +102,7 @@ Screens:
                 )
             )
         );
-        UpdateContext({ctxPagina: 1})
+        UpdateContext({ctxPagina: Coalesce(ctxPagina,1)})
     Children:
       - cmpAppHeaderSol:
           Control: CanvasComponent
@@ -1068,7 +1068,7 @@ Screens:
                               FontWeight: =FontWeight.Bold
                               Height: =Parent.Height
                               Size: =9.38
-                              Text: =CountRows(colSolicitudesSol) & " solicitudes · página " & ctxPagina & " de " & Max(1, RoundUp(CountRows(colSolicitudesSol) / ctxFilasPag, 0))
+                              Text: =CountRows(colSolicitudesSol) & " solicitudes · página " & ctxPagina & " de " & Max(1, RoundUp(CountRows(colSolicitudesSol) / Coalesce(ctxFilasPag, 25), 0))
                               Width: =Parent.Width * 0.5
                               X: =16
                         - btnPagPrevSol:
@@ -1105,7 +1105,7 @@ Screens:
                               DisabledBorderColor: =Color.Transparent
                               DisabledColor: =ThemeInk3
                               DisabledFill: =ThemeLineSoft
-                              DisplayMode: =If(ctxPagina < Max(1, RoundUp(CountRows(colSolicitudesSol) / ctxFilasPag, 0)), DisplayMode.Edit, DisplayMode.Disabled)
+                              DisplayMode: =If(ctxPagina < Max(1, RoundUp(CountRows(colSolicitudesSol) / Coalesce(ctxFilasPag, 25), 0)), DisplayMode.Edit, DisplayMode.Disabled)
                               Fill: =ThemeSurface
                               Font: =Font.'Open Sans'
                               Height: =28

@@ -125,6 +125,7 @@ Screens:
                         - lblNombreClienteFic:
                             Control: Label@2.5.1
                             Properties:
+                              AutoHeight: =true
                               BorderColor: =ThemeLine
                               Font: =Font.'Open Sans'
                               FontWeight: =FontWeight.Bold
@@ -132,7 +133,6 @@ Screens:
                               Size: =10.88
                               Text: =gvarClienteSel.Name
                               Width: =Parent.Width - 28
-                              Wrap: =false
                               X: =14
                               Y: =cntTarjetaClienteHeadFic.Y + cntTarjetaClienteHeadFic.Height + 12
                         - lblClienteDesdeFic:
@@ -208,7 +208,7 @@ Screens:
                               Text: ="Sucursales"
                               Width: =90
                               X: =14
-                              Y: =lblKvCifComLabFic.Y + lblKvCifComLabFic.Height + 5
+                              Y: =lblKvTaxIdLabFic.Y + lblKvTaxIdLabFic.Height + 5
                         - lblKvSucursalesValFic:
                             Control: Label@2.5.1
                             Properties:
@@ -272,6 +272,31 @@ Screens:
                               Width: =Parent.Width - 28 - Self.X
                               X: =lblKvCuentasLabFic.X + lblKvCuentasLabFic.Width
                               Y: =lblKvCuentasLabFic.Y
+                        - lblKvTaxIdLabFic:
+                            Control: Label@2.5.1
+                            Properties:
+                              BorderColor: =ThemeLine
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              Height: =16
+                              Size: =9
+                              Text: ="Tax ID"
+                              Width: =90
+                              X: =14
+                              Y: =lblKvCifComLabFic.Y + lblKvCifComLabFic.Height + 5
+                        - lblKvTaxIdValFic:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              BorderColor: =ThemeLine
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =16
+                              Size: =9
+                              Text: =If(IsBlank(gvarClienteSel.TaxId), "—", gvarClienteSel.TaxId)
+                              Width: =Parent.Width - 28 - Self.X
+                              X: =lblKvTaxIdLabFic.X + lblKvTaxIdLabFic.Width
+                              Y: =lblKvTaxIdLabFic.Y
                   - cntAccionesClienteFic:
                       Control: GroupContainer@1.5.0
                       Variant: ManualLayout
@@ -335,6 +360,7 @@ Screens:
                                 Reset(inpPanelCampoAFic);
                                 Reset(inpPanelCampoBFic);
                                 Reset(inpPanelCampoCFic);
+                                Reset(inpPanelCampoDFic);
                                 Reset(inpMotivoPanelFic);
                                 Clear(colCambiosPanelFic)
                               PressedBorderColor: =ThemeAccent
@@ -684,6 +710,7 @@ Screens:
                                 Reset(inpPanelCampoAFic);
                                 Reset(inpPanelCampoBFic);
                                 Reset(inpPanelCampoCFic);
+                                Reset(inpPanelCampoDFic);
                                 Reset(inpMotivoPanelFic);
                                 Clear(colCambiosPanelFic)
                               PressedBorderColor: =ThemeAccent
@@ -763,6 +790,7 @@ Screens:
                                     Client.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'
                                     && (IsBlank(inpBuscarTabFic.Text) || StartsWith(Name, inpBuscarTabFic.Text))
                                 )
+                              OnSelect: "=If(\n    !IsBlank(LookUp(colMisPermisos, Name = \"sanic_chtblclientbranch\" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))\n    && ThisItem.RecordStatus = 'CH-Ch-RecordStatus'.Active\n    && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = \"sanic_chtblclientbranch\" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientBranch'))),\n    \n        UpdateContext(\n            {\n                varPanelModoFic: \"sucursal\",\n                varPanelAccionFic: \"Editar\",\n                varPanelTargetIdFic: ThisItem.'CH-Tbl-ClientBranch',\n                varPanelAbiertoFic: true\n            }\n        );\n        Reset(inpPanelCampoAFic);\n        Reset(inpMotivoPanelFic);\n        Clear(colCambiosPanelFic)\n    \n)"
                               TemplateSize: =fxRowH
                               Width: =Parent.Width
                               Y: =shpHSucLineaFic.Y + shpHSucLineaFic.Height
@@ -974,6 +1002,7 @@ Screens:
                                     Client.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client'
                                     && (IsBlank(inpBuscarTabFic.Text) || StartsWith('Email Address', inpBuscarTabFic.Text))
                                 )
+                              OnSelect: "=If(\n    !IsBlank(LookUp(colMisPermisos, Name = \"sanic_chtblclientemail\" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))\n    && ThisItem.RecordStatus = 'CH-Ch-RecordStatus'.Active\n    && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = \"sanic_chtblclientemail\" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientEmail'))),\n    \n        UpdateContext(\n            {\n                varPanelModoFic: \"correo\",\n                varPanelAccionFic: \"Editar\",\n                varPanelTargetIdFic: ThisItem.'CH-Tbl-ClientEmail',\n                varPanelAbiertoFic: true\n            }\n        );\n        Reset(inpPanelCampoAFic);\n        Reset(inpMotivoPanelFic);\n        Clear(colCambiosPanelFic)\n    \n)"
                               TemplateSize: =fxRowH
                               Width: =Parent.Width
                               Y: =shpHCorLineaFic.Y + shpHCorLineaFic.Height
@@ -1021,7 +1050,7 @@ Screens:
                                     Height: =Parent.TemplateHeight
                                     OnSelect: =Select(Parent)
                                     Size: =9
-                                    Text: =ThisItem.'Email Address'
+                                    Text: =ThisItem.Name
                                     Width: =lblHCorCorreoFic.Width - 16
                                     X: =16
                               - lblCorNotifFic:
@@ -1190,6 +1219,7 @@ Screens:
                             Properties:
                               Height: =Parent.Height - Self.Y
                               Items: =Filter('CH-Tbl-ClientAccounts', Client.'CH-Tbl-Client' = gvarClienteSel.'CH-Tbl-Client')
+                              OnSelect: "=If(\n    !IsBlank(LookUp(colMisPermisos, Name = \"sanic_chtblclientaccount\" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))\n    && ThisItem.RecordStatus = 'CH-Ch-RecordStatus'.Active\n    && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = \"sanic_chtblclientaccount\" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientAccount'))),\n    \n        UpdateContext(\n            {\n                varPanelModoFic: \"cuenta\",\n                varPanelAccionFic: \"Editar\",\n                varPanelTargetIdFic: ThisItem.'CH-Tbl-ClientAccount',\n                varPanelAbiertoFic: true\n            }\n        );\n        Reset(inpPanelCampoAFic);\n        Reset(inpMotivoPanelFic);\n        Clear(colCambiosPanelFic)\n    \n)"
                               TemplateSize: =fxRowH
                               Width: =Parent.Width
                               Y: =shpHCtaLineaFic.Y + shpHCtaLineaFic.Height
@@ -1209,7 +1239,7 @@ Screens:
                                     HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
                                     HoverColor: =Self.Color
                                     HoverFill: =ThemeSurface2
-                                    OnSelect: "=If(\n    !IsBlank(LookUp(colMisPermisos, Name = \"sanic_chtblclientaccount\" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))\n    && ThisItem.'CH-Ch-RecordStatus' = 'CH-Ch-RecordStatus'.Active\n    && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = \"sanic_chtblclientaccount\" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientAccount'))),\n    \n        UpdateContext(\n            {\n                varPanelModoFic: \"cuenta\",\n                varPanelAccionFic: \"Editar\",\n                varPanelTargetIdFic: ThisItem.'CH-Tbl-ClientAccount',\n                varPanelAbiertoFic: true\n            }\n        );\n        Reset(inpPanelCampoAFic);\n        Reset(inpMotivoPanelFic);\n        Clear(colCambiosPanelFic)\n    \n)"
+                                    OnSelect: "=If(\n    !IsBlank(LookUp(colMisPermisos, Name = \"sanic_chtblclientaccount\" && Type = 'Type (CH-Tbl-ClientDataChangePermissions)'.Contributor))\n    && ThisItem.RecordStatus = 'CH-Ch-RecordStatus'.Active\n    && IsBlank(LookUp(colRfcEnCursoFic, TargetTable = \"sanic_chtblclientaccount\" && TargetRecordID = Text(ThisItem.'CH-Tbl-ClientAccount'))),\n    \n        UpdateContext(\n            {\n                varPanelModoFic: \"cuenta\",\n                varPanelAccionFic: \"Editar\",\n                varPanelTargetIdFic: ThisItem.'CH-Tbl-ClientAccount',\n                varPanelAbiertoFic: true\n            }\n        );\n        Reset(inpPanelCampoAFic);\n        Reset(inpMotivoPanelFic);\n        Clear(colCambiosPanelFic)\n    \n)"
                                     PressedBorderColor: =Self.Fill
                                     PressedColor: =Self.Fill
                                     PressedFill: =ThemeAccentSoft
@@ -1290,7 +1320,7 @@ Screens:
                                   Properties:
                                     BorderColor: =ColorFade(Self.Fill, -15%)
                                     BorderThickness: =0
-                                    Color: =Switch(ThisItem.'CH-Ch-RecordStatus', 'CH-Ch-RecordStatus'.Active,ThemeOk, 'CH-Ch-RecordStatus'.Inactive,ThemeInk3, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarn, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarn, ThemeInk3)
+                                    Color: =Switch(ThisItem.RecordStatus, 'CH-Ch-RecordStatus'.Active,ThemeOk, 'CH-Ch-RecordStatus'.Inactive,ThemeInk3, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarn, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarn, ThemeInk3)
                                     DisabledBorderColor: =Color.Transparent
                                     DisabledColor: =ThemeInk3
                                     DisabledFill: =ThemeLineSoft
@@ -1301,7 +1331,7 @@ Screens:
                                           DisplayMode.Edit,
                                           DisplayMode.View
                                       )
-                                    Fill: =Switch(ThisItem.'CH-Ch-RecordStatus', 'CH-Ch-RecordStatus'.Active,ThemeOkSoft, 'CH-Ch-RecordStatus'.Inactive,ThemeLineSoft, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarnSoft, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarnSoft, ThemeLineSoft)
+                                    Fill: =Switch(ThisItem.RecordStatus, 'CH-Ch-RecordStatus'.Active,ThemeOkSoft, 'CH-Ch-RecordStatus'.Inactive,ThemeLineSoft, 'CH-Ch-RecordStatus'.PendingApproval,ThemeWarnSoft, 'CH-Ch-RecordStatus'.PendingDeactivation,ThemeWarnSoft, ThemeLineSoft)
                                     Font: =Font.'Open Sans'
                                     Height: =20
                                     HoverBorderColor: =Self.BorderColor
@@ -1312,7 +1342,7 @@ Screens:
                                           Self.DisplayMode = DisplayMode.Edit,
                                           UpdateContext(
                                               {
-                                                  varDlgAccionFic: If(ThisItem.'CH-Ch-RecordStatus' = 'CH-Ch-RecordStatus'.Inactive, "Activar", "Desactivar"),
+                                                  varDlgAccionFic: If(ThisItem.RecordStatus = 'CH-Ch-RecordStatus'.Inactive, "Activar", "Desactivar"),
                                                   varDlgTargetTableFic: "sanic_chtblclientaccount",
                                                   varDlgTargetTableLabelFic: "Cuentas",
                                                   varDlgTargetTablePluralFic: "sanic_chtblclientaccounts",
@@ -1329,7 +1359,7 @@ Screens:
                                     RadiusTopLeft: =12
                                     RadiusTopRight: =12
                                     Size: =7.88
-                                    Text: =Switch(ThisItem.'CH-Ch-RecordStatus', 'CH-Ch-RecordStatus'.Active,"Activa", 'CH-Ch-RecordStatus'.Inactive,"Inactiva", 'CH-Ch-RecordStatus'.PendingApproval,"Pend. aprobación", 'CH-Ch-RecordStatus'.PendingDeactivation,"Pend. desactivación", "—")
+                                    Text: =Switch(ThisItem.RecordStatus, 'CH-Ch-RecordStatus'.Active,"Activa", 'CH-Ch-RecordStatus'.Inactive,"Inactiva", 'CH-Ch-RecordStatus'.PendingApproval,"Pend. aprobación", 'CH-Ch-RecordStatus'.PendingDeactivation,"Pend. desactivación", "—")
                                     Width: =100
                                     X: =lblHCtaEstadoFic.X
                                     Y: =(Parent.TemplateHeight-20)/2
@@ -1475,6 +1505,10 @@ Screens:
                                     "createdon",
                                     SortOrder.Descending
                                 )
+                              OnSelect: |-
+                                =Set(gvarSolicitudSel, ThisItem);
+                                Set(gvarClienteSel, ThisItem.RelatedClient);
+                                Navigate(scrSolicitud, ScreenTransition.None)
                               TemplateSize: =fxRowH
                               Width: =Parent.Width
                               Y: =shpHSolLineaFic.Y + shpHSolLineaFic.Height
@@ -1868,9 +1902,9 @@ Screens:
                                       varPanelAccionFic = "Editar",
                                       Switch(
                                           varPanelModoFic,
-                                          "sucursal", " · sucursal " & LookUp('CH-Tbl-ClientBranches', 'CH-Tbl-ClientBranch' = varPanelTargetIdFic).Name,
-                                          "correo", " · correo " & LookUp('CH-Tbl-ClientEmails', 'CH-Tbl-ClientEmail' = varPanelTargetIdFic).'Email Address',
-                                          "cuenta", " · cuenta •••• " & Right(LookUp('CH-Tbl-ClientAccounts', 'CH-Tbl-ClientAccount' = varPanelTargetIdFic).'Numero de cuenta', 4),
+                                          "sucursal", " · sucursal " & LookUp('CH-Tbl-ClientBranches', 'CH-Tbl-ClientBranch' = GUID(varPanelTargetIdFic)).Name,
+                                          "correo", " · correo " & LookUp('CH-Tbl-ClientEmails', 'CH-Tbl-ClientEmail' = GUID(varPanelTargetIdFic)).'Email Address',
+                                          "cuenta", " · cuenta •••• " & Right(LookUp('CH-Tbl-ClientAccounts', 'CH-Tbl-ClientAccount' = GUID(varPanelTargetIdFic)).'Numero de cuenta', 4),
                                           ""
                                       ),
                                       ""
@@ -1931,9 +1965,9 @@ Screens:
                                 =Switch(
                                     varPanelModoFic,
                                     "cliente", "Actual: " & gvarClienteSel.Name,
-                                    "sucursal", "Actual: " & LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=varPanelTargetIdFic).Name,
-                                    "correo", "Actual: " & LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).'Email Address',
-                                    "cuenta", "Actual: •••• " & Right(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).'Numero de cuenta', 4),
+                                    "sucursal", "Actual: " & LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=GUID(varPanelTargetIdFic)).Name,
+                                    "correo", "Actual: " & LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).Name,
+                                    "cuenta", "Actual: •••• " & Right(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).'Numero de cuenta', 4),
                                     ""
                                 )
                               Visible: =varPanelAccionFic = "Editar"
@@ -1949,9 +1983,9 @@ Screens:
                                 =Switch(
                                     varPanelModoFic,
                                     "cliente", If(varPanelAccionFic = "Editar", gvarClienteSel.Name, ""),
-                                    "sucursal", If(varPanelAccionFic = "Editar", LookUp('CH-Tbl-ClientBranches', 'CH-Tbl-ClientBranch' = varPanelTargetIdFic).Name, ""),
-                                    "correo", If(varPanelAccionFic = "Editar", LookUp('CH-Tbl-ClientEmails', 'CH-Tbl-ClientEmail' = varPanelTargetIdFic).'Email Address', ""),
-                                    "cuenta", If(varPanelAccionFic = "Editar", LookUp('CH-Tbl-ClientAccounts', 'CH-Tbl-ClientAccount' = varPanelTargetIdFic).'Numero de cuenta', ""),
+                                    "sucursal", If(varPanelAccionFic = "Editar", LookUp('CH-Tbl-ClientBranches', 'CH-Tbl-ClientBranch' = GUID(varPanelTargetIdFic)).Name, ""),
+                                    "correo", If(varPanelAccionFic = "Editar", LookUp('CH-Tbl-ClientEmails', 'CH-Tbl-ClientEmail' = GUID(varPanelTargetIdFic)).'Email Address', ""),
+                                    "cuenta", If(varPanelAccionFic = "Editar", LookUp('CH-Tbl-ClientAccounts', 'CH-Tbl-ClientAccount' = GUID(varPanelTargetIdFic)).'Numero de cuenta', ""),
                                     ""
                                 )
                               DisabledBorderColor: =Color.Transparent
@@ -1972,23 +2006,26 @@ Screens:
                                             "cliente", Table(
                                                 {Campo: "Nombre", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
                                                 {Campo: "CIFBCO", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFBCO, ""), ValorNuevo: Trim(inpPanelCampoBFic.Text)},
-                                                {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)}
+                                                {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)},
+                                                {Campo: "TaxId", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.TaxId, ""), ValorNuevo: Trim(inpPanelCampoDFic.Text)}
                                             ),
                                             "sucursal", Table(
-                                                {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=varPanelTargetIdFic).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
+                                                {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=GUID(varPanelTargetIdFic)).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
                                             ),
                                             "correo", Table(
-                                                {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).'Email Address', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
-                                                {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "Sí", "No")}
+                                                {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                                {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "true", "false")}
                                             ),
                                             /* cuenta */ Table(
-                                                {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
-                                                {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
+                                                {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                                {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
                                             )
                                         ),
                                         ValorViejo <> ValorNuevo && !IsBlank(ValorNuevo)
                                     )
-                                )
+                                );
+
+                                If(varPanelAccionFic<>"Editar" && varPanelModoFic <> "cliente", Collect(colCambiosPanelFic, Table({Campo: "Cliente", ValorViejo: "" , ValorNuevo: gvarClienteSel.'CH-Tbl-Client'})))
                               RadiusBottomLeft: =7
                               RadiusBottomRight: =7
                               RadiusTopLeft: =7
@@ -2044,8 +2081,8 @@ Screens:
                                 =Switch(
                                     varPanelModoFic,
                                     "cliente", "Actual: " & gvarClienteSel.CIFBCO,
-                                    "correo", "Actual: " & If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).AlwaysNotify,"Sí","No"),
-                                    "cuenta", "Actual: " & Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).Moneda, 'CH-Ch-Currency'.NIO,"NIO", 'CH-Ch-Currency'.USD,"USD", 'CH-Ch-Currency'.EUR,"EUR", "—"),
+                                    "correo", "Actual: " & If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).AlwaysNotify,"Sí","No"),
+                                    "cuenta", "Actual: " & Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).Moneda, 'CH-Ch-Currency'.NIO,"NIO", 'CH-Ch-Currency'.USD,"USD", 'CH-Ch-Currency'.EUR,"EUR", "—"),
                                     ""
                                 )
                               Visible: =varPanelModoFic <> "sucursal" && varPanelAccionFic = "Editar"
@@ -2076,23 +2113,26 @@ Screens:
                                             "cliente", Table(
                                                 {Campo: "Nombre", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
                                                 {Campo: "CIFBCO", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFBCO, ""), ValorNuevo: Trim(inpPanelCampoBFic.Text)},
-                                                {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)}
+                                                {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)},
+                                                {Campo: "TaxId", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.TaxId, ""), ValorNuevo: Trim(inpPanelCampoDFic.Text)}
                                             ),
                                             "sucursal", Table(
-                                                {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=varPanelTargetIdFic).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
+                                                {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=GUID(varPanelTargetIdFic)).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
                                             ),
                                             "correo", Table(
-                                                {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).'Email Address', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
-                                                {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "Sí", "No")}
+                                                {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                                {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "true", "false")}
                                             ),
                                             /* cuenta */ Table(
-                                                {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
-                                                {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
+                                                {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                                {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
                                             )
                                         ),
                                         ValorViejo <> ValorNuevo && !IsBlank(ValorNuevo)
                                     )
-                                )
+                                );
+
+                                If(varPanelAccionFic<>"Editar" && varPanelModoFic <> "cliente", Collect(colCambiosPanelFic, Table({Campo: "Cliente", ValorViejo: "" , ValorNuevo: gvarClienteSel.'CH-Tbl-Client'})))
                               RadiusBottomLeft: =7
                               RadiusBottomRight: =7
                               RadiusTopLeft: =7
@@ -2112,9 +2152,9 @@ Screens:
                                     Blank(),
                                     If(
                                         varPanelModoFic = "correo",
-                                        If(LookUp('CH-Tbl-ClientEmails', 'CH-Tbl-ClientEmail' = varPanelTargetIdFic).AlwaysNotify, "Yes", "No"),
+                                        If(LookUp('CH-Tbl-ClientEmails', 'CH-Tbl-ClientEmail' = GUID(varPanelTargetIdFic)).AlwaysNotify, "Yes", "No"),
                                         Switch(
-                                            LookUp('CH-Tbl-ClientAccounts', 'CH-Tbl-ClientAccount' = varPanelTargetIdFic).Moneda,
+                                            LookUp('CH-Tbl-ClientAccounts', 'CH-Tbl-ClientAccount' = GUID(varPanelTargetIdFic)).Moneda,
                                             'CH-Ch-Currency'.NIO, "NIO",
                                             'CH-Ch-Currency'.USD, "USD",
                                             'CH-Ch-Currency'.EUR, "EUR"
@@ -2143,23 +2183,26 @@ Screens:
                                             "cliente", Table(
                                                 {Campo: "Nombre", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
                                                 {Campo: "CIFBCO", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFBCO, ""), ValorNuevo: Trim(inpPanelCampoBFic.Text)},
-                                                {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)}
+                                                {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)},
+                                                {Campo: "TaxId", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.TaxId, ""), ValorNuevo: Trim(inpPanelCampoDFic.Text)}
                                             ),
                                             "sucursal", Table(
-                                                {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=varPanelTargetIdFic).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
+                                                {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=GUID(varPanelTargetIdFic)).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
                                             ),
                                             "correo", Table(
-                                                {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).'Email Address', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
-                                                {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "Sí", "No")}
+                                                {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                                {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "true", "false")}
                                             ),
                                             Table(
-                                                {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
-                                                {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
+                                                {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                                {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
                                             )
                                         ),
                                         ValorViejo <> ValorNuevo && !IsBlank(ValorNuevo)
                                     )
-                                )
+                                );
+
+                                If(varPanelAccionFic<>"Editar" && varPanelModoFic <> "cliente", Collect(colCambiosPanelFic, Table({Campo: "Cliente", ValorViejo: "" , ValorNuevo: gvarClienteSel.'CH-Tbl-Client'})))
                               Size: =9
                               Visible: =varPanelModoFic = "correo" || varPanelModoFic = "cuenta"
                               Width: =Parent.Width - 40
@@ -2227,23 +2270,26 @@ Screens:
                                             "cliente", Table(
                                                 {Campo: "Nombre", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
                                                 {Campo: "CIFBCO", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFBCO, ""), ValorNuevo: Trim(inpPanelCampoBFic.Text)},
-                                                {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)}
+                                                {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)},
+                                                {Campo: "TaxId", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.TaxId, ""), ValorNuevo: Trim(inpPanelCampoDFic.Text)}
                                             ),
                                             "sucursal", Table(
-                                                {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=varPanelTargetIdFic).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
+                                                {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=GUID(varPanelTargetIdFic)).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
                                             ),
                                             "correo", Table(
-                                                {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).'Email Address', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
-                                                {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=varPanelTargetIdFic).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "Sí", "No")}
+                                                {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                                {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "true", "false")}
                                             ),
                                             /* cuenta */ Table(
-                                                {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
-                                                {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=varPanelTargetIdFic).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
+                                                {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                                {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
                                             )
                                         ),
                                         ValorViejo <> ValorNuevo && !IsBlank(ValorNuevo)
                                     )
-                                )
+                                );
+
+                                If(varPanelAccionFic<>"Editar" && varPanelModoFic <> "cliente", Collect(colCambiosPanelFic, Table({Campo: "Cliente", ValorViejo: "" , ValorNuevo: gvarClienteSel.'CH-Tbl-Client'})))
                               RadiusBottomLeft: =7
                               RadiusBottomRight: =7
                               RadiusTopLeft: =7
@@ -2267,7 +2313,7 @@ Screens:
                               Y: |-
                                 =Switch(
                                     varPanelModoFic,
-                                    "cliente", inpPanelCampoCFic.Y + inpPanelCampoCFic.Height + 12,
+                                    "cliente", inpPanelCampoDFic.Y + inpPanelCampoDFic.Height + 12,
                                     "sucursal", lblCampoAErrorFic.Y + lblCampoAErrorFic.Height + 12,
                                     lblCampoBErrorFic.Y + lblCampoBErrorFic.Height + 12
                                 )
@@ -2395,7 +2441,7 @@ Screens:
                               RadiusBottomRight: =9
                               RadiusTopLeft: =9
                               RadiusTopRight: =9
-                              Visible: =varPanelAccionFic = "Editar" && CountRows(colCambiosPanelFic) < Switch(varPanelModoFic, "cliente", 3, "sucursal", 1, 2)
+                              Visible: =varPanelAccionFic = "Editar" && CountRows(colCambiosPanelFic) < Switch(varPanelModoFic, "cliente", 4, "sucursal", 1, 2)
                               Width: =Parent.Width - 40
                               X: =20
                               Y: =cntCambiosPanelFic.Y + cntCambiosPanelFic.Height + 10
@@ -2412,7 +2458,7 @@ Screens:
                                           {
                                               _camposModo: Switch(
                                                   varPanelModoFic,
-                                                  "cliente", ["Nombre", "CIFBCO", "CIFCOM"],
+                                                  "cliente", ["Nombre", "CIFBCO", "CIFCOM", "TaxId"],
                                                   "sucursal", ["Sucursal"],
                                                   "correo", ["Correo electronico", "Notificar siempre"],
                                                   ["Numero de cuenta", "Moneda"]
@@ -2464,6 +2510,91 @@ Screens:
                                     Width: =Parent.Width - 20
                                     X: =10
                                     Y: =7
+                        - lblCampoDLabelFic:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =16
+                              Size: =8.25
+                              Text: ="Tax ID" & If(IsBlank(gvarClienteSel.TaxId), " *", "")
+                              Visible: =varPanelModoFic = "cliente"
+                              Width: =Parent.Width - 40
+                              X: =20
+                              Y: =inpPanelCampoCFic.Y + inpPanelCampoCFic.Height + 12
+                        - lblCampoDActualFic:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              Height: =16
+                              Size: =8.63
+                              Text: |-
+                                ="Actual: " & If(
+                                    IsBlank(gvarClienteSel.TaxId),
+                                    "— sin Tax ID; completalo para guardar",
+                                    gvarClienteSel.TaxId
+                                )
+                              Visible: =varPanelModoFic = "cliente" && varPanelAccionFic = "Editar"
+                              Width: =Parent.Width - 40
+                              X: =20
+                              Y: =lblCampoDLabelFic.Y + lblCampoDLabelFic.Height + 2
+                        - inpPanelCampoDFic:
+                            Control: Classic/TextInput@2.3.2
+                            Properties:
+                              BorderColor: =ThemeLine
+                              BorderThickness: =1
+                              Default: =If(varPanelAccionFic = "Editar", gvarClienteSel.TaxId, "")
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              Fill: =ThemeSurface
+                              FocusedBorderThickness: =2
+                              Font: =Font.'Open Sans'
+                              Height: =34
+                              HintText: =
+                              HoverBorderColor: =ThemeLine
+                              HoverFill: =ThemeSurface
+                              MaxLength: =20
+                              OnChange: |-
+                                =ClearCollect(
+                                    colCambiosPanelFic,
+                                    Filter(
+                                        Switch(
+                                            varPanelModoFic,
+                                            "cliente", Table(
+                                                {Campo: "Nombre", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                                {Campo: "CIFBCO", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFBCO, ""), ValorNuevo: Trim(inpPanelCampoBFic.Text)},
+                                                {Campo: "CIFCOM", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.CIFCOM, ""), ValorNuevo: Trim(inpPanelCampoCFic.Text)},
+                                                {Campo: "TaxId", ValorViejo: If(varPanelAccionFic="Editar", gvarClienteSel.TaxId, ""), ValorNuevo: Trim(inpPanelCampoDFic.Text)}
+                                            ),
+                                            "sucursal", Table(
+                                                {Campo: "Sucursal", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientBranches','CH-Tbl-ClientBranch'=GUID(varPanelTargetIdFic)).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)}
+                                            ),
+                                            "correo", Table(
+                                                {Campo: "Correo electronico", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).Name, ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                                {Campo: "Notificar siempre", ValorViejo: If(varPanelAccionFic="Editar", If(LookUp('CH-Tbl-ClientEmails','CH-Tbl-ClientEmail'=GUID(varPanelTargetIdFic)).AlwaysNotify,"Sí","No"), ""), ValorNuevo: If(drpPanelCampoBFic.Selected.Value = "Yes", "true", "false")}
+                                            ),
+                                            /* cuenta */ Table(
+                                                {Campo: "Numero de cuenta", ValorViejo: If(varPanelAccionFic="Editar", LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).'Numero de cuenta', ""), ValorNuevo: Trim(inpPanelCampoAFic.Text)},
+                                                {Campo: "Moneda", ValorViejo: If(varPanelAccionFic="Editar", Switch(LookUp('CH-Tbl-ClientAccounts','CH-Tbl-ClientAccount'=GUID(varPanelTargetIdFic)).Moneda, 'CH-Ch-Currency'.NIO,"NIO",'CH-Ch-Currency'.USD,"USD",'CH-Ch-Currency'.EUR,"EUR"), ""), ValorNuevo: drpPanelCampoBFic.Selected.Value}
+                                            )
+                                        ),
+                                        ValorViejo <> ValorNuevo && !IsBlank(ValorNuevo)
+                                    )
+                                );
+
+                                If(varPanelAccionFic<>"Editar" && varPanelModoFic <> "cliente", Collect(colCambiosPanelFic, Table({Campo: "Cliente", ValorViejo: "" , ValorNuevo: gvarClienteSel.'CH-Tbl-Client'})))
+                              RadiusBottomLeft: =7
+                              RadiusBottomRight: =7
+                              RadiusTopLeft: =7
+                              RadiusTopRight: =7
+                              Size: =9
+                              Visible: =varPanelModoFic = "cliente"
+                              Width: =Parent.Width - 40
+                              X: =20
+                              Y: =lblCampoDActualFic.Y + lblCampoDActualFic.Height + 4
                   - cntPanelFootFic:
                       Control: GroupContainer@1.5.0
                       Variant: ManualLayout
@@ -2517,6 +2648,16 @@ Screens:
                                     && CountRows(colCambiosPanelFic) > 0
                                     && !lblCampoAErrorFic.Visible
                                     && !IsBlank(Trim(inpMotivoPanelFic.Text))
+                                    // Ningun cliente puede quedar sin Tax ID. Si el maestro no lo
+                                    // tiene, esta edicion debe completarlo — sea cual sea el campo
+                                    // que se venia a cambiar. Misma regla que aplica el plugin en
+                                    // ResolveChangeRequestPlugin, adelantada para no hacer chocar al
+                                    // aprobador contra un rechazo evitable.
+                                    && (
+                                        varPanelModoFic <> "cliente"
+                                        || !IsBlank(gvarClienteSel.TaxId)
+                                        || !IsBlank(Trim(inpPanelCampoDFic.Text))
+                                    )
                                     && IsBlank(
                                         LookUp(
                                             colRfcEnCursoFic,
@@ -2551,6 +2692,7 @@ Screens:
           Properties:
             Cargando: =varDlgCargandoFic
             EtiquetaCampo: ="Motivo de la solicitud"
+            Height: =Parent.Height
             Mostrar: =!IsBlank(varDlgAccionFic)
             MostrarCampo: =true
             OkHabilitado: =!IsBlank(Trim(cmpConfirmDialogFic.CampoTexto))
@@ -2607,6 +2749,7 @@ Screens:
             Tono: =If(varDlgAccionFic = "Activar", "ok", "danger")
             ValorCampo: =""
             Visible: =!IsBlank(varDlgAccionFic)
+            Width: =Parent.Width
       - btnNavigatescrClientesFic:
           Control: Classic/Button@2.2.0
           Properties:

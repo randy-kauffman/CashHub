@@ -13,6 +13,7 @@ cmpConfirmDialog As CanvasComponent:
     Mostrar: =false
     MostrarCampo: =true
     OkHabilitado: =true
+    OnReset: =Reset(inpCampoDlg)
     PlaceholderCampo: =""
     Texto: =""
     TextoCancelar: ="Cancelar"
@@ -108,7 +109,7 @@ cmpConfirmDialog As CanvasComponent:
                 Color: =RGBA(0, 0, 0, 1)
                 DisabledColor: =RGBA(166, 166, 166, 1)
                 FontWeight: =FontWeight.Bold
-                Height: =24
+                Height: =30
                 Size: =10.88
                 Text: =cmpConfirmDialog.Titulo
                 Width: =Parent.Width - icoTonoDlg.Width - 76
@@ -207,7 +208,7 @@ cmpConfirmDialog As CanvasComponent:
                 HoverBorderColor: =ThemeLine
                 HoverColor: =ThemeInk2
                 HoverFill: =ThemeSurface2
-                OnSelect: =cmpConfirmDialog.OnCancelar()
+                OnSelect: =cmpConfirmDialog.OnCancelar(); 
                 PressedBorderColor: =App.Theme.Colors.Darker40
                 PressedColor: =Self.Color
                 PressedFill: =App.Theme.Colors.Darker40

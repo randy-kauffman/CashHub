@@ -13,14 +13,14 @@ Screens:
       OnVisible: |-
         =// 1) Estado local a default (gotcha 8.3 — no arrastrar estado de la visita anterior)
         UpdateContext({
-            ctxSegEstadoCli: "Activos",
-            ctxPagCli: 1,
+            ctxSegEstadoCli: Coalesce(ctxSegEstadoCli,"Activos"),
+            ctxPagCli: Coalesce(ctxPagCli,1),
             ctxPagTamCli: 50,
-            ctxOrdenAscCli: true,
-            ctxPanelAltaCli: false,
-            ctxGuardandoCli: false
+            ctxOrdenAscCli: Coalesce(ctxOrdenAscCli,true),
+            ctxPanelAltaCli: Coalesce(ctxPanelAltaCli,false),
+            ctxGuardandoCli: Coalesce(ctxGuardandoCli,false)
         });
-        Reset(inpBusqCli);
+        //Reset(inpBusqCli);
         // 2) RFCs sin resolver (badge "RFC en curso" + KPIs) — acotada por ESTADO server-side.
         //    Filtro delegable: ORs sobre el mismo picklist. Se re-ejecuta al volver de crear
         //    una solicitud (el boton del panel la refresca, y este OnVisible tambien).
@@ -33,14 +33,17 @@ Screens:
                 || 'Change Status' = 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Approved
             )
         );
-        // 3) Listado inicial: segmento "Activos", sin texto de busqueda (Search con "" devuelve todo)
-        ClearCollect(
-            colClientesCli,
-            Search(
-                Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Active),
-                Trim(inpBusqCli.Text),
-                Name, CIFBCO, CIFCOM
-            )
+        // 3) Listado inicial: segmento "Activos", sin texto de busqueda (Search con "" devuelve todo). Solo en primera carga.
+        If(!gvarCargaInicialClientes,
+            ClearCollect(
+                colClientesCli,
+                Search(
+                    Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Active),
+                    Trim(inpBusqCli.Text),
+                    Name, CIFBCO, CIFCOM, TaxId
+                )
+            );
+            Set(gvarCargaInicialClientes,true)
         )
     Children:
       - cmpAppHeaderCli:
@@ -98,7 +101,7 @@ Screens:
                           =UpdateContext({ctxSegEstadoCli: "Todos", ctxPagCli: 1});
                           ClearCollect(
                               colClientesCli,
-                              Search('CH-Tbl-Clients', Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM)
+                              Search('CH-Tbl-Clients', Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM, TaxId)
                           )
                         RadiusBottomLeft: =7
                         RadiusBottomRight: =7
@@ -133,7 +136,7 @@ Screens:
                                       || RecordStatus = 'CH-Ch-RecordStatus'.PendingDeactivation
                                   ),
                                   Trim(inpBusqCli.Text),
-                                  Name, CIFBCO, CIFCOM
+                                  Name, CIFBCO, CIFCOM, TaxId
                               )
                           )
                         RadiusBottomLeft: =7
@@ -172,7 +175,7 @@ Screens:
                               Search(
                                   Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Inactive),
                                   Trim(inpBusqCli.Text),
-                                  Name, CIFBCO, CIFCOM
+                                  Name, CIFBCO, CIFCOM, TaxId
                               )
                           )
                         RadiusBottomLeft: =7
@@ -204,7 +207,7 @@ Screens:
                               Search(
                                   Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Active),
                                   Trim(inpBusqCli.Text),
-                                  Name, CIFBCO, CIFCOM
+                                  Name, CIFBCO, CIFCOM, TaxId
                               )
                           )
                         RadiusBottomLeft: =7
@@ -244,7 +247,7 @@ Screens:
                         Fill: =ThemeSurface
                         Font: =Font.'Open Sans'
                         Height: =Parent.Height
-                        HintText: ="Nombre, CIF BCO o CIF COM…"
+                        HintText: ="Nombre, CIF BCO, CIF COM o TaxId…"
                         HoverBorderColor: =ThemeLine
                         OnChange: |-
                           =UpdateContext({ctxPagCli: 1});
@@ -255,7 +258,7 @@ Screens:
                                   colClientesCli,
                                   Search(
                                       Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Active),
-                                      Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM
+                                      Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM, TaxId
                                   )
                               ),
                               "Inactivos",
@@ -263,7 +266,7 @@ Screens:
                                   colClientesCli,
                                   Search(
                                       Filter('CH-Tbl-Clients', RecordStatus = 'CH-Ch-RecordStatus'.Inactive),
-                                      Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM
+                                      Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM, TaxId
                                   )
                               ),
                               "Pendientes",
@@ -275,12 +278,12 @@ Screens:
                                           RecordStatus = 'CH-Ch-RecordStatus'.PendingApproval
                                           || RecordStatus = 'CH-Ch-RecordStatus'.PendingDeactivation
                                       ),
-                                      Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM
+                                      Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM, TaxId
                                   )
                               ),
                               ClearCollect(
                                   colClientesCli,
-                                  Search('CH-Tbl-Clients', Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM)
+                                  Search('CH-Tbl-Clients', Trim(inpBusqCli.Text), Name, CIFBCO, CIFCOM, TaxId)
                               )
                           )
                         RadiusBottomLeft: =8
@@ -306,6 +309,7 @@ Screens:
                     =Reset(inpNombrePanCli);
                     Reset(inpCifBcoPanCli);
                     Reset(inpCifComPanCli);
+                    Reset(inpTaxIdPanCli);
                     Reset(inpMotivoPanCli);
                     UpdateContext({ctxPanelAltaCli: true})
                   RadiusBottomLeft: =8
@@ -548,9 +552,21 @@ Screens:
                           =UpdateContext({ctxOrdenAscCli: !ctxOrdenAscCli, ctxPagCli: 1})
                         Size: =7.5
                         Text: ="CLIENTE " & If(ctxOrdenAscCli, "▼", "▲")
-                        Width: =(Parent.Width - 32 - fxGap) * 0.29
+                        Width: =(Parent.Width - 32 - fxGap) * 0.25
                         X: =16
                         Y: =6
+                  - lblColTaxIdCli:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =16
+                        Size: =7.5
+                        Text: ="TAX ID"
+                        Width: =(Parent.Width - 32 - fxGap) * 0.12
+                        X: =lblColCifComCli.X + lblColCifComCli.Width
+                        Y: =10
                   - lblColCifBcoCli:
                       Control: Label@2.5.1
                       Properties:
@@ -560,7 +576,7 @@ Screens:
                         Height: =16
                         Size: =7.5
                         Text: ="CIF BCO"
-                        Width: =(Parent.Width - 32 - fxGap) * 0.14
+                        Width: =(Parent.Width - 32 - fxGap) * 0.12
                         X: =btnColClienteCli.X + btnColClienteCli.Width
                         Y: =10
                   - lblColCifComCli:
@@ -572,7 +588,7 @@ Screens:
                         Height: =16
                         Size: =7.5
                         Text: ="CIF COM"
-                        Width: =(Parent.Width - 32 - fxGap) * 0.14
+                        Width: =(Parent.Width - 32 - fxGap) * 0.12
                         X: =lblColCifBcoCli.X + lblColCifBcoCli.Width
                         Y: =10
                   - lblColEstadoCli:
@@ -584,8 +600,8 @@ Screens:
                         Height: =16
                         Size: =7.5
                         Text: ="ESTADO"
-                        Width: =(Parent.Width - 32 - fxGap) * 0.14
-                        X: =lblColCifComCli.X + lblColCifComCli.Width + fxGap
+                        Width: =(Parent.Width - 32 - fxGap) * 0.12
+                        X: =lblColTaxIdCli.X + lblColTaxIdCli.Width + fxGap
                         Y: =10
                   - lblColSolicitudCli:
                       Control: Label@2.5.1
@@ -596,7 +612,7 @@ Screens:
                         Height: =16
                         Size: =7.5
                         Text: ="SOLICITUD"
-                        Width: =(Parent.Width - 32 - fxGap) * 0.16
+                        Width: =(Parent.Width - 32 - fxGap) * 0.15
                         X: =lblColEstadoCli.X + lblColEstadoCli.Width
                         Y: =10
                   - lblColModifCli:
@@ -609,7 +625,7 @@ Screens:
                         Height: =16
                         Size: =7.5
                         Text: ="MODIFICADO"
-                        Width: =(Parent.Width - 32 - fxGap) * 0.13
+                        Width: =(Parent.Width - 32 - fxGap) * 0.12
                         X: =lblColSolicitudCli.X + lblColSolicitudCli.Width
                         Y: =10
                   - shpColLineaCli:
@@ -767,6 +783,17 @@ Screens:
                               Height: =1
                               Width: =Parent.TemplateWidth
                               Y: =fxRowH - 1
+                        - lblTaxIdFilaCli:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              Font: =Font.'Open Sans'
+                              Height: =fxRowH
+                              OnSelect: =Select(Parent)
+                              Size: =9
+                              Text: =ThisItem.TaxId
+                              Width: =lblColTaxIdCli.Width
+                              X: =lblColTaxIdCli.X
                   - lblVacioGrillaCli:
                       Control: Label@2.5.1
                       Properties:
@@ -794,7 +821,7 @@ Screens:
                               Font: =Font.'Open Sans'
                               Height: =Parent.Height
                               Size: =8.63
-                              Text: =CountRows(colClientesCli) & " clientes · página " & ctxPagCli & " de " & Max(1, RoundUp(CountRows(colClientesCli) / ctxPagTamCli, 0))
+                              Text: =CountRows(colClientesCli) & " clientes · página " & ctxPagCli & " de " & Max(1, RoundUp(CountRows(colClientesCli) / Coalesce(ctxPagTamCli, 50), 0))
                               Width: =Parent.Width * 0.5
                               X: =16
                         - btnPagAntCli:
@@ -831,7 +858,7 @@ Screens:
                               DisabledBorderColor: =Color.Transparent
                               DisabledColor: =ThemeInk3
                               DisabledFill: =ThemeLineSoft
-                              DisplayMode: =If(ctxPagCli < Max(1, RoundUp(CountRows(colClientesCli) / ctxPagTamCli, 0)), DisplayMode.Edit, DisplayMode.Disabled)
+                              DisplayMode: =If(ctxPagCli < Max(1, RoundUp(CountRows(colClientesCli) / Coalesce(ctxPagTamCli, 50), 0)), DisplayMode.Edit, DisplayMode.Disabled)
                               Fill: =ThemeSurface
                               Font: =Font.'Open Sans'
                               Height: =28
@@ -1006,14 +1033,8 @@ Screens:
                   - inpCifComPanCli:
                       Control: Classic/TextInput@2.3.2
                       Properties:
-                        BorderColor: |-
+                        BorderColor: |
                           =ThemeLine
-
-                          /*If(
-                              Len(Trim(inpCifComPanCli.Text)) > 0 && !IsMatch(Trim(inpCifComPanCli.Text), "C-\d{5}"),
-                              ThemeDanger,
-                              ThemeLine
-                          )*/
                         Default: =
                         Fill: =ThemeSurface
                         Font: =Font.'Open Sans'
@@ -1036,7 +1057,7 @@ Screens:
                         Height: =28
                         Size: =8.25
                         Text: ="El CIF COM debe tener el formato C-#####. Corregilo para continuar."
-                        Visible: =false//Len(Trim(inpCifComPanCli.Text)) > 0 && !IsMatch(Trim(inpCifComPanCli.Text), "C-\d{5}")
+                        Visible: =false
                         Width: =Parent.Width - 40
                         X: =20
                         Y: =inpCifComPanCli.Y + inpCifComPanCli.Height + 4
@@ -1051,7 +1072,7 @@ Screens:
                         Text: ="Motivo de la solicitud *"
                         Width: =Parent.Width - 40
                         X: =20
-                        Y: =lblCifComErrPanCli.Y + lblCifComErrPanCli.Height + 6
+                        Y: =inpTaxIdPanCli.Y + inpTaxIdPanCli.Height + 13
                   - inpMotivoPanCli:
                       Control: Classic/TextInput@2.3.2
                       Properties:
@@ -1091,7 +1112,7 @@ Screens:
                         BorderColor: =ThemeLine
                         BorderThickness: =1
                         Fill: =ThemeSurface
-                        Height: =104
+                        Height: =126
                         RadiusBottomLeft: =9
                         RadiusBottomRight: =9
                         RadiusTopLeft: =9
@@ -1155,6 +1176,16 @@ Screens:
                               Size: =7.5
                               Text: ="CAMPO → VALOR PROPUESTO"
                               Width: =Parent.Width
+                        - lblResumenTaxIdPanCli:
+                            Control: Label@2.5.1
+                            Properties:
+                              Font: =Font.'Open Sans'
+                              Height: =22
+                              Size: =9
+                              Text: ="TaxId → " & Trim(inpTaxIdPanCli.Text)
+                              Width: =Parent.Width - 28
+                              X: =14
+                              Y: =98
                   - cntBannerPanCli:
                       Control: GroupContainer@1.5.0
                       Variant: ManualLayout
@@ -1182,6 +1213,38 @@ Screens:
                               Width: =Parent.Width - 26
                               X: =13
                               Y: =9
+                  - lblTaxIdLabPanCli:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =8.25
+                        Text: ="Tax ID *"
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblCifComErrPanCli.Y + lblCifComErrPanCli.Height + 6
+                  - inpTaxIdPanCli:
+                      Control: Classic/TextInput@2.3.2
+                      Properties:
+                        BorderColor: |
+                          =ThemeLine
+                        Default: =
+                        Fill: =ThemeSurface
+                        Font: =Font.'Open Sans'
+                        Height: =34
+                        HintText: ="RUC, NIT o cedula juridica"
+                        HoverBorderColor: =ThemeLine
+                        MaxLength: =20
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9
+                        Width: =Parent.Width - 40
+                        X: =20
+                        Y: =lblTaxIdLabPanCli.Y + lblTaxIdLabPanCli.Height + 4
             - cntPanelAltaFootCli:
                 Control: GroupContainer@1.5.0
                 Variant: ManualLayout
@@ -1229,6 +1292,7 @@ Screens:
                               && Len(Trim(inpNombrePanCli.Text)) > 0
                               && Len(Trim(inpCifBcoPanCli.Text)) > 0
                               && Len(Trim(inpCifComPanCli.Text)) > 0
+                              && Len(Trim(inpTaxIdPanCli.Text)) > 0
                               && Len(Trim(inpMotivoPanCli.Text)) > 0,
                               DisplayMode.Edit,
                               DisplayMode.Disabled
@@ -1296,6 +1360,22 @@ Screens:
                                               Name = "CIFCOM" && Table = "sanic_chtblclient"
                                           ),
                                           NewValue: Trim(inpCifComPanCli.Text),
+                                          ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Draft
+                                      }
+                                  );
+                                  // Linea 4 — TaxId (OBLIGATORIO). El boton Crear ya exige el campo,
+                                  //   y ResolveChangeRequestPlugin rechaza el alta si la linea falta o
+                                  //   viene vacia — la app es la UX, el plugin es la integridad.
+                                  Patch(
+                                      'CH-Tbl-ClientDataChangeRequestLines',
+                                      Defaults('CH-Tbl-ClientDataChangeRequestLines'),
+                                      {
+                                          ChangeRequestID: rfc,
+                                          'Field Definition': LookUp(
+                                              'CH-Tbl-ClientTableLogicalFieldNames',
+                                              Name = "TaxId" && Table = "sanic_chtblclient"
+                                          ),
+                                          NewValue: Trim(inpTaxIdPanCli.Text),
                                           ChangeStatus: 'ChangeStatus (CH-Tbl-ClientDataChangeRequestLines)'.Draft
                                       }
                                   );

@@ -53,7 +53,8 @@ Screens:
                     ClearCollect(colTargetRecordDet,
                         {LogicalName: "sanic_name", Valor: _r.Name},
                         {LogicalName: "sanic_cifbco", Valor: Text(_r.CIFBCO)},
-                        {LogicalName: "sanic_cifcom", Valor: Text(_r.CIFCOM)}
+                        {LogicalName: "sanic_cifcom", Valor: Text(_r.CIFCOM)},
+                        {LogicalName: "sanic_taxid", Valor: Text(_r.TaxId)}
                     )
                 ),
                 "sanic_chtblclientbranch",
@@ -212,7 +213,7 @@ Screens:
                               Font: =Font.'Open Sans'
                               Height: =26
                               HoverFill: =ThemeSurface2
-                              OnSelect: =Navigate(scrSolicitudes, ScreenTransition.None)
+                              OnSelect: =Back(ScreenTransition.None)
                               RadiusBottomLeft: =7
                               RadiusBottomRight: =7
                               RadiusTopLeft: =7
@@ -344,7 +345,7 @@ Screens:
                               Font: =Font.'Open Sans'
                               Height: =18
                               Size: =9
-                              Text: =If(gvarSolicitudSel.TargetTable = "sanic_chtblclient", "Tabla", "Registro")
+                              Text: ="Tabla"
                               Width: =78
                               X: =Parent.Width/2 + 8
                               Y: =14
@@ -355,22 +356,7 @@ Screens:
                               FontWeight: =FontWeight.Semibold
                               Height: =18
                               Size: =9
-                              Text: |-
-                                =If(
-                                    gvarSolicitudSel.Type = 'Type (CH-Tbl-ClientDataChangeRequests)'.Create,
-                                    "(registro nuevo — se crea al aprobar)",
-                                    Coalesce(
-                                        LookUp(
-                                            colTargetRecordDet,
-                                            LogicalName = If(
-                                                gvarSolicitudSel.TargetTable = "sanic_chtblclientemail",
-                                                "emailaddress",
-                                                "sanic_name"
-                                            )
-                                        ).Valor,
-                                        "—"
-                                    )
-                                )
+                              Text: =gvarSolicitudSel.TargetTableDisplayName
                               Width: =Parent.Width/2 - 106
                               X: =Parent.Width/2 + 90
                               Y: =14
@@ -1298,11 +1284,11 @@ Screens:
                   )
               )
             OnCancelar: |-
-              =UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: "", ctxModoDlgDet: "confirmar"})
+              =UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: "", ctxModoDlgDet: "confirmar"}); Reset(cmpConfirmDialogDet)
             OnOk: |-
               =If(
                   ctxModoDlgDet = "resultado",
-                  UpdateContext({ctxMostrarDlgDet: false, ctxModoDlgDet: "confirmar", ctxAccionDet: ""}),
+                  UpdateContext({ctxMostrarDlgDet: false, ctxModoDlgDet: "confirmar", ctxAccionDet: ""}); Reset(cmpConfirmDialogDet); Refresh('CH-Tbl-Clients'),
                   ctxAccionDet = "aprobar" || ctxAccionDet = "rechazar",
                   UpdateContext({ctxCargandoDet: true, ctxErrorDet: Blank()});
                    IfError(
@@ -1317,7 +1303,7 @@ Screens:
                        );
                        UpdateContext({ctxModoDlgDet: "resultado", ctxCargandoDet: false})
                        ,
-                       UpdateContext({ctxErrorDet: FirstError.Message, ctxCargandoDet: false, ctxMostrarDlgDet: false})
+                       UpdateContext({ctxErrorDet: FirstError.Message, ctxCargandoDet: false, ctxMostrarDlgDet: false}); Reset(cmpConfirmDialogDet); Refresh('CH-Tbl-Clients')
                   ),
                   ctxAccionDet = "enviar",
                   UpdateContext({ctxCargandoDet: true, ctxErrorDet: Blank()});
@@ -1334,7 +1320,7 @@ Screens:
                               Patch('CH-Tbl-ClientDataChangeRequests', fresco, {'Change Status': 'Change Status (CH-Tbl-ClientDataChangeRequests)'.Submitted});
                               Set(gvarSolicitudSel, LookUp('CH-Tbl-ClientDataChangeRequests', 'CH-Tbl-ClientDataChangeRequest' = fresco.'CH-Tbl-ClientDataChangeRequest'));
                               Notify("Solicitud enviada a aprobación.", NotificationType.Success);
-                              UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: ""})
+                              UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: ""}); Reset(cmpConfirmDialogDet); Refresh('CH-Tbl-Clients')
                           )
                       ),
                       UpdateContext({ctxErrorDet: FirstError.Message})
@@ -1366,7 +1352,7 @@ Screens:
                               );
                               Set(gvarSolicitudSel, LookUp('CH-Tbl-ClientDataChangeRequests', 'CH-Tbl-ClientDataChangeRequest' = fresco.'CH-Tbl-ClientDataChangeRequest'));
                               Notify("Solicitud cancelada.", NotificationType.Success);
-                              UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: ""})
+                              UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: ""}); Reset(cmpConfirmDialogDet); Refresh('CH-Tbl-Clients')
                           )
                       ),
                       UpdateContext({ctxErrorDet: FirstError.Message})
@@ -1381,7 +1367,7 @@ Screens:
                           Filter('CH-Tbl-ClientDataChangeRequestLines', ChangeRequestID.'CH-Tbl-ClientDataChangeRequest' = gvarSolicitudSel.'CH-Tbl-ClientDataChangeRequest')
                       );
                       Notify("Cambio eliminado de la solicitud.", NotificationType.Success);
-                      UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: ""})
+                      UpdateContext({ctxMostrarDlgDet: false, ctxAccionDet: ""}); Reset(cmpConfirmDialogDet); Refresh('CH-Tbl-Clients')
                       ,
                       UpdateContext({ctxErrorDet: FirstError.Message})
                   );
