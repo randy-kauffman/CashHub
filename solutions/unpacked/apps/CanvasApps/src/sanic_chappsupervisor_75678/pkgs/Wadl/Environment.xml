@@ -7568,6 +7568,12 @@
         <property name="sanic_resp_statusmessage" type="string" />
         <property name="sanic_resp_businessunitsjson" type="string" />
       </object>
+      <string name="Microsoft_Dynamics_CRM_sanic_CHCanResolveApprovalResponse_Message_def" />
+      <string name="Microsoft_Dynamics_CRM_sanic_CHCanResolveApprovalResponse_Outcome_def" />
+      <object name="Microsoft_Dynamics_CRM_sanic_CHCanResolveApprovalResponse">
+        <property name="Message" type="string" />
+        <property name="Outcome" type="string" />
+      </object>
       <string name="Microsoft_Dynamics_CRM_sanic_CHCreateTransactionCutResponse_BatchId_def" />
       <string name="Microsoft_Dynamics_CRM_sanic_CHCreateTransactionCutResponse_BatchName_def" />
       <integer name="Microsoft_Dynamics_CRM_sanic_CHCreateTransactionCutResponse_AssignedCount_def" />
@@ -7595,6 +7601,12 @@
         <property name="TotalNIO" type="number" />
         <property name="TotalUSD" type="number" />
         <property name="TotalEUR" type="number" />
+      </object>
+      <string name="Microsoft_Dynamics_CRM_sanic_CHResolveApprovalRequestResponse_Outcome_def" />
+      <string name="Microsoft_Dynamics_CRM_sanic_CHResolveApprovalRequestResponse_Message_def" />
+      <object name="Microsoft_Dynamics_CRM_sanic_CHResolveApprovalRequestResponse">
+        <property name="Outcome" type="string" />
+        <property name="Message" type="string" />
       </object>
       <string name="Microsoft_Dynamics_CRM_sanic_CHResolveChangeRequestResponse_Outcome_def" />
       <string name="Microsoft_Dynamics_CRM_sanic_CHResolveChangeRequestResponse_Message_def" />
@@ -14314,6 +14326,10 @@
       <object name="sanic_capi_wfe_syncgetbusinessunits_param_body_def">
         <property name="sanic_req_environmenturl" type="string" />
       </object>
+      <string name="sanic_CHCanResolveApproval_param_body_def_ApprovalRequestId_def" />
+      <object name="sanic_CHCanResolveApproval_param_body_def">
+        <property name="ApprovalRequestId" type="string" />
+      </object>
       <string name="sanic_CHCreateTransactionCut_param_body_def_CajeroId_def" />
       <object name="sanic_CHCreateTransactionCut_param_body_def">
         <property name="CajeroId" type="string" />
@@ -14327,6 +14343,14 @@
       <object name="sanic_CHRemoveFromCut_param_body_def">
         <property name="TransactionId" type="string" />
         <property name="Motivo" type="string" />
+      </object>
+      <string name="sanic_CHResolveApprovalRequest_param_body_def_ApprovalRequestId_def" />
+      <string name="sanic_CHResolveApprovalRequest_param_body_def_Decision_def" />
+      <string name="sanic_CHResolveApprovalRequest_param_body_def_Reason_def" />
+      <object name="sanic_CHResolveApprovalRequest_param_body_def">
+        <property name="ApprovalRequestId" type="string" />
+        <property name="Decision" type="string" />
+        <property name="Reason" type="string" />
       </object>
       <string name="sanic_CHResolveChangeRequest_param_body_def_ChangeRequestId_def" />
       <string name="sanic_CHResolveChangeRequest_param_body_def_Decision_def" />
@@ -19217,6 +19241,19 @@
         </response>
       </method>
     </resource>
+    <resource path="/sanic_CHCanResolveApproval">
+      <method siena:requiresAuthentication="true" name="POST" id="sanic_CHCanResolveApproval" actionName="sanic_CHCanResolveApproval" siena:isDeprecated="false">
+        <doc title="Invoke actionImport sanic_CHCanResolveApproval" />
+        <request>
+          <representation mediaType="application/json">
+            <param style="plain" name="ApprovalRequestId" path="/ApprovalRequestId" type="xs:string" />
+          </representation>
+        </request>
+        <response>
+          <representation mediaType="application/json" element="service:Microsoft_Dynamics_CRM_sanic_CHCanResolveApprovalResponse" />
+        </response>
+      </method>
+    </resource>
     <resource path="/sanic_CHCreateTransactionCut">
       <method siena:requiresAuthentication="true" name="POST" id="sanic_CHCreateTransactionCut" actionName="sanic_CHCreateTransactionCut" siena:isDeprecated="false">
         <doc title="Invoke actionImport sanic_CHCreateTransactionCut" />
@@ -19254,6 +19291,21 @@
         </request>
         <response>
           <representation mediaType="application/json" element="service:Microsoft_Dynamics_CRM_sanic_CHRemoveFromCutResponse" />
+        </response>
+      </method>
+    </resource>
+    <resource path="/sanic_CHResolveApprovalRequest">
+      <method siena:requiresAuthentication="true" name="POST" id="sanic_CHResolveApprovalRequest" actionName="sanic_CHResolveApprovalRequest" siena:isDeprecated="false">
+        <doc title="Invoke actionImport sanic_CHResolveApprovalRequest" />
+        <request>
+          <representation mediaType="application/json">
+            <param style="plain" name="ApprovalRequestId" path="/ApprovalRequestId" type="xs:string" />
+            <param style="plain" name="Decision" path="/Decision" type="xs:string" />
+            <param style="plain" name="Reason" path="/Reason" type="xs:string" />
+          </representation>
+        </request>
+        <response>
+          <representation mediaType="application/json" element="service:Microsoft_Dynamics_CRM_sanic_CHResolveApprovalRequestResponse" />
         </response>
       </method>
     </resource>

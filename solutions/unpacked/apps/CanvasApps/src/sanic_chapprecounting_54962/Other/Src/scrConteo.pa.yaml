@@ -855,7 +855,7 @@ Screens:
             RadiusTopRight: =13
             Size: =9
             Text: =""
-            Width: =704
+            Width: =(Parent.Width - 50) * 0.534954
             X: =18
             Y: =190
       - lblPanelDepTitCon:
@@ -902,8 +902,8 @@ Screens:
             BorderStyle: =BorderStyle.None
             Fill: =ThemeLine
             Height: =1
-            Width: =704
-            X: =18
+            Width: =shpCardDepCon.Width
+            X: =shpCardDepCon.X
             Y: =224
       - tabDepositosCon:
           Control: ModernTabList@1.0.1
@@ -925,8 +925,8 @@ Screens:
             BorderStyle: =BorderStyle.None
             Fill: =ThemeLine
             Height: =1
-            Width: =704
-            X: =18
+            Width: =shpCardDepCon.Width
+            X: =shpCardDepCon.X
             Y: =tabDepositosCon.Y + tabDepositosCon.Height
       - btnEnlazarCon:
           Control: Classic/Button@2.2.0
@@ -1335,8 +1335,8 @@ Screens:
             BorderStyle: =BorderStyle.None
             Fill: =ThemeLineSoft
             Height: =1
-            Width: =704
-            X: =18
+            Width: =shpCardDepCon.Width
+            X: =shpCardDepCon.X
             Y: =btnEnlazarCon.Y + btnEnlazarCon.Height + 7
       - shpHeadDepCon:
           Control: Classic/Button@2.2.0
@@ -1367,8 +1367,8 @@ Screens:
             RadiusTopRight: =0
             Size: =9
             Text: =""
-            Width: =704
-            X: =18
+            Width: =shpCardDepCon.Width
+            X: =shpCardDepCon.X
             Y: =shpLineaOpsDepCon.Y + 1
       - lblThCuentaCon:
           Control: Label@2.5.1
@@ -1385,9 +1385,9 @@ Screens:
             PaddingTop: =0
             Size: =7.5
             Text: ="CUENTA"
-            Width: =117
+            Width: =shpCardDepCon.Width * 0.16619
             Wrap: =false
-            X: =34
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.02273
             Y: =shpHeadDepCon.Y + 8
       - lblThMonedaCon:
           Control: Label@2.5.1
@@ -1404,9 +1404,9 @@ Screens:
             PaddingTop: =0
             Size: =7.5
             Text: ="MONEDA"
-            Width: =62
+            Width: =shpCardDepCon.Width * 0.08807
             Wrap: =false
-            X: =159
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.20028
             Y: =shpHeadDepCon.Y + 8
       - lblThChqCon:
           Control: Label@2.5.1
@@ -1424,9 +1424,9 @@ Screens:
             PaddingTop: =0
             Size: =7.5
             Text: ="CHQ"
-            Width: =52
+            Width: =shpCardDepCon.Width * 0.07386
             Wrap: =false
-            X: =229
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.29972
             Y: =shpHeadDepCon.Y + 8
       - lblThMontoChqDepCon:
           Control: Label@2.5.1
@@ -1444,9 +1444,9 @@ Screens:
             PaddingTop: =0
             Size: =7.5
             Text: ="MONTO CHEQUES"
-            Width: =94
+            Width: =shpCardDepCon.Width * 0.13352
             Wrap: =false
-            X: =289
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.38494
             Y: =shpHeadDepCon.Y + 8
       - lblThEfectivoCon:
           Control: Label@2.5.1
@@ -1464,9 +1464,9 @@ Screens:
             PaddingTop: =0
             Size: =7.5
             Text: ="EFECTIVO"
-            Width: =98
+            Width: =shpCardDepCon.Width * 0.1392
             Wrap: =false
-            X: =391
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.52983
             Y: =shpHeadDepCon.Y + 8
       - lblThTotalDepCon:
           Control: Label@2.5.1
@@ -1484,9 +1484,9 @@ Screens:
             PaddingTop: =0
             Size: =7.5
             Text: ="TOTAL"
-            Width: =98
+            Width: =shpCardDepCon.Width * 0.1392
             Wrap: =false
-            X: =497
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.6804
             Y: =shpHeadDepCon.Y + 8
       - lblThEnlaceCon:
           Control: Label@2.5.1
@@ -1504,9 +1504,9 @@ Screens:
             PaddingTop: =0
             Size: =7.5
             Text: ="ENLACE"
-            Width: =96
+            Width: =shpCardDepCon.Width * 0.13636
             Wrap: =false
-            X: =603
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.83097
             Y: =shpHeadDepCon.Y + 8
       - shpLineaHeadDepCon:
           Control: Rectangle@2.3.0
@@ -1515,8 +1515,8 @@ Screens:
             BorderStyle: =BorderStyle.None
             Fill: =ThemeLine
             Height: =1
-            Width: =704
-            X: =18
+            Width: =shpCardDepCon.Width
+            X: =shpCardDepCon.X
             Y: =shpHeadDepCon.Y + shpHeadDepCon.Height
       - galDepDeclaradosCon:
           Control: Gallery@2.15.0
@@ -1534,8 +1534,8 @@ Screens:
             TemplatePadding: =0
             TemplateSize: =34
             Visible: =tabDepositosCon.Selected.Value = "Declarado"
-            Width: =704
-            X: =18
+            Width: =shpCardDepCon.Width
+            X: =shpCardDepCon.X
             Y: =shpLineaHeadDepCon.Y + 1
           Children:
             - shpSelDepDecCon:
@@ -1593,9 +1593,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.75
                   Text: =Text(ThisItem.AccountNumber)
-                  Width: =117
+                  Width: =Parent.TemplateWidth * 0.16619
                   Wrap: =false
-                  X: =16
+                  X: =Parent.TemplateWidth * 0.02273
             - lblMonedaDepDecCon:
                 Control: Label@2.5.1
                 Properties:
@@ -1611,9 +1611,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.38
                   Text: =Text(ThisItem.Currency)
-                  Width: =62
+                  Width: =Parent.TemplateWidth * 0.08807
                   Wrap: =false
-                  X: =141
+                  X: =Parent.TemplateWidth * 0.20028
             - lblChqDepDecCon:
                 Control: Label@2.5.1
                 Properties:
@@ -1638,9 +1638,9 @@ Screens:
                             )
                         )
                     )
-                  Width: =52
+                  Width: =Parent.TemplateWidth * 0.07386
                   Wrap: =false
-                  X: =211
+                  X: =Parent.TemplateWidth * 0.29972
             - lblMontoChqDepDecCon:
                 Control: Label@2.5.1
                 Properties:
@@ -1657,9 +1657,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.38
                   Text: =fxMonto(ThisItem.BACLocalCheckAmount + ThisItem.OtherLocalCheckAmount, fxSimbolo(Text(ThisItem.Currency)))
-                  Width: =94
+                  Width: =Parent.TemplateWidth * 0.13352
                   Wrap: =false
-                  X: =271
+                  X: =Parent.TemplateWidth * 0.38494
             - lblEfectivoDepDecCon:
                 Control: Label@2.5.1
                 Properties:
@@ -1676,9 +1676,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.38
                   Text: =fxMonto(ThisItem.CashAmount, fxSimbolo(Text(ThisItem.Currency)))
-                  Width: =98
+                  Width: =Parent.TemplateWidth * 0.1392
                   Wrap: =false
-                  X: =373
+                  X: =Parent.TemplateWidth * 0.52983
             - lblTotalDepDecCon:
                 Control: Label@2.5.1
                 Properties:
@@ -1696,9 +1696,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.38
                   Text: =fxMonto(ThisItem.Total, fxSimbolo(Text(ThisItem.Currency)))
-                  Width: =98
+                  Width: =Parent.TemplateWidth * 0.1392
                   Wrap: =false
-                  X: =479
+                  X: =Parent.TemplateWidth * 0.6804
             - pilEnlaceDepDecCon:
                 Control: Classic/Button@2.2.0
                 Properties:
@@ -1729,7 +1729,7 @@ Screens:
                   Size: =7.88
                   Text: =If(IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), "Sin enlazar", "Enlazado")
                   Width: =14 + 6.2 * Len(Self.Text)
-                  X: =585 + (96 - Self.Width) / 2
+                  X: =Parent.TemplateWidth * 0.83097 + (Parent.TemplateWidth * 0.13636 - Self.Width) / 2
                   Y: =7
             - shpSepDepDecCon:
                 Control: Rectangle@2.3.0
@@ -1766,8 +1766,8 @@ Screens:
             TemplatePadding: =0
             TemplateSize: =34
             Visible: =tabDepositosCon.Selected.Value = "Recontado"
-            Width: =704
-            X: =18
+            Width: =shpCardDepCon.Width
+            X: =shpCardDepCon.X
             Y: =shpLineaHeadDepCon.Y + 1
           Children:
             - shpSelDepRecCon:
@@ -1825,9 +1825,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.75
                   Text: =Text(ThisItem.AccountNumber)
-                  Width: =117
+                  Width: =Parent.TemplateWidth * 0.16619
                   Wrap: =false
-                  X: =16
+                  X: =Parent.TemplateWidth * 0.02273
             - lblMonedaDepRecCon:
                 Control: Label@2.5.1
                 Properties:
@@ -1843,9 +1843,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.38
                   Text: =Text(ThisItem.Currency)
-                  Width: =62
+                  Width: =Parent.TemplateWidth * 0.08807
                   Wrap: =false
-                  X: =141
+                  X: =Parent.TemplateWidth * 0.20028
             - lblChqDepRecCon:
                 Control: Label@2.5.1
                 Properties:
@@ -1870,9 +1870,9 @@ Screens:
                             )
                         )
                     )
-                  Width: =52
+                  Width: =Parent.TemplateWidth * 0.07386
                   Wrap: =false
-                  X: =211
+                  X: =Parent.TemplateWidth * 0.29972
             - lblMontoChqDepRecCon:
                 Control: Label@2.5.1
                 Properties:
@@ -1889,9 +1889,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.38
                   Text: =fxMonto(ThisItem.BACLocalCheckAmount + ThisItem.OtherLocaCheckAmount, fxSimbolo(Text(ThisItem.Currency)))
-                  Width: =94
+                  Width: =Parent.TemplateWidth * 0.13352
                   Wrap: =false
-                  X: =271
+                  X: =Parent.TemplateWidth * 0.38494
             - lblEfectivoDepRecCon:
                 Control: Label@2.5.1
                 Properties:
@@ -1908,9 +1908,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.38
                   Text: =fxMonto(ThisItem.CashAmount, fxSimbolo(Text(ThisItem.Currency)))
-                  Width: =98
+                  Width: =Parent.TemplateWidth * 0.1392
                   Wrap: =false
-                  X: =373
+                  X: =Parent.TemplateWidth * 0.52983
             - lblTotalDepRecCon:
                 Control: Label@2.5.1
                 Properties:
@@ -1928,9 +1928,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.38
                   Text: =fxMonto(ThisItem.Total, fxSimbolo(Text(ThisItem.Currency)))
-                  Width: =98
+                  Width: =Parent.TemplateWidth * 0.1392
                   Wrap: =false
-                  X: =479
+                  X: =Parent.TemplateWidth * 0.6804
             - pilEnlaceDepRecCon:
                 Control: Classic/Button@2.2.0
                 Properties:
@@ -1961,7 +1961,7 @@ Screens:
                   Size: =7.88
                   Text: =If(IsBlank(ThisItem.RelatedDeclaredDeposit.'CH-Tbl-DeclaredDeposits'), "Sin enlazar", "Enlazado")
                   Width: =14 + 6.2 * Len(Self.Text)
-                  X: =585 + (96 - Self.Width) / 2
+                  X: =Parent.TemplateWidth * 0.83097 + (Parent.TemplateWidth * 0.13636 - Self.Width) / 2
                   Y: =7
             - shpSepDepRecCon:
                 Control: Rectangle@2.3.0
@@ -2002,8 +2002,8 @@ Screens:
                   IsEmpty(colDepDeclaradosCon),
                   IsEmpty(colDepRecontadosCon)
               )
-            Width: =672
-            X: =34
+            Width: =shpCardDepCon.Width * 0.95455
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.02273
             Y: =galDepDeclaradosCon.Y + 60
       - shpFootDepCon:
           Control: Classic/Button@2.2.0
@@ -2060,8 +2060,8 @@ Screens:
             RadiusTopRight: =0
             Size: =9
             Text: =""
-            Width: =704
-            X: =18
+            Width: =shpCardDepCon.Width
+            X: =shpCardDepCon.X
             Y: =shpCardDepCon.Y + shpCardDepCon.Height - Self.Height
       - lblFootDepLabCon:
           Control: Label@2.5.1
@@ -2078,9 +2078,9 @@ Screens:
             PaddingTop: =0
             Size: =9.38
             Text: =If(tabDepositosCon.Selected.Value = "Declarado", "Total declarado", "Total recontado")
-            Width: =117
+            Width: =shpCardDepCon.Width * 0.16619
             Wrap: =false
-            X: =34
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.02273
             Y: =shpFootDepCon.Y
       - lblFootDepChqCon:
           Control: Label@2.5.1
@@ -2122,8 +2122,8 @@ Screens:
                      ) },
                   If(IsEmpty(P), "0", Concat(P As R, Text(R.Cant), Char(10)))
               )
-            Width: =52
-            X: =211
+            Width: =shpCardDepCon.Width * 0.07386
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.27415
             Y: =shpFootDepCon.Y
       - lblFootDepMontoChqCon:
           Control: Label@2.5.1
@@ -2169,8 +2169,8 @@ Screens:
                       Concat(P As R, fxMonto(R.Chq, fxSimbolo(R.Mon)), Char(10))
                   )
               )
-            Width: =94
-            X: =271
+            Width: =shpCardDepCon.Width * 0.13352
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.35938
             Y: =shpFootDepCon.Y
       - lblFootDepEfectivoCon:
           Control: Label@2.5.1
@@ -2216,8 +2216,8 @@ Screens:
                       Concat(P As R, fxMonto(R.Efe, fxSimbolo(R.Mon)), Char(10))
                   )
               )
-            Width: =98
-            X: =373
+            Width: =shpCardDepCon.Width * 0.1392
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.50426
             Y: =shpFootDepCon.Y
       - lblFootDepTotalCon:
           Control: Label@2.5.1
@@ -2263,8 +2263,8 @@ Screens:
                       Concat(P As R, fxMonto(R.Chq + R.Efe, fxSimbolo(R.Mon)), Char(10))
                   )
               )
-            Width: =98
-            X: =479
+            Width: =shpCardDepCon.Width * 0.1392
+            X: =shpCardDepCon.X + shpCardDepCon.Width * 0.65483
             Y: =shpFootDepCon.Y
       - shpCardCurCon:
           Control: Classic/Button@2.2.0
@@ -2295,8 +2295,8 @@ Screens:
             RadiusTopRight: =13
             Size: =9
             Text: =""
-            Width: =612
-            X: =736
+            Width: =(Parent.Width - 50) * 0.465046
+            X: =shpCardDepCon.X + shpCardDepCon.Width + 14
             Y: =190
       - lblPanelCurTitCon:
           Control: Label@2.5.1
@@ -2384,8 +2384,8 @@ Screens:
             BorderStyle: =BorderStyle.None
             Fill: =ThemeLine
             Height: =1
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =224
       - lblLabMonedaCon:
           Control: Label@2.5.1
@@ -2518,8 +2518,8 @@ Screens:
             BorderStyle: =BorderStyle.None
             Fill: =ThemeLineSoft
             Height: =1
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =273
       - shpBandaMatDepCon:
           Control: Classic/Button@2.2.0
@@ -2551,8 +2551,8 @@ Screens:
             Size: =9
             Text: =""
             Visible: =ctxHayDepositoCon
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =274
       - cmpMatDepositoCon:
           Control: CanvasComponent
@@ -2603,8 +2603,8 @@ Screens:
             Fill: =ThemeLineSoft
             Height: =1
             Visible: =ctxHayDepositoCon
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =shpBandaMatDepCon.Y + shpBandaMatDepCon.Height
       - tabDetalleCon:
           Control: ModernTabList@1.0.1
@@ -2623,8 +2623,8 @@ Screens:
             Fill: =ThemeLine
             Height: =1
             Visible: =ctxHayDepositoCon
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =tabDetalleCon.Y + tabDetalleCon.Height
       - lblHintDetalleCon:
           Control: Label@2.5.1
@@ -2859,8 +2859,8 @@ Screens:
             Fill: =ThemeLineSoft
             Height: =1
             Visible: =ctxHayDepositoCon
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =lblHintDetalleCon.Y + lblHintDetalleCon.Height
       - shpHeadDetCon:
           Control: Classic/Button@2.2.0
@@ -2892,8 +2892,8 @@ Screens:
             Size: =9
             Text: =""
             Visible: =ctxHayDepositoCon
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =shpLineaOpsDetCon.Y + 1
       - lblThDenBilCon:
           Control: Label@2.5.1
@@ -2912,9 +2912,9 @@ Screens:
             Size: =7.5
             Text: ="DENOMINACIÓN"
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Billetes"
-            Width: =173
+            Width: =shpCardCurCon.Width * 0.28268
             Wrap: =false
-            X: =754
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.02941
             Y: =shpHeadDetCon.Y + 6
       - lblThAutoBilCon:
           Control: Label@2.5.1
@@ -2933,9 +2933,9 @@ Screens:
             Size: =7.5
             Text: ="AUTO"
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Billetes"
-            Width: =74
+            Width: =shpCardCurCon.Width * 0.12092
             Wrap: =false
-            X: =937
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.32843
             Y: =shpHeadDetCon.Y + 6
       - lblThCantBilCon:
           Control: Label@2.5.1
@@ -2954,9 +2954,9 @@ Screens:
             Size: =7.5
             Text: ="CANTIDAD"
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Billetes"
-            Width: =104
+            Width: =shpCardCurCon.Width * 0.16993
             Wrap: =false
-            X: =1021
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.46569
             Y: =shpHeadDetCon.Y + 6
       - lblThTotBilCon:
           Control: Label@2.5.1
@@ -2975,9 +2975,9 @@ Screens:
             Size: =7.5
             Text: ="TOTAL"
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Billetes"
-            Width: =188
+            Width: =shpCardCurCon.Width * 0.30719
             Wrap: =false
-            X: =1135
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.65196
             Y: =shpHeadDetCon.Y + 6
       - lblThDenMonCon:
           Control: Label@2.5.1
@@ -2996,9 +2996,9 @@ Screens:
             Size: =7.5
             Text: ="DENOMINACIÓN"
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Monedas"
-            Width: =214
+            Width: =shpCardCurCon.Width * 0.34967
             Wrap: =false
-            X: =754
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.02941
             Y: =shpHeadDetCon.Y + 6
       - lblThCantMonCon:
           Control: Label@2.5.1
@@ -3017,9 +3017,9 @@ Screens:
             Size: =7.5
             Text: ="CANTIDAD"
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Monedas"
-            Width: =104
+            Width: =shpCardCurCon.Width * 0.16993
             Wrap: =false
-            X: =978
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.39542
             Y: =shpHeadDetCon.Y + 6
       - lblThTotMonCon:
           Control: Label@2.5.1
@@ -3038,9 +3038,9 @@ Screens:
             Size: =7.5
             Text: ="TOTAL"
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Monedas"
-            Width: =232
+            Width: =shpCardCurCon.Width * 0.37908
             Wrap: =false
-            X: =1092
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.5817
             Y: =shpHeadDetCon.Y + 6
       - lblThNumChqCon:
           Control: Label@2.5.1
@@ -3058,9 +3058,9 @@ Screens:
             Size: =7.5
             Text: ="N° CHEQUE"
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Cheques"
-            Width: =104
+            Width: =shpCardCurCon.Width * 0.16993
             Wrap: =false
-            X: =791
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.08987
             Y: =shpHeadDetCon.Y + 6
       - lblThTipoChqCon:
           Control: Label@2.5.1
@@ -3078,9 +3078,9 @@ Screens:
             Size: =7.5
             Text: ="TIPO"
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Cheques"
-            Width: =99
+            Width: =shpCardCurCon.Width * 0.16176
             Wrap: =false
-            X: =904
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.27451
             Y: =shpHeadDetCon.Y + 6
       - lblThMonChqCon:
           Control: Label@2.5.1
@@ -3098,9 +3098,9 @@ Screens:
             Size: =7.5
             Text: ="MON."
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Cheques"
-            Width: =56
+            Width: =shpCardCurCon.Width * 0.0915
             Wrap: =false
-            X: =1012
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.45098
             Y: =shpHeadDetCon.Y + 6
       - lblThMontoChqCon:
           Control: Label@2.5.1
@@ -3119,9 +3119,9 @@ Screens:
             Size: =7.5
             Text: ="MONTO"
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Cheques"
-            Width: =109
+            Width: =shpCardCurCon.Width * 0.1781
             Wrap: =false
-            X: =1077
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.55719
             Y: =shpHeadDetCon.Y + 6
       - lblThOrigenChqCon:
           Control: Label@2.5.1
@@ -3140,9 +3140,9 @@ Screens:
             Size: =7.5
             Text: ="ORIGEN"
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Cheques"
-            Width: =92
+            Width: =shpCardCurCon.Width * 0.15033
             Wrap: =false
-            X: =1195
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.75
             Y: =shpHeadDetCon.Y + 6
       - shpLineaHeadDetCon:
           Control: Rectangle@2.3.0
@@ -3152,8 +3152,8 @@ Screens:
             Fill: =ThemeLine
             Height: =1
             Visible: =ctxHayDepositoCon
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =shpHeadDetCon.Y + shpHeadDetCon.Height
       - galBilletesCon:
           Control: Gallery@2.15.0
@@ -3167,8 +3167,8 @@ Screens:
             TemplatePadding: =0
             TemplateSize: =32
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Billetes"
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =shpLineaHeadDetCon.Y + 1
           Children:
             - lblDenBilCon:
@@ -3187,9 +3187,9 @@ Screens:
                   PaddingTop: =0
                   Size: =10.88
                   Text: =fxSimbolo(ctxMonedaCon) & Text(ThisItem.Denominacion, "#,##0.##")
-                  Width: =173
+                  Width: =Parent.TemplateWidth * 0.28268
                   Wrap: =false
-                  X: =18
+                  X: =Parent.TemplateWidth * 0.02941
             - btnAutoBilCon:
                 Control: Classic/Button@2.2.0
                 Properties:
@@ -3221,7 +3221,7 @@ Screens:
                   TabIndex: =-1
                   Text: =Text(ThisItem.Auto)
                   Width: =54
-                  X: =201 + (74 - Self.Width) / 2
+                  X: =Parent.TemplateWidth * 0.32843 + (Parent.TemplateWidth * 0.12092 - Self.Width) / 2
                   Y: =5
             - inpCantidadBilCon:
                 Control: Classic/TextInput@2.3.2
@@ -3250,8 +3250,8 @@ Screens:
                   RadiusTopLeft: =7
                   RadiusTopRight: =7
                   Size: =10.13
-                  Width: =104
-                  X: =285
+                  Width: =Parent.TemplateWidth * 0.16993
+                  X: =Parent.TemplateWidth * 0.46569
                   Y: =3
             - lblTotFilaBilCon:
                 Control: Label@2.5.1
@@ -3273,9 +3273,9 @@ Screens:
                         ThisItem.Denominacion * (ThisItem.Auto + Value(Coalesce(inpCantidadBilCon.Text, "0"))),
                         fxSimbolo(ctxMonedaCon)
                     )
-                  Width: =188
+                  Width: =Parent.TemplateWidth * 0.30719
                   Wrap: =false
-                  X: =399
+                  X: =Parent.TemplateWidth * 0.65196
             - shpSepBilCon:
                 Control: Rectangle@2.3.0
                 Properties:
@@ -3297,8 +3297,8 @@ Screens:
             TemplatePadding: =0
             TemplateSize: =32
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Monedas"
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =galBilletesCon.Y
           Children:
             - lblDenMonCon:
@@ -3317,9 +3317,9 @@ Screens:
                   PaddingTop: =0
                   Size: =10.88
                   Text: =fxSimbolo(ctxMonedaCon) & Text(ThisItem.Denominacion, "#,##0.##")
-                  Width: =214
+                  Width: =Parent.TemplateWidth * 0.34967
                   Wrap: =false
-                  X: =18
+                  X: =Parent.TemplateWidth * 0.02941
             - inpCantidadMonCon:
                 Control: Classic/TextInput@2.3.2
                 Properties:
@@ -3347,8 +3347,8 @@ Screens:
                   RadiusTopLeft: =7
                   RadiusTopRight: =7
                   Size: =10.13
-                  Width: =104
-                  X: =242
+                  Width: =Parent.TemplateWidth * 0.16993
+                  X: =Parent.TemplateWidth * 0.39542
                   Y: =3
             - lblTotFilaMonCon:
                 Control: Label@2.5.1
@@ -3366,9 +3366,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.75
                   Text: =fxMonto(ThisItem.Denominacion * Value(Coalesce(inpCantidadMonCon.Text, "0")), fxSimbolo(ctxMonedaCon))
-                  Width: =232
+                  Width: =Parent.TemplateWidth * 0.37908
                   Wrap: =false
-                  X: =356
+                  X: =Parent.TemplateWidth * 0.5817
             - shpSepMonCon:
                 Control: Rectangle@2.3.0
                 Properties:
@@ -3390,8 +3390,8 @@ Screens:
             TemplatePadding: =0
             TemplateSize: =34
             Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Cheques"
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =galBilletesCon.Y
           Children:
             - shpFilaChqCon:
@@ -3443,7 +3443,7 @@ Screens:
                   Text: =""
                   Visible: =!ThisItem.EsManual
                   Width: =24
-                  X: =16 + 3
+                  X: =Parent.TemplateWidth * 0.02614 + 3
                   Y: =5
             - lblGuionChqCon:
                 Control: Label@2.5.1
@@ -3463,7 +3463,7 @@ Screens:
                   Visible: =ThisItem.EsManual
                   Width: =30
                   Wrap: =false
-                  X: =16
+                  X: =Parent.TemplateWidth * 0.02614
             - lblNumChequeCon:
                 Control: Label@2.5.1
                 Properties:
@@ -3480,9 +3480,9 @@ Screens:
                   Size: =9.75
                   Text: =ThisItem.Numero
                   Visible: =!ThisItem.EsManual
-                  Width: =104
+                  Width: =Parent.TemplateWidth * 0.16993
                   Wrap: =false
-                  X: =55
+                  X: =Parent.TemplateWidth * 0.08987
             - inpNumChequeCon:
                 Control: Classic/TextInput@2.3.2
                 Properties:
@@ -3509,8 +3509,8 @@ Screens:
                   RadiusTopRight: =7
                   Size: =9
                   Visible: =ThisItem.EsManual
-                  Width: =104
-                  X: =55
+                  Width: =Parent.TemplateWidth * 0.16993
+                  X: =Parent.TemplateWidth * 0.08987
                   Y: =4
             - lblTipoChequeCon:
                 Control: Label@2.5.1
@@ -3527,9 +3527,9 @@ Screens:
                   Size: =9.38
                   Text: =ThisItem.Tipo
                   Visible: =!ThisItem.EsManual
-                  Width: =99
+                  Width: =Parent.TemplateWidth * 0.16176
                   Wrap: =false
-                  X: =168
+                  X: =Parent.TemplateWidth * 0.27451
             - ddTipoChequeCon:
                 Control: Classic/DropDown@2.3.1
                 Properties:
@@ -3561,8 +3561,8 @@ Screens:
                   SelectionFill: =RGBA(0, 176, 240, 1)
                   Size: =8.25
                   Visible: =ThisItem.EsManual
-                  Width: =99
-                  X: =168
+                  Width: =Parent.TemplateWidth * 0.16176
+                  X: =Parent.TemplateWidth * 0.27451
                   Y: =4
             - lblMonChequeCon:
                 Control: Label@2.5.1
@@ -3578,9 +3578,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.38
                   Text: =Trim(fxSimbolo(ThisItem.Moneda))
-                  Width: =56
+                  Width: =Parent.TemplateWidth * 0.0915
                   Wrap: =false
-                  X: =276
+                  X: =Parent.TemplateWidth * 0.45098
             - lblMontoChequeCon:
                 Control: Label@2.5.1
                 Properties:
@@ -3598,9 +3598,9 @@ Screens:
                   Size: =9.38
                   Text: =Text(ThisItem.Monto, FmtMoney)
                   Visible: =!ThisItem.EsManual
-                  Width: =109
+                  Width: =Parent.TemplateWidth * 0.1781
                   Wrap: =false
-                  X: =341
+                  X: =Parent.TemplateWidth * 0.55719
             - inpMontoChequeCon:
                 Control: Classic/TextInput@2.3.2
                 Properties:
@@ -3628,8 +3628,8 @@ Screens:
                   RadiusTopRight: =7
                   Size: =9
                   Visible: =ThisItem.EsManual
-                  Width: =109
-                  X: =341
+                  Width: =Parent.TemplateWidth * 0.1781
+                  X: =Parent.TemplateWidth * 0.55719
                   Y: =4
             - pilOrigenChequeCon:
                 Control: Classic/Button@2.2.0
@@ -3661,7 +3661,7 @@ Screens:
                   Size: =7.5
                   Text: =If(ThisItem.EsManual, "Manual", "Declarado")
                   Width: =14 + 6.2 * Len(Self.Text)
-                  X: =459 + (92 - Self.Width) / 2
+                  X: =Parent.TemplateWidth * 0.75 + (Parent.TemplateWidth * 0.15033 - Self.Width) / 2
                   Y: =7
             - icoBorrarChequeCon:
                 Control: Classic/Icon@2.5.0
@@ -3680,7 +3680,7 @@ Screens:
                     Set(gvarDepositoSinGuardar, true)
                   Visible: =ThisItem.EsManual && gvarIdentidadOk && !ctxSoloLecturaCon
                   Width: =16
-                  X: =560 + 7
+                  X: =Parent.TemplateWidth * 0.91503 + 7
                   Y: =9
             - shpSepChqCon:
                 Control: Rectangle@2.3.0
@@ -3777,8 +3777,8 @@ Screens:
             Size: =9
             Text: =""
             Visible: =galBilletesCon.Visible
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =shpFootAccionesCon.Y - 32
       - lblFootBilLabCon:
           Control: Label@2.5.1
@@ -3796,9 +3796,9 @@ Screens:
             Size: =9.38
             Text: ="Total billetes"
             Visible: =galBilletesCon.Visible
-            Width: =173
+            Width: =shpCardCurCon.Width * 0.28268
             Wrap: =false
-            X: =754
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.02941
             Y: =shpFootBilCon.Y
       - lblFootBilAutoCon:
           Control: Label@2.5.1
@@ -3817,9 +3817,9 @@ Screens:
             Size: =9.38
             Text: =Text(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Auto))
             Visible: =galBilletesCon.Visible
-            Width: =74
+            Width: =shpCardCurCon.Width * 0.12092
             Wrap: =false
-            X: =937
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.32843
             Y: =shpFootBilCon.Y
       - lblFootBilManualCon:
           Control: Label@2.5.1
@@ -3838,9 +3838,9 @@ Screens:
             Size: =9.38
             Text: =Text(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Manual))
             Visible: =galBilletesCon.Visible
-            Width: =104
+            Width: =shpCardCurCon.Width * 0.16993
             Wrap: =false
-            X: =1021
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.46569
             Y: =shpFootBilCon.Y
       - lblFootBilTotalCon:
           Control: Label@2.5.1
@@ -3859,9 +3859,9 @@ Screens:
             Size: =9.38
             Text: =fxMonto(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Denominacion * (Auto + Manual)), fxSimbolo(ctxMonedaCon))
             Visible: =galBilletesCon.Visible
-            Width: =188
+            Width: =shpCardCurCon.Width * 0.30719
             Wrap: =false
-            X: =1135
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.65196
             Y: =shpFootBilCon.Y
       - shpFootMonCon:
           Control: Classic/Button@2.2.0
@@ -3893,8 +3893,8 @@ Screens:
             Size: =9
             Text: =""
             Visible: =galMonedasCon.Visible
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =shpBandaEfectivoCon.Y - 32
       - lblFootMonLabCon:
           Control: Label@2.5.1
@@ -3912,9 +3912,9 @@ Screens:
             Size: =9.38
             Text: ="Total monedas"
             Visible: =galMonedasCon.Visible
-            Width: =214
+            Width: =shpCardCurCon.Width * 0.34967
             Wrap: =false
-            X: =754
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.02941
             Y: =shpFootMonCon.Y
       - lblFootMonCantCon:
           Control: Label@2.5.1
@@ -3933,9 +3933,9 @@ Screens:
             Size: =9.38
             Text: =Text(Sum(Filter(colDetalleConteoCon, Tipo = "Moneda"), Manual))
             Visible: =galMonedasCon.Visible
-            Width: =104
+            Width: =shpCardCurCon.Width * 0.16993
             Wrap: =false
-            X: =978
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.39542
             Y: =shpFootMonCon.Y
       - lblFootMonTotalCon:
           Control: Label@2.5.1
@@ -3954,9 +3954,9 @@ Screens:
             Size: =9.38
             Text: =fxMonto(Sum(Filter(colDetalleConteoCon, Tipo = "Moneda"), Denominacion * Manual), fxSimbolo(ctxMonedaCon))
             Visible: =galMonedasCon.Visible
-            Width: =232
+            Width: =shpCardCurCon.Width * 0.37908
             Wrap: =false
-            X: =1092
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.5817
             Y: =shpFootMonCon.Y
       - shpBandaEfectivoCon:
           Control: Classic/Button@2.2.0
@@ -3988,8 +3988,8 @@ Screens:
             Size: =9
             Text: =""
             Visible: =galMonedasCon.Visible
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =shpFootAccionesCon.Y - 36
       - lblEfectivoDepositoCon:
           Control: Label@2.5.1
@@ -4008,9 +4008,9 @@ Screens:
               ="Efectivo del depósito (billetes + monedas): " &
               fxMonto(Sum(colDetalleConteoCon, Denominacion * (Auto + Manual)), fxSimbolo(ctxMonedaCon))
             Visible: =galMonedasCon.Visible
-            Width: =570
+            Width: =shpCardCurCon.Width * 0.93137
             Wrap: =false
-            X: =754
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.02941
             Y: =shpBandaEfectivoCon.Y
       - shpFootChqCon:
           Control: Classic/Button@2.2.0
@@ -4042,8 +4042,8 @@ Screens:
             Size: =9
             Text: =""
             Visible: =galChequesCon.Visible
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =shpFootAccionesCon.Y - 32
       - lblFootChqLabCon:
           Control: Label@2.5.1
@@ -4083,9 +4083,9 @@ Screens:
             Size: =9.38
             Text: =fxMonto(Sum(Filter(colChecksCon, Seleccionado), Monto), fxSimbolo(ctxMonedaCon))
             Visible: =galChequesCon.Visible
-            Width: =262
+            Width: =shpCardCurCon.Width * 0.4281
             Wrap: =false
-            X: =1062
+            X: =shpCardCurCon.X + shpCardCurCon.Width * 0.53268
             Y: =shpFootChqCon.Y
       - shpFootAccionesCon:
           Control: Classic/Button@2.2.0
@@ -4116,8 +4116,8 @@ Screens:
             RadiusTopRight: =0
             Size: =9
             Text: =""
-            Width: =612
-            X: =736
+            Width: =shpCardCurCon.Width
+            X: =shpCardCurCon.X
             Y: =shpCardCurCon.Y + shpCardCurCon.Height - 48
       - btnNuevoDepositoCon:
           Control: Classic/Button@2.2.0

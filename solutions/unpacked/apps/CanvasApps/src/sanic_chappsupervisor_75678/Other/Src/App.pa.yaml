@@ -41,17 +41,4 @@ App:
           { u: LookUp(Users, 'Primary Email' = User().Email) },
           If(IsBlank(u.'Primary Email'), LookUp(Users, 'User Name' = User().Email), u)
       );
-    OnError: |-
-      =/*Trace(
-          $"[Supervisor] {FirstError.Message} | Kind: {FirstError.Kind} | Origen: {FirstError.Source}",
-          TraceSeverity.Error
-      );
-      Notify(
-          If(
-              FirstError.Kind = ErrorKind.Validation || FirstError.Kind = ErrorKind.Conflict || FirstError.Kind = ErrorKind.Sync,
-              FirstError.Message,   // mensaje de negocio del guard, tal cual
-              "Ocurrió un error inesperado. El detalle quedó registrado para soporte."
-          ),
-          NotificationType.Error
-      )*/
     Theme: =PowerAppsTheme

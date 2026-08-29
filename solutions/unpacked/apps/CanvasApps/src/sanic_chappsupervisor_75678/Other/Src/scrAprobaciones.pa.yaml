@@ -98,8 +98,7 @@ Screens:
                         PaddingRight: =0
                         PaddingTop: =0
                         Size: =10.5
-                        Text: |-
-                          ="Solicitudes que requieren tu firma. Control de cuatro ojos: no podés aprobar lo que vos mismo solicitaste."
+                        Text: ="Solicitudes que requieren tu firma. No podés aprobar lo que vos mismo solicitaste."
             - cardFiltrosApr:
                 Control: GroupContainer@1.5.0
                 Variant: ManualLayout
@@ -1663,564 +1662,46 @@ Screens:
                         HoverColor: =ThemeAccentInk
                         HoverFill: =ColorFade(ThemeAccent, -10%)
                         OnSelect: |-
-                          =UpdateContext({ctxCargandoApr: true, ctxResueltaApr: false});
+                          =UpdateContext({ctxCargandoApr: true});
 
-                          // (1) Revalidación con registro FRESCO (anti doble aprobación + cuatro ojos)
-                          UpdateContext(
-                              {
-                                  ctxFrescaApr:
-                                      LookUp(
-                                          'CH-Tbl-ApprovalRequests',
-                                          'CH-Tbl-ApprovalRequest' = galBandejaApr.Selected.'CH-Tbl-ApprovalRequest'
+                          // UNA sola llamada. La CAPI sanic_CHResolveApprovalRequest autoriza, aplica el
+                          // efecto y marca la solicitud EN LA MISMA TRANSACCION. Antes esto eran dos
+                          // escrituras sueltas desde aca: si la segunda fallaba, la solicitud quedaba
+                          // resuelta y el efecto sin ejecutar (una decision apuntando a la nada).
+                          //
+                          // Las reglas y los efectos NO se reimplementan aca a proposito: viven en el
+                          // servidor, bajo test. El veredicto negativo vuelve como DATO (Outcome =
+                          // "Blocked" + Message), nunca como fault, porque Power Fx descarta el mensaje
+                          // de los faults de plugin y mostraria un "Network error" generico.
+                          IfError(
+                              With(
+                                  {
+                                      _r: Environment.sanic_CHResolveApprovalRequest(
+                                          {
+                                              ApprovalRequestId: galBandejaApr.Selected.'CH-Tbl-ApprovalRequest',
+                                              Decision: "Approve",
+                                              Reason: Trim(inpMotivoApr.Text)
+                                          }
                                       )
-                              }
-                          );
-
-                          If(
-                              IsBlank(ctxFrescaApr),
-                              Notify("La solicitud ya no existe. Actualizá la bandeja.", NotificationType.Warning),
-                              !IsBlank(ctxFrescaApr.ApprovalStatus),
-                              Notify(
-                                  "Esta solicitud ya fue resuelta (" & Text(ctxFrescaApr.ApprovalStatus) & ") por "
-                                  & Coalesce(ctxFrescaApr.SolvedBy.'Full Name', "otro supervisor") & ". No se ejecutó nada.",
-                                  NotificationType.Warning
-                              ),
-                              ctxFrescaApr.'Created By'.User = UsuarioActual.User,
-                              Notify(
-                                  "No podés aprobar una solicitud creada por vos.",
-                                  NotificationType.Error
-                              ),
-
-                              // (2) La SOLICITUD primero. Si esto falla, no se toca nada más.
-                              IfError(
-                                  Patch(
-                                      'CH-Tbl-ApprovalRequests',
-                                      ctxFrescaApr,
-                                      {
-                                          ApprovalStatus: 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Aprobado,
-                                          SolvedBy: UsuarioActual,
-                                          ResolutionDatetime: Now()
-                                      }
-                                  );
-                                  UpdateContext({ctxResueltaApr: true}),
-                                  UpdateContext({ctxResueltaApr: false});
-                                  Notify("No se pudo registrar la aprobación: " & FirstError.Message, NotificationType.Error)
-                              )
-                          );
-
-                          // (3) Efectos — SOLO si la solicitud quedó marcada Aprobado
-                          If(
-                              ctxResueltaApr,
-                              IfError(
-                                  Switch(
-                                      ctxFrescaApr.RequestType,
-
-                                      // 1) Remapear tula: mover a otra planilla y restituir su estado previo
-                                      "Remapear tula",
-                                      With(
-                                          {
-                                              Tula: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr),
-                                              Planilla: LookUp(
-                                                  'CH-Tbl-Receptions',
-                                                  'CH-Tbl-Receptions' = IfError(GUID(Text(ParseJSON(ctxResApr).ReceiptGUID)), Blank())
-                                              ),
-                                              EstadoPrevio: LookUp(
-                                                  Choices([@'CH-Tbl-Bags'].BagStatus),
-                                                  Text(Value) = Text(ParseJSON(ctxResApr).BagPreviousState)
-                                              )
-                                          },
-                                          If(
-                                              IsBlank(Tula) || IsBlank(Planilla),
-                                              Notify("No se encontró la tula o la planilla destino.", NotificationType.Error),
-                                              // guarda: si el label no resolvió, NO se escribe BagStatus
-                                              IsBlank(EstadoPrevio),
-                                              Patch('CH-Tbl-Bags', Tula, {ReceptionID: Planilla});
-                                              Notify(
-                                                  "Tula remapeada. El estado previo no pudo resolverse — revisalo a mano.",
-                                                  NotificationType.Warning
-                                              ),
-                                              Patch('CH-Tbl-Bags', Tula, {ReceptionID: Planilla, BagStatus: EstadoPrevio.Value});
-                                              Notify("Tula remapeada.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 2) Agregar tula: materializar la tula pendiente, con dup-check
-                                      "Agregar tula",
-                                      With(
-                                          {
-                                              Tula: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr),
-                                              NumNuevo: Text(ParseJSON(ctxResApr).BagID),
-                                              LoteGuid: IfError(GUID(Text(ParseJSON(ctxResApr).ReceptionBatchGUID)), Blank())
-                                          },
-                                          If(
-                                              IsBlank(Tula),
-                                              Notify("La tula pendiente ya no existe.", NotificationType.Error),
-                                              !IsBlank(
-                                                  LookUp(
-                                                      'CH-Tbl-Bags',
-                                                      ReceptionBatchId.'CH-Tbl-ReceptionBatch' = LoteGuid
-                                                      && BagID = NumNuevo
-                                                      && 'CH-Tbl-Bags' <> ctxBagGuidApr
-                                                  )
-                                              ),
-                                              Notify(
-                                                  "Ese número de tula ya existe en otra planilla del mismo lote. La solicitud quedó aprobada: corregí el número y volvé a intentar el alta.",
-                                                  NotificationType.Error
-                                              ),
-                                              Patch('CH-Tbl-Bags', Tula, {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'});
-                                              Notify("Tula dada de alta en bóveda.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 3) Eliminar tula: baja efectiva
-                                      "Eliminar tula",
-                                      With(
-                                          { Tula: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr) },
-                                          If(
-                                              IsBlank(Tula),
-                                              Notify("La tula ya no existe.", NotificationType.Warning),
-                                              Remove('CH-Tbl-Bags', Tula);
-                                              Notify("Tula eliminada.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 4) Modificar numero de planilla: dup-check en el mismo lote
-                                      "Modificar numero de planilla",
-                                      With(
-                                          {
-                                              Planilla: LookUp(
-                                                  'CH-Tbl-Receptions',
-                                                  'CH-Tbl-Receptions' = IfError(GUID(Text(ParseJSON(ctxResApr).ReceiptGUID)), Blank())
-                                              ),
-                                              NumNuevo: Text(ParseJSON(ctxResApr).NewReceiptID),
-                                              GUIDPlanilla: GUID(Text(ParseJSON(ctxResApr).ReceiptGUID))
-                                          },
-                                          If(
-                                              IsBlank(Planilla),
-                                              Notify("No se encontró la planilla.", NotificationType.Error),
-                                              !IsBlank(
-                                                  LookUp(
-                                                      'CH-Tbl-Receptions',
-                                                      ReceptionBatch.'CH-Tbl-ReceptionBatch' = GUIDPlanilla
-                                                      && ReceiptID = NumNuevo                           
-                                                  )
-                                              )                   
-                                              ,
-                                              Notify(
-                                                  "Ese número de planilla ya existe en el mismo lote de recepción.",
-                                                  NotificationType.Error
-                                              ),
-                                              Patch('CH-Tbl-Receptions', Planilla, {ReceiptID: NumNuevo, Name: NumNuevo});
-                                              Notify("Número de planilla actualizado.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 5) Editar tula: renombrar con dup-check
-                                      "Editar tula",
-                                      With(
-                                          {
-                                              Tula: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr),
-                                              NumNuevo: Text(ParseJSON(ctxResApr).BagID),
-                                              LoteGuid: IfError(GUID(Text(ParseJSON(ctxResApr).ReceptionBatchGUID)), Blank())
-                                          },
-                                          If(
-                                              IsBlank(Tula),
-                                              Notify("La tula ya no existe.", NotificationType.Error),
-                                              !IsBlank(
-                                                  LookUp(
-                                                      'CH-Tbl-Bags',
-                                                      ReceptionBatchId.'CH-Tbl-ReceptionBatch' = LoteGuid
-                                                      && BagID = NumNuevo
-                                                      && 'CH-Tbl-Bags' <> ctxBagGuidApr
-                                                  )
-                                              ),
-                                              Notify(
-                                                  "Ese número de tula ya existe en el mismo lote de recepción.",
-                                                  NotificationType.Error
-                                              ),
-                                              Patch(
-                                                  'CH-Tbl-Bags',
-                                                  Tula,
-                                                  {
-                                                      Name: NumNuevo,
-                                                      BagID: NumNuevo,
-                                                      BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'
-                                                  }
-                                              );
-                                              Notify("Número de tula actualizado.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 6) Crear sesion de recuento: confirmar la sesión
-                                      "Crear sesion de recuento",
-                                      With(
-                                          {
-                                              Ses: LookUp(
-                                                  'CH-Tbl-RecountingSessions',
-                                                  'CH-Tbl-RecountingSession' = IfError(GUID(Text(ParseJSON(ctxResApr).RecountingSessionGUID)), Blank())
-                                              )
-                                          },
-                                          If(
-                                              IsBlank(Ses),
-                                              Notify("La sesión de recuento ya no existe.", NotificationType.Error),
-                                              Patch('CH-Tbl-RecountingSessions', Ses, {Confirmed: true, ConfirmedBy: UsuarioActual});
-                                              Notify("Sesión de recuento confirmada.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 7) Primera tula en planilla: COMPLETAR lo que el productor dejó a medias.
-                                      "Primera tula en planilla",
-                                      With(
-                                          {
-                                              Tula: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr),
-                                              Ses: LookUp(
-                                                  'CH-Tbl-RecountingSessions',
-                                                  'CH-Tbl-RecountingSession' = IfError(GUID(Text(ParseJSON(ctxResApr).RecountingSessionGUID)), Blank())
-                                              ),
-                                              Declarada: LookUp(
-                                                  'CH-Tbl-DeclaredBags',
-                                                  'CH-Tbl-DeclaredBags' = IfError(GUID(Text(ParseJSON(ctxResApr).DeclarationBagGUID)), Blank())
-                                              )
-                                          },
-                                          If(
-                                              IsBlank(Tula) || IsBlank(Ses),
-                                              Notify("Falta la tula o la sesión de recuento.", NotificationType.Error),
-                                              // guarda: no se escribe BagDeclarationID en blanco
-                                              IsBlank(Declarada),
-                                              Patch(
-                                                  'CH-Tbl-Bags',
-                                                  Tula,
-                                                  {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero', RecountingSession: Ses}
-                                              );
-                                              Notify(
-                                                  "Tula asignada al cajero. No se pudo enlazar la bolsa declarada — revisalo a mano.",
-                                                  NotificationType.Warning
-                                              ),
-                                              Patch(
-                                                  'CH-Tbl-Bags',
-                                                  Tula,
-                                                  {
-                                                      BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',
-                                                      RecountingSession: Ses,
-                                                      BagDeclarationID: Declarada
-                                                  }
-                                              );
-                                              Patch('CH-Tbl-DeclaredBags', Declarada, {BagID: Tula});
-                                              Notify("Tula asignada al cajero y enlazada a su declaración.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 8) Tula sin declaracion: asignar al cajero + abrir detalle de sesión
-                                      "Tula sin declaracion",
-                                      With(
-                                          {
-                                              Tula: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr),
-                                              Ses: LookUp(
-                                                  'CH-Tbl-RecountingSessions',
-                                                  'CH-Tbl-RecountingSession' = IfError(GUID(Text(ParseJSON(ctxResApr).RecountingSessionGUID)), Blank())
-                                              )
-                                          },
-                                          If(
-                                              IsBlank(Tula) || IsBlank(Ses),
-                                              Notify("Falta la tula o la sesión de recuento.", NotificationType.Error),
-                                              Patch(
-                                                  'CH-Tbl-Bags',
-                                                  Tula,
-                                                  {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero', RecountingSession: Ses}
-                                              );
-                                              Patch(
-                                                  'CH-Tbl-RecountingSessionDetails',
-                                                  Defaults('CH-Tbl-RecountingSessionDetails'),
-                                                  {RecountingSessionId: Ses, BagId: Tula, SupervisorId: UsuarioActual}
-                                              );
-                                              Notify("Tula sin declaración asignada al cajero.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 9) Tula con diferencia: asientos SEPARADOS por componente
-                                      "Tula con diferencia",
-                                      If(
-                                          IsBlank(ctxBagApr),
-                                          Notify("No se encontró la tula de la solicitud.", NotificationType.Error),
-                                          Clear(colTxApr);
-
-                                          // 9.a) Depósitos RECONTADOS (join LOCAL contra colDecApr — cero fetch por fila)
-                                          ForAll(
-                                              colRecApr As R,
-                                              With(
-                                                  {
-                                                      D: LookUp(
-                                                          colDecApr,
-                                                          RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting' = R.'CH-Tbl-DepositsRecounting'
-                                                      )
-                                                  },
-                                                  If(
-                                                      IsBlank(D),
-                                                      // recontado SIN declarado → Sobrante CON cuenta y CON el recuento enlazado
-                                                      Collect(
-                                                          colTxApr,
-                                                          {
-                                                              AccountNumber: R.AccountNumber,
-                                                              Currency: R.Currency,
-                                                              CashAmount: Coalesce(R.CashAmount, 0),
-                                                              BACLocalCheckAmount: Coalesce(R.BACLocalCheckAmount, 0),
-                                                              OtherLocalCheckAmount: Coalesce(R.OtherLocaCheckAmount, 0),
-                                                              TransactionReference: "Sobrante sin declarar tula " & ctxBagApr.BagID,
-                                                              TransactionType: 'TransactionType (CH-Tbl-Transactions)'.Sobrante,
-                                                              TransactionNumber: R.TransactionNumber,
-                                                              TransactionProcessingType: 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual,
-                                                              RelatedDepositRecounting: R
-                                                          }
-                                                      ),
-                                                      // enlazado → diferencia POR COMPONENTE, nunca por el neto
-                                                      With(
-                                                          {
-                                                              dCash: Coalesce(R.CashAmount, 0) - Coalesce(D.CashAmount, 0),
-                                                              dBac: Coalesce(R.BACLocalCheckAmount, 0) - Coalesce(D.BACLocalCheckAmount, 0),
-                                                              dOtro: Coalesce(R.OtherLocaCheckAmount, 0) - Coalesce(D.OtherLocalCheckAmount, 0)
-                                                          },
-                                                          If(
-                                                              Max(dCash, 0) + Max(dBac, 0) + Max(dOtro, 0) > 0,
-                                                              Collect(
-                                                                  colTxApr,
-                                                                  {
-                                                                      AccountNumber: D.AccountNumber,
-                                                                      Currency: R.Currency,
-                                                                      CashAmount: Max(dCash, 0),
-                                                                      BACLocalCheckAmount: Max(dBac, 0),
-                                                                      OtherLocalCheckAmount: Max(dOtro, 0),
-                                                                      TransactionReference: "Sobrante tula " & ctxBagApr.BagID,
-                                                                      TransactionType: 'TransactionType (CH-Tbl-Transactions)'.Sobrante,
-                                                                      TransactionNumber: R.TransactionNumber,
-                                                                      TransactionProcessingType: 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual,
-                                                                      RelatedDepositRecounting: R
-                                                                  }
-                                                              )
-                                                          );
-                                                          If(
-                                                              Abs(Min(dCash, 0)) + Abs(Min(dBac, 0)) + Abs(Min(dOtro, 0)) > 0,
-                                                              Collect(
-                                                                  colTxApr,
-                                                                  {
-                                                                      AccountNumber: D.AccountNumber,
-                                                                      Currency: R.Currency,
-                                                                      CashAmount: Abs(Min(dCash, 0)),
-                                                                      BACLocalCheckAmount: Abs(Min(dBac, 0)),
-                                                                      OtherLocalCheckAmount: Abs(Min(dOtro, 0)),
-                                                                      TransactionReference: "Faltante tula " & ctxBagApr.BagID,
-                                                                      TransactionType: 'TransactionType (CH-Tbl-Transactions)'.Faltante,
-                                                                      TransactionNumber: R.TransactionNumber,
-                                                                      TransactionProcessingType: 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual,
-                                                                      RelatedDepositRecounting: R
-                                                                  }
-                                                              )
-                                                          );
-                                                          // el depósito recontado en sí
-                                                          Collect(
-                                                              colTxApr,
-                                                              {
-                                                                  AccountNumber: D.AccountNumber,
-                                                                  Currency: R.Currency,
-                                                                  CashAmount: Coalesce(R.CashAmount, 0),
-                                                                  BACLocalCheckAmount: Coalesce(R.BACLocalCheckAmount, 0),
-                                                                  OtherLocalCheckAmount: Coalesce(R.OtherLocaCheckAmount, 0),
-                                                                  TransactionReference: D.DepositReference,
-                                                                  TransactionType: 'TransactionType (CH-Tbl-Transactions)'.Deposito,
-                                                                  TransactionNumber: R.TransactionNumber,
-                                                                  TransactionProcessingType:
-                                                                      If(
-                                                                          R.BACLocalCheckAmount > 0 || R.OtherLocaCheckAmount > 0,
-                                                                          'TransactionProcessingType (CH-Tbl-Transactions)'.Manual,
-                                                                          'TransactionProcessingType (CH-Tbl-Transactions)'.Batch
-                                                                      ),
-                                                                  RelatedDepositRecounting: R
-                                                              }
-                                                          )
-                                                      )
-                                                  )
-                                              )
-                                          );
-
-                                          // 9.b) Declarados que NADIE recontó → Faltante + su contrapartida de depósito
-                                          ForAll(
-                                              Filter(colDecApr, IsBlank(RelatedRecountedDeposit)) As D2,
-                                              Collect(
-                                                  colTxApr,
-                                                  {
-                                                      AccountNumber: D2.AccountNumber,
-                                                      Currency: D2.Currency,
-                                                      CashAmount: Coalesce(D2.CashAmount, 0),
-                                                      BACLocalCheckAmount: Coalesce(D2.BACLocalCheckAmount, 0),
-                                                      OtherLocalCheckAmount: Coalesce(D2.OtherLocalCheckAmount, 0),
-                                                      TransactionReference: "Faltante tula " & ctxBagApr.BagID,
-                                                      TransactionType: 'TransactionType (CH-Tbl-Transactions)'.Faltante,
-                                                      TransactionNumber: D2.TransactionNo,
-                                                      TransactionProcessingType: 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual,
-                                                      RelatedDepositRecounting: If(false, First(colRecApr))
-                                                  }
-                                              );
-                                              Collect(
-                                                  colTxApr,
-                                                  {
-                                                      AccountNumber: D2.AccountNumber,
-                                                      Currency: D2.Currency,
-                                                      CashAmount: Coalesce(D2.CashAmount, 0),
-                                                      BACLocalCheckAmount: Coalesce(D2.BACLocalCheckAmount, 0),
-                                                      OtherLocalCheckAmount: Coalesce(D2.OtherLocalCheckAmount, 0),
-                                                      TransactionReference: D2.DepositReference,
-                                                      TransactionType: 'TransactionType (CH-Tbl-Transactions)'.Deposito,
-                                                      TransactionNumber: D2.TransactionNo,
-                                                      TransactionProcessingType: 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual,
-                                                      RelatedDepositRecounting: If(false, First(colRecApr))
-                                                  }
-                                              )
-                                          );
-
-                                          // 9.c) Alta MASIVA de asientos: UNA llamada, no un Patch por fila
-                                          Patch(
-                                              'CH-Tbl-Transactions',
-                                              ForAll(
-                                                  colTxApr As T,
-                                                  Patch(
-                                                      Defaults('CH-Tbl-Transactions'),
-                                                      {
-                                                          AccountNumber: T.AccountNumber,
-                                                          Currency: T.Currency,
-                                                          CashAmount: T.CashAmount,
-                                                          BACLocalCheckAmount: T.BACLocalCheckAmount,
-                                                          OtherLocalCheckAmount: T.OtherLocalCheckAmount,
-                                                          TransactionReference: T.TransactionReference,
-                                                          TransactionType: T.TransactionType,
-                                                          TransactionNumber: T.TransactionNumber,
-                                                          TransactionProcessingType: T.TransactionProcessingType,
-                                                          RelatedDepositRecounting: T.RelatedDepositRecounting
-                                                      }
-                                                  )
-                                              )
-                                          );
-
-                                          // 9.d) Cheques de la tula a Recontado — también en UNA llamada
-                                          ClearCollect(colChkApr, Filter('CH-Tbl-Checks', Bag.'CH-Tbl-Bags' = ctxBagGuidApr));
-                                          If(
-                                              CountRows(colChkApr) > 0,
-                                              Patch(
-                                                  'CH-Tbl-Checks',
-                                                  ForAll(colChkApr As C, Patch(C, {CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.Recontado}))
-                                              )
-                                          );
-
-                                          // 9.e) Tula recontada
-                                          Patch('CH-Tbl-Bags', ctxBagApr, {BagStatus: 'BagStatus (CH-Tbl-Bags)'.Recontada});
-
-                                          // 9.f) Detalle de sesión — LookUp desambiguado (PK a PK) y con guarda
-                                          With(
-                                              {
-                                                  Det: LookUp(
-                                                      'CH-Tbl-RecountingSessionDetails',
-                                                      BagId.'CH-Tbl-Bags' = ctxBagGuidApr
-                                                      && RecountingSessionId.'CH-Tbl-RecountingSession' = ctxBagApr.RecountingSession.'CH-Tbl-RecountingSession'
-                                                  )
-                                              },
-                                              If(
-                                                  IsBlank(Det),
-                                                  Notify(
-                                                      "Asientos generados, pero la tula no tiene detalle de sesión: cerralo a mano.",
-                                                      NotificationType.Warning
-                                                  ),
-                                                  Patch(
-                                                      'CH-Tbl-RecountingSessionDetails',
-                                                      Det,
-                                                      {RecountingSessionDetailStatus: 'ch-recountingDetailsStatus'.'Cerrado con diferencias'}
-                                                  )
-                                              )
-                                          );
-                                          Notify(
-                                              "Recuento cerrado con diferencias: " & CountRows(colTxApr) & " asientos generados.",
-                                              NotificationType.Success
-                                          )
-                                      ),
-
-                                      // 10) Tula recontada sin declaracion: un asiento «Sin declaracion» por depósito
-                                      "Tula recontada sin declaracion",
-                                      If(
-                                          IsBlank(ctxBagApr),
-                                          Notify("No se encontró la tula de la solicitud.", NotificationType.Error),
-                                          If(
-                                              CountRows(colRecApr) = 0,
-                                              Notify("La tula no tiene depósitos recontados.", NotificationType.Warning),
-                                              Patch(
-                                                  'CH-Tbl-Transactions',
-                                                  ForAll(
-                                                      colRecApr As R,
-                                                      Patch(
-                                                          Defaults('CH-Tbl-Transactions'),
-                                                          {
-                                                              AccountNumber: R.AccountNumber,
-                                                              Currency: R.Currency,
-                                                              CashAmount: Coalesce(R.CashAmount, 0),
-                                                              BACLocalCheckAmount: Coalesce(R.BACLocalCheckAmount, 0),
-                                                              OtherLocalCheckAmount: Coalesce(R.OtherLocaCheckAmount, 0),
-                                                              TransactionReference: "Recuento sin declaracion tula " & ctxBagApr.BagID,
-                                                              TransactionType: 'TransactionType (CH-Tbl-Transactions)'.'Sin declaracion',
-                                                              TransactionNumber: R.TransactionNumber,
-                                                              TransactionProcessingType: 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual,
-                                                              RelatedDepositRecounting: R
-                                                          }
-                                                      )
-                                                  )
-                                              )
-                                          );
-                                          ClearCollect(colChkApr, Filter('CH-Tbl-Checks', Bag.'CH-Tbl-Bags' = ctxBagGuidApr));
-                                          If(
-                                              CountRows(colChkApr) > 0,
-                                              Patch(
-                                                  'CH-Tbl-Checks',
-                                                  ForAll(colChkApr As C, Patch(C, {CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.Recontado}))
-                                              )
-                                          );
-                                          Patch('CH-Tbl-Bags', ctxBagApr, {BagStatus: 'BagStatus (CH-Tbl-Bags)'.Recontada});
-                                          With(
-                                              {
-                                                  Det: LookUp(
-                                                      'CH-Tbl-RecountingSessionDetails',
-                                                      BagId.'CH-Tbl-Bags' = ctxBagGuidApr
-                                                      && RecountingSessionId.'CH-Tbl-RecountingSession' = ctxBagApr.RecountingSession.'CH-Tbl-RecountingSession'
-                                                  )
-                                              },
-                                              If(
-                                                  IsBlank(Det),
-                                                  Notify(
-                                                      "Asientos generados, pero la tula no tiene detalle de sesión: cerralo a mano.",
-                                                      NotificationType.Warning
-                                                  ),
-                                                  Patch(
-                                                      'CH-Tbl-RecountingSessionDetails',
-                                                      Det,
-                                                      {RecountingSessionDetailStatus: 'ch-recountingDetailsStatus'.Cerrado}
-                                                  )
-                                              )
-                                          );
-                                          Notify("Recuento sin declaración cerrado.", NotificationType.Success)
-                                      ),
-
-                                      // por defecto: tipo desconocido (contrato nuevo sin soporte en la app)
-                                      Notify(
-                                          "Tipo de solicitud no soportado: «" & ctxFrescaApr.RequestType
-                                          & "». La solicitud quedó APROBADA pero no se ejecutó ningún efecto. Avisá a soporte.",
-                                          NotificationType.Error
-                                      )
-                                  ),
-
-                                  // rama de error de la cadena de EFECTOS
+                                  },
                                   Notify(
-                                      "La solicitud quedó APROBADA pero los efectos fallaron: " & FirstError.Message
-                                      & " — revisá la tula antes de reintentar.",
-                                      NotificationType.Error
+                                      _r.Message,
+                                      If(
+                                          _r.Outcome = "Blocked",
+                                          NotificationType.Error,
+                                          NotificationType.Success
+                                      )
                                   )
+                              ),
+                              // Solo llega aca si la llamada NO pudo hacerse (privilegios, red). Los
+                              // rechazos de negocio ya viajaron como dato en la rama de arriba.
+                              Notify(
+                                  "No se pudo aprobar la solicitud: " & FirstError.Message,
+                                  NotificationType.Error
                               )
                           );
 
-                          // (4) Cierre — SIEMPRE fuera de la rama de éxito
+                          // Cierre — SIEMPRE fuera de la rama de exito
                           Reset(inpMotivoApr);
                           UpdateContext({ctxCargandoApr: false, ctxConfirmApr: ""});
                           Refresh('CH-Tbl-ApprovalRequests');
@@ -2249,231 +1730,46 @@ Screens:
                         HoverColor: =ThemeAccentInk
                         HoverFill: =ColorFade(ThemeDanger, -10%)
                         OnSelect: |-
-                          =UpdateContext({ctxCargandoApr: true, ctxResueltaApr: false});
+                          =UpdateContext({ctxCargandoApr: true});
 
-                          // (1) Revalidación con registro FRESCO
-                          UpdateContext(
-                              {
-                                  ctxFrescaApr:
-                                      LookUp(
-                                          'CH-Tbl-ApprovalRequests',
-                                          'CH-Tbl-ApprovalRequest' = galBandejaApr.Selected.'CH-Tbl-ApprovalRequest'
+                          // UNA sola llamada. La CAPI sanic_CHResolveApprovalRequest autoriza, aplica el
+                          // efecto y marca la solicitud EN LA MISMA TRANSACCION. Antes esto eran dos
+                          // escrituras sueltas desde aca: si la segunda fallaba, la solicitud quedaba
+                          // resuelta y el efecto sin ejecutar (una decision apuntando a la nada).
+                          //
+                          // Las reglas y los efectos NO se reimplementan aca a proposito: viven en el
+                          // servidor, bajo test. El veredicto negativo vuelve como DATO (Outcome =
+                          // "Blocked" + Message), nunca como fault, porque Power Fx descarta el mensaje
+                          // de los faults de plugin y mostraria un "Network error" generico.
+                          IfError(
+                              With(
+                                  {
+                                      _r: Environment.sanic_CHResolveApprovalRequest(
+                                          {
+                                              ApprovalRequestId: galBandejaApr.Selected.'CH-Tbl-ApprovalRequest',
+                                              Decision: "Reject",
+                                              Reason: Trim(inpMotivoApr.Text)
+                                          }
                                       )
-                              }
-                          );
-
-                          If(
-                              IsBlank(ctxFrescaApr),
-                              Notify("La solicitud ya no existe. Actualizá la bandeja.", NotificationType.Warning),
-                              !IsBlank(ctxFrescaApr.ApprovalStatus),
-                              Notify(
-                                  "Esta solicitud ya fue resuelta (" & Text(ctxFrescaApr.ApprovalStatus) & ") por "
-                                  & Coalesce(ctxFrescaApr.SolvedBy.'Full Name', "otro supervisor") & ". No se ejecutó nada.",
-                                  NotificationType.Warning
-                              ),
-                              ctxFrescaApr.'Created By'.User = UsuarioActual.User,
-                              Notify("Cuatro ojos: no podés rechazar una solicitud creada por vos.", NotificationType.Error),
-
-                              // (2) La SOLICITUD primero — con motivo obligatorio
-                              IfError(
-                                  Patch(
-                                      'CH-Tbl-ApprovalRequests',
-                                      ctxFrescaApr,
-                                      {
-                                          ApprovalStatus: 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Rechazado,
-                                          SolvedBy: UsuarioActual,
-                                          ResolutionDatetime: Now(),
-                                          StatusReason: Trim(inpMotivoApr.Text)
-                                      }
-                                  );
-                                  UpdateContext({ctxResueltaApr: true}),
-                                  UpdateContext({ctxResueltaApr: false});
-                                  Notify("No se pudo registrar el rechazo: " & FirstError.Message, NotificationType.Error)
-                              )
-                          );
-
-                          // (3) Reversión — SOLO si la solicitud quedó marcada Rechazado
-                          If(
-                              ctxResueltaApr,
-                              IfError(
-                                  Switch(
-                                      ctxFrescaApr.RequestType,
-
-                                      // 1) Remapear tula: restituir el estado previo (la tula NO se movió)
-                                      "Remapear tula",
-                                      With(
-                                          {
-                                              Tula: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr),
-                                              EstadoPrevio: LookUp(
-                                                  Choices([@'CH-Tbl-Bags'].BagStatus),
-                                                  Text(Value) = Text(ParseJSON(ctxResApr).BagPreviousState)
-                                              )
-                                          },
-                                          If(
-                                              IsBlank(Tula), Notify("La tula ya no existe.", NotificationType.Warning),
-                                              IsBlank(EstadoPrevio),
-                                              Notify(
-                                                  "Rechazada, pero el estado previo no pudo resolverse: la tula quedó en «"
-                                                  & Text(Tula.BagStatus) & "». Corregilo a mano.",
-                                                  NotificationType.Warning
-                                              ),
-                                              Patch('CH-Tbl-Bags', Tula, {BagStatus: EstadoPrevio.Value});
-                                              Notify("Remapeo rechazado, tula restituida.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 2) Agregar tula: borrar la tula pendiente que Reception creó
-                                      "Agregar tula",
-                                      With(
-                                          { Tula: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr) },
-                                          If(
-                                              IsBlank(Tula),
-                                              Notify("La tula pendiente ya no existe.", NotificationType.Warning),
-                                              Remove('CH-Tbl-Bags', Tula);
-                                              Notify("Alta rechazada: la tula pendiente fue eliminada.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 3) Eliminar tula: restituir el estado previo
-                                      "Eliminar tula",
-                                      With(
-                                          {
-                                              Tula: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr),
-                                              EstadoPrevio: LookUp(
-                                                  Choices([@'CH-Tbl-Bags'].BagStatus),
-                                                  Text(Value) = Text(ParseJSON(ctxResApr).BagPreviousState)
-                                              )
-                                          },
-                                          If(
-                                              IsBlank(Tula), Notify("La tula ya no existe.", NotificationType.Warning),
-                                              IsBlank(EstadoPrevio),
-                                              Notify(
-                                                  "Rechazada, pero el estado previo no pudo resolverse: la tula quedó en «"
-                                                  & Text(Tula.BagStatus) & "». Corregilo a mano.",
-                                                  NotificationType.Warning
-                                              ),
-                                              Patch('CH-Tbl-Bags', Tula, {BagStatus: EstadoPrevio.Value});
-                                              Notify("Baja rechazada, tula restituida.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 4) Modificar numero de planilla: nada que revertir
-                                      "Modificar numero de planilla",
-                                      Notify("Cambio de número de planilla rechazado. Nada que revertir.", NotificationType.Success),
-
-                                      // 5) Editar tula: sacar la tula del limbo (el productor la dejó en revisión)
-                                      "Editar tula",
-                                      With(
-                                          {
-                                              Tula: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr),
-                                              EstadoPrevio: LookUp(
-                                                  Choices([@'CH-Tbl-Bags'].BagStatus),
-                                                  Text(Value) = Text(ParseJSON(ctxResApr).BagPreviousState)
-                                              )
-                                          },
-                                          If(
-                                              IsBlank(Tula),
-                                              Notify("La tula ya no existe.", NotificationType.Warning),
-                                              !IsBlank(EstadoPrevio),
-                                              Patch('CH-Tbl-Bags', Tula, {BagStatus: EstadoPrevio.Value});
-                                              Notify("Edición rechazada, tula restituida.", NotificationType.Success),
-                                              // sin BagPreviousState en el contrato → estado terminal seguro + aviso
-                                              Patch('CH-Tbl-Bags', Tula, {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'});
-                                              Notify(
-                                                  "Edición rechazada. El contrato de «Editar tula» no trae BagPreviousState: la tula se devolvió a «Almacenada en boveda». Verificá que sea el estado correcto.",
-                                                  NotificationType.Warning
-                                              )
-                                          )
-                                      ),
-
-                                      // 6) Crear sesion de recuento: eliminar la sesión creada en espera
-                                      "Crear sesion de recuento",
-                                      With(
-                                          {
-                                              Ses: LookUp(
-                                                  'CH-Tbl-RecountingSessions',
-                                                  'CH-Tbl-RecountingSession' = IfError(GUID(Text(ParseJSON(ctxResApr).RecountingSessionGUID)), Blank())
-                                              )
-                                          },
-                                          If(
-                                              IsBlank(Ses),
-                                              Notify("La sesión ya no existe.", NotificationType.Warning),
-                                              Remove('CH-Tbl-RecountingSessions', Ses);
-                                              Notify("Sesión de recuento rechazada y eliminada.", NotificationType.Success)
-                                          )
-                                      ),
-
-                                      // 7) Primera tula en planilla: devolver a bóveda y DESENLAZAR la sesión
-                                      "Primera tula en planilla",
-                                      With(
-                                          { Tula: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr) },
-                                          If(
-                                              IsBlank(Tula),
-                                              Notify("La tula ya no existe.", NotificationType.Warning),
-                                              Patch(
-                                                  'CH-Tbl-Bags',
-                                                  Tula,
-                                                  {
-                                                      BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
-                                                      RecountingSession: Blank()
-                                                  }
-                                              );
-                                              Notify(
-                                                  "Asignación rechazada: la tula vuelve a bóveda y se desenlaza de la sesión. El contrato no trae BagPreviousState — verificá que «Almacenada en boveda» sea el estado correcto.",
-                                                  NotificationType.Warning
-                                              )
-                                          )
-                                      ),
-
-                                      // 8) Tula sin declaracion: no-op deliberado (el productor NO pre-patchea)
-                                      "Tula sin declaracion",
-                                      Notify(
-                                          "Asignación rechazada. La tula sigue disponible para volver a asignarse.",
-                                          NotificationType.Success
-                                      ),
-
-                                      // 9) Tula con diferencia: devolver la tula al cajero para recontar
-                                      "Tula con diferencia",
-                                      If(
-                                          IsBlank(ctxBagApr),
-                                          Notify("No se encontró la tula de la solicitud.", NotificationType.Warning),
-                                          Patch('CH-Tbl-Bags', ctxBagApr, {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero'});
-                                          Notify(
-                                              "Recuento rechazado: la tula vuelve al cajero. NO se generó ningún asiento.",
-                                              NotificationType.Success
-                                          )
-                                      ),
-
-                                      // 10) Tula recontada sin declaracion: ídem
-                                      "Tula recontada sin declaracion",
-                                      If(
-                                          IsBlank(ctxBagApr),
-                                          Notify("No se encontró la tula de la solicitud.", NotificationType.Warning),
-                                          Patch('CH-Tbl-Bags', ctxBagApr, {BagStatus: 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero'});
-                                          Notify(
-                                              "Recuento rechazado: la tula vuelve al cajero. NO se generó ningún asiento.",
-                                              NotificationType.Success
-                                          )
-                                      ),
-
-                                      // por defecto
-                                      Notify(
-                                          "Tipo de solicitud no soportado: «" & ctxFrescaApr.RequestType
-                                          & "». Quedó RECHAZADA pero no se revirtió nada. Avisá a soporte.",
-                                          NotificationType.Error
-                                      )
-                                  ),
-
-                                  // rama de error de la cadena de REVERSIÓN
+                                  },
                                   Notify(
-                                      "La solicitud quedó RECHAZADA pero la reversión falló: " & FirstError.Message
-                                      & " — revisá el estado de la tula.",
-                                      NotificationType.Error
+                                      _r.Message,
+                                      If(
+                                          _r.Outcome = "Blocked",
+                                          NotificationType.Error,
+                                          NotificationType.Success
+                                      )
                                   )
+                              ),
+                              // Solo llega aca si la llamada NO pudo hacerse (privilegios, red). Los
+                              // rechazos de negocio ya viajaron como dato en la rama de arriba.
+                              Notify(
+                                  "No se pudo rechazar la solicitud: " & FirstError.Message,
+                                  NotificationType.Error
                               )
                           );
 
-                          // (4) Cierre — SIEMPRE fuera de la rama de éxito
+                          // Cierre — SIEMPRE fuera de la rama de exito
                           Reset(inpMotivoApr);
                           UpdateContext({ctxCargandoApr: false, ctxConfirmApr: ""});
                           Refresh('CH-Tbl-ApprovalRequests');

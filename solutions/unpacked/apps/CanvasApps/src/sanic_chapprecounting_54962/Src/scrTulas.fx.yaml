@@ -59,13 +59,13 @@ scrTulas As screen:
 
     shpRailTul As rectangle:
         Fill: =ThemeSurface
-        Height: =768
+        Height: =Parent.Height
         Width: =250
         ZIndex: =1
 
     shpRailLineaTul As rectangle:
         Fill: =ThemeLine
-        Height: =768
+        Height: =Parent.Height
         Width: =1
         X: =249
         ZIndex: =2
@@ -436,7 +436,7 @@ scrTulas As screen:
         RadiusTopRight: =13
         Size: =9
         Text: =""
-        Width: =1076
+        Width: =(Parent.Width - 290)
         X: =270
         Y: =16
         ZIndex: =20
@@ -476,7 +476,7 @@ scrTulas As screen:
         RadiusTopRight: =9
         Size: =9
         Text: =""
-        Width: =900
+        Width: =(Parent.Width - 290) - 176
         X: =288
         Y: =lblScanTitTul.Y + lblScanTitTul.Height + 10
         ZIndex: =22
@@ -510,7 +510,7 @@ scrTulas As screen:
         RadiusTopLeft: =7
         RadiusTopRight: =7
         Size: =12
-        Width: =843
+        Width: =(Parent.Width - 290) - 233
         X: =icoScanTul.X + icoScanTul.Width + 10
         Y: =btnScanCajaTul.Y
         ZIndex: =24
@@ -571,7 +571,7 @@ scrTulas As screen:
                     ClearCollect(
                         colDeclaradasCandidatasTul,
                         SortByColumns(
-                            Filter('CH-Tbl-DeclaredBags', BagNumber = ctxScanTul && IsBlank(BagID.'CH-Tbl-Bags')),
+                            Filter('CH-Tbl-DeclaredBags', BagNumber = ctxScanTul && IsBlank(BagID)),
                             "createdon",
                             SortOrder.Descending
                         )
@@ -640,7 +640,7 @@ scrTulas As screen:
         Size: =8.25
         Text: |-
             ="El campo toma el foco al entrar: el lector de código de barras dispara la apertura con Enter, sin tocar el mouse."
-        Width: =1040
+        Width: =(Parent.Width - 290) - 36
         X: =288
         Y: =btnScanCajaTul.Y + btnScanCajaTul.Height + 10
         ZIndex: =26
@@ -652,7 +652,7 @@ scrTulas As screen:
         DisplayMode: =DisplayMode.View
         Fill: =ThemeSurface
         FontWeight: =FontWeight.Semibold
-        Height: =578
+        Height: =Parent.Height - Self.Y - 18
         HoverFill: =ThemeSurface
         PaddingBottom: =0
         PaddingLeft: =0
@@ -665,7 +665,7 @@ scrTulas As screen:
         RadiusTopRight: =13
         Size: =9
         Text: =""
-        Width: =1076
+        Width: =(Parent.Width - 290)
         X: =270
         Y: =172
         ZIndex: =27
@@ -732,7 +732,7 @@ scrTulas As screen:
         Size: =8.25
         Text: ="Actualizar"
         Width: =104
-        X: =1226
+        X: =270 + (Parent.Width - 290) - 120
         Y: =181
         ZIndex: =30
 
@@ -750,7 +750,7 @@ scrTulas As screen:
     shpPanelLineaTul As rectangle:
         Fill: =ThemeLine
         Height: =1
-        Width: =1076
+        Width: =(Parent.Width - 290)
         X: =270
         Y: =215
         ZIndex: =32
@@ -758,7 +758,7 @@ scrTulas As screen:
     shpHeadListaTul As rectangle:
         Fill: =ThemeSurface2
         Height: =32
-        Width: =1076
+        Width: =(Parent.Width - 290)
         X: =270
         Y: =216
         ZIndex: =33
@@ -774,7 +774,7 @@ scrTulas As screen:
         Size: =7.5
         Text: ="N° DE TULA"
         Wrap: =false
-        X: =286
+        X: =270 + (Parent.Width - 290) * 0.01487
         Y: =216
         ZIndex: =34
 
@@ -788,9 +788,9 @@ scrTulas As screen:
         PaddingTop: =0
         Size: =7.5
         Text: ="PLANILLA"
-        Width: =140
+        Width: =(Parent.Width - 290) * 0.13011
         Wrap: =false
-        X: =446
+        X: =270 + (Parent.Width - 290) * 0.16357
         Y: =216
         ZIndex: =35
 
@@ -804,9 +804,9 @@ scrTulas As screen:
         PaddingTop: =0
         Size: =7.5
         Text: ="CLIENTE"
-        Width: =378
+        Width: =(Parent.Width - 290) * 0.3513
         Wrap: =false
-        X: =596
+        X: =270 + (Parent.Width - 290) * 0.30297
         Y: =216
         ZIndex: =36
 
@@ -820,9 +820,9 @@ scrTulas As screen:
         PaddingTop: =0
         Size: =7.5
         Text: ="ACTIVIDAD"
-        Width: =110
+        Width: =(Parent.Width - 290) * 0.10223
         Wrap: =false
-        X: =984
+        X: =270 + (Parent.Width - 290) * 0.66357
         Y: =216
         ZIndex: =37
 
@@ -836,23 +836,23 @@ scrTulas As screen:
         PaddingTop: =0
         Size: =7.5
         Text: ="ESTADO"
-        Width: =190
+        Width: =(Parent.Width - 290) * 0.17658
         Wrap: =false
-        X: =1104
+        X: =270 + (Parent.Width - 290) * 0.77509
         Y: =216
         ZIndex: =38
 
     shpHeadLineaTul As rectangle:
         Fill: =ThemeLine
         Height: =1
-        Width: =1076
+        Width: =(Parent.Width - 290)
         X: =270
         Y: =248
         ZIndex: =39
 
     galTulasTul As gallery.galleryVertical:
         DelayItemLoading: =true
-        Height: =501
+        Height: =Parent.Height - Self.Y - 18
         Items: =colTulasSesionTul
         Layout: =Layout.Vertical
         OnSelect: |-
@@ -862,7 +862,7 @@ scrTulas As screen:
             Select(btnReabrirTul)
         TemplatePadding: =0
         TemplateSize: =42
-        Width: =1076
+        Width: =(Parent.Width - 290)
         X: =270
         Y: =249
         ZIndex: =40
@@ -886,7 +886,7 @@ scrTulas As screen:
             RadiusTopRight: =0
             Size: =9
             Text: =""
-            Width: =1076
+            Width: =Parent.TemplateWidth
             ZIndex: =1
 
         shpSelBarraTul As rectangle:
@@ -908,7 +908,7 @@ scrTulas As screen:
             Size: =9.75
             Text: =ThisItem.BagID
             Wrap: =false
-            X: =16
+            X: =Parent.TemplateWidth * 0.01487
             Y: =11
             ZIndex: =3
 
@@ -922,9 +922,9 @@ scrTulas As screen:
             PaddingTop: =0
             Size: =9.38
             Text: =ThisItem.ReceiptIdMirror
-            Width: =140
+            Width: =Parent.TemplateWidth * 0.13011
             Wrap: =false
-            X: =176
+            X: =Parent.TemplateWidth * 0.16357
             Y: =11
             ZIndex: =4
 
@@ -938,9 +938,9 @@ scrTulas As screen:
             PaddingTop: =0
             Size: =9.38
             Text: =ThisItem.ReceptionID.RemitentName
-            Width: =378
+            Width: =Parent.TemplateWidth * 0.3513
             Wrap: =false
-            X: =326
+            X: =Parent.TemplateWidth * 0.30297
             Y: =11
             ZIndex: =5
 
@@ -954,9 +954,9 @@ scrTulas As screen:
             PaddingTop: =0
             Size: =8.25
             Text: =Text(ThisItem.'Modified On', FmtHora)
-            Width: =110
+            Width: =Parent.TemplateWidth * 0.10223
             Wrap: =false
-            X: =714
+            X: =Parent.TemplateWidth * 0.66357
             Y: =11
             ZIndex: =6
 
@@ -1031,7 +1031,7 @@ scrTulas As screen:
                     "—"
                 )
             Width: =14 + 6.2 * Len(Self.Text)
-            X: =834
+            X: =Parent.TemplateWidth * 0.77509
             Y: =10
             ZIndex: =7
 
@@ -1041,14 +1041,14 @@ scrTulas As screen:
             Icon: =Icon.ChevronRight
             OnSelect: =Select(Parent)
             Width: =16
-            X: =1039
+            X: =Parent.TemplateWidth * 0.96561
             Y: =13
             ZIndex: =8
 
         shpSepTul As rectangle:
             Fill: =ThemeLineSoft
             Height: =1
-            Width: =1076
+            Width: =Parent.TemplateWidth
             Y: =41
             ZIndex: =9
 
@@ -1064,7 +1064,7 @@ scrTulas As screen:
         Size: =9.38
         Text: ="Aún no abrió ninguna tula en esta sesión"
         Visible: =IsEmpty(colTulasSesionTul)
-        Width: =1016
+        Width: =(Parent.Width - 290) - 60
         Wrap: =false
         X: =300
         Y: =287
@@ -1080,7 +1080,7 @@ scrTulas As screen:
         Size: =9.38
         Text: ="Escanee el número de tula con el lector o escríbalo en la barra de arriba y presione Enter."
         Visible: =lblVacioTitTul.Visible
-        Width: =1016
+        Width: =(Parent.Width - 290) - 60
         X: =300
         Y: =lblVacioTitTul.Y + lblVacioTitTul.Height + 4
         ZIndex: =42
