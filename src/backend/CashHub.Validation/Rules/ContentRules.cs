@@ -226,6 +226,45 @@ namespace CashHub.Validation.Rules
         }
     }
 
+    /// <summary>
+    /// VR-29: el número de cheque son SOLO DÍGITOS (depende de VR-15).
+    ///
+    /// El campo <em>serial number</em> de la línea MICR contiene únicamente dígitos — los
+    /// símbolos impresos son delimitadores, no parte del número. Wells Fargo especifica de
+    /// 4 a 10 dígitos; el estándar del Reserve Bank of India, 6. Ni letras ni guiones.
+    ///
+    /// No alcanzaba con agregar "No. Cheque" a <c>Checks.NumericColumns</c> (VR-17): esa
+    /// regla usa TryDecimal, que aceptaría 1234.56, -5 y 1e5. Un serial no es una cantidad.
+    ///
+    /// Valida el valor NORMALIZADO — el mismo que persiste DeclarationMaterializer — para
+    /// que no se valide una cosa y se guarde otra.
+    /// </summary>
+    public sealed class Vr29CheckNumbersAreDigits : IValidationRule
+    {
+        public string Key => "VR-29";
+
+        public IReadOnlyList<Finding> Evaluate(RuleDefinition definition, ValidationContext context)
+        {
+            var table = context.Workbook!.Table(ChecksTable)!;
+            var findings = new List<Finding>();
+
+            foreach (var row in table.Rows)
+            {
+                var cell = row[Checks.CheckNo];
+                // Las celdas vacías son de VR-15, que además es la dependencia de esta
+                // regla: reportar dos veces el mismo problema llena el correo de ruido.
+                if (cell == null || cell.IsEmpty) continue;
+
+                if (!DeclaredValueNormalizer.IsValidCheckNumber(cell.Raw))
+                {
+                    findings.Add(new Finding(Key, sheet: table.Sheet, cellRef: cell.CellRef,
+                        rowNumber: row.RowNumber, actualValue: cell.Raw));
+                }
+            }
+            return findings;
+        }
+    }
+
     /// <summary>VR-14: sin números de cheque repetidos.</summary>
     public sealed class Vr14NoDuplicateChecks : IValidationRule
     {

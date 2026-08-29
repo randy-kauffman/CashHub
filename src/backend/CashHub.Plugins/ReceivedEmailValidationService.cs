@@ -586,16 +586,30 @@ namespace CashHub.Plugins
             return links;
         }
 
+        /// <summary>
+        /// Resuelve el cliente por cualquiera de sus TRES identificadores. La plantilla
+        /// trae un solo dato en Depositos!J2 y el cliente puede declarar con el que tenga
+        /// a mano; el motor no le exige adivinar cual guardamos nosotros.
+        ///
+        /// TopCount = 2, no 1: con tres columnas en OR la superficie de colision crece, y
+        /// dos clientes distintos podrian responder al mismo texto (el CIFBCO de uno y el
+        /// taxid de otro). Quedarse con rows[0] atribuiria la declaracion al cliente
+        /// EQUIVOCADO en silencio. Se levanta la excepcion: el motor la aisla como Error,
+        /// el correo va a Revision con error y NO se le responde al cliente — es un
+        /// problema de datos nuestro, no suyo.
+        /// </summary>
         public ClientLookup FindClientByCif(string cif)
         {
             var query = new QueryExpression("sanic_chtblclient")
             {
                 ColumnSet = new ColumnSet(Schema.MasterRecordStatus.FieldName),
-                TopCount = 1
+                TopCount = 2
             };
             var filter = new FilterExpression(LogicalOperator.Or);
-            filter.AddCondition("sanic_cifbco", ConditionOperator.Equal, cif);
-            filter.AddCondition("sanic_cifcom", ConditionOperator.Equal, cif);
+            foreach (var column in Schema.Client.IdentifierColumns)
+            {
+                filter.AddCondition(column, ConditionOperator.Equal, cif);
+            }
             query.Criteria.AddFilter(filter);
 
             var rows = _service.RetrieveMultiple(query).Entities;
@@ -603,6 +617,15 @@ namespace CashHub.Plugins
             {
                 _tracing.Trace("DataAccess.FindClientByCif('{0}') = (no existe)", cif);
                 return ClientLookup.NotFound;
+            }
+
+            if (rows.Count > 1)
+            {
+                throw new InvalidPluginExecutionException(
+                    $"El identificador '{cif}' resuelve a MAS DE UN cliente en " +
+                    $"{string.Join(", ", Schema.Client.IdentifierColumns)} (al menos " +
+                    $"{rows[0].Id:D} y {rows[1].Id:D}). No se atribuye la declaracion a " +
+                    "ninguno: corrija los identificadores duplicados en CH-Tbl-Client.");
             }
 
             var vigency = RecordVigencyMap.FromRecordStatus(rows[0].GetAttributeValue<OptionSetValue>(

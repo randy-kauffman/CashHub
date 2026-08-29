@@ -136,6 +136,7 @@ namespace CashHub.Validation.Rules
                 new Vr18SupportedCurrencies(),
                 new Vr13AccountSingleCurrency(),
                 new Vr15CheckFieldsComplete(),
+                new Vr29CheckNumbersAreDigits(),
                 new Vr14NoDuplicateChecks(),
                 new Vr22NoOrphanChecks(),
                 new Vr12ChecksMatchDeclared(),

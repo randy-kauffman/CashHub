@@ -275,6 +275,24 @@ namespace CashHub.Plugins
         internal static class Client
         {
             public const string LogicalName = "sanic_chtblclient";
+
+            /// <summary>
+            /// Identificacion tributaria: RUC / NIT / cedula juridica segun el pais.
+            /// Se llama TaxId y no LegalIdentifier a proposito: "Legal Entity Identifier"
+            /// (LEI) es un estandar ISO 17442 real y su largo es exactamente 20 caracteres
+            /// — el mismo de esta columna —, asi que ese nombre se leeria como otra cosa.
+            /// La crea scripts/create-client-taxid-column.sh (nvarchar 20 + alternate key).
+            /// </summary>
+            public const string TaxId = "sanic_taxid";
+
+            /// <summary>
+            /// Las TRES columnas por las que un cliente puede identificarse en la
+            /// plantilla (Depositos!J2). La busqueda es un OR sobre las tres: el cliente
+            /// declara con el identificador que tiene a mano y no tiene por que adivinar
+            /// cual guardamos nosotros.
+            /// </summary>
+            public static readonly string[] IdentifierColumns =
+                { "sanic_cifbco", "sanic_cifcom", TaxId };
         }
 
         /// <summary>Custom API sanic_CHResolveChangeRequest: reemplaza los 4 flujos materializadores de RFC.</summary>

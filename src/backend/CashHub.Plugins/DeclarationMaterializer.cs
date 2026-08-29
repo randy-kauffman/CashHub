@@ -128,8 +128,13 @@ namespace CashHub.Plugins
 
         private Dictionary<string, Guid> CreateBags(Guid declarationId, TableModel deposits)
         {
+            // La clave del grupo YA viene normalizada (trim + MAYUSCULAS), asi que es
+            // exactamente lo que se persiste: antes se agrupaba sin distinguir mayusculas
+            // pero se guardaba la capitalizacion de la PRIMERA fila del grupo, y la misma
+            // tula quedaba escrita distinto segun el orden de las filas del Excel.
             var bagIds = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
-            foreach (var group in deposits.Rows.GroupBy(r => r[Deposits.BagNo]!.Raw!.Trim(),
+            foreach (var group in deposits.Rows.GroupBy(
+                         r => DeclaredValueNormalizer.BagNumber(r[Deposits.BagNo]!.Raw),
                          StringComparer.OrdinalIgnoreCase))
             {
                 decimal Total(string currency) => group
@@ -187,7 +192,7 @@ namespace CashHub.Plugins
                     [Deposit.Total] = ReadDecimal(row, Deposits.Total),
                     [Deposit.Reference] = row[Deposits.Reference]?.Raw,
                     [Deposit.DeclaredBag] = new EntityReference(Bag.Entity,
-                        bagIds[row[Deposits.BagNo]!.Raw!.Trim()]),
+                        bagIds[DeclaredValueNormalizer.BagNumber(row[Deposits.BagNo]!.Raw)]),
                     [Deposit.Declaration] = new EntityReference(Decl.Entity, declarationId)
                 };
                 var id = _service.Create(deposit);
@@ -216,10 +221,15 @@ namespace CashHub.Plugins
                     ? CheckTypeBacLocal
                     : CheckTypeOtrosLocal;
 
+                // Trimmeado, y como TEXTO: los ceros a la izquierda son significativos
+                // (0001234 y 1234 son cheques distintos). VR-29 ya garantizo que sean
+                // solo digitos, validando este MISMO valor normalizado.
+                var checkNumber = DeclaredValueNormalizer.CheckNumber(row[Checks.CheckNo]!.Raw);
+
                 var id = _service.Create(new Entity(Check.Entity)
                 {
-                    [Check.Name] = $"Cheque {row[Checks.CheckNo]!.Raw}",
-                    [Check.Number] = row[Checks.CheckNo]!.Raw,
+                    [Check.Name] = $"Cheque {checkNumber}",
+                    [Check.Number] = checkNumber,
                     [Check.Amount] = ReadDecimal(row, Checks.Amount),
                     [Check.Currency] = MapCurrency(emailId, row[Checks.Currency]!.Raw!, row.RowNumber),
                     [Check.Type] = new OptionSetValue(type),
@@ -227,7 +237,7 @@ namespace CashHub.Plugins
                     [Check.Declaration] = new EntityReference(Decl.Entity, declarationId)
                 });
                 _tracing.Trace("Materializer: DeclaredCheck {0} (deposito {1}) -> {2}",
-                    row[Checks.CheckNo]!.Raw, depositNo, id);
+                    checkNumber, depositNo, id);
             }
         }
 
