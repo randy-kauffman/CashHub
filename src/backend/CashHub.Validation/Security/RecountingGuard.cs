@@ -520,8 +520,20 @@ namespace CashHub.Validation.Security
         /// por una solicitud ya resuelta (dejaria la decision del supervisor apuntando
         /// a la nada).
         /// </summary>
+        /// <param name="actorIsApprover">
+        /// El actor pertenece al grupo aprobador de supervisores. Le levanta DOS
+        /// restricciones que existen para proteger al cajero de si mismo, no de su
+        /// supervisor: la propiedad de la mesa y el congelamiento por solicitud ya
+        /// resuelta. Esta ultima es imprescindible: al rechazar una solicitud "Crear
+        /// sesion de recuento", el borrado de la sesion ES el efecto de esa decision
+        /// — bloquearlo por "hay una decision que apunta a esto" es circular, y era
+        /// lo que dejaba la sesion huerfana e imborrable para todos.
+        ///
+        /// NO le levanta la confirmacion: esa frontera es dura para todos.
+        /// </param>
         public static RecountingGuardResult EvaluateSessionDelete(
-            Guid cashierId, Guid actorId, bool confirmed, bool hasResolvedApproval)
+            Guid cashierId, Guid actorId, bool confirmed, bool hasResolvedApproval,
+            bool actorIsApprover = false)
         {
             if (cashierId == Guid.Empty)
             {
@@ -530,12 +542,10 @@ namespace CashHub.Validation.Security
                     "mesa y se bloquea el borrado por seguridad.");
             }
 
-            if (cashierId != actorId)
-            {
-                return RecountingGuardResult.Block(
-                    "Solo el cajero dueno de la sesion puede darla de baja.");
-            }
-
+            // La confirmacion se evalua PRIMERO, antes que la propiedad, porque es la
+            // unica restriccion que no admite excepcion: hay recuento real colgando.
+            // Si fuera despues, un cajero ajeno leeria "no es tuya" y saldria a pedirle
+            // el borrado al dueno — que tampoco puede. El motivo tiene que ser el real.
             if (confirmed)
             {
                 return RecountingGuardResult.Block(
@@ -543,7 +553,13 @@ namespace CashHub.Validation.Security
                     "Pida al supervisor el cierre forzado de la sesion.");
             }
 
-            if (hasResolvedApproval)
+            if (cashierId != actorId && !actorIsApprover)
+            {
+                return RecountingGuardResult.Block(
+                    "Solo el cajero dueno de la sesion puede darla de baja.");
+            }
+
+            if (hasResolvedApproval && !actorIsApprover)
             {
                 return RecountingGuardResult.Block(
                     "La sesion esta referenciada por una solicitud que el supervisor ya resolvio: " +

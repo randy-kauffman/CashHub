@@ -475,19 +475,33 @@ namespace CashHub.Plugins
                 confirmed = current.GetAttributeValue<bool>(Schema.RecountingSession.Confirmed);
             }
 
-            // La solicitud resuelta solo se busca cuando el resto ya paso: si la sesion
-            // es ajena o esta confirmada, el dominio bloquea igual y la query no aporta.
+            var actor = context.InitiatingUserId;
+
+            // La solicitud resuelta solo se busca cuando puede cambiar el resultado: si
+            // la sesion esta confirmada el dominio bloquea igual, y si es ajena el
+            // congelamiento no es lo que decide.
             var hasResolvedApproval = false;
-            if (cashierId != Guid.Empty && cashierId == context.InitiatingUserId && !confirmed)
+            if (cashierId != Guid.Empty && !confirmed && cashierId == actor)
             {
                 hasResolvedApproval = HasResolvedApproval(system, tracing, sessionId);
             }
 
-            tracing.Trace("GuardRecounting: baja de sesion {0} cajero={1} actor={2} confirmada={3} resuelta={4}.",
-                sessionId, cashierId, context.InitiatingUserId, confirmed, hasResolvedApproval);
+            // La membresia se consulta SOLO en los casos que sin ella quedarian
+            // bloqueados: sesion ajena, o propia pero congelada por una solicitud ya
+            // resuelta (el rechazo, que es justamente cuando el supervisor necesita
+            // borrarla). En el camino feliz del cajero no se paga la query.
+            var actorIsApprover = false;
+            if (cashierId != Guid.Empty && !confirmed && (cashierId != actor || hasResolvedApproval))
+            {
+                actorIsApprover = ApproverTeamLookup.IsApprover(system, tracing, actor);
+            }
+
+            tracing.Trace(
+                "GuardRecounting: baja de sesion {0} cajero={1} actor={2} confirmada={3} resuelta={4} aprobador={5}.",
+                sessionId, cashierId, actor, confirmed, hasResolvedApproval, actorIsApprover);
 
             return RecountingGuard.EvaluateSessionDelete(
-                cashierId, context.InitiatingUserId, confirmed, hasResolvedApproval);
+                cashierId, actor, confirmed, hasResolvedApproval, actorIsApprover);
         }
 
         /// <summary>

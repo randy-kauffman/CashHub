@@ -322,6 +322,79 @@ namespace CashHub.Plugins
             public const string OutcomeRejected = "Rejected";
         }
 
+        /// <summary>
+        /// Contrato de sanic_CHCanResolveApproval: pre-vuelo de la resolucion de una
+        /// solicitud de aprobacion.
+        ///
+        /// EXISTE POR UNA RAZON PUNTUAL. Cuando GuardReceptionPlugin bloquea un Update,
+        /// Dataverse devuelve el motivo correcto en el cuerpo HTTP (code 0x80040265 +
+        /// message + @Microsoft.PowerApps.CDS.InnerError.Message), pero Power Fx arma
+        /// FirstError con la descripcion GENERICA del codigo y descarta el mensaje custom:
+        /// la app termina mostrando "Network error ... The requested operation is invalid".
+        /// Verificado en Monitor; ni FirstError.Message ni AllErrors lo recuperan.
+        ///
+        /// Por eso este contrato devuelve el veredicto como DATO (HTTP 200), nunca como
+        /// fault: el canal de error de Power Fx no participa. La autoridad sigue siendo
+        /// GuardReceptionPlugin — esto es solo el pre-vuelo que permite dar un mensaje
+        /// util ANTES de intentar el Patch.
+        /// </summary>
+        /// <summary>
+        /// Contrato de sanic_CHResolveApprovalRequest: resuelve una solicitud de
+        /// aprobacion (Approve/Reject) COMO UNIDAD TRANSACCIONAL.
+        ///
+        /// POR QUE EXISTE. La app hacia dos escrituras sueltas: marcar la solicitud y
+        /// despues aplicar el efecto. Sin transaccion, si la segunda fallaba quedaba
+        /// la solicitud resuelta y el efecto sin ejecutar — y peor, la app se plantaba
+        /// en "esta solicitud ya fue resuelta" y el reintento era imposible. Invertir
+        /// el orden no servia: la validacion de membresia al grupo aprobador vive en
+        /// el Update de la solicitud, asi que aplicar el efecto primero dejaba que un
+        /// no-aprobador destruyera datos antes de chocar contra el bloqueo.
+        ///
+        /// Aca se autoriza PRIMERO y se escribe despues, todo en la misma ejecucion
+        /// del plugin: si algo falla, revierte entero. Un bloqueo viaja como DATO
+        /// (Outcome/Message, HTTP 200) porque Power Fx descarta el mensaje de los
+        /// faults de plugin.
+        /// </summary>
+        internal static class ResolveApprovalApi
+        {
+            public const string MessageName = "sanic_CHResolveApprovalRequest";
+
+            public const string InApprovalRequestId = "ApprovalRequestId";
+            public const string InDecision = "Decision";
+            public const string InReason = "Reason";
+
+            public const string DecisionApprove = "Approve";
+            public const string DecisionReject = "Reject";
+
+            public const string OutOutcome = "Outcome";
+            public const string OutMessage = "Message";
+
+            public const string OutcomeApproved = "Approved";
+            public const string OutcomeRejected = "Rejected";
+            public const string OutcomeBlocked = "Blocked";
+        }
+
+        internal static class CanResolveApprovalApi
+        {
+            public const string MessageName = "sanic_CHCanResolveApproval";
+
+            public const string InApprovalRequestId = "ApprovalRequestId";
+
+            /// <summary>
+            /// Outcome es STRING, no Boolean, a proposito. El conector Environment de las
+            /// canvas apps no expuso la API mientras la respuesta tenia un parametro
+            /// Boolean: Power Fx la reportaba como "unknown or unsupported function" por
+            /// mas que estuviera en la solucion y se refrescara el datasource. Ninguna de
+            /// las Custom API del repo que SI funcionan usa Boolean (solo Guid, String,
+            /// Integer y Decimal). Se calca la forma de sanic_CHResolveChangeRequest.
+            /// </summary>
+            public const string OutOutcome = "Outcome";
+            public const string OutMessage = "Message";
+
+            public const string OutcomeAllowed = "Allowed";
+            public const string OutcomeBlocked = "Blocked";
+        }
+
         /// <summary>Tabla de configuracion del backend (CH-Tbl-Parameter): clave -> valor de texto.</summary>
         internal static class Parameter
         {
@@ -397,6 +470,8 @@ namespace CashHub.Plugins
             public const string LogicalName = "sanic_chtblreceptions";
             public const string Id = "sanic_chtblreceptionsid";
             public const string BatchLookup = "sanic_receptionbatch";
+            public const string ReceiptId = "sanic_receiptid";
+            public const string Name = "sanic_name";
 
             /// <summary>
             /// Espejo entero del sanic_receptionstatus del lote, mantenido por
@@ -432,6 +507,8 @@ namespace CashHub.Plugins
             /// sanic_recountingsession del cheque.
             /// </summary>
             public const string RecountingSessionLookup = "sanic_recountingsession";
+            /// <summary>Lookup al lote de recepcion. Define el alcance del dup-check de numero de tula.</summary>
+            public const string ReceptionBatchLookup = "sanic_receptionbatchid";
 
             /// <summary>Totales recontados (los estampa la app Recounting).</summary>
             public const string TotalNio = "sanic_totalnio";
@@ -465,6 +542,8 @@ namespace CashHub.Plugins
 
             /// <summary>Fecha/hora de la resolucion.</summary>
             public const string ResolutionDatetime = "sanic_resolutiondatetime";
+            /// <summary>Motivo escrito por el resolutor (nvarchar propio, NO el statuscode del sistema).</summary>
+            public const string StatusReason = "sanic_statusreason";
 
             public const string PreImageName = "PreImage";
         }
@@ -539,6 +618,9 @@ namespace CashHub.Plugins
             public const string LogicalName = "sanic_chtblchecks";
             public const string Id = "sanic_chtblchecksid";
             public const string CheckStatus = "sanic_checkstatus";
+
+            /// <summary>Primer estado del ciclo del cheque, el que estampa el cierre del recuento.</summary>
+            public const int CheckStatusRecontado = 159460000;
 
             /// <summary>
             /// Sellos server-side del handshake de recepcion, estampados por
@@ -647,6 +729,16 @@ namespace CashHub.Plugins
         {
             public const string LogicalName = "sanic_chtblrecountingsessiondetail";
             public const string Id = "sanic_chtblrecountingsessiondetailid";
+            public const string SessionLookup = "sanic_recountingsessionid";
+            public const string BagLookup = "sanic_bagid";
+            public const string SupervisorLookup = "sanic_supervisorid";
+
+            /// <summary>Estado del detalle: 159460000 En progreso, 159460001 Cerrado, 159460002 Cerrado con diferencias.</summary>
+            public const string Status = "sanic_recountingsessiondetailstatus";
+
+            public const int StatusEnProgreso = 159460000;
+            public const int StatusCerrado = 159460001;
+            public const int StatusCerradoConDiferencias = 159460002;
         }
 
         /// <summary>Lectura de la contadora (CH-Tbl-XMLReadings).</summary>
@@ -706,6 +798,8 @@ namespace CashHub.Plugins
         {
             public const string LogicalName = "sanic_chtbldeclaredbags";
             public const string Id = "sanic_chtbldeclaredbagsid";
+            /// <summary>Lookup a la tula FISICA. Ojo: en CH-Tbl-Bags "sanic_bagid" es texto, aca es lookup.</summary>
+            public const string BagLookup = "sanic_bagid";
             public const string TotalNio = "sanic_totalnio";
             public const string TotalUsd = "sanic_totalusd";
             public const string TotalEur = "sanic_totaleur";
@@ -824,6 +918,7 @@ namespace CashHub.Plugins
         {
             public const string LogicalName = "sanic_chtbldeclareddeposits";
             public const string Id = "sanic_chtbldeclareddepositsid";
+            public const string AccountNumber = "sanic_accountnumber";
             public const string CashAmount = "sanic_cashamount";
             public const string BacCheckAmount = "sanic_baclocalcheckamount";
 

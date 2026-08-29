@@ -569,6 +569,88 @@ namespace CashHub.Validation.Tests
             Assert.False(EvaluateSessionDelete(Guid.Empty, Cajero, false, false).IsAllowed);
         }
 
+        // ---------------------------------------------------------------------
+        // Baja de sesion por un APROBADOR (supervisor)
+        //
+        // Regla de negocio: el supervisor puede dar de baja una sesion mientras NO
+        // haya sido aprobada/activada (sanic_Confirmed). Una vez confirmada hay
+        // recuento real colgando y la salida es el cierre forzado, no el borrado.
+        //
+        // Sin esto, rechazar una solicitud "Crear sesion de recuento" dejaba la
+        // sesion huerfana: el supervisor no podia borrarla (no es el cajero) y el
+        // cajero tampoco (la solicitud ya figuraba resuelta).
+        // ---------------------------------------------------------------------
+
+        private static readonly Guid Supervisor = Guid.Parse("cccccccc-3333-3333-3333-333333333333");
+
+        private const bool EsAprobador = true;
+        private const bool NoEsAprobador = false;
+
+        [Fact]
+        public void SessionDelete_AjenaPeroActorEsAprobador_SinConfirmar_SePermite()
+        {
+            Assert.True(
+                EvaluateSessionDelete(Cajero, Supervisor, false, false, EsAprobador).IsAllowed);
+        }
+
+        [Fact]
+        public void SessionDelete_AprobadorConSolicitudResuelta_SePermite()
+        {
+            // Es EL caso del rechazo: la solicitud se marca resuelta y el borrado de
+            // la sesion es su efecto. Bloquearlo aca es lo que producia el huerfano.
+            Assert.True(
+                EvaluateSessionDelete(Cajero, Supervisor, false, true, EsAprobador).IsAllowed);
+        }
+
+        [Fact]
+        public void SessionDelete_Confirmada_NiSiquieraElAprobador()
+        {
+            // La confirmacion es la frontera dura: aplica a TODOS.
+            var result = EvaluateSessionDelete(Cajero, Supervisor, true, false, EsAprobador);
+
+            Assert.False(result.IsAllowed);
+            Assert.Contains("confirmada", result.Reason!, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void SessionDelete_ConfirmadaYAjena_ElMotivoEsLaConfirmacion()
+        {
+            // La confirmacion se evalua ANTES que la propiedad: un cajero ajeno que
+            // intenta borrar una sesion confirmada tiene que leer el motivo real,
+            // no "no es tuya" (que ademas lo mandaria a pedirsela al dueno, y el
+            // dueno tampoco puede).
+            var result = EvaluateSessionDelete(Cajero, OtroCajero, true, false, NoEsAprobador);
+
+            Assert.False(result.IsAllowed);
+            Assert.Contains("confirmada", result.Reason!, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void SessionDelete_SinCajeroConocido_NiSiquieraElAprobador()
+        {
+            // No se sabe de quien es la mesa: se bloquea por seguridad, sin excepcion.
+            Assert.False(
+                EvaluateSessionDelete(Guid.Empty, Supervisor, false, false, EsAprobador).IsAllowed);
+        }
+
+        [Fact]
+        public void SessionDelete_AjenaYNoAprobador_SigueBloqueada()
+        {
+            // Candado de regresion: la excepcion es SOLO para aprobadores.
+            var result = EvaluateSessionDelete(Cajero, OtroCajero, false, false, NoEsAprobador);
+
+            Assert.False(result.IsAllowed);
+            Assert.Contains("cajero", result.Reason!, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void SessionDelete_PropiaConSolicitudResuelta_SinSerAprobador_SigueBloqueada()
+        {
+            // Candado de regresion del caso original.
+            Assert.False(
+                EvaluateSessionDelete(Cajero, Cajero, false, true, NoEsAprobador).IsAllowed);
+        }
+
         // =====================================================================
         // 6. La transicion de apertura que escribe el cajero sigue siendo legal
         //     (candado de regresion sobre ReceptionGuard: el guard esta ACTIVO en DEV)
