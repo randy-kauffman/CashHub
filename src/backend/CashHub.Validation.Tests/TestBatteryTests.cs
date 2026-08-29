@@ -36,6 +36,41 @@ namespace CashHub.Validation.Tests
             new object[] { "12-ERR-sin-depositos", new[] { "VR-09" } },
             new object[] { "13-ERR-multiple", new[] { "VR-10", "VR-13", "VR-20", "VR-22", "VR-23" } },
             new object[] { "15-ERR-desglose-cheques", new[] { "VR-28" } },
+
+            // ---- VR-29: el numero de cheque son solo digitos ----
+            new object[] { "16-OK-cheque-ceros-izquierda", Array.Empty<string>() },
+            new object[] { "17-OK-cheque-espacios-alrededor", Array.Empty<string>() },
+            new object[] { "18-ERR-cheque-alfanumerico", new[] { "VR-29" } },
+            new object[] { "19-ERR-cheque-con-guion", new[] { "VR-29" } },
+            new object[] { "20-ERR-cheque-no-entero", new[] { "VR-29" } },
+            new object[] { "21-ERR-cheque-espacio-interno", new[] { "VR-29" } },
+            new object[] { "22-ERR-cheque-digitos-no-ascii", new[] { "VR-29" } },
+
+            // ---- Limites de columna. Los que pasan en verde y NO deberian estan
+            // marcados HUECO: ninguna regla los cuida y revientan al persistir. ----
+            new object[] { "23-LIM-tula-50-exacto", Array.Empty<string>() },
+            new object[] { "24-LIM-tula-51-excede", Array.Empty<string>() },      // HUECO: String(50)
+            new object[] { "25-LIM-cheque-30-exacto", Array.Empty<string>() },
+            new object[] { "26-LIM-cheque-31-excede", Array.Empty<string>() },    // HUECO: String(30)
+            new object[] { "27-LIM-cuenta-10-digitos", new[] { "VR-23" } },
+            new object[] { "28-LIM-cuenta-cero", new[] { "VR-23" } },
+            new object[] { "29-LIM-monto-tope-exacto", Array.Empty<string>() },
+            new object[] { "30-LIM-monto-excede", Array.Empty<string>() },        // HUECO: Decimal max 1e11
+            new object[] { "31-LIM-decimales-de-mas", Array.Empty<string>() },    // HUECO: precision 2
+            new object[] { "32-LIM-suma-bolsa-excede", Array.Empty<string>() },   // HUECO: suma por bolsa
+            new object[] { "33-LIM-cif-excede", new[] { "VR-25" } },
+
+            // ---- Valores raros ----
+            new object[] { "34-OK-tula-case-y-espacios", Array.Empty<string>() },
+            new object[] { "35-RARO-unicode", Array.Empty<string>() },
+            new object[] { "36-RARO-invisibles", Array.Empty<string>() },
+            new object[] { "37-RARO-inyeccion", Array.Empty<string>() },
+            new object[] { "38-RARO-solo-espacios", new[] { "VR-10", "VR-11" } },
+            new object[] { "39-RARO-referencia-larga", Array.Empty<string>() },
+            new object[] { "40-OK-volumen-tope", Array.Empty<string>() },
+
+            // Los 5x-MTX-* NO se asertan aca: dependen del estado de los vinculos en el
+            // ambiente (scripts/seed-sender-matrix.py) y se prueban ENVIANDO de verdad.
         };
 
         [Theory]
@@ -86,6 +121,57 @@ namespace CashHub.Validation.Tests
             Assert.Empty(huerfanas);
         }
 
+        /// <summary>
+        /// El catalogo de esta bateria es una REPLICA A MANO del seed, y una replica a mano
+        /// se desincroniza. Ya paso: VR-29 se sembro en el ambiente y se registro en el
+        /// motor, pero nadie la agrego aca, asi que la bateria siguio en verde mientras el
+        /// ambiente rechazaba archivos que aca pasaban.
+        ///
+        /// Este test compara clave por clave contra data/seed/50-validationrules.json.
+        /// </summary>
+        [Fact]
+        public void El_catalogo_de_la_bateria_no_puede_divergir_del_seed()
+        {
+            var seedPath = Path.Combine(RepoRoot(), "data", "seed", "50-validationrules.json");
+            using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(seedPath));
+
+            var enElSeed = doc.RootElement.GetProperty("rows").EnumerateArray()
+                .Where(r => r.GetProperty("sanic_isactive").GetBoolean())
+                .Select(r => r.GetProperty("sanic_validationname").GetString()!)
+                .OrderBy(k => k, StringComparer.Ordinal)
+                .ToArray();
+
+            var enLaBateria = Catalogo()
+                .Where(r => r.IsActive)
+                .Select(r => r.Key)
+                .OrderBy(k => k, StringComparer.Ordinal)
+                .ToArray();
+
+            Assert.Equal(enElSeed, enLaBateria);
+        }
+
+        /// <summary>
+        /// Toda regla activa del seed tiene que tener estrategia en el motor. Sin esto, el
+        /// motor la marca NotImplemented -> HasSystemIssues -> TODOS los correos van a
+        /// Revision con error. Es la trampa del orden de despliegue: sembrar una regla
+        /// antes de subir el assembly rompe la ingesta entera.
+        /// </summary>
+        [Fact]
+        public void Toda_regla_activa_del_seed_tiene_estrategia_en_el_motor()
+        {
+            var seedPath = Path.Combine(RepoRoot(), "data", "seed", "50-validationrules.json");
+            using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(seedPath));
+
+            var conEstrategia = FullRuleSet.All.Select(r => r.Key).ToHashSet(StringComparer.Ordinal);
+            var sinEstrategia = doc.RootElement.GetProperty("rows").EnumerateArray()
+                .Where(r => r.GetProperty("sanic_isactive").GetBoolean())
+                .Select(r => r.GetProperty("sanic_validationname").GetString()!)
+                .Where(k => !conEstrategia.Contains(k))
+                .ToArray();
+
+            Assert.Empty(sinEstrategia);
+        }
+
         /// <summary>Replica de data/seed/50-validationrules.json (orden, parametros y dependencias).</summary>
         private static List<RuleDefinition> Catalogo() => new()
         {
@@ -114,6 +200,7 @@ namespace CashHub.Validation.Tests
                 "La celda {celda} declara '{valor}'; soportadas {esperado}.", "VR-19"),
             new("VR-13", "Cuenta con moneda unica", 160, true, null, "La cuenta {valor} tiene dos monedas (fila {fila}).", "VR-18"),
             new("VR-15", "Cheques completos", 170, true, null, "El cheque de la fila {fila}: {celda} vacia.", "VR-16"),
+            new("VR-29", "Numero de cheque numerico", 175, true, null, "El numero de cheque '{valor}' (fila {fila}) no es numerico.", "VR-15"),
             new("VR-14", "Sin repetidos", 180, true, null, "El cheque {valor} esta repetido (fila {fila}).", "VR-15"),
             new("VR-22", "Sin huerfanos", 190, true, null, "Fila {fila}: el deposito {valor} no existe.", "VR-14"),
             new("VR-12", "Cheques cuadran", 200, true, null, "El deposito {valor} (fila {fila}) no cuadra: {esperado}.", "VR-22"),
@@ -132,10 +219,13 @@ namespace CashHub.Validation.Tests
             public IReadOnlyList<SenderLink> GetSenderLinks(string senderEmail) =>
                 new[] { new SenderLink(_cliente, Vigency.Vigente) };
             public ClientLookup FindClientByCif(string cif) =>
-                cif == "0012024001" ? new ClientLookup(_cliente, Vigency.Vigente) : ClientLookup.NotFound;
+                cif == "00120240014" ? new ClientLookup(_cliente, Vigency.Vigente) : ClientLookup.NotFound;
             public bool AccountBelongsToClient(string accountNumber, Guid clientId) =>
                 accountNumber == "100200111" || accountNumber == "100200112";
         }
+
+        internal static string RepoRootPublic() => RepoRoot();
+        internal static List<RuleDefinition> CatalogoPublic() => Catalogo();
 
         private static string RepoRoot()
         {
