@@ -249,6 +249,36 @@ for indice, (cif, nombre, estado_cli, taxid, vinculos, esperado) in enumerate(CL
                    f'vinculo {direccion} [{ESTADO[estado_vin]}]')
     print()
 
+# ---------------------------------------------------------------------------
+# CUENTA COMPARTIDA — el caso que la key vieja hacia imposible de montar.
+#
+# CH-Tbl-ClientAccount dice a que cuentas esta AUTORIZADO a depositar un cliente,
+# no de quien es la cuenta. Con la key sobre (sanic_name) sola, la misma cuenta no
+# se podia autorizar a dos clientes; con sanic_KeyCuentaPorCliente sobre el par, si.
+# Es el caso real del grupo empresarial que deposita en una cuenta recolectora.
+#
+# Se autoriza la cuenta del cliente 9010000001 TAMBIEN al 9010000009, y ambos
+# tienen vinculo vigente con gmail, asi que VR-23 se evalua de verdad en los dos.
+# ---------------------------------------------------------------------------
+print('== Cuenta compartida entre dos clientes (VR-23)')
+COMPARTIDA = str(CUENTA_BASE + 1)          # 910000001, ya autorizada al 9010000001
+q = urllib.parse.urlencode({'$select': 'sanic_chtblclientid',
+                            '$filter': "sanic_cifbco eq '9010000009'"})
+segundo = req('GET', f'/sanic_chtblclients?{q}').get('value', [])
+if segundo:
+    sid = segundo[0]['sanic_chtblclientid']
+    upsert('sanic_chtblclientaccounts', 'sanic_chtblclientaccountid',
+           f"sanic_name eq '{COMPARTIDA}' and _sanic_client_value eq {sid}",
+           {'sanic_name': COMPARTIDA, 'sanic_recordstatus': ACTIVE,
+            'sanic_Client@odata.bind': f'/sanic_chtblclients({sid})'},
+           f'cuenta {COMPARTIDA} autorizada TAMBIEN al 9010000009')
+    dupq = urllib.parse.urlencode({'$select': 'sanic_name,_sanic_client_value',
+                                   '$filter': f"sanic_name eq '{COMPARTIDA}'"})
+    n = len(req('GET', f'/sanic_chtblclientaccounts?{dupq}').get('value', []))
+    print(f'   la cuenta {COMPARTIDA} esta autorizada a {n} cliente(s) '
+          f'{"— OK, la key del par lo permite" if n >= 2 else "*** deberia ser 2"}')
+print()
+
 print('== Verificacion de que hotmail NO tenga vinculos (caso "desconocido")')
 v = req('GET', f"/sanic_chtblclientemails?$select=sanic_name&$filter=sanic_name eq '{HOTMAIL}'")
 n = len(v.get('value', []))

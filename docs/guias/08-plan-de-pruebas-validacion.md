@@ -3,7 +3,7 @@
 Batería para probar de punta a punta: ingesta del correo, las **29 reglas**, la
 materialización de la declaración y **el correo de respuesta al cliente**.
 
-**50 archivos** en [`docs/plantillas/pruebas/`](../plantillas/pruebas/), regenerables con
+**51 archivos** en [`docs/plantillas/pruebas/`](../plantillas/pruebas/), regenerables con
 `python3 scripts/build-test-workbooks.py`. Los casos de archivo (01–40) están **verificados
 por tests automáticos** (`TestBatteryTests`): si alguien cambia una regla y un archivo deja
 de probar lo que dice esta guía, la suite lo delata en CI.
@@ -15,7 +15,7 @@ La batería tiene cuatro capas, y cada una responde una pregunta distinta:
 | **Reglas de negocio** | 01–22 | ¿El motor acepta lo válido y rechaza lo inválido, con un mensaje que el cliente entienda? |
 | **Límites de columna** | 23–33 | ¿Qué pasa cuando el archivo pasa todas las reglas pero **no cabe** en la base? |
 | **Valores raros** | 34–40 | ¿Se rompe con unicode, caracteres invisibles, inyección o volumen máximo? |
-| **Matriz de remitentes** | 50–59 | ¿Le respondemos a quien corresponde, y le contamos solo lo que corresponde? |
+| **Matriz de remitentes** | 50–60 | ¿Le respondemos a quien corresponde, y le contamos solo lo que corresponde? |
 
 ## Antes de empezar
 
@@ -217,6 +217,7 @@ Requiere `./scripts/seed-sender-matrix.py`. Recordar las dos puertas:
 | H10 | `50-MTX-vigente.xlsx` | **outlook** | Activo | ninguno con outlook | ❌ **No responde.** El único vínculo de outlook está revocado. Clasificación `Revocado`, revisión `Omitido`. |
 | H11 | `50-MTX-vigente.xlsx` | **hotmail** | Activo | ninguno | ❌ **No responde.** Clasificación `Cliente sin registrar`, revisión **`Manual`** → lo levanta Banca de Empresas. |
 | H12 | `59-MTX-cif-inexistente.xlsx` | **hotmail** | no existe | ninguno | ❌ **No responde.** Clasificación **`Sospechoso`** + alerta: alguien tiene la plantilla oficial y el CIF no existe. |
+| H13 | `60-MTX-cuenta-compartida.xlsx` | gmail | Activo | Activo | ✅ **Aceptado.** El cliente `9010000009` declara la cuenta `910000001`, que está autorizada **también** al cliente `9010000001`. Prueba que una cuenta pueda estar autorizada a varios clientes — imposible con la key vieja. |
 
 > **La diferencia entre H11 y H12 es el corazón del triage.** Los dos son desconocidos con
 > la plantilla oficial; el primero es trabajo administrativo y el segundo es un evento de
@@ -238,6 +239,75 @@ F10 y (según resultado) F9 y F11 hacen visibles. Documentados acá para que el 
 | Suma por bolsa sin tope | F10 | Regla nueva que sume por tula antes de materializar |
 | Precisión decimal | F9 | Definir si se rechaza o se redondea, y decirlo |
 | CIF más largo que su columna | F11 | Validar largo en VR-24 |
+
+---
+
+## Bloque I — Robustez frente a un atacante
+
+Los bloques anteriores prueban el sistema con un cliente que coopera y a lo sumo se equivoca.
+Este bloque asume lo contrario: **alguien fabrica el adjunto para hacernos daño**, sin usar
+Excel y sin respetar la plantilla.
+
+**No hay archivos `.xlsx` en `docs/plantillas/pruebas/` para este bloque a propósito**: un
+atacante no arma sus payloads con la plantilla oficial, y varios de estos casos (XXE, bomba
+de entidades, ZIP corrupto) no se pueden representar con un Excel legítimo. Se prueban en
+código, con bytes crudos, en `AdversarialInputTests` y `ReplyInjectionTests` — **17 casos**
+que corren en CI en cada build.
+
+La línea que se defiende es una sola: **`XlsxParser.Parse` nunca debe tumbar el worker.**
+Cualquier entrada hostil termina en `XlsxParseException` (error de negocio → el correo va a
+Revisión) y jamás en una excepción que escape, un cuelgue o un `OutOfMemory` que se lleve
+puesto el proceso y con él los demás correos que se estén validando.
+
+| Ataque | Qué se probó | Estado |
+|---|---|---|
+| **XXE — archivo local** | Entidad `SYSTEM "file:///etc/passwd"` en una celda | ✅ No la resuelve (DTD prohibido por defecto) |
+| **XXE — SSRF por HTTP** | Entidad `SYSTEM "http://169.254.169.254/..."` (metadata de la nube) | ✅ No la resuelve |
+| **Billion laughs** | 6 niveles de entidades que expanden a 10⁶ | ✅ No expande |
+| **No-ZIP renombrado** | Texto plano con extensión `.xlsx` | ✅ `XlsxParseException` |
+| **ZIP sin partes de Excel** | ZIP válido sin `workbook.xml` | ✅ `XlsxParseException` |
+| **XML truncado / no-hoja** | Cierre a la mitad, raíz que no es `worksheet` | ✅ `XlsxParseException` |
+| **Referencia de celda absurda** | `A99999999999999999999`, vacía, `@#$%` | ✅ No explota |
+| **Índice de shared string fuera de rango** | `t="s"` apuntando al 9999 sin tabla | ✅ No explota |
+| **Campo de 5 millones de caracteres** | Referencia gigante en una celda | ✅ Sobrevive |
+| **Número de 1000 dígitos** | `TryDecimal` sobre 1000 nueves | ✅ Devuelve "no es decimal", no desborda |
+| **200.000 celdas** | Hoja sin el límite de filas de la plantilla | ⚠️ Sobrevive, **pero ver abajo** |
+| **Inyección HTML en la respuesta** | `<script>`, comillas, `&` en valores del cliente | ✅ Se escapan (`&lt;script&gt;`) |
+| **Inyección de token de plantilla** | `{{cliente}}` metido en la referencia | ✅ Queda literal (reemplazo de una pasada) |
+
+### Lo que estos tests NO garantizan — leer antes de dormir tranquilo
+
+1. **Corren en `net8.0`; el plugin corre en `net462`.** El comportamiento de `XDocument.Load`
+   con DTD es el mismo (prohibido por defecto desde .NET 4.5.2), pero **la garantía de que XXE
+   está muerto en producción hay que confirmarla enviando** los payloads de I1–I3 de verdad y
+   revisando que el correo quede en Revisión sin haber leído ningún archivo ni hecho ninguna
+   salida de red. Es la prueba que más importa y la única que el código no puede darse solo.
+
+2. **El worker del sandbox de Dataverse tiene memoria y tiempo limitados** (~2 min). Los tests
+   de 5 MB y 200.000 celdas pasan en una máquina con RAM de sobra; **no prueban que el worker
+   real no se quede sin memoria**. Enviar un adjunto de decenas de MB de celdas y observar si
+   el correo termina en Error controlado o si el job muere con timeout es una prueba de
+   ambiente pendiente.
+
+3. **No hay tope de filas ni de celdas en el parser.** Hoy carga todo en memoria. No es un
+   bug con estos volúmenes, pero es la palanca de un DoS: el techo real lo pone la RAM del
+   worker, no el código. Si se decide poner un tope, `AdversarialInputTests` tiene el caso de
+   200.000 celdas listo para cambiar de "sobrevive" a "corta con aviso".
+
+4. **VR-06 (tamaño máximo del adjunto) es decorativa hoy**: mide `sanic_sizebytes`, el tamaño
+   **comprimido**, y además corre en la etapa 5 **después** de que el archivo ya se parseó en
+   la etapa 3. Un ZIP de 2 MB que descomprime a 1 GB la pasa limpio y ya hizo el daño. Para
+   que sirva habría que mover el chequeo antes del parseo y medir el tamaño descomprimido.
+
+### 🔴 Trampa activa: el token triple `{{{ }}}`
+
+El motor de plantillas tiene dos sintaxis: `{{token}}` **escapa** el HTML y `{{{token}}}`
+**no**. Ninguna plantilla del seed usa la triple hoy, así que no hay vulnerabilidad viva —
+**pero negocio edita las plantillas en Dataverse sin tocar código**. El día que alguien
+escriba `{{{cliente}}}` en una plantilla creyendo que es una variante inocente, abre inyección
+de HTML con el nombre de cliente (que viene del Excel del atacante). `ReplyInjectionTests`
+tiene un test que documenta esto en rojo. **Recomendación**: quitar la sintaxis triple del
+motor si no hay un caso de uso real que la justifique.
 
 ---
 
@@ -274,6 +344,8 @@ F10 y (según resultado) F9 y F11 hacen visibles. Documentados acá para que el 
 | H2, H3, H4 | | Respuesta GENERICA | | | |
 | H6, H7 | | Rechazo + detalle | | | |
 | H10, H11, H12 | | SIN respuesta | | | |
+| H13 | | Aceptado (cuenta compartida) | | | |
+| I1–I13 | | Cubierto en CI (AdversarialInputTests) | | | |
 
 ## Cómo leer el log de una prueba
 

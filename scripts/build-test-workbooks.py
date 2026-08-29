@@ -393,6 +393,13 @@ CASOS = [
           ref=f'Matriz {nombre}')], [])
     for i, (nombre, ident) in enumerate(MATRIZ.items())
 ] + [
+    # 60 — CUENTA COMPARTIDA: el cliente 9010000009 declara la cuenta 910000001, que
+    # esta autorizada TAMBIEN al cliente 9010000001. Con la key vieja sobre
+    # (sanic_name) sola este escenario no se podia ni montar en la base.
+    ('60-MTX-cuenta-compartida', '9010000009',
+     [dep(1, 'B-MTX-60', MATRIZ_ACC_BASE + 1, 'USD', efectivo=750,
+          ref='Cuenta recolectora compartida')], []),
+
     # 59 — CIF que no existe en ninguna parte: con plantilla oficial y remitente
     # desconocido tiene que caer en Sospechoso, no en "cliente por registrar".
     ('59-MTX-cif-inexistente', '9019999999',
