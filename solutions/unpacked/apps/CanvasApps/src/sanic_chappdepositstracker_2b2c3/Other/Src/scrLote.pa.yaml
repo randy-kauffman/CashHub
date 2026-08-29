@@ -18,23 +18,23 @@ Screens:
             BorderColor: =ThemeLine
             BorderThickness: =1
             Fill: =ThemeSurface
-            Height: =376
-            Width: =652
-            X: =690
+            Height: =App.Height - Self.Y - 24
+            Width: =shpPlanillasCard.Width
+            X: =shpPlanillasCard.X + shpPlanillasCard.Width + 14
             Y: =368
       - galTulas:
           Control: Gallery@2.15.0
           Variant: Vertical
           Group: TulaLote
           Properties:
-            Height: =296
+            Height: =shpTulasCard.Y + shpTulasCard.Height - 16 - Self.Y
             Items: =Filter('CH-Tbl-Bags', ReceptionID.'CH-Tbl-Receptions' = gvarPlanilla.'CH-Tbl-Receptions')
             OnSelect: =Set(gvarTula, ThisItem); Navigate(scrTula)
             TemplatePadding: =0
             TemplateSize: =42
             Visible: =!IsBlank(gvarPlanilla)
-            Width: =600
-            X: =710
+            Width: =shpTulasCard.Width - 52
+            X: =shpTulasCard.X + 20
             Y: =432
           Children:
             - btnTulaFila:
@@ -53,14 +53,14 @@ Screens:
                   PressedFill: =ThemeAccentSoft
                   Text: =
                   Tooltip: ="Abrir tula " & ThisItem.BagID
-                  Width: =600
+                  Width: =Parent.TemplateWidth
             - shpTFilaSep:
                 Control: Rectangle@2.3.0
                 Properties:
                   Fill: =ThemeLineSoft
                   Height: =1
                   OnSelect: =Select(Parent)
-                  Width: =600
+                  Width: =Parent.TemplateWidth
                   Y: =41
             - lblTFilaId:
                 Control: Label@2.5.1
@@ -75,7 +75,7 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.BagID
-                  Width: =140
+                  Width: =Parent.TemplateWidth * 0.23333
                   Wrap: =false
                   Y: =10
             - pilTFilaEstado:
@@ -111,7 +111,7 @@ Screens:
                   Size: =9
                   Text: =ThisItem.BagStatus
                   Width: =8 + 7*Len(Self.Text)
-                  X: =140 + (lblTCol2.Width - Self.Width) / 2
+                  X: =Parent.TemplateWidth * 0.23333 + (lblTCol2.Width - Self.Width) / 2
                   Y: =8
             - pilTFilaDif:
                 Control: Classic/Button@2.2.0
@@ -134,7 +134,7 @@ Screens:
                   Size: =9
                   Text: =If(ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.Recontada, "Pendiente", If(ThisItem.HasDifference, "Con diferencia", "Sin diferencia"))
                   Width: =8 + 7*Len(Self.Text)
-                  X: =400 + (lblTCol3.Width - Self.Width) / 2
+                  X: =Parent.TemplateWidth * 0.66667 + (lblTCol3.Width - Self.Width) / 2
                   Y: =8
       - shpTulasLinea:
           Control: Rectangle@2.3.0
@@ -142,8 +142,8 @@ Screens:
           Properties:
             Fill: =ThemeLine
             Height: =1
-            Width: =600
-            X: =710
+            Width: =galTulas.Width
+            X: =galTulas.X
             Y: =430
       - lblTCol3:
           Control: Label@2.5.1
@@ -159,8 +159,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="DIFERENCIA"
-            Width: =160
-            X: =1110
+            Width: =galTulas.Width * 0.26667
+            X: =galTulas.X + galTulas.Width * 0.66667
             Y: =410
       - lblTCol2:
           Control: Label@2.5.1
@@ -176,8 +176,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="ESTADO"
-            Width: =260
-            X: =850
+            Width: =galTulas.Width * 0.43333
+            X: =galTulas.X + galTulas.Width * 0.23333
             Y: =410
       - lblTCol1:
           Control: Label@2.5.1
@@ -193,8 +193,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="NO. TULA"
-            Width: =140
-            X: =710
+            Width: =galTulas.Width * 0.23333
+            X: =galTulas.X
             Y: =410
       - lblTulasVacio:
           Control: Label@2.5.1
@@ -209,8 +209,8 @@ Screens:
             Size: =10
             Text: ="Seleccioná una planilla para ver sus tulas."
             Visible: =IsBlank(gvarPlanilla)
-            Width: =560
-            X: =710
+            Width: =galTulas.Width - 40
+            X: =galTulas.X
             Y: =520
       - lblTulasTitulo:
           Control: Label@2.5.1
@@ -225,9 +225,9 @@ Screens:
             PaddingTop: =0
             Size: =9
             Text: =If(IsBlank(gvarPlanilla), "TULAS DE LA PLANILLA", Upper($"TULAS DE {gvarPlanilla.ReceiptID} · {gvarPlanilla.RemitentName}"))
-            Width: =560
+            Width: =galTulas.Width - 40
             Wrap: =false
-            X: =710
+            X: =galTulas.X
             Y: =382
       - shpPlanillasCard:
           Control: Rectangle@2.3.0
@@ -236,8 +236,8 @@ Screens:
             BorderColor: =ThemeLine
             BorderThickness: =1
             Fill: =ThemeSurface
-            Height: =376
-            Width: =652
+            Height: =App.Height - Self.Y - 24
+            Width: =(App.Width - 62) / 2
             X: =24
             Y: =368
       - galPlanillas:
@@ -245,14 +245,14 @@ Screens:
           Variant: Vertical
           Group: PlanillasLote
           Properties:
-            Height: =296
+            Height: =shpPlanillasCard.Y + shpPlanillasCard.Height - 16 - Self.Y
             Items: =Filter('CH-Tbl-Receptions', ReceptionBatch.'CH-Tbl-ReceptionBatch' = gvarLote.'CH-Tbl-ReceptionBatch')
             OnSelect: =Set(gvarPlanilla, ThisItem)
             ShowScrollbar: =false
             TemplatePadding: =0
             TemplateSize: =42
-            Width: =590
-            X: =44
+            Width: =shpPlanillasCard.Width - 62
+            X: =shpPlanillasCard.X + 20
             Y: =432
           Children:
             - shpPlanillaSel:
@@ -261,7 +261,7 @@ Screens:
                   Fill: =If(!IsBlank(gvarPlanilla) && ThisItem.'CH-Tbl-Receptions' = gvarPlanilla.'CH-Tbl-Receptions', ThemeAccentSoft, Color.Transparent)
                   Height: =42
                   OnSelect: =Select(Parent)
-                  Width: =590
+                  Width: =Parent.TemplateWidth
             - btnPlanillaFila:
                 Control: Classic/Button@2.2.0
                 Properties:
@@ -282,7 +282,7 @@ Screens:
                   RadiusTopRight: =0
                   Text: =""
                   Tooltip: ="Abrir planilla " & ThisItem.Name
-                  Width: =590
+                  Width: =Parent.TemplateWidth
             - shpPlanillaSelBarra:
                 Control: Rectangle@2.3.0
                 Properties:
@@ -297,7 +297,7 @@ Screens:
                   Fill: =ThemeLineSoft
                   Height: =1
                   OnSelect: =Select(Parent)
-                  Width: =590
+                  Width: =Parent.TemplateWidth
                   Y: =41
             - lblPFilaUsd:
                 Control: Label@2.5.1
@@ -313,8 +313,8 @@ Screens:
                   Size: =10
                   Text: |-
                     =With({_t: Coalesce(ThisItem.USDCash, 0) + Coalesce(ThisItem.USDCheck, 0)}, If(_t = 0, "—", Text(_t, FmtMoney)))
-                  Width: =115
-                  X: =475
+                  Width: =Parent.TemplateWidth * 0.19492
+                  X: =Parent.TemplateWidth * 0.80508
                   Y: =10
             - lblPFilaNio:
                 Control: Label@2.5.1
@@ -330,8 +330,8 @@ Screens:
                   Size: =10
                   Text: |-
                     =With({_t: Coalesce(ThisItem.NIOCash, 0) + Coalesce(ThisItem.NIOCheck, 0)}, If(_t = 0, "—", Text(_t, FmtMoney)))
-                  Width: =115
-                  X: =360
+                  Width: =Parent.TemplateWidth * 0.19492
+                  X: =Parent.TemplateWidth * 0.61017
                   Y: =10
             - lblPFilaSucursal:
                 Control: Label@2.5.1
@@ -344,9 +344,9 @@ Screens:
                   PaddingTop: =0
                   Size: =9.5
                   Text: =ThisItem.RemitentName
-                  Width: =240
+                  Width: =Parent.TemplateWidth * 0.40678
                   Wrap: =false
-                  X: =120
+                  X: =Parent.TemplateWidth * 0.20339
                   Y: =10
             - lblPFilaId:
                 Control: Label@2.5.1
@@ -360,7 +360,7 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.ReceiptID
-                  Width: =120
+                  Width: =Parent.TemplateWidth * 0.20339
                   Wrap: =false
                   Y: =10
       - shpPlanillasLinea:
@@ -370,8 +370,8 @@ Screens:
             BorderColor: =ThemeLine
             Fill: =ThemeLine
             Height: =1
-            Width: =590
-            X: =44
+            Width: =galPlanillas.Width
+            X: =galPlanillas.X
             Y: =430
       - lblPCol4:
           Control: Label@2.5.1
@@ -387,8 +387,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="DECL. US$"
-            Width: =115
-            X: =519
+            Width: =galPlanillas.Width * 0.19492
+            X: =galPlanillas.X + galPlanillas.Width * 0.80508
             Y: =410
       - lblPCol3:
           Control: Label@2.5.1
@@ -404,8 +404,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="DECL. C$"
-            Width: =115
-            X: =404
+            Width: =galPlanillas.Width * 0.19492
+            X: =galPlanillas.X + galPlanillas.Width * 0.61017
             Y: =410
       - lblPCol2:
           Control: Label@2.5.1
@@ -420,8 +420,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="SUCURSAL"
-            Width: =240
-            X: =164
+            Width: =galPlanillas.Width * 0.40678
+            X: =galPlanillas.X + galPlanillas.Width * 0.20339
             Y: =410
       - lblPCol1:
           Control: Label@2.5.1
@@ -436,8 +436,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="PLANILLA"
-            Width: =120
-            X: =44
+            Width: =galPlanillas.Width * 0.20339
+            X: =galPlanillas.X
             Y: =410
       - lblPlanillasTitulo:
           Control: Label@2.5.1
@@ -453,7 +453,7 @@ Screens:
             Size: =9
             Text: ="PLANILLAS DEL LOTE"
             Width: =400
-            X: =44
+            X: =galPlanillas.X
             Y: =382
       - shpMontosCard:
           Control: Rectangle@2.3.0
@@ -463,7 +463,7 @@ Screens:
             BorderThickness: =1
             Fill: =ThemeSurface
             Height: =140
-            Width: =1318
+            Width: =App.Width - 48
             X: =24
             Y: =216
       - lblMontosVacioLote:
@@ -480,8 +480,8 @@ Screens:
             Size: =10
             Text: ="Sin montos declarados todavía."
             Visible: =Coalesce(gvarLote.DecNIOTotal, 0) = 0 && Coalesce(gvarLote.DecUSDTotal, 0) = 0
-            Width: =670
-            X: =44
+            Width: =shpMontosCard.Width * 0.50834
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.01517
             Y: =290
       - lblMonUsd4:
           Control: Label@2.5.1
@@ -497,8 +497,8 @@ Screens:
             Size: =9.5
             Text: =Text(Coalesce(gvarLote.DecUSDTotal, 0), FmtMoney)
             Visible: =Coalesce(gvarLote.DecUSDTotal, 0) > 0
-            Width: =170
-            X: =544
+            Width: =shpMontosCard.Width * 0.12899
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.39454
             Y: =310
       - lblMonNio4:
           Control: Label@2.5.1
@@ -514,8 +514,8 @@ Screens:
             Size: =9.5
             Text: =Text(Coalesce(gvarLote.DecNIOTotal, 0), FmtMoney)
             Visible: =Coalesce(gvarLote.DecNIOTotal, 0) > 0
-            Width: =170
-            X: =544
+            Width: =shpMontosCard.Width * 0.12899
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.39454
             Y: =282
       - lblMonCol4:
           Control: Label@2.5.1
@@ -530,8 +530,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="TOTAL"
-            Width: =170
-            X: =544
+            Width: =shpMontosCard.Width * 0.12899
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.39454
             Y: =258
       - lblMonUsd3:
           Control: Label@2.5.1
@@ -546,8 +546,8 @@ Screens:
             Size: =9.5
             Text: =Text(Coalesce(gvarLote.DecUSDCheck, 0), FmtMoney)
             Visible: =Coalesce(gvarLote.DecUSDTotal, 0) > 0
-            Width: =170
-            X: =374
+            Width: =shpMontosCard.Width * 0.12899
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.26555
             Y: =310
       - lblMonNio3:
           Control: Label@2.5.1
@@ -562,8 +562,8 @@ Screens:
             Size: =9.5
             Text: =Text(Coalesce(gvarLote.DecNIOCheck, 0), FmtMoney)
             Visible: =Coalesce(gvarLote.DecNIOTotal, 0) > 0
-            Width: =170
-            X: =374
+            Width: =shpMontosCard.Width * 0.12899
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.26555
             Y: =282
       - lblMonCol3:
           Control: Label@2.5.1
@@ -578,8 +578,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="CHEQUES"
-            Width: =170
-            X: =374
+            Width: =shpMontosCard.Width * 0.12899
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.26555
             Y: =258
       - lblMonUsd2:
           Control: Label@2.5.1
@@ -594,8 +594,8 @@ Screens:
             Size: =9.5
             Text: =Text(Coalesce(gvarLote.DecUSDCash, 0), FmtMoney)
             Visible: =Coalesce(gvarLote.DecUSDTotal, 0) > 0
-            Width: =170
-            X: =204
+            Width: =shpMontosCard.Width * 0.12899
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.13657
             Y: =310
       - lblMonNio2:
           Control: Label@2.5.1
@@ -610,8 +610,8 @@ Screens:
             Size: =9.5
             Text: =Text(Coalesce(gvarLote.DecNIOCash, 0), FmtMoney)
             Visible: =Coalesce(gvarLote.DecNIOTotal, 0) > 0
-            Width: =170
-            X: =204
+            Width: =shpMontosCard.Width * 0.12899
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.13657
             Y: =282
       - lblMonCol2:
           Control: Label@2.5.1
@@ -626,8 +626,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="EFECTIVO"
-            Width: =170
-            X: =204
+            Width: =shpMontosCard.Width * 0.12899
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.13657
             Y: =258
       - shpMontosLinea:
           Control: Rectangle@2.3.0
@@ -635,8 +635,8 @@ Screens:
           Properties:
             Fill: =ThemeLine
             Height: =1
-            Width: =670
-            X: =44
+            Width: =shpMontosCard.Width * 0.50834
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.01517
             Y: =278
       - lblMonUsd1:
           Control: Label@2.5.1
@@ -652,8 +652,8 @@ Screens:
             Size: =9.5
             Text: ="USD · US$"
             Visible: =Coalesce(gvarLote.DecUSDTotal, 0) > 0
-            Width: =160
-            X: =44
+            Width: =shpMontosCard.Width * 0.12139
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.01517
             Y: =310
       - lblMonNio1:
           Control: Label@2.5.1
@@ -669,8 +669,8 @@ Screens:
             Size: =9.5
             Text: ="NIO · C$"
             Visible: =Coalesce(gvarLote.DecNIOTotal, 0) > 0
-            Width: =160
-            X: =44
+            Width: =shpMontosCard.Width * 0.12139
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.01517
             Y: =282
       - lblMonCol1:
           Control: Label@2.5.1
@@ -685,8 +685,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="MONEDA"
-            Width: =160
-            X: =44
+            Width: =shpMontosCard.Width * 0.12139
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.01517
             Y: =258
       - lblMontosTitulo:
           Control: Label@2.5.1
@@ -701,8 +701,8 @@ Screens:
             PaddingTop: =0
             Size: =9
             Text: ="MONTOS DECLARADOS EN LAS PLANILLAS DEL LOTE"
-            Width: =600
-            X: =44
+            Width: =shpMontosCard.Width * 0.45524
+            X: =shpMontosCard.X + shpMontosCard.Width * 0.01517
             Y: =230
       - shpFichaCardLote:
           Control: Rectangle@2.3.0
@@ -712,7 +712,7 @@ Screens:
             BorderThickness: =1
             Fill: =ThemeSurface
             Height: =110
-            Width: =1318
+            Width: =App.Width - 48
             X: =24
             Y: =94
       - lblFichaV5Lote:
@@ -728,8 +728,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Text(galPlanillas.AllItemsCount)
-            Width: =120
-            X: =924
+            Width: =shpFichaCardLote.Width * 0.09105
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.68285
             Y: =164
       - lblFichaK5Lote:
           Control: Label@2.5.1
@@ -743,8 +743,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="PLANILLAS"
-            Width: =120
-            X: =924
+            Width: =shpFichaCardLote.Width * 0.09105
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.68285
             Y: =148
       - lblFichaV4Lote:
           Control: Label@2.5.1
@@ -759,8 +759,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Coalesce(gvarLote.Location.Name, "—")
-            Width: =180
-            X: =704
+            Width: =shpFichaCardLote.Width * 0.13657
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.51593
             Y: =164
       - lblFichaK4Lote:
           Control: Label@2.5.1
@@ -774,8 +774,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="UBICACIÓN"
-            Width: =180
-            X: =704
+            Width: =shpFichaCardLote.Width * 0.13657
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.51593
             Y: =148
       - lblFichaV3Lote:
           Control: Label@2.5.1
@@ -790,8 +790,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =gvarLote.Transportadora
-            Width: =200
-            X: =484
+            Width: =shpFichaCardLote.Width * 0.15175
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.34901
             Y: =164
       - lblFichaK3Lote:
           Control: Label@2.5.1
@@ -805,8 +805,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="TRANSPORTADORA"
-            Width: =200
-            X: =484
+            Width: =shpFichaCardLote.Width * 0.15175
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.34901
             Y: =148
       - lblFichaV2Lote:
           Control: Label@2.5.1
@@ -821,8 +821,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =gvarLote.'Created By'.'Full Name'
-            Width: =220
-            X: =244
+            Width: =shpFichaCardLote.Width * 0.16692
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.16692
             Y: =164
       - lblFichaK2Lote:
           Control: Label@2.5.1
@@ -836,8 +836,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="RECIBIDO POR"
-            Width: =220
-            X: =244
+            Width: =shpFichaCardLote.Width * 0.16692
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.16692
             Y: =148
       - lblFichaV1Lote:
           Control: Label@2.5.1
@@ -852,8 +852,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Text(gvarLote.'Created On', FmtFecha)
-            Width: =180
-            X: =44
+            Width: =shpFichaCardLote.Width * 0.13657
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.01517
             Y: =164
       - lblFichaK1Lote:
           Control: Label@2.5.1
@@ -867,8 +867,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="RECIBIDO"
-            Width: =180
-            X: =44
+            Width: =shpFichaCardLote.Width * 0.13657
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.01517
             Y: =148
       - lblLoteTitulo:
           Control: Label@2.5.1
@@ -878,8 +878,8 @@ Screens:
             Height: =30
             Size: =15
             Text: =$"Lote de recepción {gvarLote.Name}"
-            Width: =420
-            X: =44
+            Width: =shpFichaCardLote.Width * 0.31867
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.01517
             Y: =108
       - pilLoteEstado:
           Control: Classic/Button@2.2.0
@@ -902,7 +902,7 @@ Screens:
             Size: =9
             Text: =gvarLote.ReceptionStatus
             Width: =8 + 7*Len(Self.Text)
-            X: =470
+            X: =shpFichaCardLote.X + shpFichaCardLote.Width * 0.33839
             Y: =110
       - lblCrumbActualLote:
           Control: Label@2.5.1
@@ -944,14 +944,14 @@ Screens:
           Properties:
             Fill: =ThemeSurface
             Height: =52
-            Width: =1366
+            Width: =App.Width
       - shpHeaderLineaLote:
           Control: Rectangle@2.3.0
           Group: EncabezadoLote
           Properties:
             Fill: =ThemeLine
             Height: =1
-            Width: =1366
+            Width: =App.Width
             Y: =52
       - shpMarcaLote:
           Control: Classic/Button@2.2.0

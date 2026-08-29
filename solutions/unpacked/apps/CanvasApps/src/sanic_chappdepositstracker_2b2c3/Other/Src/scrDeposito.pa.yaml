@@ -18,10 +18,10 @@ Screens:
             BorderColor: =ThemeLine
             BorderThickness: =1
             Fill: =ThemeSurface
-            Height: =196
-            Width: =1318
+            Height: =App.Height - Self.Y - 24
+            Width: =App.Width - 48
             X: =24
-            Y: =548
+            Y: =shpTxsCard.Y + shpTxsCard.Height + 12
       - lblChequesDepVacio:
           Control: Label@2.5.1
           Group: ChequesDep
@@ -36,23 +36,23 @@ Screens:
             Size: =10
             Text: ="Este depósito no incluye cheques."
             Visible: =galChequesDep.AllItemsCount = 0
-            Width: =1278
-            X: =44
-            Y: =660
+            Width: =shpChequesCard.Width * 0.96966
+            X: =shpChequesCard.X + shpChequesCard.Width * 0.01517
+            Y: =shpChequesCard.Y + 112
       - galChequesDep:
           Control: Gallery@2.15.0
           Variant: Vertical
           Group: ChequesDep
           Properties:
-            Height: =120
+            Height: =shpChequesCard.Y + shpChequesCard.Height - 12 - Self.Y
             Items: |-
               =Filter(colChequesTula,
                   RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting' = gvarDep.'CH-Tbl-DepositsRecounting')
             TemplatePadding: =0
             TemplateSize: =40
-            Width: =1278
-            X: =44
-            Y: =612
+            Width: =shpChequesCard.Width * 0.96966
+            X: =shpChequesCard.X + shpChequesCard.Width * 0.01517
+            Y: =shpChequesCard.Y + 64
           Children:
             - pilQFilaEstado:
                 Control: Classic/Button@2.2.0
@@ -90,8 +90,8 @@ Screens:
                   RadiusTopRight: =12
                   Size: =9
                   Text: =ThisItem.CheckStatus
-                  Width: =210
-                  X: =570
+                  Width: =Parent.TemplateWidth * 0.16432
+                  X: =Parent.TemplateWidth * 0.44601
                   Y: =7
             - lblQFilaMonto:
                 Control: Label@2.5.1
@@ -106,8 +106,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =Text(ThisItem.CheckAmount, FmtMoney)
-                  Width: =140
-                  X: =410
+                  Width: =Parent.TemplateWidth * 0.10955
+                  X: =Parent.TemplateWidth * 0.32081
                   Y: =9
             - lblQFilaMon:
                 Control: Label@2.5.1
@@ -121,8 +121,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.CheckCurrency
-                  Width: =90
-                  X: =320
+                  Width: =Parent.TemplateWidth * 0.07042
+                  X: =Parent.TemplateWidth * 0.25039
                   Y: =9
             - lblQFilaTipo:
                 Control: Label@2.5.1
@@ -136,8 +136,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.CheckTypes
-                  Width: =160
-                  X: =160
+                  Width: =Parent.TemplateWidth * 0.1252
+                  X: =Parent.TemplateWidth * 0.1252
                   Y: =9
             - lblQFilaNo:
                 Control: Label@2.5.1
@@ -152,7 +152,7 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.CheckNumber
-                  Width: =160
+                  Width: =Parent.TemplateWidth * 0.1252
                   Y: =9
       - shpQLineaDep:
           Control: Rectangle@2.3.0
@@ -160,9 +160,9 @@ Screens:
           Properties:
             Fill: =ThemeLine
             Height: =1
-            Width: =1278
-            X: =44
-            Y: =610
+            Width: =shpChequesCard.Width * 0.96966
+            X: =shpChequesCard.X + shpChequesCard.Width * 0.01517
+            Y: =shpChequesCard.Y + 62
       - lblQCol5:
           Control: Label@2.5.1
           Group: ChequesDep
@@ -176,9 +176,9 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="ESTADO"
-            Width: =220
-            X: =614
-            Y: =590
+            Width: =galChequesDep.Width * 0.17214
+            X: =galChequesDep.X + galChequesDep.Width * 0.44601
+            Y: =shpChequesCard.Y + 42
       - lblQCol4:
           Control: Label@2.5.1
           Group: ChequesDep
@@ -193,9 +193,9 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="MONTO"
-            Width: =140
-            X: =454
-            Y: =590
+            Width: =galChequesDep.Width * 0.10955
+            X: =galChequesDep.X + galChequesDep.Width * 0.32081
+            Y: =shpChequesCard.Y + 42
       - lblQCol3:
           Control: Label@2.5.1
           Group: ChequesDep
@@ -209,9 +209,9 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="MONEDA"
-            Width: =90
-            X: =364
-            Y: =590
+            Width: =galChequesDep.Width * 0.07042
+            X: =galChequesDep.X + galChequesDep.Width * 0.25039
+            Y: =shpChequesCard.Y + 42
       - lblQCol2:
           Control: Label@2.5.1
           Group: ChequesDep
@@ -225,9 +225,9 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="TIPO"
-            Width: =160
-            X: =204
-            Y: =590
+            Width: =galChequesDep.Width * 0.1252
+            X: =galChequesDep.X + galChequesDep.Width * 0.1252
+            Y: =shpChequesCard.Y + 42
       - lblQCol1:
           Control: Label@2.5.1
           Group: ChequesDep
@@ -241,9 +241,9 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="NO. CHEQUE"
-            Width: =160
-            X: =44
-            Y: =590
+            Width: =galChequesDep.Width * 0.1252
+            X: =galChequesDep.X
+            Y: =shpChequesCard.Y + 42
       - lblChequesTitulo:
           Control: Label@2.5.1
           Group: ChequesDep
@@ -258,8 +258,8 @@ Screens:
             Size: =9
             Text: ="CHEQUES DEL DEPÓSITO"
             Width: =400
-            X: =44
-            Y: =562
+            X: =shpChequesCard.X + shpChequesCard.Width * 0.01517
+            Y: =shpChequesCard.Y + 14
       - shpTxsCard:
           Control: Rectangle@2.3.0
           Group: TransacGeneradasDep
@@ -267,8 +267,8 @@ Screens:
             BorderColor: =ThemeLine
             BorderThickness: =1
             Fill: =ThemeSurface
-            Height: =280
-            Width: =1318
+            Height: =(App.Height - Self.Y - 36) * 0.58824
+            Width: =App.Width - 48
             X: =24
             Y: =256
       - lblTxsNota:
@@ -285,9 +285,9 @@ Screens:
             Size: =8.5
             Text: |-
               ="Un depósito puede generar más de una transacción: el monto recontado viaja como Deposito y las diferencias como Faltante o Sobrante. Si la tula llegó sin declaración, la transacción nace como Sin declaracion."
-            Width: =1278
-            X: =44
-            Y: =498
+            Width: =shpTxsCard.Width * 0.96966
+            X: =shpTxsCard.X + shpTxsCard.Width * 0.01517
+            Y: =shpTxsCard.Y + shpTxsCard.Height - 38
       - lblTxsVacio:
           Control: Label@2.5.1
           Group: TransacGeneradasDep
@@ -302,20 +302,20 @@ Screens:
             Size: =10
             Text: ="Todavía no se han generado transacciones para este depósito."
             Visible: =galTxs.AllItemsCount = 0
-            Width: =1278
-            X: =44
+            Width: =shpTxsCard.Width * 0.96966
+            X: =shpTxsCard.X + shpTxsCard.Width * 0.01517
             Y: =380
       - galTxs:
           Control: Gallery@2.15.0
           Variant: Vertical
           Group: TransacGeneradasDep
           Properties:
-            Height: =170
+            Height: =lblTxsNota.Y - 8 - Self.Y
             Items: =Filter('CH-Tbl-Transactions', RelatedDepositRecounting.'CH-Tbl-DepositsRecounting' = gvarDep.'CH-Tbl-DepositsRecounting')
             TemplatePadding: =0
             TemplateSize: =42
-            Width: =1278
-            X: =44
+            Width: =shpTxsCard.Width * 0.96966
+            X: =shpTxsCard.X + shpTxsCard.Width * 0.01517
             Y: =320
           Children:
             - shpXFilaSep:
@@ -324,7 +324,7 @@ Screens:
                   Fill: =ThemeLineSoft
                   Height: =1
                   OnSelect: =Select(Parent)
-                  Width: =1278
+                  Width: =Parent.TemplateWidth
                   Y: =41
             - lblXFilaId:
                 Control: Label@2.5.1
@@ -339,7 +339,7 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.Name
-                  Width: =130
+                  Width: =Parent.TemplateWidth * 0.10172
                   Y: =10
             - pilXFilaTipo:
                 Control: Classic/Button@2.2.0
@@ -360,8 +360,8 @@ Screens:
                   RadiusTopRight: =12
                   Size: =9
                   Text: =ThisItem.TransactionType
-                  Width: =130
-                  X: =130
+                  Width: =Parent.TemplateWidth * 0.10172
+                  X: =Parent.TemplateWidth * 0.10172
                   Y: =8
             - lblXFilaMonto:
                 Control: Label@2.5.1
@@ -376,8 +376,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =Text(ThisItem.Total, FmtMoney)
-                  Width: =110
-                  X: =270
+                  Width: =Parent.TemplateWidth * 0.08607
+                  X: =Parent.TemplateWidth * 0.21127
                   Y: =10
             - lblXFilaLote:
                 Control: Label@2.5.1
@@ -391,8 +391,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.'Transaction Batch'.Name
-                  Width: =120
-                  X: =390
+                  Width: =Parent.TemplateWidth * 0.0939
+                  X: =Parent.TemplateWidth * 0.30516
                   Y: =10
             - lblXFilaGen:
                 Control: Label@2.5.1
@@ -406,8 +406,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =Coalesce(ThisItem.'Transaction Batch'.'Generado por'.'Full Name', "—")
-                  Width: =180
-                  X: =510
+                  Width: =Parent.TemplateWidth * 0.14085
+                  X: =Parent.TemplateWidth * 0.39906
                   Y: =10
             - lblXFilaProc:
                 Control: Label@2.5.1
@@ -421,8 +421,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.TransactionProcessingType
-                  Width: =80
-                  X: =690
+                  Width: =Parent.TemplateWidth * 0.0626
+                  X: =Parent.TemplateWidth * 0.53991
                   Y: =10
             - pilXFilaCore:
                 Control: Classic/Button@2.2.0
@@ -443,8 +443,8 @@ Screens:
                   RadiusTopRight: =12
                   Size: =9
                   Text: =If(ThisItem.BatchStatus = 159460003, $"Acreditada · {Text(ThisItem.'Transaction Batch'.'Aplicado el', FmtFecha)}", "Pendiente")
-                  Width: =230
-                  X: =770
+                  Width: =Parent.TemplateWidth * 0.17997
+                  X: =Parent.TemplateWidth * 0.60251
                   Y: =8
             - lblXFilaRef:
                 Control: Label@2.5.1
@@ -458,8 +458,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =Coalesce(ThisItem.TransactionReference, "—")
-                  Width: =240
-                  X: =1010
+                  Width: =Parent.TemplateWidth * 0.18779
+                  X: =Parent.TemplateWidth * 0.79028
                   Y: =10
       - shpTxsLinea:
           Control: Rectangle@2.3.0
@@ -467,8 +467,8 @@ Screens:
           Properties:
             Fill: =ThemeLine
             Height: =1
-            Width: =1278
-            X: =44
+            Width: =shpTxsCard.Width * 0.96966
+            X: =shpTxsCard.X + shpTxsCard.Width * 0.01517
             Y: =318
       - lblXCol8:
           Control: Label@2.5.1
@@ -483,8 +483,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="REFERENCIA"
-            Width: =240
-            X: =1054
+            Width: =galTxs.Width * 0.18779
+            X: =galTxs.X + galTxs.Width * 0.79028
             Y: =298
       - lblXCol7:
           Control: Label@2.5.1
@@ -499,8 +499,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="CORE BANCARIO"
-            Width: =240
-            X: =814
+            Width: =galTxs.Width * 0.18779
+            X: =galTxs.X + galTxs.Width * 0.60251
             Y: =298
       - lblXCol6:
           Control: Label@2.5.1
@@ -515,8 +515,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="PROC."
-            Width: =80
-            X: =734
+            Width: =galTxs.Width * 0.0626
+            X: =galTxs.X + galTxs.Width * 0.53991
             Y: =298
       - lblXCol5:
           Control: Label@2.5.1
@@ -531,8 +531,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="GENERADO POR"
-            Width: =180
-            X: =554
+            Width: =galTxs.Width * 0.14085
+            X: =galTxs.X + galTxs.Width * 0.39906
             Y: =298
       - lblXCol4:
           Control: Label@2.5.1
@@ -547,8 +547,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="LOTE DIGITACIÓN"
-            Width: =120
-            X: =434
+            Width: =galTxs.Width * 0.0939
+            X: =galTxs.X + galTxs.Width * 0.30516
             Y: =298
       - lblXCol3:
           Control: Label@2.5.1
@@ -564,8 +564,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="MONTO"
-            Width: =110
-            X: =314
+            Width: =galTxs.Width * 0.08607
+            X: =galTxs.X + galTxs.Width * 0.21127
             Y: =298
       - lblXCol2:
           Control: Label@2.5.1
@@ -580,8 +580,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="TIPO"
-            Width: =140
-            X: =174
+            Width: =galTxs.Width * 0.10955
+            X: =galTxs.X + galTxs.Width * 0.10172
             Y: =298
       - lblXCol1:
           Control: Label@2.5.1
@@ -596,8 +596,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="TRANSACCIÓN"
-            Width: =130
-            X: =44
+            Width: =galTxs.Width * 0.10172
+            X: =galTxs.X
             Y: =298
       - lblTxsTitulo:
           Control: Label@2.5.1
@@ -613,7 +613,7 @@ Screens:
             Size: =9
             Text: ="TRANSACCIONES GENERADAS POR EL DEPÓSITO"
             Width: =600
-            X: =44
+            X: =shpTxsCard.X + shpTxsCard.Width * 0.01517
             Y: =270
       - shpFichaCardDep:
           Control: Rectangle@2.3.0
@@ -623,7 +623,7 @@ Screens:
             BorderThickness: =1
             Fill: =ThemeSurface
             Height: =150
-            Width: =1318
+            Width: =App.Width - 48
             X: =24
             Y: =94
       - lblDepTitulo:
@@ -639,8 +639,8 @@ Screens:
             PaddingTop: =0
             Size: =15
             Text: =$"Depósito {Coalesce(gvarDep.decRef, gvarDep.Name)}"
-            Width: =420
-            X: =44
+            Width: =shpFichaCardDep.Width * 0.31867
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.01517
             Y: =108
       - pilDepDif:
           Control: Classic/Button@2.2.0
@@ -685,8 +685,8 @@ Screens:
               If(Abs(_dif) < 0.005, "Sin diferencia",
                  If(_dif < 0, $"Faltante {_sim} {Text(Abs(_dif), FmtMoney)}",
                     $"Sobrante {_sim} {Text(_dif, FmtMoney)}")))
-            Width: =260
-            X: =470
+            Width: =shpFichaCardDep.Width * 0.19727
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.33839
             Y: =110
       - lblFichaV8Dep:
           Control: Label@2.5.1
@@ -701,8 +701,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Text(gvarDep.decEf + gvarDep.decBac + gvarDep.decOtr, FmtMoney)
-            Width: =170
-            X: =614
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.44765
             Y: =210
       - lblFichaK8Dep:
           Control: Label@2.5.1
@@ -716,8 +716,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="TOTAL DECLARADO"
-            Width: =170
-            X: =614
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.44765
             Y: =194
       - lblFichaV7Dep:
           Control: Label@2.5.1
@@ -732,8 +732,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Text(gvarDep.Total, FmtMoney)
-            Width: =170
-            X: =424
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.30349
             Y: =210
       - lblFichaK7Dep:
           Control: Label@2.5.1
@@ -747,8 +747,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="TOTAL RECONTADO"
-            Width: =170
-            X: =424
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.30349
             Y: =194
       - lblFichaV6Dep:
           Control: Label@2.5.1
@@ -763,8 +763,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Text(gvarDep.BACLocalCheckAmount + gvarDep.OtherLocaCheckAmount, FmtMoney)
-            Width: =170
-            X: =234
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.15933
             Y: =210
       - lblFichaK6Dep:
           Control: Label@2.5.1
@@ -778,8 +778,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="RECONTADO CHEQUES"
-            Width: =170
-            X: =234
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.15933
             Y: =194
       - lblFichaV5Dep:
           Control: Label@2.5.1
@@ -794,8 +794,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Text(gvarDep.CashAmount, FmtMoney)
-            Width: =170
-            X: =44
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.01517
             Y: =210
       - lblFichaK5Dep:
           Control: Label@2.5.1
@@ -809,8 +809,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="RECONTADO EFECTIVO"
-            Width: =170
-            X: =44
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.01517
             Y: =194
       - lblFichaV4Dep:
           Control: Label@2.5.1
@@ -825,8 +825,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Text(gvarDep.'Created On', FmtFecha)
-            Width: =180
-            X: =604
+            Width: =shpFichaCardDep.Width * 0.13657
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.43991
             Y: =164
       - lblFichaK4Dep:
           Control: Label@2.5.1
@@ -840,8 +840,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="FECHA DE RECUENTO"
-            Width: =180
-            X: =604
+            Width: =shpFichaCardDep.Width * 0.13657
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.43991
             Y: =148
       - lblFichaV3Dep:
           Control: Label@2.5.1
@@ -856,8 +856,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =$"{gvarDep.Currency} · {Switch(gvarDep.Currency, 'CH-Ch-Currency'.NIO, SimboloNIO, 'CH-Ch-Currency'.USD, SimboloUSD, SimboloEUR)}"
-            Width: =100
-            X: =484
+            Width: =shpFichaCardDep.Width * 0.07587
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.34901
             Y: =164
       - lblFichaK3Dep:
           Control: Label@2.5.1
@@ -871,8 +871,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="MONEDA"
-            Width: =100
-            X: =484
+            Width: =shpFichaCardDep.Width * 0.07587
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.34901
             Y: =148
       - lblFichaV2Dep:
           Control: Label@2.5.1
@@ -887,9 +887,9 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Coalesce(gvarTula.ReceptionID.RemitentClient.Name, gvarTula.ReceptionID.RemitentName)
-            Width: =260
+            Width: =shpFichaCardDep.Width * 0.19727
             Wrap: =false
-            X: =204
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.13657
             Y: =164
       - lblFichaK2Dep:
           Control: Label@2.5.1
@@ -903,8 +903,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="CLIENTE"
-            Width: =260
-            X: =204
+            Width: =shpFichaCardDep.Width * 0.19727
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.13657
             Y: =148
       - lblFichaV1Dep:
           Control: Label@2.5.1
@@ -921,8 +921,8 @@ Screens:
             Size: =10
             Text: =gvarTula.BagID
             Underline: =true
-            Width: =140
-            X: =44
+            Width: =shpFichaCardDep.Width * 0.10622
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.01517
             Y: =164
       - lblFichaK1Dep:
           Control: Label@2.5.1
@@ -936,8 +936,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="TULA"
-            Width: =140
-            X: =44
+            Width: =shpFichaCardDep.Width * 0.10622
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.01517
             Y: =148
       - lblCrumbActualDep:
           Control: Label@2.5.1
@@ -1052,14 +1052,14 @@ Screens:
           Properties:
             Fill: =ThemeSurface
             Height: =52
-            Width: =1366
+            Width: =App.Width
       - shpHeaderLineaDep:
           Control: Rectangle@2.3.0
           Group: EncabezadoDep
           Properties:
             Fill: =ThemeLine
             Height: =1
-            Width: =1366
+            Width: =App.Width
             Y: =52
       - shpMarcaDep:
           Control: Classic/Button@2.2.0

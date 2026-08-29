@@ -20,9 +20,9 @@ Screens:
             BorderColor: =ThemeLine
             BorderThickness: =1
             Fill: =ThemeSurface
-            Height: =420
-            Width: =1120
-            X: =123
+            Height: =App.Height - Self.Y - 58
+            Width: =Min(1120, App.Width - 80)
+            X: =(App.Width - Self.Width) / 2
             Y: =290
       - shpRecientesLinea:
           Control: Rectangle@2.3.0
@@ -30,8 +30,8 @@ Screens:
           Properties:
             Fill: =ThemeLine
             Height: =1
-            Width: =1072
-            X: =147
+            Width: =shpRecientesCard.Width - 48
+            X: =shpRecientesCard.X + 24
             Y: =358
       - lblRecientesTitulo:
           Control: Label@2.5.1
@@ -47,7 +47,7 @@ Screens:
             Size: =9
             Text: ="LOTES DE RECEPCIÓN RECIENTES"
             Width: =500
-            X: =147
+            X: =galRecientes.X
             Y: =306
       - lblColEstado:
           Control: Label@2.5.1
@@ -62,8 +62,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="ESTADO"
-            Width: =170
-            X: =1037
+            Width: =galRecientes.Width * 0.15858
+            X: =galRecientes.X + galRecientes.Width * 0.83022
             Y: =338
       - lblColUsd:
           Control: Label@2.5.1
@@ -79,8 +79,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="DECL. US$"
-            Width: =140
-            X: =877
+            Width: =galRecientes.Width * 0.1306
+            X: =galRecientes.X + galRecientes.Width * 0.68097
             Y: =338
       - lblColNio:
           Control: Label@2.5.1
@@ -96,8 +96,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="DECL. C$"
-            Width: =140
-            X: =737
+            Width: =galRecientes.Width * 0.1306
+            X: =galRecientes.X + galRecientes.Width * 0.55037
             Y: =338
       - lblColTransp:
           Control: Label@2.5.1
@@ -112,8 +112,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="TRANSPORTADORA"
-            Width: =160
-            X: =587
+            Width: =galRecientes.Width * 0.14925
+            X: =galRecientes.X + galRecientes.Width * 0.41045
             Y: =338
       - lblColPor:
           Control: Label@2.5.1
@@ -128,8 +128,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="RECIBIDO POR"
-            Width: =180
-            X: =407
+            Width: =galRecientes.Width * 0.16791
+            X: =galRecientes.X + galRecientes.Width * 0.24254
             Y: =338
       - lblColRecibido:
           Control: Label@2.5.1
@@ -144,7 +144,7 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="RECIBIDO"
-            X: =257
+            X: =galRecientes.X + galRecientes.Width * 0.10261
             Y: =338
       - lblColLote:
           Control: Label@2.5.1
@@ -159,8 +159,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="LOTE"
-            Width: =110
-            X: =147
+            Width: =galRecientes.Width * 0.10261
+            X: =galRecientes.X
             Y: =338
       - shpHeaderBusq:
           Control: Rectangle@2.3.0
@@ -168,26 +168,26 @@ Screens:
           Properties:
             Fill: =ThemeSurface
             Height: =52
-            Width: =1366
+            Width: =App.Width
       - shpHeaderLineaBusq:
           Control: Rectangle@2.3.0
           Group: EncabezadoBusq
           Properties:
             Fill: =ThemeLine
             Height: =1
-            Width: =1366
+            Width: =App.Width
             Y: =52
       - galRecientes:
           Control: Gallery@2.15.0
           Variant: Vertical
           Properties:
-            Height: =336
-            Items: =FirstN(Sort('CH-Tbl-ReceptionBatches', 'Created On', SortOrder.Descending), 8)
+            Height: =shpRecientesCard.Y + shpRecientesCard.Height - 14 - Self.Y
+            Items: =FirstN(Sort('CH-Tbl-ReceptionBatches', 'Created On', SortOrder.Descending), RoundDown(Self.Height / Self.TemplateHeight, 0))
             OnSelect: =Set(gvarLote, ThisItem); Set(gvarPlanilla, Blank()); Navigate(scrLote)
             TemplatePadding: =0
             TemplateSize: =42
-            Width: =1072
-            X: =147
+            Width: =shpRecientesCard.Width - 48
+            X: =shpRecientesCard.X + 24
             Y: =360
           Children:
             - btnFilaAbrir:
@@ -201,14 +201,14 @@ Screens:
                   PressedFill: =ThemeAccentSoft
                   Text: =
                   Tooltip: ="Abrir lote " & ThisItem.Name
-                  Width: =1072
+                  Width: =Parent.TemplateWidth
             - shpFilaSep:
                 Control: Rectangle@2.3.0
                 Properties:
                   Fill: =ThemeLineSoft
                   Height: =1
                   OnSelect: =Select(Parent)
-                  Width: =1072
+                  Width: =Parent.TemplateWidth
                   Y: =41
             - lblFilaLote:
                 Control: Label@2.5.1
@@ -223,7 +223,7 @@ Screens:
                   PaddingTop: =0
                   Size: =9.5
                   Text: =ThisItem.Name
-                  Width: =110
+                  Width: =Parent.TemplateWidth * 0.10261
                   Y: =10
             - lblFilaFecha:
                 Control: Label@2.5.1
@@ -237,7 +237,7 @@ Screens:
                   PaddingTop: =0
                   Size: =9.5
                   Text: =Text(ThisItem.'Created On', FmtFecha)
-                  X: =110
+                  X: =Parent.TemplateWidth * 0.10261
                   Y: =10
             - lblFilaPor:
                 Control: Label@2.5.1
@@ -251,8 +251,8 @@ Screens:
                   PaddingTop: =0
                   Size: =9.5
                   Text: =ThisItem.'Created By'.'Full Name'
-                  Width: =180
-                  X: =260
+                  Width: =Parent.TemplateWidth * 0.16791
+                  X: =Parent.TemplateWidth * 0.24254
                   Y: =10
             - lblFilaTransp:
                 Control: Label@2.5.1
@@ -266,7 +266,7 @@ Screens:
                   PaddingTop: =0
                   Size: =9.5
                   Text: =ThisItem.Transportadora
-                  X: =440
+                  X: =Parent.TemplateWidth * 0.41045
                   Y: =10
             - lblFilaNio:
                 Control: Label@2.5.1
@@ -281,8 +281,8 @@ Screens:
                   PaddingTop: =0
                   Size: =9.5
                   Text: =Text(Coalesce(ThisItem.DecNIOTotal, 0), FmtMoney)
-                  Width: =140
-                  X: =590
+                  Width: =Parent.TemplateWidth * 0.1306
+                  X: =Parent.TemplateWidth * 0.55037
                   Y: =10
             - lblFilaUsd:
                 Control: Label@2.5.1
@@ -297,8 +297,8 @@ Screens:
                   PaddingTop: =0
                   Size: =9.5
                   Text: =Text(Coalesce(ThisItem.DecUSDTotal, 0), FmtMoney)
-                  Width: =140
-                  X: =730
+                  Width: =Parent.TemplateWidth * 0.1306
+                  X: =Parent.TemplateWidth * 0.68097
                   Y: =10
             - pilFilaEstado:
                 Control: Classic/Button@2.2.0
@@ -320,7 +320,7 @@ Screens:
                   Size: =9
                   Text: =ThisItem.ReceptionStatus
                   Width: =8 + 7*Len(Self.Text)
-                  X: =890
+                  X: =Parent.TemplateWidth * 0.83022
                   Y: =8
       - lblErrorBusqueda:
           Control: Label@2.5.1
@@ -335,8 +335,8 @@ Screens:
             Size: =9
             Text: =ctxError
             Visible: =!IsBlank(ctxError)
-            Width: =680
-            X: =343
+            Width: =Min(680, App.Width - 80)
+            X: =drpTipoBusqueda.X
             Y: =218
       - btnBuscar:
           Control: ModernButton@1.0.0
@@ -383,7 +383,7 @@ Screens:
               ))
             Text: ="Buscar"
             Width: =114
-            X: =909
+            X: =drpTipoBusqueda.X + Min(680, App.Width - 80) - 114
             Y: =170
       - inpBuscar:
           Control: ModernTextInput@1.1.1
@@ -394,8 +394,8 @@ Screens:
             Height: =40
             Placeholder: |-
               =Switch(drpTipoBusqueda.Selected.Value, "Tracking (correo)", "Ej.: Email-1042", "Lote de recepción", "Ej.: RB-00012", "Planilla", "Número de planilla (ReceiptID)", "Tula", "Número de tula impreso en la bolsa")
-            Width: =360
-            X: =541
+            Width: =Min(680, App.Width - 80) - 320
+            X: =drpTipoBusqueda.X + 198
             Y: =170
       - drpTipoBusqueda:
           Control: ModernDropdown@1.0.2
@@ -409,7 +409,7 @@ Screens:
             ItemDisplayText: =ThisItem.Value
             Items: =["Tracking (correo)", "Lote de recepción", "Planilla", "Tula"]
             Width: =190
-            X: =343
+            X: =(App.Width - Min(680, App.Width - 80)) / 2
             Y: =170
       - lblHeroSub:
           Control: Label@2.5.1
@@ -424,8 +424,8 @@ Screens:
             PaddingTop: =0
             Size: =9.5
             Text: ="Buscá por tracking del correo, lote de recepción, planilla o tula. Te llevamos directo al nivel que corresponde."
-            Width: =680
-            X: =343
+            Width: =Min(680, App.Width - 80)
+            X: =(App.Width - Self.Width) / 2
             Y: =132
       - lblHeroTitulo:
           Control: Label@2.5.1
@@ -440,8 +440,8 @@ Screens:
             PaddingTop: =0
             Size: =17
             Text: ="¿Qué querés rastrear?"
-            Width: =680
-            X: =343
+            Width: =Min(680, App.Width - 80)
+            X: =(App.Width - Self.Width) / 2
             Y: =92
       - shpMarcaBusq:
           Control: Classic/Button@2.2.0

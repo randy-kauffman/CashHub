@@ -113,8 +113,8 @@ Screens:
             BorderColor: =ThemeLine
             BorderThickness: =1
             Fill: =ThemeSurface
-            Height: =488
-            Width: =1318
+            Height: =App.Height - Self.Y - 24
+            Width: =App.Width - 48
             X: =24
             Y: =256
       - tabDetalleTula:
@@ -125,20 +125,20 @@ Screens:
             Default: ={Value:"Conciliación"}
             Height: =40
             Items: =["Conciliación", "Por depósito", "Cheques", "Cronología"]
-            Width: =700
-            X: =44
+            Width: =shpDetalleCardTula.Width * 0.53111
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.01517
             Y: =268
       - galCrono:
           Control: Gallery@2.15.0
           Variant: Vertical
           Properties:
-            Height: =390
+            Height: =shpDetalleCardTula.Y + shpDetalleCardTula.Height - 24 - Self.Y
             Items: =SortByColumns(colCrono, "orden", SortOrder.Ascending)
             TemplatePadding: =0
             TemplateSize: =74
             Visible: =tabDetalleTula.Selected.Value = "Cronología"
-            Width: =840
-            X: =44
+            Width: =shpDetalleCardTula.Width * 0.63733
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.01517
             Y: =330
           Children:
             - shpCronoLinea:
@@ -188,7 +188,7 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.que
-                  Width: =780
+                  Width: =Parent.TemplateWidth - 60
                   X: =30
                   Y: =18
             - lblCronoQuien:
@@ -203,7 +203,7 @@ Screens:
                   PaddingTop: =0
                   Size: =9
                   Text: =ThisItem.quien
-                  Width: =780
+                  Width: =Parent.TemplateWidth - 60
                   X: =30
                   Y: =40
       - btnVerDeposito:
@@ -215,8 +215,8 @@ Screens:
             OnSelect: =Set(gvarDep, galDepsTula.Selected); Navigate(scrDeposito)
             Text: ="Ver transacciones y cheques del depósito →"
             Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
-            Width: =340
-            X: =724
+            Width: =shpDetalleCardTula.Width * 0.25797
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.5311
             Y: =540
       - lblDepConcNota:
           Control: Label@2.5.1
@@ -231,8 +231,8 @@ Screens:
             Size: =8.5
             Text: =$"Montos en {galDepsTula.Selected.Currency} ({Switch(galDepsTula.Selected.Currency, 'CH-Ch-Currency'.NIO, SimboloNIO, 'CH-Ch-Currency'.USD, SimboloUSD, SimboloEUR)}). Declarado proviene del depósito declarado relacionado."
             Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
-            Width: =550
-            X: =724
+            Width: =shpDetalleCardTula.Width * 0.4173
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.5311
             Y: =514
       - galDepConcMini:
           Control: Gallery@2.15.0
@@ -252,8 +252,8 @@ Screens:
             TemplatePadding: =0
             TemplateSize: =32
             Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
-            Width: =550
-            X: =724
+            Width: =shpDetalleCardTula.Width * 0.4173
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.5311
             Y: =372
           Children:
             - lblMFilaC:
@@ -268,7 +268,7 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.c
-                  Width: =160
+                  Width: =Parent.TemplateWidth * 0.29091
                   Y: =5
             - lblMFilaDec:
                 Control: Label@2.5.1
@@ -283,8 +283,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =Text(ThisItem.dec, FmtMoney)
-                  Width: =130
-                  X: =160
+                  Width: =Parent.TemplateWidth * 0.23636
+                  X: =Parent.TemplateWidth * 0.29091
                   Y: =5
             - lblMFilaRec:
                 Control: Label@2.5.1
@@ -299,8 +299,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =Text(ThisItem.rec, FmtMoney)
-                  Width: =130
-                  X: =290
+                  Width: =Parent.TemplateWidth * 0.23636
+                  X: =Parent.TemplateWidth * 0.52727
                   Y: =5
             - lblMFilaDif:
                 Control: Label@2.5.1
@@ -317,8 +317,8 @@ Screens:
                   Size: =10
                   Text: |-
                     =With({_d: ThisItem.rec - ThisItem.dec}, If(Abs(_d) < 0.005, "0.00", If(_d > 0, "+", "−") & Text(Abs(_d), FmtMoney)))
-                  Width: =130
-                  X: =420
+                  Width: =Parent.TemplateWidth * 0.23636
+                  X: =Parent.TemplateWidth * 0.76364
                   Y: =5
       - lblMCol4:
           Control: Label@2.5.1
@@ -335,8 +335,8 @@ Screens:
             Size: =8
             Text: ="DIFERENCIA"
             Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
-            Width: =130
-            X: =1144
+            Width: =galDepConcMini.Width * 0.23636
+            X: =galDepConcMini.X + galDepConcMini.Width * 0.76364
             Y: =350
       - lblMCol3:
           Control: Label@2.5.1
@@ -353,8 +353,8 @@ Screens:
             Size: =8
             Text: ="RECONTADO"
             Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
-            Width: =130
-            X: =1014
+            Width: =galDepConcMini.Width * 0.23636
+            X: =galDepConcMini.X + galDepConcMini.Width * 0.52727
             Y: =350
       - lblMCol2:
           Control: Label@2.5.1
@@ -371,8 +371,8 @@ Screens:
             Size: =8
             Text: ="DECLARADO"
             Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
-            Width: =130
-            X: =884
+            Width: =galDepConcMini.Width * 0.23636
+            X: =galDepConcMini.X + galDepConcMini.Width * 0.29091
             Y: =350
       - lblMCol1:
           Control: Label@2.5.1
@@ -388,8 +388,8 @@ Screens:
             Size: =8
             Text: ="CONCEPTO"
             Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
-            Width: =160
-            X: =725
+            Width: =galDepConcMini.Width * 0.29091
+            X: =galDepConcMini.X
             Y: =350
       - lblDepSelTitulo:
           Control: Label@2.5.1
@@ -405,8 +405,8 @@ Screens:
             Size: =9
             Text: =Upper($"DEPÓSITO {Coalesce(galDepsTula.Selected.decRef, galDepsTula.Selected.Name)} · {galDepsTula.Selected.Currency}")
             Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
-            Width: =560
-            X: =724
+            Width: =shpDetalleCardTula.Width * 0.42489
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.5311
             Y: =320
       - lblDepSelVacio:
           Control: Label@2.5.1
@@ -421,20 +421,21 @@ Screens:
             Size: =10
             Text: ="Sin depósitos recontados todavía."
             Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) = 0
-            Width: =560
-            X: =724
+            Width: =shpDetalleCardTula.Width * 0.42489
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.5311
             Y: =430
       - galDepsTula:
           Control: Gallery@2.15.0
           Variant: Vertical
           Group: PestanaPorDepositoTula
           Properties:
-            Height: =380
+            Height: =shpDetalleCardTula.Y + shpDetalleCardTula.Height - 22 - Self.Y
             Items: =SortByColumns(colDeps, "createdon", SortOrder.Descending)
             TemplatePadding: =0
             TemplateSize: =40
             Visible: =tabDetalleTula.Selected.Value = "Por depósito"
-            X: =44
+            Width: =shpDetalleCardTula.Width * 0.48558
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.01517
             Y: =342
           Children:
             - shpDepSep:
@@ -442,7 +443,7 @@ Screens:
                 Properties:
                   Fill: =ThemeLineSoft
                   Height: =1
-                  Width: =640
+                  Width: =Parent.TemplateWidth
                   Y: =39
             - shpDepSel:
                 Control: Rectangle@2.3.0
@@ -450,7 +451,7 @@ Screens:
                   Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
                   Height: =40
                   OnSelect: =Select(Parent)
-                  Width: =640
+                  Width: =Parent.TemplateWidth
             - shpDepSelBarra:
                 Control: Rectangle@2.3.0
                 Properties:
@@ -470,7 +471,7 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =Text(ThisItem.'Created On', FmtFecha)
-                  Width: =160
+                  Width: =Parent.TemplateWidth * 0.25
                   Y: =9
             - lblDFilaMon:
                 Control: Label@2.5.1
@@ -483,8 +484,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.Currency
-                  Width: =90
-                  X: =160
+                  Width: =Parent.TemplateWidth * 0.140625
+                  X: =Parent.TemplateWidth * 0.25
                   Y: =9
             - lblDFilaEf:
                 Control: Label@2.5.1
@@ -498,8 +499,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =Text(ThisItem.CashAmount, FmtMoney)
-                  Width: =130
-                  X: =250
+                  Width: =Parent.TemplateWidth * 0.203125
+                  X: =Parent.TemplateWidth * 0.390625
                   Y: =9
             - lblDFilaChq:
                 Control: Label@2.5.1
@@ -513,8 +514,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =Text(ThisItem.BACLocalCheckAmount + ThisItem.OtherLocaCheckAmount, FmtMoney)
-                  Width: =130
-                  X: =380
+                  Width: =Parent.TemplateWidth * 0.203125
+                  X: =Parent.TemplateWidth * 0.59375
                   Y: =9
             - lblDFilaTotal:
                 Control: Label@2.5.1
@@ -529,8 +530,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =Text(ThisItem.Total, FmtMoney)
-                  Width: =130
-                  X: =510
+                  Width: =Parent.TemplateWidth * 0.203125
+                  X: =Parent.TemplateWidth * 0.796875
                   Y: =9
       - shpDepsLinea:
           Control: Rectangle@2.3.0
@@ -539,8 +540,8 @@ Screens:
             Fill: =ThemeLine
             Height: =1
             Visible: =tabDetalleTula.Selected.Value = "Por depósito"
-            Width: =640
-            X: =44
+            Width: =shpDetalleCardTula.Width * 0.48558
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.01517
             Y: =340
       - lblDCol5:
           Control: Label@2.5.1
@@ -557,8 +558,8 @@ Screens:
             Size: =8
             Text: ="TOTAL"
             Visible: =tabDetalleTula.Selected.Value = "Por depósito"
-            Width: =130
-            X: =554
+            Width: =galDepsTula.Width * 0.203125
+            X: =galDepsTula.X + galDepsTula.Width * 0.796875
             Y: =320
       - lblDCol4:
           Control: Label@2.5.1
@@ -575,8 +576,8 @@ Screens:
             Size: =8
             Text: ="CHEQUES"
             Visible: =tabDetalleTula.Selected.Value = "Por depósito"
-            Width: =130
-            X: =424
+            Width: =galDepsTula.Width * 0.203125
+            X: =galDepsTula.X + galDepsTula.Width * 0.59375
             Y: =320
       - lblDCol3:
           Control: Label@2.5.1
@@ -593,8 +594,8 @@ Screens:
             Size: =8
             Text: ="EFECTIVO"
             Visible: =tabDetalleTula.Selected.Value = "Por depósito"
-            Width: =130
-            X: =294
+            Width: =galDepsTula.Width * 0.203125
+            X: =galDepsTula.X + galDepsTula.Width * 0.390625
             Y: =320
       - lblDCol2:
           Control: Label@2.5.1
@@ -610,8 +611,8 @@ Screens:
             Size: =8
             Text: ="MONEDA"
             Visible: =tabDetalleTula.Selected.Value = "Por depósito"
-            Width: =90
-            X: =204
+            Width: =galDepsTula.Width * 0.140625
+            X: =galDepsTula.X + galDepsTula.Width * 0.25
             Y: =320
       - lblDCol1:
           Control: Label@2.5.1
@@ -627,8 +628,8 @@ Screens:
             Size: =8
             Text: ="FECHA RECUENTO"
             Visible: =tabDetalleTula.Selected.Value = "Por depósito"
-            Width: =160
-            X: =44
+            Width: =galDepsTula.Width * 0.25
+            X: =galDepsTula.X
             Y: =320
       - lblChequesVacio:
           Control: Label@2.5.1
@@ -643,8 +644,8 @@ Screens:
             Size: =10
             Text: ="Esta tula no tiene cheques registrados."
             Visible: =tabDetalleTula.Selected.Value = "Cheques" && CountRows(colChequesTula) = 0
-            Width: =840
-            X: =44
+            Width: =shpDetalleCardTula.Width * 0.63733
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.01517
             Y: =420
       - shpChequesLineaTula:
           Control: Rectangle@2.3.0
@@ -654,21 +655,21 @@ Screens:
             Fill: =ThemeLine
             Height: =1
             Visible: =tabDetalleTula.Selected.Value = "Cheques"
-            Width: =840
-            X: =44
+            Width: =shpDetalleCardTula.Width * 0.63733
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.01517
             Y: =340
       - galChequesTula:
           Control: Gallery@2.15.0
           Variant: Vertical
           Group: PestanaCheques
           Properties:
-            Height: =380
+            Height: =shpDetalleCardTula.Y + shpDetalleCardTula.Height - 22 - Self.Y
             Items: =colChequesTula
             TemplatePadding: =0
             TemplateSize: =40
             Visible: =tabDetalleTula.Selected.Value = "Cheques"
-            Width: =840
-            X: =44
+            Width: =shpDetalleCardTula.Width * 0.63733
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.01517
             Y: =342
           Children:
             - pilChFilaEstado:
@@ -707,8 +708,8 @@ Screens:
                   RadiusTopRight: =12
                   Size: =9
                   Text: =ThisItem.CheckStatus
-                  Width: =210
-                  X: =570
+                  Width: =Parent.TemplateWidth * 0.25
+                  X: =Parent.TemplateWidth * 0.67857
                   Y: =7
             - lblChFilaMonto:
                 Control: Label@2.5.1
@@ -723,8 +724,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =Text(ThisItem.CheckAmount, FmtMoney)
-                  Width: =140
-                  X: =410
+                  Width: =Parent.TemplateWidth * 0.16667
+                  X: =Parent.TemplateWidth * 0.4881
                   Y: =9
             - lblChFilaMon:
                 Control: Label@2.5.1
@@ -738,8 +739,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.CheckCurrency
-                  Width: =90
-                  X: =320
+                  Width: =Parent.TemplateWidth * 0.10714
+                  X: =Parent.TemplateWidth * 0.38095
                   Y: =9
             - lblChFilaTipo:
                 Control: Label@2.5.1
@@ -753,8 +754,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.CheckTypes
-                  Width: =160
-                  X: =160
+                  Width: =Parent.TemplateWidth * 0.19048
+                  X: =Parent.TemplateWidth * 0.19048
                   Y: =9
             - lblChFilaNo:
                 Control: Label@2.5.1
@@ -769,7 +770,7 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.CheckNumber
-                  Width: =160
+                  Width: =Parent.TemplateWidth * 0.19048
                   Y: =9
       - lblChCol5:
           Control: Label@2.5.1
@@ -785,8 +786,8 @@ Screens:
             Size: =8
             Text: ="ESTADO"
             Visible: =tabDetalleTula.Selected.Value = "Cheques"
-            Width: =220
-            X: =614
+            Width: =galChequesTula.Width * 0.2619
+            X: =galChequesTula.X + galChequesTula.Width * 0.67857
             Y: =320
       - lblChCol4:
           Control: Label@2.5.1
@@ -803,8 +804,8 @@ Screens:
             Size: =8
             Text: ="MONTO"
             Visible: =tabDetalleTula.Selected.Value = "Cheques"
-            Width: =140
-            X: =454
+            Width: =galChequesTula.Width * 0.16667
+            X: =galChequesTula.X + galChequesTula.Width * 0.4881
             Y: =320
       - lblChCol3:
           Control: Label@2.5.1
@@ -820,8 +821,8 @@ Screens:
             Size: =8
             Text: ="MONEDA"
             Visible: =tabDetalleTula.Selected.Value = "Cheques"
-            Width: =90
-            X: =364
+            Width: =galChequesTula.Width * 0.10714
+            X: =galChequesTula.X + galChequesTula.Width * 0.38095
             Y: =320
       - lblChCol2:
           Control: Label@2.5.1
@@ -837,8 +838,8 @@ Screens:
             Size: =8
             Text: ="TIPO"
             Visible: =tabDetalleTula.Selected.Value = "Cheques"
-            Width: =160
-            X: =204
+            Width: =galChequesTula.Width * 0.19048
+            X: =galChequesTula.X + galChequesTula.Width * 0.19048
             Y: =320
       - lblChCol1:
           Control: Label@2.5.1
@@ -854,8 +855,8 @@ Screens:
             Size: =8
             Text: ="NO. CHEQUE"
             Visible: =tabDetalleTula.Selected.Value = "Cheques"
-            Width: =160
-            X: =44
+            Width: =galChequesTula.Width * 0.19048
+            X: =galChequesTula.X
             Y: =320
       - lblConcVacio:
           Control: Label@2.5.1
@@ -870,8 +871,8 @@ Screens:
             Size: =10
             Text: ="Sin depósitos recontados todavía."
             Visible: =tabDetalleTula.Selected.Value = "Conciliación" && CountRows(colConc) = 0
-            Width: =840
-            X: =44
+            Width: =shpDetalleCardTula.Width * 0.63733
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.01517
             Y: =420
       - lblConcNota:
           Control: Label@2.5.1
@@ -886,21 +887,21 @@ Screens:
             Size: =8.5
             Text: ="Diferencia = Recontado − Declarado. Solo se listan monedas con movimientos en la tula."
             Visible: =tabDetalleTula.Selected.Value = "Conciliación"
-            Width: =840
-            X: =44
-            Y: =690
+            Width: =shpDetalleCardTula.Width * 0.63733
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.01517
+            Y: =shpDetalleCardTula.Y + shpDetalleCardTula.Height - 54
       - galConc:
           Control: Gallery@2.15.0
           Variant: Vertical
           Group: PestanaConciliacionTula
           Properties:
-            Height: =340
+            Height: =lblConcNota.Y - 8 - Self.Y
             Items: =SortByColumns(colConc, "mon", SortOrder.Ascending, "orden", SortOrder.Ascending)
             TemplatePadding: =0
             TemplateSize: =34
             Visible: =tabDetalleTula.Selected.Value = "Conciliación"
-            Width: =840
-            X: =44
+            Width: =shpDetalleCardTula.Width * 0.63733
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.01517
             Y: =342
           Children:
             - lblConcDif:
@@ -918,8 +919,8 @@ Screens:
                   Size: =10
                   Text: |-
                     =If(ThisItem.orden = 0, "", With({_d: ThisItem.rec - ThisItem.dec}, If(Abs(_d) < 0.005, "0.00", If(_d > 0, "+", "−") & Text(Abs(_d), FmtMoney))))
-                  Width: =180
-                  X: =660
+                  Width: =Parent.TemplateWidth * 0.21429
+                  X: =Parent.TemplateWidth * 0.78571
                   Y: =6
             - lblConcRec:
                 Control: Label@2.5.1
@@ -934,8 +935,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =If(ThisItem.orden = 0, "", Text(ThisItem.rec, FmtMoney))
-                  Width: =180
-                  X: =480
+                  Width: =Parent.TemplateWidth * 0.21429
+                  X: =Parent.TemplateWidth * 0.57143
                   Y: =6
             - lblConcDec:
                 Control: Label@2.5.1
@@ -950,8 +951,8 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =If(ThisItem.orden = 0, "", Text(ThisItem.dec, FmtMoney))
-                  Width: =180
-                  X: =300
+                  Width: =Parent.TemplateWidth * 0.21429
+                  X: =Parent.TemplateWidth * 0.35714
                   Y: =6
             - lblConcConcepto:
                 Control: Label@2.5.1
@@ -964,7 +965,7 @@ Screens:
                   PaddingTop: =0
                   Size: =10
                   Text: =ThisItem.concepto
-                  Width: =300
+                  Width: =Parent.TemplateWidth * 0.35714
                   Y: =6
       - shpConcLinea:
           Control: Rectangle@2.3.0
@@ -973,8 +974,8 @@ Screens:
             Fill: =ThemeLine
             Height: =1
             Visible: =tabDetalleTula.Selected.Value = "Conciliación"
-            Width: =840
-            X: =44
+            Width: =shpDetalleCardTula.Width * 0.63733
+            X: =shpDetalleCardTula.X + shpDetalleCardTula.Width * 0.01517
             Y: =340
       - lblCCol4:
           Control: Label@2.5.1
@@ -991,8 +992,8 @@ Screens:
             Size: =8
             Text: ="DIFERENCIA"
             Visible: =tabDetalleTula.Selected.Value = "Conciliación"
-            Width: =180
-            X: =704
+            Width: =galConc.Width * 0.21429
+            X: =galConc.X + galConc.Width * 0.78571
             Y: =320
       - lblCCol3:
           Control: Label@2.5.1
@@ -1009,8 +1010,8 @@ Screens:
             Size: =8
             Text: ="RECONTADO"
             Visible: =tabDetalleTula.Selected.Value = "Conciliación"
-            Width: =180
-            X: =524
+            Width: =galConc.Width * 0.21429
+            X: =galConc.X + galConc.Width * 0.57143
             Y: =320
       - lblCCol2:
           Control: Label@2.5.1
@@ -1027,8 +1028,8 @@ Screens:
             Size: =8
             Text: ="DECLARADO"
             Visible: =tabDetalleTula.Selected.Value = "Conciliación"
-            Width: =180
-            X: =344
+            Width: =galConc.Width * 0.21429
+            X: =galConc.X + galConc.Width * 0.35714
             Y: =320
       - lblCCol1:
           Control: Label@2.5.1
@@ -1044,8 +1045,8 @@ Screens:
             Size: =8
             Text: ="MONEDA / CONCEPTO"
             Visible: =tabDetalleTula.Selected.Value = "Conciliación"
-            Width: =300
-            X: =44
+            Width: =galConc.Width * 0.35714
+            X: =galConc.X
             Y: =320
       - shpFichaCardTula:
           Control: Rectangle@2.3.0
@@ -1055,7 +1056,7 @@ Screens:
             BorderThickness: =1
             Fill: =ThemeSurface
             Height: =150
-            Width: =1318
+            Width: =App.Width - 48
             X: =24
             Y: =94
       - lblFichaV8Tula:
@@ -1071,8 +1072,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =If(IsBlank(gvarTula.BagDeclarationID), "No", "Sí")
-            Width: =200
-            X: =704
+            Width: =shpFichaCardTula.Width * 0.15175
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.51593
             Y: =210
       - lblFichaK8Tula:
           Control: Label@2.5.1
@@ -1086,8 +1087,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="DECLARACIÓN RELACIONADA"
-            Width: =200
-            X: =704
+            Width: =shpFichaCardTula.Width * 0.15175
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.51593
             Y: =194
       - lblFichaV7Tula:
           Control: Label@2.5.1
@@ -1102,8 +1103,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =If(gvarTula.BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada, Text(gvarTula.'Modified On', FmtFecha), "—")
-            Width: =180
-            X: =504
+            Width: =shpFichaCardTula.Width * 0.13657
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.36419
             Y: =210
       - lblFichaK7Tula:
           Control: Label@2.5.1
@@ -1117,8 +1118,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="FECHA DE RECUENTO"
-            Width: =180
-            X: =504
+            Width: =shpFichaCardTula.Width * 0.13657
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.36419
             Y: =194
       - lblFichaV6Tula:
           Control: Label@2.5.1
@@ -1133,8 +1134,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Coalesce(gvarTula.RecountingSession.Cashier.'Full Name', "—")
-            Width: =220
-            X: =264
+            Width: =shpFichaCardTula.Width * 0.16692
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.18209
             Y: =210
       - lblFichaK6Tula:
           Control: Label@2.5.1
@@ -1148,8 +1149,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="CAJERO"
-            Width: =220
-            X: =264
+            Width: =shpFichaCardTula.Width * 0.16692
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.18209
             Y: =194
       - lblFichaV5Tula:
           Control: Label@2.5.1
@@ -1164,8 +1165,8 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Coalesce(gvarTula.RecountingSession.Name, "—")
-            Width: =200
-            X: =44
+            Width: =shpFichaCardTula.Width * 0.15175
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.01517
             Y: =210
       - lblFichaK5Tula:
           Control: Label@2.5.1
@@ -1179,8 +1180,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="SESIÓN DE RECUENTO"
-            Width: =200
-            X: =44
+            Width: =shpFichaCardTula.Width * 0.15175
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.01517
             Y: =194
       - lblLinkPlanilla:
           Control: Label@2.5.1
@@ -1197,9 +1198,9 @@ Screens:
             Size: =10
             Text: =$"{gvarPlanilla.ReceiptID} · {gvarPlanilla.RemitentName}"
             Underline: =true
-            Width: =570
+            Width: =shpFichaCardTula.Width * 0.43248
             Wrap: =false
-            X: =764
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.56146
             Y: =164
       - lblFichaK4Tula:
           Control: Label@2.5.1
@@ -1213,8 +1214,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="PLANILLA"
-            Width: =170
-            X: =764
+            Width: =shpFichaCardTula.Width * 0.12898
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.56146
             Y: =148
       - lblLinkLote:
           Control: Label@2.5.1
@@ -1231,7 +1232,7 @@ Screens:
             Size: =10
             Text: =gvarLote.Name
             Underline: =true
-            X: =594
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.43247
             Y: =164
       - lblFichaK3Tula:
           Control: Label@2.5.1
@@ -1245,7 +1246,7 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="LOTE DE RECEPCIÓN"
-            X: =594
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.43247
             Y: =148
       - lblLinkTracking:
           Control: Label@2.5.1
@@ -1262,8 +1263,8 @@ Screens:
             Size: =10
             Text: =If(IsBlank(gvarTula.BagDeclarationID), "—", Coalesce(gvarTula.BagDeclarationID.DeclarationID.ReceivedEmail.Name, "—"))
             Underline: =!IsBlank(gvarTula.BagDeclarationID)
-            Width: =170
-            X: =404
+            Width: =shpFichaCardTula.Width * 0.12898
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.28832
             Y: =164
       - lblFichaK2Tula:
           Control: Label@2.5.1
@@ -1277,8 +1278,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="TRACKING (CORREO)"
-            Width: =170
-            X: =404
+            Width: =shpFichaCardTula.Width * 0.12898
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.28832
             Y: =148
       - lblFichaV1Tula:
           Control: Label@2.5.1
@@ -1293,9 +1294,9 @@ Screens:
             PaddingTop: =0
             Size: =10
             Text: =Coalesce(gvarTula.ReceptionID.RemitentClient.Name, gvarTula.ReceptionID.RemitentName)
-            Width: =340
+            Width: =shpFichaCardTula.Width * 0.25797
             Wrap: =false
-            X: =44
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.01517
             Y: =164
       - lblFichaK1Tula:
           Control: Label@2.5.1
@@ -1309,8 +1310,8 @@ Screens:
             PaddingTop: =0
             Size: =8
             Text: ="CLIENTE"
-            Width: =280
-            X: =44
+            Width: =shpFichaCardTula.Width * 0.21245
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.01517
             Y: =148
       - pilTulaDif:
           Control: Classic/Button@2.2.0
@@ -1335,7 +1336,7 @@ Screens:
             Text: =If(gvarTula.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.Recontada, "Pendiente", If(gvarTula.HasDifference, "Con diferencia", "Sin diferencia"))
             Visible: =gvarTula.BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada
             Width: =8 + 7*Len(Self.Text)
-            X: =570
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.41426
             Y: =110
       - pilTulaEstado:
           Control: Classic/Button@2.2.0
@@ -1371,7 +1372,7 @@ Screens:
             Size: =9
             Text: =gvarTula.BagStatus
             Width: =8 + 7*Len(Self.Text)
-            X: =310
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.21699
             Y: =110
       - lblTulaTitulo:
           Control: Label@2.5.1
@@ -1385,8 +1386,8 @@ Screens:
             PaddingTop: =0
             Size: =15
             Text: =$"Tula {gvarTula.BagID}"
-            Width: =260
-            X: =44
+            Width: =shpFichaCardTula.Width * 0.19727
+            X: =shpFichaCardTula.X + shpFichaCardTula.Width * 0.01517
             Y: =108
       - lblCrumbActualTula:
           Control: Label@2.5.1
@@ -1477,14 +1478,14 @@ Screens:
           Properties:
             Fill: =ThemeSurface
             Height: =52
-            Width: =1366
+            Width: =App.Width
       - shpHeaderLineaTula:
           Control: Rectangle@2.3.0
           Group: EncabezadoTula
           Properties:
             Fill: =ThemeLine
             Height: =1
-            Width: =1366
+            Width: =App.Width
             Y: =52
       - shpMarcaTula:
           Control: Classic/Button@2.2.0
