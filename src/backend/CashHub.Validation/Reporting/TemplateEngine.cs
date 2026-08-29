@@ -23,7 +23,13 @@ namespace CashHub.Validation.Reporting
             new(@"\{\{#(?<name>[a-zA-Z0-9_]+)\}\}(?<body>.*?)\{\{/\k<name>\}\}", RegexOptions.Singleline);
         private static readonly Regex IfBlock =
             new(@"\{\{#si:(?<name>[a-zA-Z0-9_]+)\}\}(?<body>.*?)\{\{/si\}\}", RegexOptions.Singleline);
-        private static readonly Regex RawToken = new(@"\{\{\{(?<name>[a-zA-Z0-9_]+)\}\}\}");
+        // Existia un token triple {{{x}}} que emitia el valor SIN escapar. Se elimino: el
+        // correo se arma con datos que pone el cliente (nombre, referencias, numeros), y
+        // negocio edita las plantillas en Dataverse sin tocar codigo. Un {{{cliente}}} en
+        // una plantilla era inyeccion de HTML directa. Ya no hay ningun camino sin escapar.
+        // Se sigue reconociendo la sintaxis triple para no dejar {...} colgando si alguna
+        // plantilla vieja la trae, pero ahora escapa igual que la doble.
+        private static readonly Regex TripleToken = new(@"\{\{\{(?<name>[a-zA-Z0-9_]+)\}\}\}");
         private static readonly Regex Token = new(@"\{\{(?<name>[a-zA-Z0-9_]+)\}\}");
 
         public sealed class TemplateData
@@ -83,8 +89,10 @@ namespace CashHub.Validation.Reporting
 
         private static string ReplaceTokens(string text, TemplateData data)
         {
-            text = RawToken.Replace(text, m =>
-                data.Values.TryGetValue(m.Groups["name"].Value, out var v) ? v ?? string.Empty : m.Value);
+            // La triple se resuelve primero (para consumir {{{x}}} antes de que la doble
+            // matchee {{x}} adentro y deje llaves sueltas), pero ESCAPA — no hay salida cruda.
+            text = TripleToken.Replace(text, m =>
+                data.Values.TryGetValue(m.Groups["name"].Value, out var v) ? Escape(v) : string.Empty);
 
             return Token.Replace(text, m =>
             {

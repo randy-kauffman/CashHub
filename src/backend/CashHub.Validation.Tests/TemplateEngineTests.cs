@@ -17,11 +17,15 @@ namespace CashHub.Validation.Tests
         }
 
         [Fact]
-        public void Token_triple_no_escapa_para_html_ya_armado()
+        public void Token_triple_ahora_escapa_no_inyecta_html_crudo()
         {
+            // La sintaxis triple {{{x}}} se disenó para inyectar HTML ya armado por el motor,
+            // pero NADIE la usa (ninguna plantilla del seed, ningun valor de codigo trae HTML
+            // crudo) y era un vector de inyeccion para quien edite plantillas en Dataverse.
+            // Se elimino el camino sin escapar: ahora escapa igual que la doble.
             var html = TemplateEngine.Render("{{{bloque}}}",
                 Data().Set("bloque", "<tr><td>ok</td></tr>"));
-            Assert.Equal("<tr><td>ok</td></tr>", html);
+            Assert.Equal("&lt;tr&gt;&lt;td&gt;ok&lt;/td&gt;&lt;/tr&gt;", html);
         }
 
         [Fact]

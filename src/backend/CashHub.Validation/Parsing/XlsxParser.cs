@@ -25,6 +25,18 @@ namespace CashHub.Validation.Parsing
         private static readonly XNamespace R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
         private static readonly XNamespace Rel = "http://schemas.openxmlformats.org/package/2006/relationships";
 
+        /// <summary>
+        /// Tope del tamaño DESCOMPRIMIDO del paquete. Una plantilla de depositos llena, con
+        /// 200 filas y 50 cheques, pesa unos cientos de KB descomprimida; 100 MB es varios
+        /// ordenes de magnitud mas y aun asi frena una bomba de descompresion (un .xlsx de
+        /// pocos KB que expande a gigabytes) ANTES de cargar nada en memoria.
+        ///
+        /// Este es el verdadero limite de tamaño del adjunto. VR-06 mide el tamaño
+        /// COMPRIMIDO y corre en la etapa 5, despues del parseo: para una bomba llega tarde
+        /// y con el numero equivocado. El corte tiene que estar aca, en la etapa 3.
+        /// </summary>
+        private const long MaxUncompressedBytes = 100L * 1024 * 1024;
+
         public static WorkbookModel Parse(byte[] content)
         {
             if (content == null || content.Length == 0)
@@ -37,6 +49,7 @@ namespace CashHub.Validation.Parsing
                 using (var stream = new MemoryStream(content))
                 using (var zip = new ZipArchive(stream, ZipArchiveMode.Read))
                 {
+                    GuardUncompressedSize(zip);
                     var shared = ReadSharedStrings(zip);
                     var sheets = ReadSheetCatalog(zip);          // nombre -> ruta del xml de la hoja
                     var cellCache = new Dictionary<string, Dictionary<string, (string val, int row, bool formula)>>(StringComparer.OrdinalIgnoreCase);
@@ -241,6 +254,28 @@ namespace CashHub.Validation.Parsing
                 }
             }
             return metadata;
+        }
+
+        /// <summary>
+        /// Frena una bomba de descompresion mirando el tamaño DESCOMPRIMIDO declarado en el
+        /// directorio central del ZIP (ZipArchiveEntry.Length): leerlo NO descomprime nada,
+        /// asi que el corte ocurre antes de cargar un solo byte de contenido en memoria. Un
+        /// .xlsx de 2 MB que expande a 1 GB muere aca, no en un OutOfMemory del worker.
+        /// </summary>
+        private static void GuardUncompressedSize(ZipArchive zip)
+        {
+            long total = 0;
+            foreach (var entry in zip.Entries)
+            {
+                total += entry.Length;
+                if (entry.Length > MaxUncompressedBytes || total > MaxUncompressedBytes)
+                {
+                    throw new XlsxParseException(
+                        $"El adjunto es demasiado grande al descomprimirse ({total / (1024 * 1024)} MB o mas, " +
+                        $"tope {MaxUncompressedBytes / (1024 * 1024)} MB). Se rechaza sin procesarlo por seguridad; " +
+                        "si es un archivo legitimo, divida la declaracion en varios envios.");
+                }
+            }
         }
 
         private static XDocument Load(ZipArchiveEntry entry, string label)

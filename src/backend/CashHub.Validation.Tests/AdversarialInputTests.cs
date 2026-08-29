@@ -172,6 +172,36 @@ namespace CashHub.Validation.Tests
             Assert.False(new CellValue(milDigitos, "A1", 1, "Depositos").TryDecimal(out _));
         }
 
+        // ---------------------------------------------------------------------
+        // Zip bomb — el ataque que VR-06 NO ataja (mide comprimido, corre tarde).
+        // ---------------------------------------------------------------------
+
+        [Fact]
+        public void Una_bomba_de_descompresion_se_corta_por_tamano_DESCOMPRIMIDO()
+        {
+            // 120 MB de ceros dentro de una hoja: comprime a poquisimos KB (patron trivial),
+            // asi que VR-06 —que mide el tamaño comprimido— la dejaria pasar. El parser tiene
+            // que cortarla mirando el tamaño DESCOMPRIMIDO, antes de cargar nada en memoria.
+            var relleno = new string(' ', 120 * 1024 * 1024);
+            var s = $"<worksheet xmlns=\"{M}\"><sheetData><row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>{relleno}</t></is></c></row></sheetData></worksheet>";
+            var bomba = Zip(Base(s));
+
+            // Comprime muchisimo: es lo que la hace peligrosa y lo que engaña a VR-06.
+            Assert.True(bomba.Length < 1024 * 1024, $"la bomba deberia comprimir a <1MB, pesa {bomba.Length}");
+
+            var ex = Assert.Throws<XlsxParseException>(() => XlsxParser.Parse(bomba));
+            Assert.Contains("grande", ex.Message.ToLowerInvariant());
+        }
+
+        [Fact]
+        public void Un_xlsx_normal_no_lo_corta_el_limite_de_tamano()
+        {
+            // El limite tiene que dejar pasar un archivo real de depositos. Uno chico prueba
+            // que el guardia no es tan agresivo que rechace lo legitimo.
+            var s = $"<worksheet xmlns=\"{M}\"><sheetData><row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>ok</t></is></c></row></sheetData></worksheet>";
+            XlsxParser.Parse(Zip(Base(s)));   // no debe lanzar
+        }
+
         [Fact]
         public void Cientos_de_miles_de_celdas_no_explotan_ni_cuelgan()
         {
@@ -234,16 +264,25 @@ namespace CashHub.Validation.Tests
         }
 
         /// <summary>
-        /// EL RIESGO VIVO: el token triple {{{x}}} emite SIN escapar. Hoy ninguna plantilla
-        /// del seed lo usa, pero negocio edita las plantillas en Dataverse sin tocar codigo.
-        /// Este test DOCUMENTA que el escape se pierde con la sintaxis triple, para que
-        /// quede en rojo el dia que alguien meta {{{cliente}}} en una plantilla.
+        /// El token triple {{{x}}} EMITIA sin escapar — un camino de inyeccion de HTML para
+        /// quien editara plantillas en Dataverse. Se elimino ese camino: ahora la triple
+        /// escapa igual que la doble. Este test bloquea la reintroduccion de la salida cruda.
         /// </summary>
         [Fact]
-        public void El_token_triple_NO_escapa_es_una_trampa_para_el_editor_de_plantillas()
+        public void El_token_triple_ahora_escapa_igual_que_el_normal()
         {
             var html = Render("{{{cliente}}}", ("cliente", "<b>x</b>"));
-            Assert.Contains("<b>x</b>", html);   // <-- sin escapar: por eso NO debe usarse con datos del cliente
+            Assert.DoesNotContain("<b>x</b>", html);
+            Assert.Contains("&lt;b&gt;x&lt;/b&gt;", html);
+        }
+
+        [Fact]
+        public void El_token_triple_no_deja_llaves_sueltas()
+        {
+            // El riesgo del fix mal hecho: si se borra la triple sin mas, la regex doble
+            // matchea {{x}} adentro de {{{x}}} y deja un { y un } colgando.
+            var html = Render("[{{{gestion}}}]", ("gestion", "Email-9"));
+            Assert.Equal("[Email-9]", html);
         }
     }
 }
