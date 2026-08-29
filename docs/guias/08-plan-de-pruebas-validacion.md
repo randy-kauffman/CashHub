@@ -271,43 +271,41 @@ puesto el proceso y con él los demás correos que se estén validando.
 | **Índice de shared string fuera de rango** | `t="s"` apuntando al 9999 sin tabla | ✅ No explota |
 | **Campo de 5 millones de caracteres** | Referencia gigante en una celda | ✅ Sobrevive |
 | **Número de 1000 dígitos** | `TryDecimal` sobre 1000 nueves | ✅ Devuelve "no es decimal", no desborda |
-| **200.000 celdas** | Hoja sin el límite de filas de la plantilla | ⚠️ Sobrevive, **pero ver abajo** |
+| **200.000 celdas** | Hoja sin el límite de filas de la plantilla | ✅ Sobrevive |
+| **Bomba de descompresión** | ZIP que expande a 1 GB (VR-06 lo dejaría pasar) | ✅ Cortada por tamaño descomprimido |
 | **Inyección HTML en la respuesta** | `<script>`, comillas, `&` en valores del cliente | ✅ Se escapan (`&lt;script&gt;`) |
 | **Inyección de token de plantilla** | `{{cliente}}` metido en la referencia | ✅ Queda literal (reemplazo de una pasada) |
 
 ### Lo que estos tests NO garantizan — leer antes de dormir tranquilo
 
 1. **Corren en `net8.0`; el plugin corre en `net462`.** El comportamiento de `XDocument.Load`
-   con DTD es el mismo (prohibido por defecto desde .NET 4.5.2), pero **la garantía de que XXE
-   está muerto en producción hay que confirmarla enviando** los payloads de I1–I3 de verdad y
-   revisando que el correo quede en Revisión sin haber leído ningún archivo ni hecho ninguna
-   salida de red. Es la prueba que más importa y la única que el código no puede darse solo.
+   con DTD es el mismo (prohibido por defecto desde .NET 4.5.2). Las bombas de tamaño **sí se
+   probaron en el ambiente real** (ver abajo). Lo que queda por confirmar enviando de verdad
+   es XXE (I1–I3): que el correo quede en Revisión sin haber leído ningún archivo ni hecho
+   salida de red. Es la única que el código no puede darse solo.
 
-2. **El worker del sandbox de Dataverse tiene memoria y tiempo limitados** (~2 min). Los tests
-   de 5 MB y 200.000 celdas pasan en una máquina con RAM de sobra; **no prueban que el worker
-   real no se quede sin memoria**. Enviar un adjunto de decenas de MB de celdas y observar si
-   el correo termina en Error controlado o si el job muere con timeout es una prueba de
-   ambiente pendiente.
+### Probado en el ambiente real (`net462`, sandbox)
 
-3. **No hay tope de filas ni de celdas en el parser.** Hoy carga todo en memoria. No es un
-   bug con estos volúmenes, pero es la palanca de un DoS: el techo real lo pone la RAM del
-   worker, no el código. Si se decide poner un tope, `AdversarialInputTests` tiene el caso de
-   200.000 celdas listo para cambiar de "sobrevive" a "corta con aviso".
+Estos tests corren en `net8.0`, así que las tres afirmaciones de RAM se verificaron
+**enviando de verdad** contra el sandbox, con `scripts/probe-parser-limits.py`: crea un
+correo, le cuelga un adjunto hostil, invoca la Custom API (que ejecuta el plugin en el
+sandbox) y mira si vuelve controlado o si el worker muere.
 
-4. **VR-06 (tamaño máximo del adjunto) es decorativa hoy**: mide `sanic_sizebytes`, el tamaño
-   **comprimido**, y además corre en la etapa 5 **después** de que el archivo ya se parseó en
-   la etapa 3. Un ZIP de 2 MB que descomprime a 1 GB la pasa limpio y ya hizo el daño. Para
-   que sirva habría que mover el chequeo antes del parseo y medir el tamaño descomprimido.
+| Escenario | Descomprimido | Resultado en el sandbox |
+|---|---|---|
+| Bomba de descompresión | 1 GB | ✅ Guardia dispara, **1.8 s**, HTTP 200 controlado. El worker ni se inmuta. |
+| Archivo grande legítimo | 82 MB, 1,2M celdas | ✅ El parser carga el DOM entero y **sobrevive** (1.7 s); recién ahí VR-06 lo rechaza por tamaño. |
+| Sobre el tope | 100+ MB | ✅ Guardia lo corta **antes** de parsear. |
 
-### 🔴 Trampa activa: el token triple `{{{ }}}`
+**El worker no murió por RAM en ningún escenario.** La bomba que engañaría a VR-06 (comprime
+a 1 MB) muere en el parser antes de tocar memoria.
 
-El motor de plantillas tiene dos sintaxis: `{{token}}` **escapa** el HTML y `{{{token}}}`
-**no**. Ninguna plantilla del seed usa la triple hoy, así que no hay vulnerabilidad viva —
-**pero negocio edita las plantillas en Dataverse sin tocar código**. El día que alguien
-escriba `{{{cliente}}}` en una plantilla creyendo que es una variante inocente, abre inyección
-de HTML con el nombre de cliente (que viene del Excel del atacante). `ReplyInjectionTests`
-tiene un test que documenta esto en rojo. **Recomendación**: quitar la sintaxis triple del
-motor si no hay un caso de uso real que la justifique.
+### El token triple `{{{ }}}` — ELIMINADO
+
+El motor tenía dos sintaxis: `{{token}}` escapa el HTML y `{{{token}}}` **no**. La triple era
+un vector de inyección para quien edite plantillas en Dataverse. **Se eliminó el camino sin
+escapar**: la sintaxis triple ahora escapa igual que la doble (nadie la usaba). `ReplyInjectionTests`
+tiene un test que bloquea la reintroducción de la salida cruda.
 
 ---
 
