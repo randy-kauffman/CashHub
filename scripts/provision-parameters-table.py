@@ -243,6 +243,17 @@ SEED = [
         "sanic_category": 159460000, "sanic_datatype": 159460003, "sanic_isactive": True,
         "sanic_description": "AAD group cuyos miembros aprueban RFCs de la mesa Boveda.",
     },
+    {
+        # Tope de tamaño DESCOMPRIMIDO del adjunto de correo, en MB. Solo puede BAJAR el
+        # limite: el techo absoluto (100 MB) esta hardcodeado en XlsxParser y el parser
+        # clampea. Ausente/inactivo/no numerico => el parser usa su default de 100 MB.
+        # Category=Validation(159460002), Datatype=Number(159460001).
+        "sanic_name": "Validation.MaxUncompressedMB",
+        "sanic_value": "10",
+        "sanic_category": 159460002, "sanic_datatype": 159460001, "sanic_isactive": True,
+        "sanic_description": "Tope en MB del tamaño descomprimido del adjunto. Baja el limite "
+                             "sin redeploy; el techo de 100 MB es fijo en codigo.",
+    },
 ]
 
 def seed():

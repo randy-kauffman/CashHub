@@ -26,30 +26,53 @@ namespace CashHub.Validation.Parsing
         private static readonly XNamespace Rel = "http://schemas.openxmlformats.org/package/2006/relationships";
 
         /// <summary>
-        /// Tope del tamaño DESCOMPRIMIDO del paquete. Una plantilla de depositos llena, con
-        /// 200 filas y 50 cheques, pesa unos cientos de KB descomprimida; 100 MB es varios
-        /// ordenes de magnitud mas y aun asi frena una bomba de descompresion (un .xlsx de
-        /// pocos KB que expande a gigabytes) ANTES de cargar nada en memoria.
+        /// Tope del tamaño DESCOMPRIMIDO del paquete, HARDCODEADO. Cumple dos roles:
         ///
-        /// Este es el verdadero limite de tamaño del adjunto. VR-06 mide el tamaño
-        /// COMPRIMIDO y corre en la etapa 5, despues del parseo: para una bomba llega tarde
-        /// y con el numero equivocado. El corte tiene que estar aca, en la etapa 3.
+        ///  - DEFAULT: es el limite cuando el plugin no inyecta uno (o el parametro de
+        ///    CH-Tbl-Parameter falta o es basura). Una tabla mal configurada no puede
+        ///    desactivar el guardia — a lo sumo lo afina.
+        ///  - TECHO ABSOLUTO: el parametro solo puede BAJAR el limite. Un "999999" en la
+        ///    tabla se clampea aca, asi no se reabre el agujero desde datos.
+        ///
+        /// Una plantilla de depositos llena (200 filas + 50 cheques) pesa cientos de KB
+        /// descomprimida; 100 MB es varios ordenes de magnitud mas y aun asi frena una
+        /// bomba de descompresion ANTES de cargar nada en memoria.
+        ///
+        /// Es el verdadero limite de tamaño del adjunto. VR-06 mide el COMPRIMIDO y corre
+        /// en la etapa 5, despues del parseo: para una bomba llega tarde y con el numero
+        /// equivocado. El corte tiene que estar aca, en la etapa 3.
         /// </summary>
-        private const long MaxUncompressedBytes = 100L * 1024 * 1024;
+        public const long MaxUncompressedBytesCeiling = 100L * 1024 * 1024;
 
-        public static WorkbookModel Parse(byte[] content)
+        /// <summary>
+        /// Resuelve el tope efectivo a partir del valor que el plugin leyo de
+        /// CH-Tbl-Parameter (en bytes). null, cero o negativo => default hardcodeado;
+        /// cualquier valor valido se clampea al techo. NUNCA sube por encima del techo.
+        /// </summary>
+        public static long ResolveMaxUncompressedBytes(long? fromParameter)
+        {
+            if (fromParameter == null || fromParameter.Value <= 0)
+            {
+                return MaxUncompressedBytesCeiling;
+            }
+            return System.Math.Min(fromParameter.Value, MaxUncompressedBytesCeiling);
+        }
+
+        public static WorkbookModel Parse(byte[] content, long? maxUncompressedBytes = null)
         {
             if (content == null || content.Length == 0)
             {
                 throw new XlsxParseException("El adjunto esta vacio (0 bytes): no hay archivo que leer.");
             }
 
+            var maxBytes = ResolveMaxUncompressedBytes(maxUncompressedBytes);
+
             try
             {
                 using (var stream = new MemoryStream(content))
                 using (var zip = new ZipArchive(stream, ZipArchiveMode.Read))
                 {
-                    GuardUncompressedSize(zip);
+                    GuardUncompressedSize(zip, maxBytes);
                     var shared = ReadSharedStrings(zip);
                     var sheets = ReadSheetCatalog(zip);          // nombre -> ruta del xml de la hoja
                     var cellCache = new Dictionary<string, Dictionary<string, (string val, int row, bool formula)>>(StringComparer.OrdinalIgnoreCase);
@@ -262,17 +285,17 @@ namespace CashHub.Validation.Parsing
         /// asi que el corte ocurre antes de cargar un solo byte de contenido en memoria. Un
         /// .xlsx de 2 MB que expande a 1 GB muere aca, no en un OutOfMemory del worker.
         /// </summary>
-        private static void GuardUncompressedSize(ZipArchive zip)
+        private static void GuardUncompressedSize(ZipArchive zip, long maxBytes)
         {
             long total = 0;
             foreach (var entry in zip.Entries)
             {
                 total += entry.Length;
-                if (entry.Length > MaxUncompressedBytes || total > MaxUncompressedBytes)
+                if (entry.Length > maxBytes || total > maxBytes)
                 {
                     throw new XlsxParseException(
                         $"El adjunto es demasiado grande al descomprimirse ({total / (1024 * 1024)} MB o mas, " +
-                        $"tope {MaxUncompressedBytes / (1024 * 1024)} MB). Se rechaza sin procesarlo por seguridad; " +
+                        $"tope {maxBytes / (1024 * 1024)} MB). Se rechaza sin procesarlo por seguridad; " +
                         "si es un archivo legitimo, divida la declaracion en varios envios.");
                 }
             }

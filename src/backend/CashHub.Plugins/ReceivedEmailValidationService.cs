@@ -151,9 +151,10 @@ namespace CashHub.Plugins
             {
                 _tracing.Trace("Validate[{0}]: etapa 3 — descargando adjunto {1}.", emailId, attachment.Id);
                 var bytes = DownloadFileColumn(attachment.Id);
-                _tracing.Trace("Validate[{0}]: adjunto descargado ({1} bytes); parseando xlsx.",
-                    emailId, bytes.Length);
-                context.Workbook = XlsxParser.Parse(bytes);
+                var maxBytes = ResolveMaxUncompressedBytes();
+                _tracing.Trace("Validate[{0}]: adjunto descargado ({1} bytes); parseando xlsx (tope descomprimido {2} MB).",
+                    emailId, bytes.Length, maxBytes / (1024 * 1024));
+                context.Workbook = XlsxParser.Parse(bytes, maxBytes);
                 _tracing.Trace("Validate[{0}]: xlsx parseado — {1} tablas, {2} claves de metadata.",
                     emailId, context.Workbook.Tables.Count, context.Workbook.Metadata.Count);
             }
@@ -162,6 +163,52 @@ namespace CashHub.Plugins
                 // Error de NEGOCIO (archivo malo del cliente): lo reporta VR-07 con el detalle.
                 context.WorkbookError = ex.Message;
                 _tracing.Trace("Validate[{0}]: el adjunto no parsea — {1}", emailId, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Lee el tope de tamaño descomprimido de CH-Tbl-Parameter (en MB) y lo pasa a bytes.
+        /// Se lee ANTES de parsear (etapa 3), asi que no puede salir del motor de reglas
+        /// (etapa 5) — por eso vive en la tabla de parametros y no en el valor de una regla.
+        ///
+        /// Fail-safe en todos los caminos: fila ausente, inactiva, valor no numerico o
+        /// consulta que revienta => se devuelve null y XlsxParser cae a su default
+        /// hardcodeado. Un parametro roto NUNCA desactiva el guardia; el clamp al techo lo
+        /// hace el propio parser.
+        /// </summary>
+        private long? ResolveMaxUncompressedBytes()
+        {
+            try
+            {
+                var query = new QueryExpression(Schema.Parameter.LogicalName)
+                {
+                    ColumnSet = new ColumnSet(Schema.Parameter.Value),
+                    TopCount = 1
+                };
+                query.Criteria.AddCondition(Schema.Parameter.Key, ConditionOperator.Equal,
+                    Schema.Parameter.MaxUncompressedMbKey);
+                query.Criteria.AddCondition(Schema.Parameter.IsActive, ConditionOperator.Equal, true);
+
+                var rows = _service.RetrieveMultiple(query).Entities;
+                var raw = rows.Count > 0 ? rows[0].GetAttributeValue<string>(Schema.Parameter.Value) : null;
+
+                if (long.TryParse(raw?.Trim(), out var mb) && mb > 0)
+                {
+                    _tracing.Trace("Validate: tope descomprimido tomado de CH-Tbl-Parameter '{0}' = {1} MB.",
+                        Schema.Parameter.MaxUncompressedMbKey, mb);
+                    return mb * 1024L * 1024L;
+                }
+
+                _tracing.Trace("Validate: parametro '{0}' ausente o no numerico ('{1}'); se usa el default del parser.",
+                    Schema.Parameter.MaxUncompressedMbKey, raw ?? "(sin fila)");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                // Nunca dejar sin parsear un correo por una falla al leer un parametro.
+                _tracing.Trace("Validate: fallo leyendo el parametro '{0}' ({1}); se usa el default del parser.",
+                    Schema.Parameter.MaxUncompressedMbKey, ex.Message);
+                return null;
             }
         }
 

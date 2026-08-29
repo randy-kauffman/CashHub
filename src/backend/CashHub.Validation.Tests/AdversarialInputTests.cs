@@ -194,6 +194,21 @@ namespace CashHub.Validation.Tests
         }
 
         [Fact]
+        public void Un_limite_mas_bajo_corta_un_archivo_que_con_el_default_pasaria()
+        {
+            // Un archivo de ~2 MB descomprimido: pasa con el default de 100 MB, pero un
+            // limite de 1 MB (pasado como parametro) lo corta. Prueba que Parse respeta el
+            // limite inyectado, que es como el plugin baja el tope desde CH-Tbl-Parameter.
+            var relleno = new string('x', 2 * 1024 * 1024);
+            var s = $"<worksheet xmlns=\"{M}\"><sheetData><row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>{relleno}</t></is></c></row></sheetData></worksheet>";
+            var bytes = Zip(Base(s));
+
+            XlsxParser.Parse(bytes);   // con el default (100 MB) no lanza
+            var ex = Assert.Throws<XlsxParseException>(() => XlsxParser.Parse(bytes, 1L * 1024 * 1024));
+            Assert.Contains("grande", ex.Message.ToLowerInvariant());
+        }
+
+        [Fact]
         public void Un_xlsx_normal_no_lo_corta_el_limite_de_tamano()
         {
             // El limite tiene que dejar pasar un archivo real de depositos. Uno chico prueba

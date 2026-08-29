@@ -322,6 +322,22 @@ namespace CashHub.Plugins
             public const string OutcomeRejected = "Rejected";
         }
 
+        /// <summary>Tabla de configuracion del backend (CH-Tbl-Parameter): clave -> valor de texto.</summary>
+        internal static class Parameter
+        {
+            public const string LogicalName = "sanic_chtblparameter";
+            public const string Key = "sanic_name";
+            public const string Value = "sanic_value";
+            public const string IsActive = "sanic_isactive";
+
+            /// <summary>
+            /// Tope de tamaño DESCOMPRIMIDO del adjunto, en MB. Solo puede BAJAR el limite:
+            /// el techo absoluto lo pone XlsxParser.MaxUncompressedBytesCeiling (100 MB).
+            /// Fila ausente/inactiva/no numerica => el parser usa su default.
+            /// </summary>
+            public const string MaxUncompressedMbKey = "Validation.MaxUncompressedMB";
+        }
+
         /// <summary>Permiso de cambio de datos de cliente: mapea tabla objetivo -> grupo AAD por tipo.</summary>
         internal static class ChangePermission
         {

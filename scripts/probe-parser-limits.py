@@ -99,6 +99,12 @@ def build(kind):
         # lo dejaria pasar; el guardia de tamaño descomprimido debe cortarlo.
         relleno = ' ' * (1024 * 1024 * 1024)
         return xlsx(sheet(f'<row r="1"><c r="A1" t="inlineStr"><is><t>{relleno}</t></is></c></row>'))
+    if kind == 'param':
+        # ~20 MB descomprimidos: bajo el techo de 100 MB (default) pero SOBRE los 10 MB
+        # del parametro. Con el parametro activo debe cortarlo; sin el, pasaria.
+        filas = ''.join(f'<row r="{r}"><c r="A{r}" t="inlineStr"><is><t>x</t></is></c></row>'
+                        for r in range(1, 300_001))
+        return xlsx(sheet(filas))
     # volumen: ~82 MB descomprimidos (BAJO el tope de 100 MB, para que el guardia NO lo
     # corte y el parser cargue el DOM entero). ~1,5M filas. Contenido corto y repetitivo
     # para que comprima chico y entre por la columna File (tope 32 MB). El parseo ocurre
@@ -166,7 +172,7 @@ def probar(kind):
     _, st = req('GET', f'/sanic_chtblreceivedemailses({mail_id})'
                        f'?$select=sanic_emailreviewstatus,sanic_errortext')
     print(f'  ReviewStatus={st.get("sanic_emailreviewstatus")} '
-          f'error={(st.get("sanic_errortext") or "")[:400]}')
+          f'error={((st.get("sanic_errortext") or "").replace(chr(10)," || "))[:600]}')
 
     # 6. limpieza
     req('DELETE', f'/sanic_chtblemailsattachmentses({att_id})')
