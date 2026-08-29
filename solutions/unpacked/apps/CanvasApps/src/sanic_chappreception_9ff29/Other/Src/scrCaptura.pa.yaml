@@ -486,7 +486,7 @@ Screens:
             RadiusTopRight: =17
             Size: =9
             Text: =""
-            Width: =5 + btnAvatarCap.Width + 8 + lblUsuarioCap.Width + 12
+            Width: =46 + 7 * Len(UsuarioNombre)
             X: =Parent.Width - 18 - Self.Width
             Y: =11
       - btnAvatarCap:
@@ -538,7 +538,7 @@ Screens:
             PaddingTop: =0
             Size: =8.63
             Text: =UsuarioNombre
-            Width: =5.8 * Len(Self.Text) + 6
+            Width: =btnChipUsuarioLot.Width - 47
             Wrap: =false
             X: =btnAvatarCap.X + btnAvatarCap.Width + 8
             Y: =shpChipUserCap.Y
@@ -1588,17 +1588,17 @@ Screens:
             Align: =Align.Left
             BorderColor: =ThemeLine
             BorderThickness: =1
-            Color: =ThemeInk2
+            Color: =ThemeSurface
             DisabledBorderColor: =Color.Transparent
             DisabledColor: =ThemeInk3
             DisabledFill: =ThemeLineSoft
             DisplayMode: =If(!IsBlank(gvarLoteActivo), DisplayMode.Edit, DisplayMode.Disabled)
-            Fill: =Color.Transparent
+            Fill: =ThemeAccent
             Font: =Font.'Open Sans'
             Height: =32
             HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
             HoverColor: =Self.Color
-            HoverFill: =ThemeSurface2
+            HoverFill: =ThemeAccentDark
             OnSelect: |-
               =// VOLCADO: los inputs de la grilla NO escriben en colPlanillas al tipear (el
               // re-render mataba el foco). Este bloque lee los controles vía AllItems y
@@ -1640,7 +1640,7 @@ Screens:
             PaddingTop: =0
             PressedBorderColor: =Self.Fill
             PressedColor: =Self.Fill
-            PressedFill: =ThemeSurface2
+            PressedFill: =ThemeAccentDark
             RadiusBottomLeft: =8
             RadiusBottomRight: =8
             RadiusTopLeft: =8
@@ -1655,7 +1655,7 @@ Screens:
           Properties:
             AccessibleLabel: ="Nueva planilla"
             BorderColor: =RGBA(0, 0, 0, 1)
-            Color: =ThemeInk2
+            Color: =ThemeSurface
             DisabledBorderColor: =RGBA(56, 56, 56, 1)
             DisabledColor: =RGBA(119, 119, 119, 1)
             DisplayMode: =btnNuevaPlanillaCap.DisplayMode
@@ -2614,7 +2614,7 @@ Screens:
                           =// El chequeo de duplicado es de LOTE, no de planilla: primero acá mismo,
                           // después contra colTulas de las OTRAS planillas. En los dos casos NO
                           // colecciona y ctxScanDupCap carga el mensaje completo del choque.
-                          With({num: Trim(Self.Text)},
+                          With({num: Upper(Trim(Self.Text))},
                               If(!IsBlank(num),
                                   If(
                                       CountRows(Filter(colTulasEdit As X, Trim(X.Numero) = num)) > 0,
@@ -2633,7 +2633,7 @@ Screens:
                                           {
                                               LocalId:         Text(GUID()),
                                               PlanillaLocalId: ctxPlanillaTulasCap,
-                                              Numero:          num,
+                                              Numero:          Upper(Trim(num)),
                                               GUID:            Defaults('CH-Tbl-Bags').'CH-Tbl-Bags'
                                           }
                                       );

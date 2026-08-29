@@ -1,19 +1,56 @@
 # ************************************************************************************************
 # Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
 # Use the maker portal to create and edit your Power Apps.
-#
+# 
 # The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
-#
+# 
 # For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
 # ************************************************************************************************
 App:
   Properties:
-    OnStart: |
-      =ClearCollect(
+    MinScreenHeight: =640
+    MinScreenWidth: =768
+    OnError: |-
+      =Trace(
+          "CH-App-Hub: error no controlado",
+          TraceSeverity.Error,
+          {
+              Message: FirstError.Message,
+              Kind: Value(FirstError.Kind),
+              Source: FirstError.Source
+          }
+      );
+      Notify(
+          "Ocurrió un error inesperado en el hub. " & FirstError.Message,
+          NotificationType.Error
+      )
+    OnStart: |-
+      =// ===== 1. Tokens de tema y constantes (primero: cero red, nunca fallan) =====
+      Set(ThemeAccent,     ColorValue("#C8102E"));
+      Set(ThemeAccentDark, ColorValue("#A40D26"));
+      Set(ThemeAccentSoft, ColorValue("#FBEBED"));
+      Set(ThemeBg,         ColorValue("#F6F5F4"));
+      Set(ThemeSurface,    ColorValue("#FFFFFF"));
+      Set(ThemeSurface2,   ColorValue("#FAF8F7"));
+      Set(ThemeInk,        ColorValue("#201C1D"));
+      Set(ThemeInk2,       ColorValue("#66595C"));
+      Set(ThemeInk3,       ColorValue("#948A8C"));
+      Set(ThemeLine,       ColorValue("#E2DCDD"));
+      Set(ThemeLineSoft,   ColorValue("#EDE8E9"));
+      Set(ThemeOk,         ColorValue("#0E7A3C"));
+      Set(ThemeOkSoft,     ColorValue("#E2F2E8"));
+      Set(ThemeInfo,       ColorValue("#23557D"));
+      Set(ThemeInfoSoft,   ColorValue("#E4EEF6"));
+      Set(gvarLoaded, false);
+
+      // ===== 2. Catálogo (1 lectura) =====
+      ClearCollect(
           colCatalog,
           Filter('CH-Tbl-AppCatalogs', Enabled)
       );
-      // Una fila de acceso = (app, grupo AAD). Sin filas para una app, la app es pública.
+
+      // ===== 3. Accesos relacionales (1 lectura). Una fila = (app, grupo AAD).
+      //         Sin filas para una app, la app es pública. =====
       ClearCollect(
           colAccess,
           ForAll(
@@ -27,36 +64,25 @@ App:
       Set(gvarAccessError, false);
       Clear(colMyGroupIds);
       ClearCollect(colGroupIds, Distinct(colAccess, GroupId));
-      // checkMemberGroups (membresía transitiva) acepta hasta 20 grupos por llamada: se resuelve en lotes de 20.
-      ForAll(
-          Sequence(RoundUp(CountRows(colGroupIds) / 20, 0)) As batch,
-          IfError(
-              Collect(
-                  colMyGroupIds,
-                  ForAll(
-                      Table(
-                          Office365Groups.HttpRequest(
-                              "https://graph.microsoft.com/v1.0/me/checkMemberGroups",
-                              "POST",
-                              "{""groupIds"": [" &
-                                  Concat(
-                                      LastN(
-                                          FirstN(colGroupIds, batch.Value * 20),
-                                          Min(20, CountRows(colGroupIds) - (batch.Value - 1) * 20)
-                                      ),
-                                      """" & Value & """",
-                                      ","
-                                  ) &
-                              "]}"
-                          ).value
-                      ),
-                      {GroupId: Text(Value)}
-                  )
-              ),
-              // Si Graph falla no bloqueamos el hub: se muestra todo con aviso; la autorización real la imponen las apps destino
-              Set(gvarAccessError, true)
-          )
+
+      // ===== 4. Membresía transitiva. checkMemberGroups acepta hasta 20 grupos
+      //         por llamada: se resuelve en lotes de 20. =====
+      Clear(colGraphError);
+      IfError(
+          ClearCollect(
+              colMyGroupIds,
+              ForAll(
+                  Office365Groups.ListOwnedGroupsV3().value As g,
+                  {GroupId: Text(g.id)}
+              )
+          ),
+          Collect(colGraphError, {Paso: "memberOf"})
       );
+      // Si Graph falló en cualquier lote no bloqueamos el hub: fail-open con aviso;
+      // la autorización real la imponen las apps destino
+      Set(gvarAccessError, !IsEmpty(colGraphError));
+
+      // ===== 5. Join en memoria: catálogo × accesos × mis grupos =====
       ClearCollect(
           colAppData,
           Filter(
@@ -71,23 +97,14 @@ App:
                   ) > 0
           )
       );
+
+      // ===== 6. Listo: apaga el skeleton =====
       Set(gvarLoaded, true);
+
+      // ===== 7. Si solo tenés una app, no te hacemos elegir entre una opción =====
       If(
           CountRows(colAppData) = 1 && !gvarAccessError,
           Launch(First(colAppData).AppURL, {}, LaunchTarget.Replace)
       )
-    OnError: |
-      =Trace(
-          "CH-App-Hub: error no controlado",
-          TraceSeverity.Error,
-          {
-              Message: FirstError.Message,
-              Kind: Value(FirstError.Kind),
-              Source: FirstError.Source
-          }
-      );
-      Notify(
-          "Ocurrió un error inesperado en el hub. " & FirstError.Message,
-          NotificationType.Error
-      )
+    SizeBreakpoints: =[768, 1024, 1440]
     Theme: =PowerAppsTheme

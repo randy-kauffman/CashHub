@@ -2,7 +2,7 @@
   "properties": {
     "connectionReferences": {
       "shared_commondataserviceforapps_1": {
-        "runtimeSource": "invoker",
+        "runtimeSource": "embedded",
         "connection": {
           "connectionReferenceLogicalName": "sanic_CHCRDataverse"
         },
@@ -15,13 +15,13 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$authentication": {
-          "defaultValue": {},
-          "type": "SecureObject"
-        },
         "$connections": {
           "defaultValue": {},
           "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
         }
       },
       "triggers": {
@@ -58,15 +58,16 @@
           },
           "type": "OpenApiConnection",
           "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "PerformUnboundAction",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
             "parameters": {
               "actionName": "sanic_CHCreateTransactionCut",
               "item/CajeroId": "@triggerBody()['text']"
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "PerformUnboundAction",
-              "connectionName": "shared_commondataserviceforapps_1"
-            },
+            "authentication": "@parameters('$authentication')",
             "retryPolicy": {
               "type": "exponential",
               "count": 4,
@@ -86,6 +87,12 @@
           "type": "Response",
           "kind": "PowerApp",
           "inputs": {
+            "statusCode": 200,
+            "body": {
+              "batchid": "@{outputs('Perform_an_unbound_action')?['body/BatchId']}",
+              "batchname": "@{outputs('Perform_an_unbound_action')?['body/BatchName']}",
+              "assignedcount": "@outputs('Perform_an_unbound_action')?['body/AssignedCount']"
+            },
             "schema": {
               "type": "object",
               "properties": {
@@ -104,21 +111,14 @@
                   "x-ms-dynamically-added": true,
                   "type": "number"
                 }
-              },
-              "additionalProperties": {}
-            },
-            "statusCode": 200,
-            "body": {
-              "batchid": "@{outputs('Perform_an_unbound_action')?['body/BatchId']}",
-              "batchname": "@{outputs('Perform_an_unbound_action')?['body/BatchName']}",
-              "assignedcount": "@outputs('Perform_an_unbound_action')?['body/AssignedCount']"
+              }
             }
           }
         }
       },
       "outputs": {}
     },
-    "templateName": null
+    "templateName": ""
   },
   "schemaVersion": "1.0.0.0"
 }

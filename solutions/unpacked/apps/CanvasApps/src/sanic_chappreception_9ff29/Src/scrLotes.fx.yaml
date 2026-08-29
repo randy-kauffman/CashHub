@@ -62,7 +62,7 @@ scrLotes As screen:
         Width: =674
         X: =18
         Y: =146
-        ZIndex: =26
+        ZIndex: =28
 
         btnFilaLotesLot As button:
             BorderThickness: =0
@@ -221,7 +221,7 @@ scrLotes As screen:
         Width: =614
         X: =48
         Y: =250
-        ZIndex: =27
+        ZIndex: =29
 
     galPlanillasLot As gallery.galleryVertical:
         '#CopilotOverlayLabel': ="Filtered"
@@ -266,7 +266,7 @@ scrLotes As screen:
         Width: =674
         X: =18
         Y: =146
-        ZIndex: =28
+        ZIndex: =30
 
         btnFilaPlanLot As button:
             BorderThickness: =0
@@ -329,7 +329,7 @@ scrLotes As screen:
             PaddingRight: =0
             PaddingTop: =0
             Size: =9.38
-            Text: =ThisItem.Name
+            Text: =ThisItem.ReceiptID
             Width: =400
             Wrap: =false
             X: =14
@@ -436,7 +436,7 @@ scrLotes As screen:
         Width: =614
         X: =48
         Y: =250
-        ZIndex: =29
+        ZIndex: =31
 
     btnMoverBovedaLot As button:
         BorderColor: =ThemeAccent
@@ -480,7 +480,7 @@ scrLotes As screen:
         Width: =128
         X: =720
         Y: =181
-        ZIndex: =35
+        ZIndex: =37
 
     btnEditarLoteLot As button:
         BorderColor: =ThemeLine
@@ -536,7 +536,7 @@ scrLotes As screen:
         Width: =96
         X: =856
         Y: =181
-        ZIndex: =36
+        ZIndex: =38
 
     galPlanillasDelLoteLot As gallery.galleryVertical:
         '#CopilotOverlayLabel': ="Filtered"
@@ -553,7 +553,7 @@ scrLotes As screen:
         Width: =642
         X: =706
         Y: =shpLineaHeadPlanLoteLot.Y + 1
-        ZIndex: =44
+        ZIndex: =46
 
         lblCelPlanLoteNumLot As label:
             Color: =ThemeInk
@@ -634,7 +634,7 @@ scrLotes As screen:
         Width: =582
         X: =736
         Y: =galPlanillasDelLoteLot.Y + 40
-        ZIndex: =45
+        ZIndex: =47
 
     lblVacioDetLoteLot As label:
         Align: =Align.Center
@@ -650,7 +650,7 @@ scrLotes As screen:
         Width: =582
         X: =736
         Y: =380
-        ZIndex: =46
+        ZIndex: =48
 
     galTulasLot As gallery.galleryVertical:
         '#CopilotOverlayLabel': ="Filtered"
@@ -669,7 +669,7 @@ scrLotes As screen:
         Width: =642
         X: =706
         Y: =shpLineaHeadTulasLot.Y + 1
-        ZIndex: =67
+        ZIndex: =68
 
         btnFilaTulaLot_1 As button:
             BorderThickness: =0
@@ -838,7 +838,7 @@ scrLotes As screen:
         Width: =582
         X: =736
         Y: =galTulasLot.Y + 40
-        ZIndex: =68
+        ZIndex: =69
 
     lblVacioDetPlanLot As label:
         Align: =Align.Center
@@ -854,14 +854,14 @@ scrLotes As screen:
         Width: =582
         X: =736
         Y: =380
-        ZIndex: =69
+        ZIndex: =70
 
     cntDlgBovedaLot As groupContainer.manualLayoutContainer:
         Fill: =ThemeOverlay
         Height: =Parent.Height
         Visible: =ctxDlgBovedaLot
         Width: =Parent.Width
-        ZIndex: =70
+        ZIndex: =71
 
         btnDlgBloqueoBovedaLot As button:
             BorderThickness: =0
@@ -1062,7 +1062,7 @@ scrLotes As screen:
         Height: =Parent.Height
         Visible: =ctxDlgAgregarLot
         Width: =Parent.Width
-        ZIndex: =71
+        ZIndex: =72
 
         btnDlgBloqueoAgregarLot As button:
             BorderThickness: =0
@@ -1317,8 +1317,8 @@ scrLotes As screen:
                                             Defaults('CH-Tbl-Bags'),
                                             {
                                                 ReceptionID: galPlanillasLot.Selected,
-                                                BagID:       Trim(inpTulaAgregarLot.Text),
-                                                Name:        Trim(inpTulaAgregarLot.Text),
+                                                BagID:       Upper(Trim(inpTulaAgregarLot.Text)),
+                                                Name:        Upper(Trim(inpTulaAgregarLot.Text)),
                                                 BagStatus:   'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa'
                                             }
                                         )
@@ -1362,7 +1362,7 @@ scrLotes As screen:
                                     ctxEncabezadoLot:  "simple",          // no hay "valor actual" que comparar
                                     ctxETulaLot:
                                         Substitute(Substitute(Substitute(
-                                            Trim(inpTulaAgregarLot.Text), "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
+                                            Upper(Trim(inpTulaAgregarLot.Text)), "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
                                 }
                             );
                             UpdateContext(
@@ -1402,7 +1402,7 @@ scrLotes As screen:
                                         RequestResources: JSON(
                                             {
                                                 ReceiptGUID:        Text(galPlanillasLot.Selected.'CH-Tbl-Receptions'),
-                                                BagID:              Trim(inpTulaAgregarLot.Text),
+                                                BagID:              Upper(Trim(inpTulaAgregarLot.Text)),
                                                 BagGUID:            Text(ctxTulaNuevaLot.'CH-Tbl-Bags'),
                                                 ReceptionBatchGUID: Text(galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch')
                                             }
@@ -1425,13 +1425,13 @@ scrLotes As screen:
                                 Defaults('CH-Tbl-Bags'),
                                 {
                                     ReceptionID: galPlanillasLot.Selected,
-                                    BagID:       Trim(inpTulaAgregarLot.Text),
-                                    Name:        Trim(inpTulaAgregarLot.Text),
+                                    BagID:       Upper(Trim(inpTulaAgregarLot.Text)),
+                                    Name:        Upper(Trim(inpTulaAgregarLot.Text)),
                                     BagStatus:   'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'
                                 }
                             ),
                             Notify("No se pudo agregar la tula: " & FirstError.Message, NotificationType.Error),
-                            Notify("Tula " & Trim(inpTulaAgregarLot.Text) & " agregada (acción directa).", NotificationType.Success)
+                            Notify("Tula " & Upper(Trim(inpTulaAgregarLot.Text)) & " agregada (acción directa).", NotificationType.Success)
                         )
                     );
                     
@@ -1462,7 +1462,7 @@ scrLotes As screen:
         Height: =Parent.Height
         Visible: =ctxDlgEliminarLot
         Width: =Parent.Width
-        ZIndex: =72
+        ZIndex: =73
 
         btnDlgBloqueoEliminarLot As button:
             BorderThickness: =0
@@ -1882,7 +1882,7 @@ scrLotes As screen:
         Height: =Parent.Height
         Visible: =ctxDlgRemapearLot
         Width: =Parent.Width
-        ZIndex: =73
+        ZIndex: =74
 
         btnDlgBloqueoRemapearLot As button:
             BorderThickness: =0
@@ -2289,7 +2289,7 @@ scrLotes As screen:
         Height: =Parent.Height
         Visible: =ctxDlgEditarTulaLot
         Width: =Parent.Width
-        ZIndex: =74
+        ZIndex: =75
 
         btnDlgBloqueoEditarTulaLot As button:
             BorderThickness: =0
@@ -2550,7 +2550,18 @@ scrLotes As screen:
                             galPlanillasLot.Selected.BatchStatus = 159460003,
                     
                             // ================== CAMINO APROBACIÓN ==================
-                            // (SIN bloque P: el contrato de "Editar tula" no lleva BagPreviousState — 01 §5.5)
+                                UpdateContext(
+                                {
+                                    ctxBagPrevioLot:
+                                        Switch(
+                                            ctxTulaSelLot.BagStatus,
+                                            'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            "Recibida en esclusa",
+                                            'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           "Almacenada en boveda",
+                                            'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa', "Pendiente de revision por supervisor - esclusa",
+                                            Text(ctxTulaSelLot.BagStatus)
+                                        )
+                                }
+                            );
                             // >>> BLOQUE E (§13.1) <<<
                             UpdateContext(
                                 {
@@ -2643,7 +2654,8 @@ scrLotes As screen:
                                                     ReceiptGUID:        Text(galPlanillasLot.Selected.'CH-Tbl-Receptions'),
                                                     BagID:              Trim(inpTulaEditarLot.Text),
                                                     ReceptionBatchGUID: Text(galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'),
-                                                    BagGUID:            Text(ctxTulaSelLot.'CH-Tbl-Bags')
+                                                    BagGUID:            Text(ctxTulaSelLot.'CH-Tbl-Bags'),
+                                                    BagPreviousState: ctxBagPrevioLot
                                                 }
                                             )
                                         }
@@ -2696,7 +2708,7 @@ scrLotes As screen:
         Height: =Parent.Height
         Visible: =ctxDlgEditarPlanillaLot
         Width: =Parent.Width
-        ZIndex: =75
+        ZIndex: =76
 
         btnDlgBloqueoEditarPlanillaLot As button:
             BorderThickness: =0
@@ -2817,12 +2829,12 @@ scrLotes As screen:
                 Size: =8.25
                 Text: ="La planilla " & Trim(inpPlanillaEditarLot.Text) & " ya existe en este lote."
                 Visible: |-
-                    =!IsBlank(Trim(inpTulaAgregarLot.Text))
+                    =!IsBlank(Trim(inpPlanillaEditarLot.Text))
                     && !IsBlank(
                         LookUp(
-                            'CH-Tbl-Bags',
-                            ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
-                            && BagID = Trim(inpTulaAgregarLot.Text)
+                            'CH-Tbl-Receptions',
+                            ReceptionBatch.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
+                            && ReceiptID = Trim(inpPlanillaEditarLot.Text)
                         ).'CH-Tbl-Bags'
                     )
                 Width: =340
@@ -2918,7 +2930,8 @@ scrLotes As screen:
                     =If(
                         IsBlank(Trim(inpPlanillaEditarLot.Text))
                         || Trim(inpPlanillaEditarLot.Text) = galPlanillasLot.Selected.ReceiptID
-                        || lblErrPlanillaEditarLot.Visible,
+                        || lblErrPlanillaEditarLot.Visible    
+                        ,
                         DisplayMode.Disabled,
                         DisplayMode.Edit
                     )
@@ -2927,92 +2940,103 @@ scrLotes As screen:
                 Height: =32
                 HoverFill: =ThemeAccentDark
                 OnSelect: |-
-                    =UpdateContext({ctxDlgEditarPlanillaLot: false});
+                    =If(IsBlank(
+                        LookUp(
+                            'CH-Tbl-Receptions',
+                            ReceptionBatch.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
+                            && ReceiptID = Trim(inpPlanillaEditarLot.Text)
+                        )
+                    ),
+                        UpdateContext({ctxDlgEditarPlanillaLot: false});
                     
-                    // >>> BLOQUE E (§13.1) <<<
-                    UpdateContext(
-                        {
-                            ctxELoteLot:
-                                Substitute(Substitute(Substitute(
-                                    Trim(galPlanillasLot.Selected.ReceptionBatch.Name), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
-                            ctxETransportadoraLot:
-                                Substitute(Substitute(Substitute(
-                                    Trim(galPlanillasLot.Selected.ReceptionBatch.Transportadora), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
-                            ctxEPlanillaLot:
-                                Substitute(Substitute(Substitute(
-                                    Trim(galPlanillasLot.Selected.ReceiptID), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
-                            ctxEEmpresaLot:
-                                Substitute(Substitute(Substitute(
-                                    Trim(galPlanillasLot.Selected.RemitentName), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
-                            ctxEUsuarioLot:
-                                Substitute(Substitute(Substitute(
-                                    UsuarioNombre, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
-                            ctxEEstadoLoteLot:
-                                Switch(
-                                    galPlanillasLot.Selected.BatchStatus,
-                                    159460000, "En progreso",
-                                    159460001, "Recibido",
-                                    159460003, "En bóveda",
-                                    159460002, "Anulado",
-                                    "—"
-                                )
-                        }
-                    );
-                    UpdateContext(
-                        {
-                            // PRESENTACIÓN, no contrato: literal propio, con ° y sin Upper().
-                            // El RequestType que viaja abajo NO se toca (ver la nota al pie).
-                            ctxETipoLot:          "MODIFICAR N° DE PLANILLA",
-                            ctxEncabezadoLot:     "comparativo",          // N° actual → N° nuevo
-                            ctxEPlanillaNuevaLot:
-                                Substitute(Substitute(Substitute(
-                                    Trim(inpPlanillaEditarLot.Text), "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
-                        }
-                    );
-                    UpdateContext(
-                        {
-                            ctxFilasLot:
-                                "<tr><td class=""k"">Empresa</td><td colspan=""2"">" & ctxEEmpresaLot & "</td></tr>" &
-                                "<tr><td class=""k"">N° de planilla</td><td>" & ctxEPlanillaLot & "</td>" &
-                                    "<td><b class=""new"">" & ctxEPlanillaNuevaLot & "</b></td></tr>"
-                        }
-                    );
-                    // >>> BLOQUE H (§13.3) <<<
-                    UpdateContext(
-                        {
-                            ctxHtmlLot:
-                                HtmlApEstilo &
-                                "<div class=""ap"">" &
-                                  "<div class=""apHead"">" &
-                                    "<span class=""tag"">" & ctxETipoLot & "</span>" &
-                                    "<h3>Lote " & ctxELoteLot & "</h3>" &
-                                    "<div class=""sub"">" & ctxETransportadoraLot & " · " & ctxEEstadoLoteLot & "</div>" &
-                                  "</div>" &
-                                  If(ctxEncabezadoLot = "simple", HtmlApEncabezadoTablaSimple, HtmlApEncabezadoTabla) &
-                                    ctxFilasLot &
-                                  "</table>" &
-                                  "<div class=""foot"">Solicitud generada por CH-App-Reception · " &
-                                    ctxEUsuarioLot & " · " & Text(Now(), FmtFecha) & "</div>" &
-                                "</div>"
-                        }
-                    );
-                    IfError(
-                        Patch(
-                            'CH-Tbl-ApprovalRequests',
-                            Defaults('CH-Tbl-ApprovalRequests'),
+                        // >>> BLOQUE E (§13.1) <<<
+                        UpdateContext(
                             {
-                                RequestType:      "Modificar numero de planilla",
-                                RequestDetails:   ctxHtmlLot,
-                                RequestResources: JSON(
-                                    {
-                                        ReceiptGUID:  Text(galPlanillasLot.Selected.'CH-Tbl-Receptions'),
-                                        NewReceiptID: Trim(inpPlanillaEditarLot.Text)
-                                    }
-                                )
+                                ctxELoteLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.ReceptionBatch.Name), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxETransportadoraLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.ReceptionBatch.Transportadora), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEPlanillaLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.ReceiptID), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEEmpresaLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(galPlanillasLot.Selected.RemitentName), "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEUsuarioLot:
+                                    Substitute(Substitute(Substitute(
+                                        UsuarioNombre, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"),
+                                ctxEEstadoLoteLot:
+                                    Switch(
+                                        galPlanillasLot.Selected.BatchStatus,
+                                        159460000, "En progreso",
+                                        159460001, "Recibido",
+                                        159460003, "En bóveda",
+                                        159460002, "Anulado",
+                                        "—"
+                                    )
                             }
-                        ),
-                        Notify("No se pudo crear la solicitud: " & FirstError.Message, NotificationType.Error),
-                        Notify("Solicitud «Modificar número de planilla» enviada al supervisor.", NotificationType.Success)
+                        );
+                        UpdateContext(
+                            {
+                                // PRESENTACIÓN, no contrato: literal propio, con ° y sin Upper().
+                                // El RequestType que viaja abajo NO se toca (ver la nota al pie).
+                                ctxETipoLot:          "MODIFICAR N° DE PLANILLA",
+                                ctxEncabezadoLot:     "comparativo",          // N° actual → N° nuevo
+                                ctxEPlanillaNuevaLot:
+                                    Substitute(Substitute(Substitute(
+                                        Trim(inpPlanillaEditarLot.Text), "&", "&amp;"), "<", "&lt;"), ">", "&gt;")
+                            }
+                        );
+                        UpdateContext(
+                            {
+                                ctxFilasLot:
+                                    "<tr><td class=""k"">Empresa</td><td colspan=""2"">" & ctxEEmpresaLot & "</td></tr>" &
+                                    "<tr><td class=""k"">N° de planilla</td><td>" & ctxEPlanillaLot & "</td>" &
+                                        "<td><b class=""new"">" & ctxEPlanillaNuevaLot & "</b></td></tr>"
+                            }
+                        );
+                        // >>> BLOQUE H (§13.3) <<<
+                        UpdateContext(
+                            {
+                                ctxHtmlLot:
+                                    HtmlApEstilo &
+                                    "<div class=""ap"">" &
+                                    "<div class=""apHead"">" &
+                                        "<span class=""tag"">" & ctxETipoLot & "</span>" &
+                                        "<h3>Lote " & ctxELoteLot & "</h3>" &
+                                        "<div class=""sub"">" & ctxETransportadoraLot & " · " & ctxEEstadoLoteLot & "</div>" &
+                                    "</div>" &
+                                    If(ctxEncabezadoLot = "simple", HtmlApEncabezadoTablaSimple, HtmlApEncabezadoTabla) &
+                                        ctxFilasLot &
+                                    "</table>" &
+                                    "<div class=""foot"">Solicitud generada por CH-App-Reception · " &
+                                        ctxEUsuarioLot & " · " & Text(Now(), FmtFecha) & "</div>" &
+                                    "</div>"
+                            }
+                        );
+                        IfError(
+                            Patch(
+                                'CH-Tbl-ApprovalRequests',
+                                Defaults('CH-Tbl-ApprovalRequests'),
+                                {
+                                    RequestType:      "Modificar numero de planilla",
+                                    RequestDetails:   ctxHtmlLot,
+                                    RequestResources: JSON(
+                                        {
+                                            ReceiptGUID:  Text(galPlanillasLot.Selected.'CH-Tbl-Receptions'),
+                                            NewReceiptID: Trim(inpPlanillaEditarLot.Text)
+                                        }
+                                    )
+                                }
+                            ),
+                            Notify("No se pudo crear la solicitud: " & FirstError.Message, NotificationType.Error),
+                            Notify("Solicitud «Modificar número de planilla» enviada al supervisor.", NotificationType.Success)
+                        )
+                    
+                        ,Notify("El numero de planilla "& inpPlanillaEditarLot.Text &" ya existe en el lote de recepcion "& galPlanillasLot.Selected.ReceptionBatch.Name,NotificationType.Error)
+                    
                     )
                 PaddingBottom: =0
                 PaddingLeft: =0
@@ -3041,14 +3065,14 @@ scrLotes As screen:
             Fill: =ThemeSurface
             Height: =56
             Width: =1366
-            ZIndex: =1
+            ZIndex: =2
 
         shpHeaderLineaLot As rectangle:
             Fill: =ThemeLine
             Height: =1
             Width: =1366
             Y: =55
-            ZIndex: =2
+            ZIndex: =3
 
         imgTileLot As image:
             AccessibleLabel: ="CashHub Recepción"
@@ -3062,7 +3086,7 @@ scrLotes As screen:
             Width: =34
             X: =18
             Y: =11
-            ZIndex: =3
+            ZIndex: =5
 
         lblTituloLot As label:
             Color: =ThemeInk
@@ -3078,7 +3102,7 @@ scrLotes As screen:
             Wrap: =false
             X: =66
             Y: =11
-            ZIndex: =4
+            ZIndex: =6
 
         lblSubtituloLot As label:
             Color: =ThemeInk3
@@ -3093,7 +3117,7 @@ scrLotes As screen:
             Wrap: =false
             X: =66
             Y: =29
-            ZIndex: =5
+            ZIndex: =7
 
         shpSegNavLot As button:
             BorderColor: =ThemeLine
@@ -3120,7 +3144,7 @@ scrLotes As screen:
             Width: =179
             X: =230
             Y: =12
-            ZIndex: =6
+            ZIndex: =8
 
         segCapturaLot As button:
             BorderThickness: =0
@@ -3146,7 +3170,7 @@ scrLotes As screen:
             Width: =85
             X: =shpSegNavLot.X + 3
             Y: =shpSegNavLot.Y + 3
-            ZIndex: =7
+            ZIndex: =9
 
         segLotesLot As button:
             BorderThickness: =0
@@ -3172,7 +3196,7 @@ scrLotes As screen:
             Width: =85
             X: =segCapturaLot.X + segCapturaLot.Width + 3
             Y: =segCapturaLot.Y
-            ZIndex: =8
+            ZIndex: =10
 
         btnChipUsuarioLot As button:
             BorderColor: =ThemeLine
@@ -3196,10 +3220,10 @@ scrLotes As screen:
             RadiusTopRight: =17
             Size: =9
             Text: =""
-            Width: =46 + 6.2 * Len(UsuarioNombre)
+            Width: =46 + 7 * Len(UsuarioNombre)
             X: =1348 - Self.Width
             Y: =11
-            ZIndex: =9
+            ZIndex: =11
 
         btnAvatarUsuarioLot As button:
             BorderThickness: =0
@@ -3226,7 +3250,7 @@ scrLotes As screen:
             Width: =26
             X: =btnChipUsuarioLot.X + 5
             Y: =btnChipUsuarioLot.Y + 4
-            ZIndex: =10
+            ZIndex: =12
 
         lblUsuarioLot As label:
             Color: =ThemeInk2
@@ -3241,14 +3265,48 @@ scrLotes As screen:
             Wrap: =false
             X: =btnAvatarUsuarioLot.X + btnAvatarUsuarioLot.Width + 8
             Y: =11
-            ZIndex: =11
+            ZIndex: =13
 
     FiltrosLot As group:
         Height: =5
         Width: =5
         X: =40
         Y: =40
-        ZIndex: =76
+        ZIndex: =77
+
+        lblHastaLot As label:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            Height: =32
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: |-
+                ="Hasta:"
+            Width: =45
+            Wrap: =false
+            X: =910
+            Y: =69
+            ZIndex: =1
+
+        lblDesdeLot As label:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            Height: =32
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: |-
+                ="Desde: "
+            Width: =45
+            Wrap: =false
+            X: =694
+            Y: =69
+            ZIndex: =4
 
         tabVistaLot As modernTabList:
             Height: =34
@@ -3258,7 +3316,7 @@ scrLotes As screen:
             Width: =176
             X: =18
             Y: =68
-            ZIndex: =12
+            ZIndex: =14
 
         inpBuscarLot As text:
             BorderColor: =ThemeLine
@@ -3278,7 +3336,7 @@ scrLotes As screen:
             Size: =9
             X: =204
             Y: =69
-            ZIndex: =13
+            ZIndex: =15
 
         icoBuscarLot As icon:
             AccessibleLabel: ="Buscar"
@@ -3289,7 +3347,7 @@ scrLotes As screen:
             Width: =16
             X: =214
             Y: =77
-            ZIndex: =14
+            ZIndex: =16
 
         drpEstadoLot As dropdown:
             BorderColor: =ThemeLine
@@ -3305,7 +3363,7 @@ scrLotes As screen:
             Width: =150
             X: =534
             Y: =69
-            ZIndex: =15
+            ZIndex: =17
 
         dtpDesdeLot As modernDatePicker:
             DefaultDate: =Today()
@@ -3318,9 +3376,9 @@ scrLotes As screen:
                     }
                 )
             Width: =150
-            X: =694
+            X: =740
             Y: =69
-            ZIndex: =16
+            ZIndex: =18
 
         lblRangoLot As label:
             Align: =Align.Center
@@ -3334,9 +3392,9 @@ scrLotes As screen:
             Text: ="—"
             Width: =14
             Wrap: =false
-            X: =850
+            X: =895
             Y: =69
-            ZIndex: =17
+            ZIndex: =19
 
         dtpHastaLot As modernDatePicker:
             DefaultDate: =Today()
@@ -3349,9 +3407,9 @@ scrLotes As screen:
                     }
                 )
             Width: =150
-            X: =870
+            X: =960
             Y: =69
-            ZIndex: =18
+            ZIndex: =20
 
         icoLimpiarFechasLot As icon:
             AccessibleLabel: ="Limpiar el rango de fechas"
@@ -3369,9 +3427,9 @@ scrLotes As screen:
                     }
                 )
             Width: =16
-            X: =1030
+            X: =1120
             Y: =77
-            ZIndex: =19
+            ZIndex: =21
 
         icoRefrescarLot As icon:
             AccessibleLabel: ="Actualizar las listas"
@@ -3384,16 +3442,16 @@ scrLotes As screen:
                 Refresh('CH-Tbl-Bags');
                 UpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})
             Width: =20
-            X: =1058
+            X: =1148
             Y: =75
-            ZIndex: =20
+            ZIndex: =22
 
     BaseGrillaLoteLot As group:
         Height: =5
         Width: =5
         X: =40
         Y: =40
-        ZIndex: =76
+        ZIndex: =78
 
         btnCardListaLot As button:
             BorderColor: =ThemeLine
@@ -3420,7 +3478,7 @@ scrLotes As screen:
             Width: =674
             X: =18
             Y: =114
-            ZIndex: =21
+            ZIndex: =23
 
         btnHeadListaLot As button:
             BorderThickness: =0
@@ -3446,7 +3504,7 @@ scrLotes As screen:
             Width: =672
             X: =19
             Y: =115
-            ZIndex: =22
+            ZIndex: =24
 
         lblHeadListaLotesLot As label:
             Color: =ThemeInk2
@@ -3463,7 +3521,7 @@ scrLotes As screen:
             Wrap: =false
             X: =32
             Y: =115
-            ZIndex: =23
+            ZIndex: =25
 
         lblHeadListaPlanLot As label:
             Color: =ThemeInk2
@@ -3480,7 +3538,7 @@ scrLotes As screen:
             Wrap: =false
             X: =32
             Y: =115
-            ZIndex: =24
+            ZIndex: =26
 
         shpLineaHeadListaLot As rectangle:
             Fill: =ThemeLine
@@ -3488,14 +3546,14 @@ scrLotes As screen:
             Width: =674
             X: =18
             Y: =145
-            ZIndex: =25
+            ZIndex: =27
 
     BaseDetalleSelcGrillaPrinLot As group:
         Height: =5
         Width: =5
         X: =40
         Y: =40
-        ZIndex: =76
+        ZIndex: =79
 
         btnCardDetLot As button:
             BorderColor: =ThemeLine
@@ -3522,7 +3580,7 @@ scrLotes As screen:
             Width: =642
             X: =706
             Y: =114
-            ZIndex: =30
+            ZIndex: =32
 
         lblDetLoteTitLot As label:
             Color: =ThemeInk
@@ -3539,7 +3597,7 @@ scrLotes As screen:
             Wrap: =false
             X: =722
             Y: =125
-            ZIndex: =31
+            ZIndex: =33
 
         lblDetLoteSubLot As label:
             Color: =ThemeInk3
@@ -3558,7 +3616,7 @@ scrLotes As screen:
             Wrap: =false
             X: =722
             Y: =144
-            ZIndex: =32
+            ZIndex: =34
 
         pilDetLoteLot As button:
             BorderColor: =ThemeLine
@@ -3611,7 +3669,7 @@ scrLotes As screen:
             Width: =14 + 6.2 * Len(Self.Text)
             X: =1332 - Self.Width
             Y: =132
-            ZIndex: =33
+            ZIndex: =35
 
         shpLineaDetLoteLot As rectangle:
             Fill: =ThemeLine
@@ -3620,7 +3678,7 @@ scrLotes As screen:
             Width: =642
             X: =706
             Y: =170
-            ZIndex: =34
+            ZIndex: =36
 
         shpLineaOpsLoteLot As rectangle:
             Fill: =ThemeLineSoft
@@ -3629,14 +3687,14 @@ scrLotes As screen:
             Width: =642
             X: =706
             Y: =btnMoverBovedaLot.Y + btnMoverBovedaLot.Height + 10
-            ZIndex: =37
+            ZIndex: =39
 
     EncabezadoTulaSelecLot As group:
         Height: =5
         Width: =5
         X: =40
         Y: =40
-        ZIndex: =76
+        ZIndex: =80
 
         lblDetPlanTitLot As label:
             Color: =ThemeInk
@@ -3653,7 +3711,7 @@ scrLotes As screen:
             Wrap: =false
             X: =722
             Y: =125
-            ZIndex: =47
+            ZIndex: =49
 
         lblDetPlanSubLot As label:
             Color: =ThemeInk3
@@ -3671,7 +3729,7 @@ scrLotes As screen:
             Wrap: =false
             X: =722
             Y: =144
-            ZIndex: =48
+            ZIndex: =50
 
         pilDetPlanLot As button:
             BorderColor: =ThemeLine
@@ -3718,7 +3776,7 @@ scrLotes As screen:
             Width: =14 + 6.2 * Len(Self.Text)
             X: =1332 - Self.Width
             Y: =132
-            ZIndex: =49
+            ZIndex: =51
 
         shpLineaDetPlanLot As rectangle:
             Fill: =ThemeLine
@@ -3727,7 +3785,7 @@ scrLotes As screen:
             Width: =642
             X: =706
             Y: =170
-            ZIndex: =50
+            ZIndex: =52
 
         btnBannerBovedaLot As button:
             BorderThickness: =0
@@ -3754,7 +3812,7 @@ scrLotes As screen:
             Width: =614
             X: =720
             Y: =179
-            ZIndex: =51
+            ZIndex: =53
 
         icoBannerBovedaLot As icon:
             Color: =ThemeWarn
@@ -3765,7 +3823,7 @@ scrLotes As screen:
             Width: =16
             X: =732
             Y: =187
-            ZIndex: =52
+            ZIndex: =54
 
         lblBannerBovedaLot As label:
             Color: =ThemeWarn
@@ -3782,7 +3840,7 @@ scrLotes As screen:
             Wrap: =false
             X: =756
             Y: =179
-            ZIndex: =53
+            ZIndex: =55
 
         btnAgregarTulaLot As button:
             BorderColor: =ThemeAccent
@@ -3805,15 +3863,18 @@ scrLotes As screen:
             Height: =26
             HoverFill: =ThemeAccentSoft
             OnSelect: |-
-                =If(
+                =/*If(
                     !IsBlank(
                         LookUp(
                             'CH-Tbl-Bags',
                             ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
-                            && BagID = Trim(inpTulaAgregarLot.Text)
                         ).'CH-Tbl-Bags'
                     ),
-                    Notify("La tula " & Trim(inpTulaAgregarLot.Text) & " ya existe en este lote.", NotificationType.Error),UpdateContext({ctxDlgAgregarLot: true}); Reset(inpTulaAgregarLot))
+                    Notify("La tula " & Trim(inpTulaAgregarLot.Text) & " ya existe en este lote.", NotificationType.Error),UpdateContext({ctxDlgAgregarLot: true}); Reset(inpTulaAgregarLot))*/
+                
+                
+                
+                    UpdateContext({ctxDlgAgregarLot: true}); Reset(inpTulaAgregarLot)
             PaddingBottom: =0
             PaddingLeft: =0
             PaddingRight: =0
@@ -3840,7 +3901,7 @@ scrLotes As screen:
                     btnBannerBovedaLot.Y + btnBannerBovedaLot.Height + 9,
                     shpLineaDetPlanLot.Y + 11
                 )
-            ZIndex: =54
+            ZIndex: =56
 
         btnEditarPlanillaLot As button:
             BorderColor: =ThemeLine
@@ -3883,7 +3944,7 @@ scrLotes As screen:
             Width: =108
             X: =845
             Y: =btnAgregarTulaLot.Y
-            ZIndex: =55
+            ZIndex: =57
 
         btnEditarTulaLot As button:
             BorderColor: =ThemeLine
@@ -3941,7 +4002,7 @@ scrLotes As screen:
             Width: =72
             X: =1080
             Y: =btnAgregarTulaLot.Y
-            ZIndex: =56
+            ZIndex: =58
 
         btnRemapearTulaLot As button:
             BorderColor: =ThemeLine
@@ -3987,7 +4048,7 @@ scrLotes As screen:
             Width: =88
             X: =1159
             Y: =btnAgregarTulaLot.Y
-            ZIndex: =57
+            ZIndex: =59
 
         btnEliminarTulaLot As button:
             BorderColor: =ThemeDangerLine
@@ -4033,7 +4094,7 @@ scrLotes As screen:
             Width: =78
             X: =1254
             Y: =btnAgregarTulaLot.Y
-            ZIndex: =58
+            ZIndex: =60
 
         shpLineaOpsPlanLot As rectangle:
             Fill: =ThemeLineSoft
@@ -4042,7 +4103,7 @@ scrLotes As screen:
             Width: =642
             X: =706
             Y: =btnAgregarTulaLot.Y + btnAgregarTulaLot.Height + 10
-            ZIndex: =59
+            ZIndex: =61
 
         btnHeadTulasLot As button:
             BorderThickness: =0
@@ -4069,7 +4130,7 @@ scrLotes As screen:
             Width: =640
             X: =707
             Y: =shpLineaOpsPlanLot.Y + 1
-            ZIndex: =60
+            ZIndex: =62
 
         lblHeadTulaNumLot As label:
             Color: =ThemeInk2
@@ -4086,7 +4147,7 @@ scrLotes As screen:
             Wrap: =false
             X: =722
             Y: =btnHeadTulasLot.Y
-            ZIndex: =61
+            ZIndex: =63
 
         lblHeadTulaEstadoLot As label:
             Color: =ThemeInk2
@@ -4103,7 +4164,7 @@ scrLotes As screen:
             Wrap: =false
             X: =860
             Y: =btnHeadTulasLot.Y
-            ZIndex: =62
+            ZIndex: =64
 
         lblHeadTulaFechaLot As label:
             Color: =ThemeInk2
@@ -4120,7 +4181,7 @@ scrLotes As screen:
             Wrap: =false
             X: =1068
             Y: =btnHeadTulasLot.Y
-            ZIndex: =63
+            ZIndex: =65
 
         lblHeadTulaAutorLot As label:
             Color: =ThemeInk2
@@ -4137,7 +4198,7 @@ scrLotes As screen:
             Wrap: =false
             X: =1204
             Y: =btnHeadTulasLot.Y
-            ZIndex: =64
+            ZIndex: =66
 
         shpLineaHeadTulasLot As rectangle:
             Fill: =ThemeLine
@@ -4146,14 +4207,14 @@ scrLotes As screen:
             Width: =642
             X: =706
             Y: =btnHeadTulasLot.Y + btnHeadTulasLot.Height
-            ZIndex: =65
+            ZIndex: =67
 
     EncabezadoDetalleLoteLot As group:
         Height: =5
         Width: =5
         X: =40
         Y: =40
-        ZIndex: =76
+        ZIndex: =81
 
         btnHeadPlanLoteLot As button:
             BorderThickness: =0
@@ -4180,7 +4241,7 @@ scrLotes As screen:
             Width: =640
             X: =707
             Y: =shpLineaOpsLoteLot.Y + 1
-            ZIndex: =38
+            ZIndex: =40
 
         lblHeadPlanLoteNumLot As label:
             Color: =ThemeInk2
@@ -4197,7 +4258,7 @@ scrLotes As screen:
             Wrap: =false
             X: =722
             Y: =btnHeadPlanLoteLot.Y
-            ZIndex: =39
+            ZIndex: =41
 
         lblHeadPlanLoteRemLot As label:
             Color: =ThemeInk2
@@ -4214,7 +4275,7 @@ scrLotes As screen:
             Wrap: =false
             X: =826
             Y: =btnHeadPlanLoteLot.Y
-            ZIndex: =40
+            ZIndex: =42
 
         lblHeadPlanLoteNioLot As label:
             Align: =Align.Right
@@ -4232,7 +4293,7 @@ scrLotes As screen:
             Wrap: =false
             X: =1076
             Y: =btnHeadPlanLoteLot.Y
-            ZIndex: =41
+            ZIndex: =43
 
         lblHeadPlanLoteUsdLot As label:
             Align: =Align.Right
@@ -4250,7 +4311,7 @@ scrLotes As screen:
             Wrap: =false
             X: =1206
             Y: =btnHeadPlanLoteLot.Y
-            ZIndex: =42
+            ZIndex: =44
 
         shpLineaHeadPlanLoteLot As rectangle:
             Fill: =ThemeLine
@@ -4259,5 +4320,5 @@ scrLotes As screen:
             Width: =642
             X: =706
             Y: =btnHeadPlanLoteLot.Y + btnHeadPlanLoteLot.Height
-            ZIndex: =43
+            ZIndex: =45
 

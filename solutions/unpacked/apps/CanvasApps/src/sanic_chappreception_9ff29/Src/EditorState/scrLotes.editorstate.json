@@ -96,7 +96,7 @@
       "MetaDataIDKey": "",
       "Name": "BaseDetalleSelcGrillaPrinLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 77,
+      "ParentIndex": 76,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -148,7 +148,7 @@
       "MetaDataIDKey": "",
       "Name": "BaseGrillaLoteLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 76,
+      "ParentIndex": 79,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -258,7 +258,7 @@
       "MetaDataIDKey": "",
       "Name": "btnAgregarTulaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 53,
+      "ParentIndex": 47,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -2470,7 +2470,7 @@
       "MetaDataIDKey": "",
       "Name": "btnBannerBovedaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 42,
+      "ParentIndex": 44,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -2786,7 +2786,7 @@
       "MetaDataIDKey": "",
       "Name": "btnCardDetLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 27,
+      "ParentIndex": 29,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -3027,7 +3027,7 @@
         {
           "Category": "Design",
           "PropertyName": "ZIndex",
-          "RuleProviderType": "Unknown"
+          "RuleProviderType": "User"
         },
         {
           "Category": "Behavior",
@@ -3102,7 +3102,7 @@
       "MetaDataIDKey": "",
       "Name": "btnCardListaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 26,
+      "ParentIndex": 28,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -3398,7 +3398,14 @@
         "VerticalAlign",
         "X",
         "Y",
-        "Width",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "46 + 6.2 * Len(UsuarioNombre)",
+          "InvariantPropertyName": "Width",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
         "Height",
         "TabIndex",
         "maximumHeight",
@@ -3624,7 +3631,7 @@
         {
           "Category": "Design",
           "PropertyName": "Width",
-          "RuleProviderType": "Unknown"
+          "RuleProviderType": "User"
         },
         {
           "Category": "Design",
@@ -3734,7 +3741,7 @@
       "MetaDataIDKey": "",
       "Name": "btnDlgBloqueoAgregarLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 0,
+      "ParentIndex": 1,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -4050,7 +4057,7 @@
       "MetaDataIDKey": "",
       "Name": "btnDlgBloqueoBovedaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 0,
+      "ParentIndex": 1,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -4366,7 +4373,7 @@
       "MetaDataIDKey": "",
       "Name": "btnDlgBloqueoEditarPlanillaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 0,
+      "ParentIndex": 1,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -4682,7 +4689,7 @@
       "MetaDataIDKey": "",
       "Name": "btnDlgBloqueoEditarTulaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 0,
+      "ParentIndex": 1,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -4998,7 +5005,7 @@
       "MetaDataIDKey": "",
       "Name": "btnDlgBloqueoEliminarLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 0,
+      "ParentIndex": 1,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -5314,7 +5321,7 @@
       "MetaDataIDKey": "",
       "Name": "btnDlgBloqueoRemapearLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 0,
+      "ParentIndex": 1,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -7465,7 +7472,14 @@
     "btnDlgOkAgregarLot": {
       "AllowAccessToGlobals": true,
       "ControlPropertyState": [
-        "OnSelect",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "UpdateContext({ctxDlgAgregarLot: false});\n\nIf(\n    galPlanillasLot.Selected.BatchStatus = 159460003,\n\n    // ================== CAMINO APROBACIÓN ==================\n    // La tula se CREA ya en Pendiente: por eso el JSON puede llevar BagGUID.\n    IfError(\n        UpdateContext(\n            {\n                ctxTulaNuevaLot:\n                    Patch(\n                        'CH-Tbl-Bags',\n                        Defaults('CH-Tbl-Bags'),\n                        {\n                            ReceptionID: galPlanillasLot.Selected,\n                            BagID:       Trim(inpTulaAgregarLot.Text),\n                            Name:        Trim(inpTulaAgregarLot.Text),\n                            BagStatus:   'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa'\n                        }\n                    )\n            }\n        ),\n        Notify(\"No se pudo crear la tula: \" & FirstError.Message, NotificationType.Error),\n\n        // ---- ÉXITO: la tula existe. Ahora la solicitud. ----\n        // >>> BLOQUE E (§13.1) <<<\n        UpdateContext(\n            {\n                ctxELoteLot:\n                    Substitute(Substitute(Substitute(\n                        Trim(galPlanillasLot.Selected.ReceptionBatch.Name), \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\"),\n                ctxETransportadoraLot:\n                    Substitute(Substitute(Substitute(\n                        Trim(galPlanillasLot.Selected.ReceptionBatch.Transportadora), \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\"),\n                ctxEPlanillaLot:\n                    Substitute(Substitute(Substitute(\n                        Trim(galPlanillasLot.Selected.ReceiptID), \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\"),\n                ctxEEmpresaLot:\n                    Substitute(Substitute(Substitute(\n                        Trim(galPlanillasLot.Selected.RemitentName), \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\"),\n                ctxEUsuarioLot:\n                    Substitute(Substitute(Substitute(\n                        UsuarioNombre, \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\"),\n                ctxEEstadoLoteLot:\n                    Switch(\n                        galPlanillasLot.Selected.BatchStatus,\n                        159460000, \"En progreso\",\n                        159460001, \"Recibido\",\n                        159460003, \"En bóveda\",\n                        159460002, \"Anulado\",\n                        \"—\"\n                    )\n            }\n        );\n        UpdateContext(\n            {\n                ctxETipoLot:       Upper(\"Agregar tula\"),\n                ctxEncabezadoLot:  \"simple\",          // no hay \"valor actual\" que comparar\n                ctxETulaLot:\n                    Substitute(Substitute(Substitute(\n                        Trim(inpTulaAgregarLot.Text), \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\")\n            }\n        );\n        UpdateContext(\n            {\n                ctxFilasLot:\n                    \"<tr><td class=\"\"k\"\">Planilla</td><td>\" & ctxEPlanillaLot & \" — \" & ctxEEmpresaLot & \"</td></tr>\" &\n                    \"<tr><td class=\"\"k\"\">Tula solicitada</td><td><b class=\"\"new\"\">\" & ctxETulaLot & \"</b></td></tr>\" &\n                    \"<tr><td class=\"\"k\"\">Estado al aprobar</td><td>Almacenada en bóveda</td></tr>\"\n            }\n        );\n        // >>> BLOQUE H (§13.3) <<<\n        UpdateContext(\n            {\n                ctxHtmlLot:\n                    HtmlApEstilo &\n                    \"<div class=\"\"ap\"\">\" &\n                      \"<div class=\"\"apHead\"\">\" &\n                        \"<span class=\"\"tag\"\">\" & ctxETipoLot & \"</span>\" &\n                        \"<h3>Lote \" & ctxELoteLot & \"</h3>\" &\n                        \"<div class=\"\"sub\"\">\" & ctxETransportadoraLot & \" · \" & ctxEEstadoLoteLot & \"</div>\" &\n                      \"</div>\" &\n                      If(ctxEncabezadoLot = \"simple\", HtmlApEncabezadoTablaSimple, HtmlApEncabezadoTabla) &\n                        ctxFilasLot &\n                      \"</table>\" &\n                      \"<div class=\"\"foot\"\">Solicitud generada por CH-App-Reception · \" &\n                        ctxEUsuarioLot & \" · \" & Text(Now(), FmtFecha) & \"</div>\" &\n                    \"</div>\"\n            }\n        );\n        IfError(\n            Patch(\n                'CH-Tbl-ApprovalRequests',\n                Defaults('CH-Tbl-ApprovalRequests'),\n                {\n                    RequestType:      \"Agregar tula\",\n                    RequestDetails:   ctxHtmlLot,\n                    RequestResources: JSON(\n                        {\n                            ReceiptGUID:        Text(galPlanillasLot.Selected.'CH-Tbl-Receptions'),\n                            BagID:              Trim(inpTulaAgregarLot.Text),\n                            BagGUID:            Text(ctxTulaNuevaLot.'CH-Tbl-Bags'),\n                            ReceptionBatchGUID: Text(galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch')\n                        }\n                    )\n                }\n            ),\n            Notify(\n                \"La tula quedó creada en Pendiente de revisión pero NO se pudo crear la solicitud: \" &\n                FirstError.Message & \" Avisale al supervisor.\",\n                NotificationType.Error\n            ),\n            Notify(\"Solicitud «Agregar tula» enviada al supervisor.\", NotificationType.Success)\n        )\n    ),\n\n    // ================== CAMINO DIRECTO ('En progreso' / 'Recibido') ==================\n    IfError(\n        Patch(\n            'CH-Tbl-Bags',\n            Defaults('CH-Tbl-Bags'),\n            {\n                ReceptionID: galPlanillasLot.Selected,\n                BagID:       Trim(inpTulaAgregarLot.Text),\n                Name:        Trim(inpTulaAgregarLot.Text),\n                BagStatus:   'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'\n            }\n        ),\n        Notify(\"No se pudo agregar la tula: \" & FirstError.Message, NotificationType.Error),\n        Notify(\"Tula \" & Trim(inpTulaAgregarLot.Text) & \" agregada (acción directa).\", NotificationType.Success)\n    )\n);\n\n// Recarga PUNTUAL: la única tabla que esta operación tocó. NO se llama a\n// icoRefrescarLot — ese recarga TAMBIÉN lotes y planillas, y recargar la maestra\n// le cambia el Selected a la galería: la planilla del detalle se mueve sola bajo\n// los pies del usuario (§4.2 + §0.2). Ver DL-21 y la regla D-5 de 01 §2.3.\nRefresh('CH-Tbl-Bags');\nUpdateContext({ctxTulaSelLot: Defaults('CH-Tbl-Bags')})",
+          "InvariantPropertyName": "OnSelect",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
         "AutoDisableOnSelect",
         "Text",
         "Tooltip",
@@ -7779,7 +7793,7 @@
         {
           "Category": "Behavior",
           "PropertyName": "OnSelect",
-          "RuleProviderType": "Unknown"
+          "RuleProviderType": "User"
         }
       ],
       "StyleName": "defaultButtonStyle",
@@ -8104,7 +8118,14 @@
     "btnDlgOkEditarPlanillaLot": {
       "AllowAccessToGlobals": true,
       "ControlPropertyState": [
-        "OnSelect",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "UpdateContext({ctxDlgEditarPlanillaLot: false});\n\n// >>> BLOQUE E (§13.1) <<<\nUpdateContext(\n    {\n        ctxELoteLot:\n            Substitute(Substitute(Substitute(\n                Trim(galPlanillasLot.Selected.ReceptionBatch.Name), \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\"),\n        ctxETransportadoraLot:\n            Substitute(Substitute(Substitute(\n                Trim(galPlanillasLot.Selected.ReceptionBatch.Transportadora), \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\"),\n        ctxEPlanillaLot:\n            Substitute(Substitute(Substitute(\n                Trim(galPlanillasLot.Selected.ReceiptID), \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\"),\n        ctxEEmpresaLot:\n            Substitute(Substitute(Substitute(\n                Trim(galPlanillasLot.Selected.RemitentName), \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\"),\n        ctxEUsuarioLot:\n            Substitute(Substitute(Substitute(\n                UsuarioNombre, \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\"),\n        ctxEEstadoLoteLot:\n            Switch(\n                galPlanillasLot.Selected.BatchStatus,\n                159460000, \"En progreso\",\n                159460001, \"Recibido\",\n                159460003, \"En bóveda\",\n                159460002, \"Anulado\",\n                \"—\"\n            )\n    }\n);\nUpdateContext(\n    {\n        // PRESENTACIÓN, no contrato: literal propio, con ° y sin Upper().\n        // El RequestType que viaja abajo NO se toca (ver la nota al pie).\n        ctxETipoLot:          \"MODIFICAR N° DE PLANILLA\",\n        ctxEncabezadoLot:     \"comparativo\",          // N° actual → N° nuevo\n        ctxEPlanillaNuevaLot:\n            Substitute(Substitute(Substitute(\n                Trim(inpPlanillaEditarLot.Text), \"&\", \"&amp;\"), \"<\", \"&lt;\"), \">\", \"&gt;\")\n    }\n);\nUpdateContext(\n    {\n        ctxFilasLot:\n            \"<tr><td class=\"\"k\"\">Empresa</td><td colspan=\"\"2\"\">\" & ctxEEmpresaLot & \"</td></tr>\" &\n            \"<tr><td class=\"\"k\"\">N° de planilla</td><td>\" & ctxEPlanillaLot & \"</td>\" &\n                \"<td><b class=\"\"new\"\">\" & ctxEPlanillaNuevaLot & \"</b></td></tr>\"\n    }\n);\n// >>> BLOQUE H (§13.3) <<<\nUpdateContext(\n    {\n        ctxHtmlLot:\n            HtmlApEstilo &\n            \"<div class=\"\"ap\"\">\" &\n              \"<div class=\"\"apHead\"\">\" &\n                \"<span class=\"\"tag\"\">\" & ctxETipoLot & \"</span>\" &\n                \"<h3>Lote \" & ctxELoteLot & \"</h3>\" &\n                \"<div class=\"\"sub\"\">\" & ctxETransportadoraLot & \" · \" & ctxEEstadoLoteLot & \"</div>\" &\n              \"</div>\" &\n              If(ctxEncabezadoLot = \"simple\", HtmlApEncabezadoTablaSimple, HtmlApEncabezadoTabla) &\n                ctxFilasLot &\n              \"</table>\" &\n              \"<div class=\"\"foot\"\">Solicitud generada por CH-App-Reception · \" &\n                ctxEUsuarioLot & \" · \" & Text(Now(), FmtFecha) & \"</div>\" &\n            \"</div>\"\n    }\n);\nIfError(\n    Patch(\n        'CH-Tbl-ApprovalRequests',\n        Defaults('CH-Tbl-ApprovalRequests'),\n        {\n            RequestType:      \"Modificar numero de planilla\",\n            RequestDetails:   ctxHtmlLot,\n            RequestResources: JSON(\n                {\n                    ReceiptGUID:  Text(galPlanillasLot.Selected.'CH-Tbl-Receptions'),\n                    NewReceiptID: Trim(inpPlanillaEditarLot.Text)\n                }\n            )\n        }\n    ),\n    Notify(\"No se pudo crear la solicitud: \" & FirstError.Message, NotificationType.Error),\n    Notify(\"Solicitud «Modificar número de planilla» enviada al supervisor.\", NotificationType.Success)\n)",
+          "InvariantPropertyName": "OnSelect",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
         "AutoDisableOnSelect",
         "Text",
         "Tooltip",
@@ -8125,7 +8146,14 @@
         "DisabledColor",
         "PressedColor",
         "HoverColor",
-        "DisplayMode",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "If(\n    IsBlank(Trim(inpPlanillaEditarLot.Text))\n    || Trim(inpPlanillaEditarLot.Text) = galPlanillasLot.Selected.ReceiptID\n    || lblErrPlanillaEditarLot.Visible,\n    DisplayMode.Disabled,\n    DisplayMode.Edit\n)",
+          "InvariantPropertyName": "DisplayMode",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
         "Fill",
         "DisabledFill",
         "PressedFill",
@@ -8271,7 +8299,7 @@
         {
           "Category": "Design",
           "PropertyName": "DisplayMode",
-          "RuleProviderType": "Unknown"
+          "RuleProviderType": "User"
         },
         {
           "Category": "Design",
@@ -8411,7 +8439,7 @@
         {
           "Category": "Behavior",
           "PropertyName": "OnSelect",
-          "RuleProviderType": "Unknown"
+          "RuleProviderType": "User"
         }
       ],
       "StyleName": "defaultButtonStyle",
@@ -9464,7 +9492,7 @@
       "MetaDataIDKey": "",
       "Name": "btnEditarLoteLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 45,
+      "ParentIndex": 49,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -9780,7 +9808,7 @@
       "MetaDataIDKey": "",
       "Name": "btnEditarPlanillaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 54,
+      "ParentIndex": 48,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -10110,7 +10138,7 @@
       "MetaDataIDKey": "",
       "Name": "btnEditarTulaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 55,
+      "ParentIndex": 50,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -10440,7 +10468,7 @@
       "MetaDataIDKey": "",
       "Name": "btnEliminarTulaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 57,
+      "ParentIndex": 52,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -11704,7 +11732,7 @@
       "MetaDataIDKey": "",
       "Name": "btnHeadListaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 28,
+      "ParentIndex": 30,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -12020,7 +12048,7 @@
       "MetaDataIDKey": "",
       "Name": "btnHeadPlanLoteLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 48,
+      "ParentIndex": 56,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -12336,7 +12364,7 @@
       "MetaDataIDKey": "",
       "Name": "btnHeadTulasLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 63,
+      "ParentIndex": 57,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -12659,7 +12687,7 @@
       "MetaDataIDKey": "",
       "Name": "btnMoverBovedaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 44,
+      "ParentIndex": 46,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -12989,7 +13017,7 @@
       "MetaDataIDKey": "",
       "Name": "btnRemapearTulaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 56,
+      "ParentIndex": 51,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -14120,7 +14148,7 @@
       "MetaDataIDKey": "",
       "Name": "cntDlgCardAgregarLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 1,
+      "ParentIndex": 0,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -14376,7 +14404,7 @@
       "MetaDataIDKey": "",
       "Name": "cntDlgCardBovedaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 1,
+      "ParentIndex": 0,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -14632,7 +14660,7 @@
       "MetaDataIDKey": "",
       "Name": "cntDlgCardEditarPlanillaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 1,
+      "ParentIndex": 0,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -14888,7 +14916,7 @@
       "MetaDataIDKey": "",
       "Name": "cntDlgCardEditarTulaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 1,
+      "ParentIndex": 0,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -15144,7 +15172,7 @@
       "MetaDataIDKey": "",
       "Name": "cntDlgCardEliminarLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 1,
+      "ParentIndex": 0,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -15400,7 +15428,7 @@
       "MetaDataIDKey": "",
       "Name": "cntDlgCardRemapearLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 1,
+      "ParentIndex": 0,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -16684,7 +16712,14 @@
         "FontWeight",
         "X",
         "Y",
-        "Width",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "Width",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
         "Height",
         "DisplayMode",
         "ZIndex",
@@ -16957,7 +16992,14 @@
         "Italic",
         "Underline",
         "Strikethrough",
-        "X",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "X",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
         "Y",
         "Width",
         "Height",
@@ -16991,7 +17033,7 @@
       "MetaDataIDKey": "",
       "Name": "dtpDesdeLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 20,
+      "ParentIndex": 21,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -17117,7 +17159,14 @@
         "Italic",
         "Underline",
         "Strikethrough",
-        "X",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "X",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
         "Y",
         "Width",
         "Height",
@@ -17150,7 +17199,7 @@
       "MetaDataIDKey": "",
       "Name": "dtpHastaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 22,
+      "ParentIndex": 24,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -17312,7 +17361,7 @@
       "MetaDataIDKey": "",
       "Name": "EncabezadoDetalleLoteLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 79,
+      "ParentIndex": 81,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -17364,7 +17413,7 @@
       "MetaDataIDKey": "",
       "Name": "EncabezadoLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 74,
+      "ParentIndex": 77,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -17416,7 +17465,7 @@
       "MetaDataIDKey": "",
       "Name": "EncabezadoTulaSelecLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 78,
+      "ParentIndex": 80,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -17468,7 +17517,7 @@
       "MetaDataIDKey": "",
       "Name": "FiltrosLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 75,
+      "ParentIndex": 78,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -17583,7 +17632,7 @@
       "MetaDataIDKey": "",
       "Name": "galLotesLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 38,
+      "ParentIndex": 40,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -17889,7 +17938,7 @@
       "MetaDataIDKey": "",
       "Name": "galPlanillasDelLoteLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 59,
+      "ParentIndex": 68,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -18202,7 +18251,7 @@
       "MetaDataIDKey": "",
       "Name": "galPlanillasLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 39,
+      "ParentIndex": 41,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -18508,7 +18557,7 @@
       "MetaDataIDKey": "",
       "Name": "galTulasLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 70,
+      "ParentIndex": 69,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -20110,7 +20159,7 @@
       "MetaDataIDKey": "",
       "Name": "icoBannerBovedaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 46,
+      "ParentIndex": 53,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -20372,7 +20421,7 @@
       "MetaDataIDKey": "",
       "Name": "icoBuscarLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 24,
+      "ParentIndex": 26,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -22170,7 +22219,14 @@
         "HoverFill",
         "Visible",
         "DisplayMode",
-        "X",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "X",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
         "Y",
         "Width",
         "Height",
@@ -22213,7 +22269,7 @@
       "MetaDataIDKey": "",
       "Name": "icoLimpiarFechasLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 25,
+      "ParentIndex": 27,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -22439,7 +22495,14 @@
         "HoverFill",
         "Visible",
         "DisplayMode",
-        "X",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "X",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
         "Y",
         "Width",
         "Height",
@@ -22475,7 +22538,7 @@
       "MetaDataIDKey": "",
       "Name": "icoRefrescarLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 23,
+      "ParentIndex": 25,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -25610,7 +25673,7 @@
       "MetaDataIDKey": "",
       "Name": "lblBannerBovedaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 43,
+      "ParentIndex": 45,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -29480,6 +29543,369 @@
       "StyleName": "defaultLabelStyle",
       "Type": "ControlInfo"
     },
+    "lblDesdeLot": {
+      "AllowAccessToGlobals": true,
+      "ControlPropertyState": [
+        "Live",
+        "LineHeight",
+        "Overflow",
+        "AutoHeight",
+        "Wrap",
+        "IsErrorMessage",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "Text",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
+        "Tooltip",
+        "Role",
+        "ContentLanguage",
+        "Color",
+        "DisabledColor",
+        "PressedColor",
+        "HoverColor",
+        "BorderColor",
+        "DisabledBorderColor",
+        "PressedBorderColor",
+        "HoverBorderColor",
+        "BorderStyle",
+        "BorderThickness",
+        "FocusedBorderColor",
+        "FocusedBorderThickness",
+        "Fill",
+        "DisabledFill",
+        "PressedFill",
+        "HoverFill",
+        "Font",
+        "Size",
+        "FontWeight",
+        "Italic",
+        "Underline",
+        "Strikethrough",
+        "PaddingTop",
+        "PaddingRight",
+        "PaddingBottom",
+        "PaddingLeft",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "Align",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
+        "VerticalAlign",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "X",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "Y",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "Width",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
+        "Height",
+        "Visible",
+        "DisplayMode",
+        "TabIndex",
+        "OnSelect",
+        "minimumWidth",
+        "minimumHeight",
+        "maximumWidth",
+        "maximumHeight",
+        "ZIndex"
+      ],
+      "HasDynamicProperties": false,
+      "IsAutoGenerated": false,
+      "IsComponentDefinition": false,
+      "IsDataControl": false,
+      "IsFromScreenLayout": false,
+      "IsGroupControl": false,
+      "IsLocked": false,
+      "LayoutName": "",
+      "MetaDataIDKey": "",
+      "Name": "lblDesdeLot",
+      "OptimizeForDevices": "Off",
+      "ParentIndex": 20,
+      "PersistMetaDataIDKey": false,
+      "Properties": [
+        {
+          "Category": "Data",
+          "PropertyName": "Live",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Data",
+          "PropertyName": "Text",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Data",
+          "PropertyName": "Tooltip",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Data",
+          "PropertyName": "Role",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Data",
+          "PropertyName": "ContentLanguage",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "LineHeight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Overflow",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "AutoHeight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Wrap",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "IsErrorMessage",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Color",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "DisabledColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PressedColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "HoverColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "BorderColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "DisabledBorderColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PressedBorderColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "HoverBorderColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "BorderStyle",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "BorderThickness",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "FocusedBorderColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "FocusedBorderThickness",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Fill",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "DisabledFill",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PressedFill",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "HoverFill",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Font",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Size",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "FontWeight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Italic",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Underline",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Strikethrough",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PaddingTop",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PaddingRight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PaddingBottom",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PaddingLeft",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Align",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "VerticalAlign",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "X",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Y",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Width",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Height",
+          "RuleProviderType": "User"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Visible",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "DisplayMode",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "TabIndex",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "minimumWidth",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "minimumHeight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "maximumWidth",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "maximumHeight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "ZIndex",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Behavior",
+          "PropertyName": "OnSelect",
+          "RuleProviderType": "Unknown"
+        }
+      ],
+      "StyleName": "defaultLabelStyle",
+      "Type": "ControlInfo"
+    },
     "lblDetLoteSubLot": {
       "AllowAccessToGlobals": true,
       "ControlPropertyState": [
@@ -29546,7 +29972,7 @@
       "MetaDataIDKey": "",
       "Name": "lblDetLoteSubLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 35,
+      "ParentIndex": 37,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -29797,7 +30223,7 @@
         {
           "Category": "Design",
           "PropertyName": "ZIndex",
-          "RuleProviderType": "User"
+          "RuleProviderType": "Unknown"
         },
         {
           "Category": "Behavior",
@@ -29874,7 +30300,7 @@
       "MetaDataIDKey": "",
       "Name": "lblDetLoteTitLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 31,
+      "ParentIndex": 33,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -30202,7 +30628,7 @@
       "MetaDataIDKey": "",
       "Name": "lblDetPlanSubLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 36,
+      "ParentIndex": 38,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -30530,7 +30956,7 @@
       "MetaDataIDKey": "",
       "Name": "lblDetPlanTitLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 32,
+      "ParentIndex": 34,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -37729,6 +38155,355 @@
       "StyleName": "defaultLabelStyle",
       "Type": "ControlInfo"
     },
+    "lblHastaLot": {
+      "AllowAccessToGlobals": true,
+      "ControlPropertyState": [
+        "Live",
+        "LineHeight",
+        "Overflow",
+        "AutoHeight",
+        "Wrap",
+        "IsErrorMessage",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "Text",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
+        "Tooltip",
+        "Role",
+        "ContentLanguage",
+        "Color",
+        "DisabledColor",
+        "PressedColor",
+        "HoverColor",
+        "BorderColor",
+        "DisabledBorderColor",
+        "PressedBorderColor",
+        "HoverBorderColor",
+        "BorderStyle",
+        "BorderThickness",
+        "FocusedBorderColor",
+        "FocusedBorderThickness",
+        "Fill",
+        "DisabledFill",
+        "PressedFill",
+        "HoverFill",
+        "Font",
+        "Size",
+        "FontWeight",
+        "Italic",
+        "Underline",
+        "Strikethrough",
+        "PaddingTop",
+        "PaddingRight",
+        "PaddingBottom",
+        "PaddingLeft",
+        "Align",
+        "VerticalAlign",
+        "X",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "Y",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "Width",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
+        "Height",
+        "Visible",
+        "DisplayMode",
+        "TabIndex",
+        "OnSelect",
+        "minimumWidth",
+        "minimumHeight",
+        "maximumWidth",
+        "maximumHeight",
+        "ZIndex"
+      ],
+      "HasDynamicProperties": false,
+      "IsAutoGenerated": false,
+      "IsComponentDefinition": false,
+      "IsDataControl": false,
+      "IsFromScreenLayout": false,
+      "IsGroupControl": false,
+      "IsLocked": false,
+      "LayoutName": "",
+      "MetaDataIDKey": "",
+      "Name": "lblHastaLot",
+      "OptimizeForDevices": "Off",
+      "ParentIndex": 23,
+      "PersistMetaDataIDKey": false,
+      "Properties": [
+        {
+          "Category": "Data",
+          "PropertyName": "Live",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Data",
+          "PropertyName": "Text",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Data",
+          "PropertyName": "Tooltip",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Data",
+          "PropertyName": "Role",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Data",
+          "PropertyName": "ContentLanguage",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "LineHeight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Overflow",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "AutoHeight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Wrap",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "IsErrorMessage",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Color",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "DisabledColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PressedColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "HoverColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "BorderColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "DisabledBorderColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PressedBorderColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "HoverBorderColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "BorderStyle",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "BorderThickness",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "FocusedBorderColor",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "FocusedBorderThickness",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Fill",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "DisabledFill",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PressedFill",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "HoverFill",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Font",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Size",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "FontWeight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Italic",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Underline",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Strikethrough",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PaddingTop",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PaddingRight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PaddingBottom",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "PaddingLeft",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Align",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "VerticalAlign",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "X",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Y",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Width",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Height",
+          "RuleProviderType": "User"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "Visible",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "DisplayMode",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "TabIndex",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "minimumWidth",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "minimumHeight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "maximumWidth",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "maximumHeight",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Design",
+          "PropertyName": "ZIndex",
+          "RuleProviderType": "Unknown"
+        },
+        {
+          "Category": "Behavior",
+          "PropertyName": "OnSelect",
+          "RuleProviderType": "Unknown"
+        }
+      ],
+      "StyleName": "defaultLabelStyle",
+      "Type": "ControlInfo"
+    },
     "lblHeadListaLotesLot": {
       "AllowAccessToGlobals": true,
       "ControlPropertyState": [
@@ -37795,7 +38570,7 @@
       "MetaDataIDKey": "",
       "Name": "lblHeadListaLotesLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 29,
+      "ParentIndex": 31,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -38123,7 +38898,7 @@
       "MetaDataIDKey": "",
       "Name": "lblHeadListaPlanLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 30,
+      "ParentIndex": 32,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -38451,7 +39226,7 @@
       "MetaDataIDKey": "",
       "Name": "lblHeadPlanLoteNioLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 51,
+      "ParentIndex": 63,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -38779,7 +39554,7 @@
       "MetaDataIDKey": "",
       "Name": "lblHeadPlanLoteNumLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 49,
+      "ParentIndex": 58,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -39107,7 +39882,7 @@
       "MetaDataIDKey": "",
       "Name": "lblHeadPlanLoteRemLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 50,
+      "ParentIndex": 60,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -39435,7 +40210,7 @@
       "MetaDataIDKey": "",
       "Name": "lblHeadPlanLoteUsdLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 52,
+      "ParentIndex": 65,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -39763,7 +40538,7 @@
       "MetaDataIDKey": "",
       "Name": "lblHeadTulaAutorLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 67,
+      "ParentIndex": 64,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -40091,7 +40866,7 @@
       "MetaDataIDKey": "",
       "Name": "lblHeadTulaEstadoLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 65,
+      "ParentIndex": 61,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -40419,7 +41194,7 @@
       "MetaDataIDKey": "",
       "Name": "lblHeadTulaFechaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 66,
+      "ParentIndex": 62,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -40747,7 +41522,7 @@
       "MetaDataIDKey": "",
       "Name": "lblHeadTulaNumLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 64,
+      "ParentIndex": 59,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -43018,7 +43793,14 @@
         "PaddingLeft",
         "Align",
         "VerticalAlign",
-        "X",
+        {
+          "AFDDataSourceName": "",
+          "AutoRuleBindingEnabled": false,
+          "AutoRuleBindingString": "",
+          "InvariantPropertyName": "X",
+          "IsLockable": false,
+          "NameMapSourceSchema": "?"
+        },
         "Y",
         "Width",
         "Height",
@@ -43043,7 +43825,7 @@
       "MetaDataIDKey": "",
       "Name": "lblRangoLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 21,
+      "ParentIndex": 22,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -44355,7 +45137,7 @@
       "MetaDataIDKey": "",
       "Name": "lblVacioDetLoteLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 72,
+      "ParentIndex": 74,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -44683,7 +45465,7 @@
       "MetaDataIDKey": "",
       "Name": "lblVacioDetPlanLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 73,
+      "ParentIndex": 75,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -45011,7 +45793,7 @@
       "MetaDataIDKey": "",
       "Name": "lblVacioLotesLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 60,
+      "ParentIndex": 70,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -45346,7 +46128,7 @@
       "MetaDataIDKey": "",
       "Name": "lblVacioPlanillasLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 61,
+      "ParentIndex": 71,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -45674,7 +46456,7 @@
       "MetaDataIDKey": "",
       "Name": "lblVacioPlanLoteLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 69,
+      "ParentIndex": 72,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -46002,7 +46784,7 @@
       "MetaDataIDKey": "",
       "Name": "lblVacioTulasLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 71,
+      "ParentIndex": 73,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -46644,7 +47426,7 @@
       "MetaDataIDKey": "",
       "Name": "pilDetLoteLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 33,
+      "ParentIndex": 35,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -46960,7 +47742,7 @@
       "MetaDataIDKey": "",
       "Name": "pilDetPlanLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 34,
+      "ParentIndex": 36,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -48962,7 +49744,7 @@
       "MetaDataIDKey": "",
       "Name": "shpLineaDetLoteLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 40,
+      "ParentIndex": 42,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -49140,7 +49922,7 @@
       "MetaDataIDKey": "",
       "Name": "shpLineaDetPlanLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 41,
+      "ParentIndex": 43,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -49318,7 +50100,7 @@
       "MetaDataIDKey": "",
       "Name": "shpLineaHeadListaLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 37,
+      "ParentIndex": 39,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -49496,7 +50278,7 @@
       "MetaDataIDKey": "",
       "Name": "shpLineaHeadPlanLoteLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 58,
+      "ParentIndex": 66,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -49674,7 +50456,7 @@
       "MetaDataIDKey": "",
       "Name": "shpLineaHeadTulasLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 68,
+      "ParentIndex": 67,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -49852,7 +50634,7 @@
       "MetaDataIDKey": "",
       "Name": "shpLineaOpsLoteLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 47,
+      "ParentIndex": 54,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {
@@ -50030,7 +50812,7 @@
       "MetaDataIDKey": "",
       "Name": "shpLineaOpsPlanLot",
       "OptimizeForDevices": "Off",
-      "ParentIndex": 62,
+      "ParentIndex": 55,
       "PersistMetaDataIDKey": false,
       "Properties": [
         {

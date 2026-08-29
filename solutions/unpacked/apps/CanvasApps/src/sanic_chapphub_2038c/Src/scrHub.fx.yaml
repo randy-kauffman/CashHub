@@ -1,0 +1,731 @@
+scrHub As screen:
+    Fill: =ThemeBg
+
+    shpHubHeader As rectangle:
+        Fill: =ThemeSurface
+        Height: =61
+        Width: =Parent.Width
+        ZIndex: =1
+
+    shpHubHeaderLinea As rectangle:
+        Fill: =ThemeLine
+        Height: =1
+        Width: =Parent.Width
+        Y: =shpHubHeader.Y + shpHubHeader.Height
+        ZIndex: =2
+
+    shpHubMarca As button:
+        BorderThickness: =0
+        Color: =Color.White
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeAccent
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Bold
+        Height: =36
+        HoverFill: =ThemeAccent
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeAccent
+        RadiusBottomLeft: =9
+        RadiusBottomRight: =9
+        RadiusTopLeft: =9
+        RadiusTopRight: =9
+        Size: =14.25
+        Text: ="₵"
+        Width: =36
+        X: =22
+        Y: =(shpHubHeader.Height - Self.Height) / 2
+        ZIndex: =3
+
+    lblHubMarca As label:
+        Color: =ThemeInk
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =20
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =10.88
+        Text: ="CashHub"
+        Width: =170
+        Wrap: =false
+        X: =68
+        Y: =shpHubMarca.Y
+        ZIndex: =4
+
+    lblHubMarcaSub As label:
+        Color: =ThemeInk3
+        Font: =Font.'Segoe UI'
+        Height: =16
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: ="Portal de operaciones"
+        Width: =220
+        Wrap: =false
+        X: =68
+        Y: =lblHubMarca.Y + lblHubMarca.Height
+        ZIndex: =5
+
+    shpHubUserChip As button:
+        BorderColor: =ThemeLineSoft
+        BorderThickness: =1
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeSurface2
+        Font: =Font.'Segoe UI'
+        HoverBorderColor: =ThemeLineSoft
+        HoverFill: =ThemeSurface2
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedBorderColor: =ThemeLineSoft
+        PressedFill: =ThemeSurface2
+        RadiusBottomLeft: =20
+        RadiusBottomRight: =20
+        RadiusTopLeft: =20
+        RadiusTopRight: =20
+        Size: =9
+        Text: =""
+        Width: =If(Parent.Width < 900, 40, 232)
+        X: =Parent.Width - Self.Width - 22
+        Y: =(shpHubHeader.Height - Self.Height) / 2
+        ZIndex: =7
+
+    shpHubAvatar As button:
+        BorderThickness: =0
+        Color: =ThemeAccent
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeAccentSoft
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Bold
+        Height: =30
+        HoverFill: =ThemeAccentSoft
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeAccentSoft
+        RadiusBottomLeft: =15
+        RadiusBottomRight: =15
+        RadiusTopLeft: =15
+        RadiusTopRight: =15
+        Size: =9
+        Text: |-
+            =Upper(
+                Left(First(Split(Trim(User().FullName), " ")).Value, 1) &
+                If(
+                    CountRows(Split(Trim(User().FullName), " ")) > 1,
+                    Left(Last(FirstN(Split(Trim(User().FullName), " "), 2)).Value, 1),
+                    ""
+                )
+            )
+        Tooltip: =User().FullName & " · " & User().Email
+        Width: =30
+        X: =shpHubUserChip.X + 5
+        Y: =shpHubUserChip.Y + 5
+        ZIndex: =8
+
+    lblHubUserNombre As label:
+        Color: =ThemeInk
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =User().FullName
+        Visible: =Parent.Width >= 900
+        Width: =Max(0, shpHubUserChip.Width - 48)
+        Wrap: =false
+        X: =shpHubAvatar.X + 38
+        Y: =shpHubUserChip.Y + 5
+        ZIndex: =9
+
+    lblHubUserMail As label:
+        Color: =ThemeInk3
+        Font: =Font.'Segoe UI'
+        Height: =15
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =7.88
+        Text: =User().Email
+        Visible: =Parent.Width >= 900
+        Width: =lblHubUserNombre.Width
+        Wrap: =false
+        X: =lblHubUserNombre.X
+        Y: =lblHubUserNombre.Y + lblHubUserNombre.Height
+        ZIndex: =10
+
+    shpHubBanner As rectangle:
+        Fill: =ThemeAccentSoft
+        Height: =44
+        Visible: =gvarAccessError
+        Width: =Parent.Width
+        Y: =shpHubHeaderLinea.Y + shpHubHeaderLinea.Height
+        ZIndex: =11
+
+    shpHubBannerBarra As rectangle:
+        Fill: =ThemeAccent
+        Height: =shpHubBanner.Height
+        Visible: =gvarAccessError
+        Width: =3
+        Y: =shpHubBanner.Y
+        ZIndex: =12
+
+    icoHubBanner As icon.Warning:
+        Color: =ThemeAccent
+        Height: =16
+        HoverColor: =ThemeAccent
+        Icon: =Icon.Warning
+        PressedColor: =ThemeAccent
+        Visible: =gvarAccessError
+        Width: =16
+        X: =galHubApps.X
+        Y: =shpHubBanner.Y + 14
+        ZIndex: =13
+
+    lblHubBanner As label:
+        Color: =ThemeAccentDark
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =shpHubBanner.Height
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: ="No pudimos verificar tus accesos con Azure AD. Se muestran todas las aplicaciones; si alguna no te corresponde, no vas a poder usarla."
+        Visible: =gvarAccessError
+        Width: =galHubApps.Width - 18 - 24
+        X: =icoHubBanner.X + 24
+        Y: =shpHubBanner.Y
+        ZIndex: =14
+
+    htmHubSaludo As htmlViewer:
+        Height: =44
+        HtmlText: |-
+            ="<div style='font-family:Segoe UI,sans-serif;font-size:26px;font-weight:600;color:#201C1D;letter-spacing:-0.2px'>" &
+            If(
+                Hour(Now()) < 12, "Buenos días",
+                Hour(Now()) < 19, "Buenas tardes",
+                "Buenas noches"
+            ) &
+            ", <span style='color:#C8102E'>" &
+            First(Split(Trim(User().FullName), " ")).Value &
+            "</span></div>"
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Width: =galHubApps.Width - 18
+        X: =galHubApps.X
+        Y: =shpHubBanner.Y + If(gvarAccessError, shpHubBanner.Height, 0) + 34
+        ZIndex: =15
+
+    lblHubFecha As label:
+        Color: =ThemeInk2
+        Font: =Font.'Segoe UI'
+        Height: =22
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =10.13
+        Text: |-
+            =If(
+                gvarLoaded,
+                $"{Text(Now(), "dddd", "es-ES")} {Day(Now())} de {Text(Now(), "mmmm", "es-ES")} · Estas son tus aplicaciones de tesorería.",
+                "Verificando tus accesos…"
+            )
+        Width: =galHubApps.Width - 18
+        Wrap: =false
+        X: =galHubApps.X
+        Y: =htmHubSaludo.Y + htmHubSaludo.Height + 2
+        ZIndex: =16
+
+    shpHubPildoraAccesos As button:
+        BorderThickness: =0
+        DisplayMode: =DisplayMode.View
+        Fill: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOkSoft, ThemeInfoSoft)
+        Font: =Font.'Segoe UI'
+        Height: =26
+        HoverFill: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOkSoft, ThemeInfoSoft)
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOkSoft, ThemeInfoSoft)
+        RadiusBottomLeft: =13
+        RadiusBottomRight: =13
+        RadiusTopLeft: =13
+        RadiusTopRight: =13
+        Size: =9
+        Text: =""
+        Visible: =gvarLoaded && !gvarAccessError && CountRows(colAppData) > 0
+        Width: =Min(galHubApps.Width - 18, Len(lblHubAccesos.Text) * 6.4 + 46)
+        X: =galHubApps.X
+        Y: =lblHubFecha.Y + lblHubFecha.Height + 14
+        ZIndex: =17
+
+    icoHubAccesos As icon.Check:
+        Color: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOk, ThemeInfo)
+        Height: =14
+        HoverColor: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOk, ThemeInfo)
+        Icon: =Icon.Check
+        PressedColor: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOk, ThemeInfo)
+        Visible: =shpHubPildoraAccesos.Visible
+        Width: =14
+        X: =shpHubPildoraAccesos.X + 12
+        Y: =shpHubPildoraAccesos.Y + 6
+        ZIndex: =18
+
+    lblHubAccesos As label:
+        Color: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOk, ThemeInfo)
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =shpHubPildoraAccesos.Height
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: =$"Tenés acceso a {CountRows(colAppData)} de {CountRows(colCatalog)} aplicaciones según tus grupos"
+        Visible: =shpHubPildoraAccesos.Visible
+        Width: =shpHubPildoraAccesos.Width - 46
+        Wrap: =false
+        X: =icoHubAccesos.X + icoHubAccesos.Width + 7
+        Y: =shpHubPildoraAccesos.Y
+        ZIndex: =19
+
+    galHubSkeleton As gallery.galleryVertical:
+        DelayItemLoading: =true
+        Height: =galHubApps.Height
+        Items: =Sequence(6)
+        Layout: =Layout.Vertical
+        LoadingSpinner: =LoadingSpinner.Data
+        ShowScrollbar: =false
+        TemplateFill: =Color.Transparent
+        TemplatePadding: =0
+        TemplateSize: =214
+        Visible: =!gvarLoaded
+        Width: =galHubApps.Width
+        WrapCount: =Max(1, RoundDown(Self.Width / 300, 0))
+        X: =galHubApps.X
+        Y: =galHubApps.Y
+        ZIndex: =20
+
+        shpHubSkTarjeta As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Font: =Font.'Segoe UI'
+            Height: =Parent.TemplateHeight - 18
+            HoverBorderColor: =ThemeLine
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =ThemeLine
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: =""
+            Width: =Parent.TemplateWidth - 18
+            ZIndex: =1
+
+        shpHubSkGlifo As button:
+            BorderThickness: =0
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeLineSoft
+            Font: =Font.'Segoe UI'
+            Height: =44
+            HoverFill: =ThemeLineSoft
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeLineSoft
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Size: =9
+            Text: =""
+            Width: =44
+            X: =20
+            Y: =20
+            ZIndex: =2
+
+        shpHubSkBarra1 As button:
+            BorderThickness: =0
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeLineSoft
+            Font: =Font.'Segoe UI'
+            Height: =12
+            HoverFill: =ThemeLineSoft
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeLineSoft
+            RadiusBottomLeft: =6
+            RadiusBottomRight: =6
+            RadiusTopLeft: =6
+            RadiusTopRight: =6
+            Size: =9
+            Text: =""
+            Width: =(Parent.TemplateWidth - 58) * 0.55
+            X: =20
+            Y: =82
+            ZIndex: =3
+
+        shpHubSkBarra2 As button:
+            BorderThickness: =0
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeLineSoft
+            Font: =Font.'Segoe UI'
+            Height: =10
+            HoverFill: =ThemeLineSoft
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeLineSoft
+            RadiusBottomLeft: =6
+            RadiusBottomRight: =6
+            RadiusTopLeft: =6
+            RadiusTopRight: =6
+            Size: =9
+            Text: =""
+            Width: =(Parent.TemplateWidth - 58) * 0.85
+            X: =20
+            Y: =106
+            ZIndex: =4
+
+        shpHubSkBarra3 As button:
+            BorderThickness: =0
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeLineSoft
+            Font: =Font.'Segoe UI'
+            Height: =10
+            HoverFill: =ThemeLineSoft
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeLineSoft
+            RadiusBottomLeft: =6
+            RadiusBottomRight: =6
+            RadiusTopLeft: =6
+            RadiusTopRight: =6
+            Size: =9
+            Text: =""
+            Width: =(Parent.TemplateWidth - 58) * 0.6
+            X: =20
+            Y: =124
+            ZIndex: =5
+
+    galHubApps As gallery.galleryVertical:
+        DelayItemLoading: =true
+        Height: =shpHubFooter.Y - Self.Y - 20
+        Items: =Sort(colAppData, 'Order')
+        Layout: =Layout.Vertical
+        LoadingSpinner: =LoadingSpinner.Data
+        OnSelect: =Launch(galHubApps.Selected.AppURL, {}, LaunchTarget.Replace)
+        TemplateFill: =Color.Transparent
+        TemplatePadding: =0
+        TemplateSize: =214
+        Visible: =gvarLoaded && CountRows(colAppData) > 0
+        Width: =Parent.Width - Self.X * 2 + 18
+        WrapCount: =Max(1, RoundDown(Self.Width / 300, 0))
+        X: =If(Parent.Width < 900, 20, 46)
+        Y: =shpHubPildoraAccesos.Y + shpHubPildoraAccesos.Height + 24
+        ZIndex: =21
+
+        btnHubTarjeta As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Font: =Font.'Segoe UI'
+            Height: =Parent.TemplateHeight - 18
+            HoverBorderColor: =ThemeAccent
+            HoverFill: =ThemeSurface
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =ThemeAccent
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: =""
+            Tooltip: ="Abrir " & ThisItem.'Display Name'
+            Width: =Parent.TemplateWidth - 18
+            ZIndex: =1
+
+        shpHubGlifo As button:
+            BorderThickness: =0
+            Fill: =ThemeAccentSoft
+            Font: =Font.'Segoe UI'
+            Height: =44
+            HoverFill: =ThemeAccentSoft
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Size: =9
+            Text: =""
+            Width: =44
+            X: =20
+            Y: =20
+            ZIndex: =2
+
+        imgHubGlifo As image:
+            Height: =44
+            Image: =ThisItem.Icon
+            OnSelect: =Select(Parent)
+            Visible: =!IsBlank(ThisItem.Icon)
+            Width: =44
+            X: =20
+            Y: =20
+            ZIndex: =3
+
+        lblHubGlifoInicial As label:
+            Align: =Align.Center
+            Color: =ThemeAccent
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =44
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11.25
+            Text: |-
+                =Upper(
+                    With(
+                        { _k: Trim(Coalesce(ThisItem.'App Key', ThisItem.'Display Name')) },
+                        Left(_k, 1) & If(Len(_k) > 1, Right(_k, 1), "")
+                    )
+                )
+            Visible: =IsBlank(ThisItem.Icon)
+            Width: =44
+            Wrap: =false
+            X: =20
+            Y: =20
+            ZIndex: =4
+
+        lblHubTarjetaTitulo As label:
+            Color: =ThemeInk
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11.25
+            Text: =ThisItem.'Display Name'
+            Width: =Parent.TemplateWidth - 58
+            Wrap: =false
+            X: =20
+            Y: =78
+            ZIndex: =5
+
+        lblHubTarjetaDesc As label:
+            Color: =ThemeInk2
+            Font: =Font.'Segoe UI'
+            Height: =Parent.TemplateHeight - 163
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =ThisItem.Description
+            VerticalAlign: =VerticalAlign.Top
+            Width: =Parent.TemplateWidth - 58
+            X: =20
+            Y: =102
+            ZIndex: =6
+
+        shpHubTarjetaSep As rectangle:
+            Fill: =ThemeLineSoft
+            Height: =1
+            OnSelect: =Select(Parent)
+            Width: =Parent.TemplateWidth - 58
+            X: =20
+            Y: =Parent.TemplateHeight - 61
+            ZIndex: =7
+
+        lblHubTarjetaAbrir As label:
+            Color: =ThemeAccent
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="Abrir aplicación"
+            Width: =140
+            Wrap: =false
+            X: =20
+            Y: =shpHubTarjetaSep.Y + 12
+            ZIndex: =8
+
+        lblHubTarjetaFlecha As label:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            Font: =Font.'Segoe UI'
+            Height: =18
+            OnSelect: =Select(Parent)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="→"
+            Width: =14
+            Wrap: =false
+            X: =Parent.TemplateWidth - 52
+            Y: =lblHubTarjetaAbrir.Y
+            ZIndex: =9
+
+    shpHubVacio As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeSurface
+        Font: =Font.'Segoe UI'
+        Height: =150
+        HoverBorderColor: =ThemeLine
+        HoverFill: =ThemeSurface
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedBorderColor: =ThemeLine
+        PressedFill: =ThemeSurface
+        RadiusBottomLeft: =13
+        RadiusBottomRight: =13
+        RadiusTopLeft: =13
+        RadiusTopRight: =13
+        Size: =9
+        Text: =""
+        Visible: =gvarLoaded && CountRows(colAppData) = 0
+        Width: =galHubApps.Width - 18
+        X: =galHubApps.X
+        Y: =galHubApps.Y
+        ZIndex: =22
+
+    lblHubVacioTitulo As label:
+        Color: =ThemeInk
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =26
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =11.25
+        Text: ="No tenés aplicaciones asignadas"
+        Visible: =shpHubVacio.Visible
+        Width: =shpHubVacio.Width - 56
+        Wrap: =false
+        X: =shpHubVacio.X + 28
+        Y: =shpHubVacio.Y + 44
+        ZIndex: =23
+
+    lblHubVacioSub As label:
+        Color: =ThemeInk2
+        Font: =Font.'Segoe UI'
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =10.13
+        Text: ="Contactá a tu supervisor para que te agregue a los grupos de Azure AD que correspondan a tu rol."
+        Visible: =shpHubVacio.Visible
+        Width: =lblHubVacioTitulo.Width
+        X: =lblHubVacioTitulo.X
+        Y: =lblHubVacioTitulo.Y + 30
+        ZIndex: =24
+
+    shpHubFooter As rectangle:
+        Fill: =ThemeSurface2
+        Height: =46
+        Width: =Parent.Width
+        Y: =Parent.Height - Self.Height
+        ZIndex: =25
+
+    shpHubFooterLinea As rectangle:
+        Fill: =ThemeLineSoft
+        Height: =1
+        Width: =Parent.Width
+        Y: =shpHubFooter.Y
+        ZIndex: =26
+
+    lblHubFooterIzq As label:
+        Color: =ThemeInk3
+        Font: =Font.'Segoe UI'
+        Height: =46
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: ="CashHub · CH-App-Hub"
+        Width: =240
+        Wrap: =false
+        X: =galHubApps.X
+        Y: =shpHubFooter.Y
+        ZIndex: =27
+
+    lblHubFooterDer As label:
+        Align: =Align.Right
+        Color: =ThemeInk3
+        Font: =Font.'Segoe UI'
+        Height: =46
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: ="Los accesos se administran por grupos de Azure AD · ¿Te falta una app? Contactá a tu supervisor"
+        Visible: =Parent.Width >= 900
+        Width: =Min(560, galHubApps.Width - 18 - 260)
+        Wrap: =false
+        X: =galHubApps.X + galHubApps.Width - 18 - Self.Width
+        Y: =shpHubFooter.Y
+        ZIndex: =28
+

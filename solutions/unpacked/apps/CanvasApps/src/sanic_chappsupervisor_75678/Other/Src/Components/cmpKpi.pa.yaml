@@ -1,0 +1,163 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpKpi:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      KpiAccent:
+        PropertyKind: Input
+        DisplayName: KpiAccent
+        Description: A custom property
+        DataType: Color
+        Default: =ThemeAccent
+      KpiCur:
+        PropertyKind: Input
+        DisplayName: KpiCur
+        Description: A custom property
+        DataType: Text
+        Default: =""
+      KpiLabel:
+        PropertyKind: Input
+        DisplayName: KpiLabel
+        Description: A custom property
+        DataType: Text
+        Default: ="INDICADOR"
+      KpiPie:
+        PropertyKind: Input
+        DisplayName: KpiPie
+        Description: A custom property
+        DataType: Text
+        Default: =""
+      KpiPieColor:
+        PropertyKind: Input
+        DisplayName: KpiPieColor
+        Description: A custom property
+        DataType: Color
+        Default: =ThemeInk3
+      KpiValor:
+        PropertyKind: Input
+        DisplayName: KpiValor
+        Description: A custom property
+        DataType: Text
+        Default: ="0"
+      OnKpiSelect:
+        PropertyKind: Event
+        DisplayName: OnKpiSelect
+        Description: A custom property
+        ReturnType: Text
+        Default: ="Text"
+    Properties:
+      Height: =92
+      Width: =220
+    Children:
+      - cntKpiCard:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =cmpKpi.Height
+            RadiusBottomLeft: =10
+            RadiusBottomRight: =10
+            RadiusTopLeft: =10
+            RadiusTopRight: =10
+            Width: =cmpKpi.Width
+          Children:
+            - btnKpiClick:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Fill: =RGBA(0, 0, 0, 0)
+                  Font: =Font.'Segoe UI'
+                  Height: =cntKpiCard.Height
+                  HoverFill: =RGBA(0, 0, 0, 0)
+                  OnSelect: =cmpKpi.OnKpiSelect()
+                  PressedFill: =RGBA(0, 0, 0, 0)
+                  Size: =10
+                  Text: =""
+                  Width: =cntKpiCard.Width
+            - shpKpiBarra:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =cmpKpi.KpiAccent
+                  Height: =cntKpiCard.Height
+                  OnSelect: =Select(btnKpiClick)
+                  Width: =3
+            - lblKpiLabel:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk3
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =14
+                  OnSelect: =Select(btnKpiClick)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =8.5
+                  Text: =cmpKpi.KpiLabel
+                  Width: =cntKpiCard.Width - 28
+                  X: =14
+                  Y: =12
+            - lblKpiCur:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk3
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =24
+                  OnSelect: =Select(btnKpiClick)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =11
+                  Text: =cmpKpi.KpiCur
+                  VerticalAlign: =VerticalAlign.Bottom
+                  Width: =If(IsBlank(cmpKpi.KpiCur), 0, 9 * Len(cmpKpi.KpiCur) + 6)
+                  Wrap: =false
+                  X: =14
+                  Y: =34
+            - lblKpiValor:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =30
+                  OnSelect: =Select(btnKpiClick)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =If(Len(cmpKpi.KpiValor) > 12, 12.5, If(Len(cmpKpi.KpiValor) > 9, 16, 20))
+                  Text: =cmpKpi.KpiValor
+                  Width: =cntKpiCard.Width - Self.X - 12
+                  Wrap: =false
+                  X: =lblKpiCur.X + lblKpiCur.Width
+                  Y: =28
+            - lblKpiPie:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =cmpKpi.KpiPieColor
+                  Font: =Font.'Segoe UI'
+                  Height: =14
+                  OnSelect: =Select(btnKpiClick)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =8.5
+                  Text: =cmpKpi.KpiPie
+                  Width: =cntKpiCard.Width - 28
+                  X: =14
+                  Y: =62

@@ -14,23 +14,22 @@ Screens:
         // Catalogo de reglas: 28 filas fijas. Se carga una vez para poder cruzarlo
         // contra los resultados en memoria sin advertencias de delegacion.
         ClearCollect(colReglasActivas, Filter('CH-Tbl-ValidationRules', IsActive = true));
-        Select(galBandeja);
         // Salud del pipeline: latido del barrido + cola real
         UpdateContext(
             {
                 varLatido: LookUp('CH-Tbl-SystemHeartbeat', Name = "ingesta-correos"),
                 varEsperandoBanca: CountRows(
                     Filter('CH-Tbl-Received Emails',
-                        EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual')),
+                        EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual' && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
                 varSospechosos: CountRows(
                     Filter('CH-Tbl-Received Emails',
-                        SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso)),
+                        SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
                 varPendientes: CountRows(
                     Filter('CH-Tbl-Received Emails',
                         ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente)),
                 varErroresSistema: CountRows(
                     Filter('CH-Tbl-Received Emails',
-                        EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error)),
+                        EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
                 varRespuestasPendientes: CountRows(
                     Filter('CH-Tbl-Received Emails',
                         EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3))
@@ -114,16 +113,16 @@ Screens:
                                   varLatido: LookUp('CH-Tbl-SystemHeartbeat', Name = "ingesta-correos"),
                                   varEsperandoBanca: CountRows(
                                       Filter('CH-Tbl-Received Emails',
-                                          EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual')),
+                                          EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual' && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
                                   varSospechosos: CountRows(
                                       Filter('CH-Tbl-Received Emails',
-                                          SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso)),
+                                          SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
                                   varPendientes: CountRows(
                                       Filter('CH-Tbl-Received Emails',
                                           ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente)),
                                   varErroresSistema: CountRows(
                                       Filter('CH-Tbl-Received Emails',
-                                          EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error)),
+                                          EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
                                   varRespuestasPendientes: CountRows(
                                       Filter('CH-Tbl-Received Emails',
                                           EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3))
@@ -243,17 +242,17 @@ Screens:
                               Switch(
                                   varVista,
                                   "BANCA",
-                                  Filter('CH-Tbl-Received Emails', EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'),
+                                  Filter('CH-Tbl-Received Emails', EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual' && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente),
                                   "SOSPECHOSO",
-                                  Filter('CH-Tbl-Received Emails', SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso),
+                                  Filter('CH-Tbl-Received Emails', SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente),
                                   "ERROR",
-                                  Filter('CH-Tbl-Received Emails', EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error),
+                                  Filter('CH-Tbl-Received Emails', EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente),
                                   "SINRESP",
                                   Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3),
                                   Filter('CH-Tbl-Received Emails',
-                                      EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'
-                                      || EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error
-                                      || ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
+                                      EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'&& EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente
+                                      || EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente
+                                      || ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente
                                       || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3)
                               ),
                               SearchInput1_1.Value,
@@ -354,7 +353,7 @@ Screens:
                                 );
                               PaddingLeft: =0
                               Size: =11
-                              Text: =Coalesce(ThisItem.Subject, "(sin asunto)")
+                              Text: =ThisItem.'Email Address'
                               Width: =Parent.TemplateWidth - 112
                               X: =16
                               Y: =11
@@ -383,8 +382,7 @@ Screens:
                                     }
                                 );
                               Size: =9
-                              Text: |-
-                                =With({h: DateDiff(ThisItem.ReceptionDateTime, Now(), TimeUnit.Hours)}, If(h < 1, "hace " & DateDiff(ThisItem.ReceptionDateTime, Now(), TimeUnit.Minutes) & " min", h < 24, "hace " & h & " h", "hace " & RoundDown(h / 24, 0) & " d"))
+                              Text: =ThisItem.DeclaredCif
                               Width: =92
                               X: =Parent.TemplateWidth - 104
                               Y: =12
@@ -413,7 +411,7 @@ Screens:
                                 );
                               PaddingLeft: =0
                               Size: =10
-                              Text: =Coalesce(ThisItem.SourceEmailAddress, "(sin remitente)")
+                              Text: =ThisItem.ErrorCode
                               Width: =Parent.TemplateWidth - 30
                               X: =16
                               Y: =31
@@ -601,7 +599,7 @@ Screens:
                                                   "<div style='font-family:Segoe UI,sans-serif;font-size:14px;color:rgb(28,21,23)'>" &
                                                   If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso,
                                       "<p>Llego un pre-registro con la <b>plantilla oficial</b>, pero el CIF declarado <b>no existe en CashHub</b>. Lo mas probable es que sea un cliente real al que todavia le falta la carga operativa.</p>" &
-                                      "<p>Necesitamos que confirmen: si es cliente del banco y falta cargarlo, o si ese CIF no corresponde a nadie. En ese segundo caso lo escalamos a Seguridad, porque alguien tendria nuestra plantilla oficial.</p>",
+                                      "<p>Necesitamos que confirmen: si es cliente del banco y falta cargarlo, o si ese CIF no corresponde a nadie.</p>",
                                       "<p>Un pre-registro llego desde una direccion que no esta registrada, pero el archivo <b>es la plantilla oficial</b> y el CIF declarado corresponde a un cliente real.</p>" &
                                       "<p>Mientras no se registre esa direccion, <b>al cliente no se le puede responder</b>: escribirle a un correo sin verificar confirmaria que ese CIF opera con el banco.</p>") &
                                                                                           "<table cellpadding='6' cellspacing='0' style='font-size:13px;border-collapse:collapse'>" &
@@ -611,8 +609,8 @@ Screens:
                                                   "<tr><td style='color:rgb(120,106,109)'>Recibido</td><td>" & Text(galBandeja.Selected.ReceptionDateTime, "dd/mm/yyyy hh:mm") & "</td></tr>" &
                                                   "</table>" &
                                                   If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso,
-                                      "<p><b>Que hay que hacer:</b> verificar si ese CIF corresponde a un cliente del banco. Si falta cargarlo, cargarlo en Client Administration y avisarnos para reprocesar. Si no corresponde a nadie, decirnoslo para escalarlo.</p>",
-                                      "<p><b>Que hay que hacer:</b> confirmar con el cliente que esa persona esta autorizada y, si corresponde, dar de alta la direccion en Client Administration. Operaciones reprocesa el correo y el cliente recibe su respuesta.</p>") &
+                                      "<p><b>Que hay que hacer:</b> verificar si ese CIF corresponde a un cliente del banco. Si falta cargarlo, cargarlo en Client Administration y avisarnos para reprocesar. Si no corresponde a nadie, decirnoslo para omitir el correo.</p>",
+                                      "<p><b>Que hay que hacer:</b> confirmar con el cliente que esa persona esta autorizada y, si corresponde, dar de alta la direccion en Client Administration. Avisarnos para reprocesar y el cliente recibe su respuesta.</p>") &
                                                   If(IsBlank(urlAdmin), "", "<p><a href='" & urlAdmin & "'>Abrir Client Administration</a></p>") &
                                                   "<p style='font-size:12px;color:rgb(120,106,109)'>Aviso enviado por " & User().FullName & " desde la consola de ingesta de correos.</p></div>",
                                                   {IsHtml: true, Importance: "Normal"}
@@ -646,44 +644,24 @@ Screens:
                                       Notify("Marcado para reproceso. El barrido lo revalida en su proxima corrida, dentro de 10 minutos como maximo.", NotificationType.Success);
                                     Text: ="Marcar para reproceso"
                                     Width: =190
-                              - btnReenviar:
+                              - btnMover:
                                   Control: Button@0.0.45
                                   Properties:
                                     Appearance: ='ButtonCanvas.Appearance'.Secondary
                                     Height: =36
+                                    LayoutMinHeight: =0
+                                    LayoutMinWidth: =0
                                     OnSelect: |-
-                                      =Patch(
+                                      =
+                                      Patch(
                                           'CH-Tbl-Received Emails',
                                           galBandeja.Selected,
-                                          {EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente}
+                                          {
+                                              EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido
+                                          }
                                       );
                                       Refresh('CH-Tbl-Received Emails');
-                                      Notify("Respuesta encolada. Si el correo se archivo hace tiempo el envio puede fallar: al mover un mensaje, Exchange le cambia el id.", NotificationType.Warning);
-                                    Text: ="Reenviar respuesta"
-                                    Visible: =!IsBlank(galBandeja.Selected.ReplyBodyHtml)
-                                    Width: =175
-                              - btnResueltoFuera:
-                                  Control: Button@0.0.45
-                                  Properties:
-                                    Appearance: ='ButtonCanvas.Appearance'.Secondary
-                                    Height: =36
-                                    LayoutMinHeight: =0
-                                    LayoutMinWidth: =0
-                                    OnSelect: |-
-                                      =UpdateContext({varCierreAbierto: true, varCierreMotivo: ""})
-                                    Text: ="Resuelto por fuera"
-                                    Visible: =!IsBlank(galBandeja.Selected.ReplyBodyHtml)
-                                    Width: =175
-                              - btnDenegar:
-                                  Control: Button@0.0.45
-                                  Properties:
-                                    Appearance: ='ButtonCanvas.Appearance'.Secondary
-                                    Height: =36
-                                    LayoutMinHeight: =0
-                                    LayoutMinWidth: =0
-                                    OnSelect: |-
-                                      =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: false, varOverrideMotivo: ""})
-                                    Text: ="Denegar manualmente"
+                                    Text: ="Omitir respuesta"
                                     Width: =190
                               - btnVerAdjunto:
                                   Control: Button@0.0.45
@@ -705,17 +683,6 @@ Screens:
                                     Text: |-
                                       ="Ver el archivo adjunto" & With({a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galBandeja.Selected.'CH-Tbl-Received Emails')}, If(IsBlank(a), "", " (" & a.Filename & ")"))
                                     Width: =260
-                              - btnAceptar:
-                                  Control: Button@0.0.45
-                                  Properties:
-                                    Appearance: ='ButtonCanvas.Appearance'.Secondary
-                                    Height: =36
-                                    LayoutMinHeight: =0
-                                    LayoutMinWidth: =0
-                                    OnSelect: |-
-                                      =UpdateContext({varOverrideAbierto: true, varOverrideAcepta: true, varOverrideMotivo: ""})
-                                    Text: ="Aceptar manualmente"
-                                    Width: =190
                         - htmlReglas:
                             Control: HtmlViewer@2.1.0
                             Properties:
@@ -801,126 +768,6 @@ Screens:
                               Size: =11
                               Visible: =Coalesce(varTecnicoAbierto, false)
                               Width: =Parent.Width - 48
-      - container OverrideManual:
-          Control: GroupContainer@1.5.0
-          Variant: ManualLayout
-          Properties:
-            DropShadow: =DropShadow.None
-            Fill: =RGBA(0, 0, 0, 0.70)
-            Height: =Parent.Height
-            Visible: =Coalesce(varOverrideAbierto, false)
-            Width: =Parent.Width
-          Children:
-            - container OverrideManual Dialog:
-                Control: GroupContainer@1.5.0
-                Variant: ManualLayout
-                Properties:
-                  DropShadow: =DropShadow.Bold
-                  Fill: =RGBA(255, 255, 255, 1)
-                  Height: =330
-                  RadiusBottomLeft: =8
-                  RadiusBottomRight: =8
-                  RadiusTopLeft: =8
-                  RadiusTopRight: =8
-                  Visible: =Coalesce(varOverrideAbierto, false)
-                  Width: =560
-                  X: =(Parent.Width - 560) / 2
-                  Y: =(Parent.Height - 330) / 2
-                Children:
-                  - lblOverrideTitulo:
-                      Control: Label@2.5.1
-                      Properties:
-                        BorderColor: =RGBA(0, 0, 0, 1)
-                        Color: =RGBA(32, 31, 30, 1)
-                        DisabledColor: =RGBA(186, 186, 186, 1)
-                        Font: =Font.'Open Sans'
-                        FontWeight: =FontWeight.Semibold
-                        Height: =32
-                        Size: =15
-                        Text: =If(varOverrideAcepta, "Aceptar manualmente", "Denegar manualmente")
-                        Width: =520
-                        X: =20
-                        Y: =16
-                  - lblOverrideAviso:
-                      Control: Label@2.5.1
-                      Properties:
-                        BorderColor: =RGBA(0, 0, 0, 1)
-                        Color: =RGBA(97, 97, 97, 1)
-                        DisabledColor: =RGBA(186, 186, 186, 1)
-                        Font: =Font.'Open Sans'
-                        Height: =76
-                        Size: =11
-                        Text: |-
-                          ="Esta decision reemplaza el resultado del motor para " & galBandeja.Selected.Name &
-                           ". Queda registrada con su usuario, la fecha y el motivo, y el correo pasa a metodo Manual."
-                        Width: =520
-                        X: =20
-                        Y: =48
-                  - txtOverrideMotivo:
-                      Control: TextInput@0.0.54
-                      Properties:
-                        Height: =104
-                        Mode: ="MultiLine"
-                        OnChange: |-
-                          =UpdateContext({varOverrideMotivo: Self.Value})
-                        Placeholder: ="Por que toma esta decision? Minimo 10 caracteres."
-                        Width: =520
-                        X: =20
-                        Y: =128
-                  - lblOverrideValidacion:
-                      Control: Label@2.5.1
-                      Properties:
-                        BorderColor: =RGBA(0, 0, 0, 1)
-                        Color: =RGBA(168, 0, 0, 1)
-                        DisabledColor: =RGBA(186, 186, 186, 1)
-                        Font: =Font.'Open Sans'
-                        Height: =20
-                        Size: =10
-                        Text: =If(Len(Trim(Coalesce(varOverrideMotivo, ""))) < 10, "Escriba al menos 10 caracteres explicando la decision.", "")
-                        Width: =520
-                        X: =20
-                        Y: =236
-                  - btnOverrideCancelar:
-                      Control: Button@0.0.45
-                      Properties:
-                        Appearance: ='ButtonCanvas.Appearance'.Secondary
-                        Height: =36
-                        OnSelect: |-
-                          =UpdateContext({varOverrideAbierto: false})
-                        Text: ="Cancelar"
-                        Width: =140
-                        X: =240
-                        Y: =266
-                  - btnOverrideConfirmar:
-                      Control: Button@0.0.45
-                      Properties:
-                        Appearance: ='ButtonCanvas.Appearance'.Primary
-                        DisplayMode: =If(Len(Trim(Coalesce(varOverrideMotivo, ""))) < 10, DisplayMode.Disabled, DisplayMode.Edit)
-                        Height: =36
-                        OnSelect: |-
-                          =Patch(
-                              'CH-Tbl-Received Emails',
-                              galBandeja.Selected,
-                              {
-                                  EmailReviewStatus: If(varOverrideAcepta,
-                                      'EmailReviewStatus (CH-Tbl-Received Emails)'.Aceptado,
-                                      'EmailReviewStatus (CH-Tbl-Received Emails)'.Denegado),
-                                  ValidationStatus: If(varOverrideAcepta,
-                                      'ValidationStatus (CH-Tbl-Received Emails)'.Valido,
-                                      'ValidationStatus (CH-Tbl-Received Emails)'.Invalido),
-                                  EmailReviewMethod: 'EmailReviewMethod (CH-Tbl-Received Emails)'.Manual,
-                                  OverrideBy: User().Email,
-                                  OverrideOn: Now(),
-                                  OverrideReason: Trim(varOverrideMotivo)
-                              }
-                          );
-                          Refresh('CH-Tbl-Received Emails');
-                          UpdateContext({varOverrideAbierto: false});
-                          Notify("Decision registrada a nombre de " & User().Email & ".", NotificationType.Success);
-                        Text: ="Confirmar"
-                        Width: =160
-                        X: =390
-                        Y: =266
       - container CierreFuera:
           Control: GroupContainer@1.5.0
           Variant: ManualLayout

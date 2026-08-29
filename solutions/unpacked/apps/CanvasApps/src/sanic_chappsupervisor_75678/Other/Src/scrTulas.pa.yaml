@@ -1,0 +1,1098 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrTulas:
+    Properties:
+      Fill: =ThemeBg
+      LoadingSpinnerColor: =ThemeAccent
+      OnVisible: |-
+        =UpdateContext({
+            ctxSegTula: "esclusa",
+            ctxSortTula: "creado",
+            ctxSortAscTula: false
+        });
+        If(
+            IsEmpty(colTulasTula),
+            Select(btnActualizarTula)   // primera visita: carga sola
+        );
+        Reset(galTulasTula)
+    Children:
+      - cmpNavTula:
+          Control: CanvasComponent
+          ComponentName: cmpNav
+          Properties:
+            Height: =Parent.Height
+            Width: =214
+      - cntBodyTula:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =14
+            PaddingBottom: =18
+            PaddingLeft: =26
+            PaddingRight: =26
+            PaddingTop: =22
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Width: =Parent.Width - cmpNavTula.Width
+            X: =cmpNavTula.Width
+          Children:
+            - cntTituloTula:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =52
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =3
+                  LayoutMinHeight: =52
+                  LayoutMinWidth: =16
+                  RadiusBottomLeft: =0
+                  RadiusBottomRight: =0
+                  RadiusTopLeft: =0
+                  RadiusTopRight: =0
+                Children:
+                  - lblTituloTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =30
+                        LayoutMinHeight: =30
+                        LayoutMinWidth: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =18
+                        Text: ="Localización de tulas"
+                        Width: =480
+                  - lblSubtituloTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        Height: =18
+                        LayoutMinHeight: =18
+                        LayoutMinWidth: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.5
+                        Text: ="Dónde está cada tula, en cualquier estado del circuito. Ninguna queda invisible."
+                        Width: =720
+            - cardFiltrosTula:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  FillPortions: =0
+                  Height: =104
+                  LayoutMinHeight: =104
+                  LayoutMinWidth: =16
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                Children:
+                  - lblFecDesdeTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: ="FECHA DESDE"
+                        Width: =120
+                        X: =16
+                        Y: =10
+                  - dtDesdeTula:
+                      Control: ModernDatePicker@1.0.1
+                      Properties:
+                        DefaultDate: =DateAdd(Today(), -30, TimeUnit.Days)
+                        Format: =DatePickerFormat.Short
+                        Height: =34
+                        OnChange: =Select(btnActualizarTula)
+                        Width: =150
+                        X: =16
+                        Y: =30
+                  - lblFecHastaTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: ="FECHA HASTA"
+                        Width: =120
+                        X: =180
+                        Y: =10
+                  - dtHastaTula:
+                      Control: ModernDatePicker@1.0.1
+                      Properties:
+                        DefaultDate: =Today()
+                        Format: =DatePickerFormat.Short
+                        Height: =34
+                        OnChange: =Select(btnActualizarTula)
+                        Width: =150
+                        X: =180
+                        Y: =30
+                  - lblBuscarTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: ="BUSCAR"
+                        Width: =120
+                        X: =344
+                        Y: =10
+                  - inpBuscarTula:
+                      Control: Classic/TextInput@2.3.2
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk
+                        Default: =""
+                        DelayOutput: =true
+                        Fill: =ThemeSurface2
+                        FocusedBorderThickness: =2
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HintText: ="Número de tula o de recibo…"
+                        HoverBorderColor: =ThemeLineStrong
+                        HoverColor: =ThemeInk
+                        HoverFill: =ThemeSurface2
+                        OnChange: =Select(btnActualizarTula)
+                        PaddingLeft: =26
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9.5
+                        Width: =cardFiltrosTula.Width - 344 - 236 - 12
+                        X: =344
+                        Y: =30
+                  - icoBuscarTula:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        Color: =ThemeInk3
+                        Height: =16
+                        Icon: =Icon.Search
+                        Width: =16
+                        X: =352
+                        Y: =39
+                  - lblCreadoPorTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: ="CREADO POR"
+                        Width: =120
+                        X: =cardFiltrosTula.Width - 236
+                        Y: =10
+                  - drpCreadoPorTula:
+                      Control: Classic/DropDown@2.3.1
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        ChevronBackground: =ThemeSurface
+                        ChevronFill: =ThemeInk2
+                        ChevronHoverBackground: =ThemeSurface2
+                        ChevronHoverFill: =ThemeAccent
+                        Color: =ThemeInk
+                        Default: =Coalesce(LookUp(colCreadoresTula, CreadorGuid = ctxCreadorSelTula).CreadorNombre, "Cualquiera")
+                        Fill: =ThemeSurface
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverColor: =ThemeInk
+                        HoverFill: =ThemeSurface2
+                        Items: =colCreadoresTula
+                        Items.Value: =CreadorNombre
+                        OnChange: |-
+                          =UpdateContext({ctxCreadorSelTula: drpCreadoPorTula.Selected.CreadorGuid});
+                          Select(btnActualizarTula)
+                        PressedColor: =ThemeAccentInk
+                        PressedFill: =ThemeAccent
+                        SelectionColor: =ThemeAccentInk
+                        SelectionFill: =ThemeAccent
+                        Size: =10
+                        Width: =220
+                        X: =cardFiltrosTula.Width - 236
+                        Y: =30
+                  - cirSyncTula:
+                      Control: Circle@2.3.0
+                      Properties:
+                        Fill: =ThemeAccent
+                        Height: =8
+                        Width: =8
+                        X: =16
+                        Y: =84
+                  - lblSyncTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        Height: =20
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: =If(IsBlank(ctxUltimaActTula), "Sin actualizar", "Actualizado " & Text(ctxUltimaActTula, "HH:mm:ss"))
+                        Width: =260
+                        X: =30
+                        Y: =76
+                  - btnActualizarTula:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeAccent
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =26
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =ThemeAccent
+                        HoverFill: =ThemeAccentSoft
+                        OnSelect: |-
+                          =UpdateContext({ctxCargandoTula: true});
+                          IfError(
+                              // 1) LA consulta: una sola, delegable, con ventana temporal obligatoria.
+                              //    El AddColumns MATERIALIZA en la carga los cuatro textos de lookup y el
+                              //    segmento: la galería después no hace NI UN fetch por fila (fix del N+1),
+                              //    y el segmentado y los contadores trabajan 100% en local.
+                              ClearCollect(colTulasTula,
+                                  AddColumns(
+                                      Filter('CH-Tbl-Bags',
+                                          'Created On' >= Coalesce(dtDesdeTula.SelectedDate, DateAdd(Today(), -30, TimeUnit.Days))
+                                          && 'Created On' < DateAdd(Coalesce(dtHastaTula.SelectedDate, Today()), 1, TimeUnit.Days)
+                                          && (IsBlank(ctxCreadorSelTula) || 'Created By'.User = ctxCreadorSelTula)
+                                          // B-3 ya en el entorno: el espejo ReceiptIdMirror permite buscar
+                                          // por número de recibo sin romper la delegación.
+                                          && (
+                                              StartsWith(BagID, inpBuscarTula.Text)
+                                              || StartsWith(ReceiptIdMirror, inpBuscarTula.Text)
+                                          )
+                                      ),
+                                      SegTula,
+                                      Switch(BagStatus,
+                                          'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                             "esclusa",
+                                          'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  "esclusa",
+                                          'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                            "boveda",
+                                          'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                               "cajero",
+                                          'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', "pendrec",
+                                          'BagStatus (CH-Tbl-Bags)'.Recontada,                                         "procesadas",
+                                          "otros"
+                                      ),
+                                      ReciboTula,      ReceptionID.ReceiptID,      // 1 salto, UNA vez por fila cargada
+                                      ClienteTula,     ReceptionID.RemitentName,   // 1 salto (NO se dot-walkea a Client)
+                                      CreadoPorTula,   'Created By'.'Full Name',   // 1 salto
+                                      CreadorGuidTula, 'Created By'.User           // GUID: es lo que filtra, delegable
+                                  )
+                              );
+
+                              // 2) Combo "Creado por" = los creadores REALES de la ventana cargada.
+                              //    Se reconstruye SOLO cuando no hay creador seleccionado: si hubiera uno,
+                              //    la colección tendría un único creador y el combo se quedaría sin las
+                              //    demás opciones. Cero consultas extra: nombres y GUIDs ya vienen
+                              //    materializados del paso 1. Dedupe con GroupBy, NO con ForAll+LookUp
+                              //    (ForAll no garantiza orden de evaluación => duplicados intermitentes).
+                              If(
+                                  IsBlank(ctxCreadorSelTula),
+                                  ClearCollect(colCreadoresTula,
+                                      // GUID TIPADO: If(false, GUID(...)) siembra la columna con tipo.
+                                      // Blank() pelado deja la columna sin tipo y el Collect siguiente falla.
+                                      {CreadorNombre: "Cualquiera",
+                                       CreadorGuid: If(false, GUID("00000000-0000-0000-0000-000000000000"))}
+                                  );
+                                  Collect(colCreadoresTula,
+                                      ForAll(
+                                          GroupBy(
+                                              Filter(colTulasTula, !IsBlank(CreadorGuidTula)),
+                                              CreadoPorTula, CreadorGuidTula, FilasTula
+                                          ) As G,
+                                          {CreadorNombre: G.CreadoPorTula, CreadorGuid: G.CreadorGuidTula}
+                                      )
+                                  )
+                              );
+
+                              UpdateContext({ctxUltimaActTula: Now()}),
+
+                              // rama de error del IfError
+                              Notify("No se pudieron cargar las tulas: " & FirstError.Message, NotificationType.Error)
+                          );
+                          UpdateContext({ctxCargandoTula: false});
+                          Reset(galTulasTula)
+                        PressedBorderColor: =ThemeLine
+                        PressedColor: =ThemeAccent
+                        PressedFill: =ThemeAccentSoft
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        Size: =9
+                        Text: ="↻  Actualizar"
+                        Width: =124
+                        X: =cardFiltrosTula.Width - 140
+                        Y: =74
+            - cntSegTula:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =If(scrTulas.Width < 1100, 68, 34)
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutMinHeight: =If(scrTulas.Width < 1100, 68, 34)
+                  LayoutMinWidth: =16
+                  LayoutWrap: =true
+                  RadiusBottomLeft: =0
+                  RadiusBottomRight: =0
+                  RadiusTopLeft: =0
+                  RadiusTopRight: =0
+                Children:
+                  - segTodasTula:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =If(ctxSegTula = "todas", ThemeAccentInk, ThemeInk2)
+                        Fill: =If(ctxSegTula = "todas", ThemeAccent, ThemeSurface2)
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =Self.Color
+                        HoverFill: =If(ctxSegTula = "todas", ThemeAccent, ThemeSurface)
+                        LayoutMinHeight: =34
+                        LayoutMinWidth: =22 + 7 * Len(Self.Text)
+                        OnSelect: |-
+                          =UpdateContext({ctxSegTula: "todas"});
+                          Reset(galTulasTula)
+                        PressedBorderColor: =ThemeLine
+                        PressedFill: =Self.HoverFill
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =0
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =0
+                        Size: =9.5
+                        Text: |-
+                          ="Todas  " & Text(CountRows(Filter('CH-Tbl-Bags',
+                              'Created On' >= Coalesce(dtDesdeTula.SelectedDate, DateAdd(Today(), -30, TimeUnit.Days))
+                              && 'Created On' < DateAdd(Coalesce(dtHastaTula.SelectedDate, Today()), 1, TimeUnit.Days)
+                              && (IsBlank(ctxCreadorSelTula) || 'Created By'.User = ctxCreadorSelTula)
+                              && (StartsWith(BagID, inpBuscarTula.Text) || StartsWith(ReceiptIdMirror, inpBuscarTula.Text))
+                          )))
+                        Width: =22 + 7 * Len(Self.Text)
+                  - segEsclusaTula:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =If(ctxSegTula = "esclusa", ThemeAccentInk, ThemeInk2)
+                        Fill: =If(ctxSegTula = "esclusa", ThemeAccent, ThemeSurface2)
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =Self.Color
+                        HoverFill: =If(ctxSegTula = "esclusa", ThemeAccent, ThemeSurface)
+                        LayoutMinHeight: =34
+                        LayoutMinWidth: =22 + 7 * Len(Self.Text)
+                        OnSelect: |-
+                          =UpdateContext({ctxSegTula: "esclusa"});
+                          Reset(galTulasTula)
+                        PressedBorderColor: =ThemeLine
+                        PressedFill: =Self.HoverFill
+                        RadiusBottomLeft: =0
+                        RadiusBottomRight: =0
+                        RadiusTopLeft: =0
+                        RadiusTopRight: =0
+                        Size: =9.5
+                        Text: |-
+                          ="En esclusa  " & Text(CountRows(Filter('CH-Tbl-Bags',
+                              'Created On' >= Coalesce(dtDesdeTula.SelectedDate, DateAdd(Today(), -30, TimeUnit.Days))
+                              && 'Created On' < DateAdd(Coalesce(dtHastaTula.SelectedDate, Today()), 1, TimeUnit.Days)
+                              && (IsBlank(ctxCreadorSelTula) || 'Created By'.User = ctxCreadorSelTula)
+                              && (StartsWith(BagID, inpBuscarTula.Text) || StartsWith(ReceiptIdMirror, inpBuscarTula.Text))
+                              && (BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa' || BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa')
+                          )))
+                        Width: =22 + 7 * Len(Self.Text)
+                  - segBovedaTula:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =If(ctxSegTula = "boveda", ThemeAccentInk, ThemeInk2)
+                        Fill: =If(ctxSegTula = "boveda", ThemeAccent, ThemeSurface2)
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =Self.Color
+                        HoverFill: =If(ctxSegTula = "boveda", ThemeAccent, ThemeSurface)
+                        LayoutMinHeight: =34
+                        LayoutMinWidth: =22 + 7 * Len(Self.Text)
+                        OnSelect: |-
+                          =UpdateContext({ctxSegTula: "boveda"});
+                          Reset(galTulasTula)
+                        PressedBorderColor: =ThemeLine
+                        PressedFill: =Self.HoverFill
+                        RadiusBottomLeft: =0
+                        RadiusBottomRight: =0
+                        RadiusTopLeft: =0
+                        RadiusTopRight: =0
+                        Size: =9.5
+                        Text: |-
+                          ="En bóveda  " & Text(CountRows(Filter('CH-Tbl-Bags',
+                              'Created On' >= Coalesce(dtDesdeTula.SelectedDate, DateAdd(Today(), -30, TimeUnit.Days))
+                              && 'Created On' < DateAdd(Coalesce(dtHastaTula.SelectedDate, Today()), 1, TimeUnit.Days)
+                              && (IsBlank(ctxCreadorSelTula) || 'Created By'.User = ctxCreadorSelTula)
+                              && (StartsWith(BagID, inpBuscarTula.Text) || StartsWith(ReceiptIdMirror, inpBuscarTula.Text))
+                              && (BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda')
+                          )))
+                        Width: =22 + 7 * Len(Self.Text)
+                  - segCajeroTula:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =If(ctxSegTula = "cajero", ThemeAccentInk, ThemeInk2)
+                        Fill: =If(ctxSegTula = "cajero", ThemeAccent, ThemeSurface2)
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =Self.Color
+                        HoverFill: =If(ctxSegTula = "cajero", ThemeAccent, ThemeSurface)
+                        LayoutMinHeight: =34
+                        LayoutMinWidth: =22 + 7 * Len(Self.Text)
+                        OnSelect: |-
+                          =UpdateContext({ctxSegTula: "cajero"});
+                          Reset(galTulasTula)
+                        PressedBorderColor: =ThemeLine
+                        PressedFill: =Self.HoverFill
+                        RadiusBottomLeft: =0
+                        RadiusBottomRight: =0
+                        RadiusTopLeft: =0
+                        RadiusTopRight: =0
+                        Size: =9.5
+                        Text: |-
+                          ="Asignada a cajero  " & Text(CountRows(Filter('CH-Tbl-Bags',
+                              'Created On' >= Coalesce(dtDesdeTula.SelectedDate, DateAdd(Today(), -30, TimeUnit.Days))
+                              && 'Created On' < DateAdd(Coalesce(dtHastaTula.SelectedDate, Today()), 1, TimeUnit.Days)
+                              && (IsBlank(ctxCreadorSelTula) || 'Created By'.User = ctxCreadorSelTula)
+                              && (StartsWith(BagID, inpBuscarTula.Text) || StartsWith(ReceiptIdMirror, inpBuscarTula.Text))
+                              && (BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero')
+                          )))
+                        Width: =22 + 7 * Len(Self.Text)
+                  - segPendRecTula:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =If(ctxSegTula = "pendrec", ThemeAccentInk, ThemeInk2)
+                        Fill: =If(ctxSegTula = "pendrec", ThemeAccent, ThemeSurface2)
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =Self.Color
+                        HoverFill: =If(ctxSegTula = "pendrec", ThemeAccent, ThemeSurface)
+                        LayoutMinHeight: =34
+                        LayoutMinWidth: =22 + 7 * Len(Self.Text)
+                        OnSelect: |-
+                          =UpdateContext({ctxSegTula: "pendrec"});
+                          Reset(galTulasTula)
+                        PressedBorderColor: =ThemeLine
+                        PressedFill: =Self.HoverFill
+                        RadiusBottomLeft: =0
+                        RadiusBottomRight: =0
+                        RadiusTopLeft: =0
+                        RadiusTopRight: =0
+                        Size: =9.5
+                        Text: |-
+                          ="Pend. revisión recuento  " & Text(CountRows(Filter('CH-Tbl-Bags',
+                              'Created On' >= Coalesce(dtDesdeTula.SelectedDate, DateAdd(Today(), -30, TimeUnit.Days))
+                              && 'Created On' < DateAdd(Coalesce(dtHastaTula.SelectedDate, Today()), 1, TimeUnit.Days)
+                              && (IsBlank(ctxCreadorSelTula) || 'Created By'.User = ctxCreadorSelTula)
+                              && (StartsWith(BagID, inpBuscarTula.Text) || StartsWith(ReceiptIdMirror, inpBuscarTula.Text))
+                              && (BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento')
+                          )))
+                        Width: =22 + 7 * Len(Self.Text)
+                  - segProcesadasTula:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =If(ctxSegTula = "procesadas", ThemeAccentInk, ThemeInk2)
+                        Fill: =If(ctxSegTula = "procesadas", ThemeAccent, ThemeSurface2)
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =Self.Color
+                        HoverFill: =If(ctxSegTula = "procesadas", ThemeAccent, ThemeSurface)
+                        LayoutMinHeight: =34
+                        LayoutMinWidth: =22 + 7 * Len(Self.Text)
+                        OnSelect: |-
+                          =UpdateContext({ctxSegTula: "procesadas"});
+                          Reset(galTulasTula)
+                        PressedBorderColor: =ThemeLine
+                        PressedFill: =Self.HoverFill
+                        RadiusBottomLeft: =0
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =0
+                        RadiusTopRight: =8
+                        Size: =9.5
+                        Text: |-
+                          ="Procesadas  " & Text(CountRows(Filter('CH-Tbl-Bags',
+                              'Created On' >= Coalesce(dtDesdeTula.SelectedDate, DateAdd(Today(), -30, TimeUnit.Days))
+                              && 'Created On' < DateAdd(Coalesce(dtHastaTula.SelectedDate, Today()), 1, TimeUnit.Days)
+                              && (IsBlank(ctxCreadorSelTula) || 'Created By'.User = ctxCreadorSelTula)
+                              && (StartsWith(BagID, inpBuscarTula.Text) || StartsWith(ReceiptIdMirror, inpBuscarTula.Text))
+                              && (BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada)
+                          )))
+                        Width: =22 + 7 * Len(Self.Text)
+            - cardTablaTula:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  LayoutMinHeight: =320
+                  LayoutMinWidth: =16
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                Children:
+                  - lblPanelTituloTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.5
+                        Text: |-
+                          =Switch(ctxSegTula,
+                              "todas",      "Todas las tulas",
+                              "esclusa",    "En esclusa",
+                              "boveda",     "En bóveda",
+                              "cajero",     "Asignadas a cajero",
+                              "pendrec",    "Pendientes de revisión — recuento",
+                              "procesadas", "Procesadas",
+                              "Tulas"
+                          )
+                        Width: =7 * Len(Self.Text) + 8
+                        X: =16
+                        Y: =12
+                  - pilCountTula:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =0
+                        Color: =ThemeInk3
+                        DisplayMode: =DisplayMode.View
+                        Fill: =ThemeSunk
+                        Font: =Font.'Segoe UI'
+                        Height: =22
+                        HoverBorderColor: =Self.BorderColor
+                        HoverColor: =Self.Color
+                        HoverFill: =Self.Fill
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PressedBorderColor: =Self.BorderColor
+                        PressedFill: =Self.Fill
+                        Size: =9
+                        Text: |-
+                          =Text(CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula))) & 
+                              If(CountRows(colTulasTula) >= 2000, "+ tulas visibles", " tulas")
+                        Width: =12 + 7 * Len(Self.Text)
+                        X: =lblPanelTituloTula.X + lblPanelTituloTula.Width + 10
+                        Y: =10
+                  - shpLineaPanelTula:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        Fill: =ThemeLine
+                        Height: =1
+                        Width: =cardTablaTula.Width
+                        Y: =40
+                  - shpBandHeadTula:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        Fill: =ThemeSurface2
+                        Height: =22
+                        Visible: =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) > 0
+                        Width: =cardTablaTula.Width - 32
+                        X: =16
+                        Y: =42
+                  - btnSortTulaTula:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        Align: =Align.Left
+                        BorderColor: =App.Theme.Colors.Darker40
+                        BorderThickness: =0
+                        Color: =ThemeInk3
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =18
+                        HoverColor: =ThemeInk
+                        HoverFill: =RGBA(0, 0, 0, 0)
+                        OnSelect: |-
+                          =If(ctxSortTula = "tula",
+                              UpdateContext({ctxSortAscTula: !ctxSortAscTula}),
+                              UpdateContext({ctxSortTula: "tula", ctxSortAscTula: true}));
+                          Reset(galTulasTula)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedColor: =ThemeInk
+                        PressedFill: =RGBA(0, 0, 0, 0)
+                        Size: =8
+                        Text: ="TULA " & If(ctxSortTula = "tula", If(ctxSortAscTula, "▲", "▼"), "")
+                        Visible: =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) > 0
+                        Width: =galTulasTula.Width * 0.10
+                        X: =16
+                        Y: =44
+                  - lblColReciboTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8
+                        Text: ="RECIBO"
+                        Visible: =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) > 0
+                        Width: =galTulasTula.Width * 0.12
+                        X: =16 + galTulasTula.Width * 0.10
+                        Y: =44
+                  - lblColClienteTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8
+                        Text: ="CLIENTE"
+                        Visible: |-
+                          =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) > 0
+                          && scrTulas.Width >= 1100
+                        Width: =galTulasTula.Width * 0.21
+                        X: =16 + galTulasTula.Width * 0.22
+                        Y: =44
+                  - lblColEstadoTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8
+                        Text: ="ESTADO"
+                        Visible: =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) > 0
+                        Width: =galTulasTula.Width * 0.24
+                        X: =16 + galTulasTula.Width * 0.43
+                        Y: =44
+                  - btnSortCreadoTula:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        Align: =Align.Left
+                        BorderColor: =App.Theme.Colors.Darker40
+                        BorderThickness: =0
+                        Color: =ThemeInk3
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =18
+                        HoverColor: =ThemeInk
+                        HoverFill: =RGBA(0, 0, 0, 0)
+                        OnSelect: |-
+                          =If(ctxSortTula = "creado",
+                              UpdateContext({ctxSortAscTula: !ctxSortAscTula}),
+                              UpdateContext({ctxSortTula: "creado", ctxSortAscTula: false}));
+                          Reset(galTulasTula)
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        PressedColor: =ThemeInk
+                        PressedFill: =RGBA(0, 0, 0, 0)
+                        Size: =8
+                        Text: ="CREADO " & If(ctxSortTula = "creado", If(ctxSortAscTula, "▲", "▼"), "")
+                        Visible: =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) > 0
+                        Width: =galTulasTula.Width * 0.16
+                        X: =16 + galTulasTula.Width * 0.67
+                        Y: =44
+                  - lblColCreadoPorTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8
+                        Text: ="CREADO POR"
+                        Visible: |-
+                          =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) > 0
+                          && scrTulas.Width >= 1100
+                        Width: =galTulasTula.Width * 0.17
+                        X: =16 + galTulasTula.Width * 0.83
+                        Y: =44
+                  - shpLineaHeadTula:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        Fill: =ThemeLine
+                        Height: =1
+                        Visible: =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) > 0
+                        Width: =cardTablaTula.Width - 32
+                        X: =16
+                        Y: =64
+                  - galTulasTula:
+                      Control: Gallery@2.15.0
+                      Variant: Vertical
+                      Properties:
+                        DelayItemLoading: =false
+                        Height: =cardTablaTula.Height - 90
+                        Items: |-
+                          =With(
+                              { ord: If(ctxSortAscTula, SortOrder.Ascending, SortOrder.Descending) },
+                              With(
+                                  { base: Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula) },
+                                  If(
+                                      ctxSortTula = "tula",
+                                      SortByColumns(base, "sanic_bagid", ord),
+                                      SortByColumns(base, "createdon", ord)
+                                  )
+                              )
+                          )
+                        LoadingSpinner: =LoadingSpinner.None
+                        TemplatePadding: =0
+                        TemplateSize: =44
+                        Width: =cardTablaTula.Width - 32
+                        X: =16
+                        Y: =66
+                      Children:
+                        - btnFilaTula:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderThickness: =0
+                              Color: =ThemeInk
+                              Fill: =RGBA(0, 0, 0, 0)
+                              Font: =Font.'Segoe UI'
+                              Height: =44
+                              HoverColor: =ThemeInk
+                              HoverFill: =ThemeSurface2
+                              OnSelect: =Select(Parent)
+                              PressedFill: =ThemeAccentSoft
+                              Size: =10
+                              Text: =""
+                              Width: =Parent.Width
+                        - lblCelTulaTula:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeAccent
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9
+                              Text: =ThisItem.BagID
+                              Width: =Parent.Width * 0.10
+                              Wrap: =false
+                              Y: =12
+                        - lblCelReciboTula:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Segoe UI'
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9.5
+                              Text: =Coalesce(ThisItem.ReciboTula, "—")
+                              Width: =Parent.Width * 0.12
+                              X: =Parent.Width * 0.10
+                              Y: =12
+                        - lblCelClienteTula:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk
+                              Font: =Font.'Segoe UI'
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9.5
+                              Text: =Coalesce(ThisItem.ClienteTula, "—")
+                              Visible: =scrTulas.Width >= 1100
+                              Width: =Parent.Width * 0.21
+                              Wrap: =false
+                              X: =Parent.Width * 0.22
+                              Y: =12
+                        - pilCelEstadoTula:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeLine
+                              BorderThickness: =If(Self.Fill = ThemeSunk, 1, 0)
+                              Color: |-
+                                =Switch(ThisItem.BagStatus,
+                                    'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                             ThemeWarn,
+                                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeAccent,
+                                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeAccent,
+                                    'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                            ThemePos,
+                                    'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                               ThemeInk3,
+                                    'BagStatus (CH-Tbl-Bags)'.Recontada,                                         ThemeInk3,
+                                    ThemeInk3
+                                )
+                              DisplayMode: =DisplayMode.View
+                              Fill: |-
+                                =Switch(ThisItem.BagStatus,
+                                    'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                             ThemeWarnSoft,
+                                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  ThemeAccentSoft,
+                                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeAccentSoft,
+                                    'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                            ThemePosSoft,
+                                    'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                               ThemeSunk,
+                                    'BagStatus (CH-Tbl-Bags)'.Recontada,                                         ThemeSunk,
+                                    ThemeSunk
+                                )
+                              Font: =Font.'Segoe UI'
+                              Height: =22
+                              HoverBorderColor: =Self.BorderColor
+                              HoverColor: =Self.Color
+                              HoverFill: =Self.Fill
+                              OnSelect: =Select(Parent)
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PressedBorderColor: =Self.BorderColor
+                              PressedFill: =Self.Fill
+                              Size: =9
+                              Text: |-
+                                =Switch(ThisItem.BagStatus,
+                                    'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                             "Recibida en esclusa",
+                                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  "Pend. rev. — esclusa",
+                                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', "Pend. rev. — recuento",
+                                    'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                            "En bóveda",
+                                    'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                               "Asignada a cajero",
+                                    'BagStatus (CH-Tbl-Bags)'.Recontada,                                         "Recontada",
+                                    "Estado " & Text(ThisItem.BagStatus)
+                                )
+                              Width: =Min(12 + 7 * Len(Self.Text), Parent.Width * 0.235)
+                              X: =Parent.Width * 0.43
+                              Y: =11
+                        - lblCelCreadoTula:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Segoe UI'
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9.5
+                              Text: =Text(ThisItem.'Created On', FmtFechaCorta)
+                              Width: =Parent.Width * 0.16
+                              X: =Parent.Width * 0.67
+                              Y: =12
+                        - lblCelCreadoPorTula:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Segoe UI'
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9.5
+                              Text: =Coalesce(ThisItem.CreadoPorTula, "—")
+                              Visible: =scrTulas.Width >= 1100
+                              Width: =Parent.Width * 0.17
+                              X: =Parent.Width * 0.83
+                              Y: =12
+                        - shpSepTula:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =ThemeLine
+                              Height: =1
+                              OnSelect: =Select(Parent)
+                              Width: =Parent.Width
+                              Y: =43
+                  - icoVacioTula:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        Color: =ThemeInk3
+                        Height: =32
+                        Icon: =Icon.Folder
+                        Visible: |-
+                          =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) = 0
+                          && !ctxCargandoTula
+                        Width: =32
+                        X: =cardTablaTula.Width / 2 - 16
+                        Y: =cardTablaTula.Height / 2 - 60
+                  - lblVacioTextoTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        Height: =36
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9.5
+                        Text: ="Ampliá el rango de fechas, limpiá la búsqueda o probá con otro segmento."
+                        Visible: |-
+                          =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) = 0
+                          && !ctxCargandoTula
+                        Width: =cardTablaTula.Width - 32
+                        X: =16
+                        Y: =cardTablaTula.Height / 2 + 6
+                  - lblTopeTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeWarn
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: ="La grilla muestra las primeras 2.000 filas; los contadores de los segmentos son EXACTOS (conteo en el servidor). Acotá el rango o buscá para ver el detalle."
+                        Visible: =CountRows(colTulasTula) >= 2000
+                        Width: =cardTablaTula.Width - 32
+                        X: =16
+                        Y: =cardTablaTula.Height - 22
+                  - lblVacioTituloTula:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        Color: =ThemeInk2
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =12
+                        Text: |-
+                          =Switch(ctxSegTula,
+                              "todas",      "No hay tulas en el rango de fechas seleccionado",
+                              "esclusa",    "No hay tulas en esclusa en este rango",
+                              "boveda",     "No hay tulas almacenadas en bóveda en este rango",
+                              "cajero",     "No hay tulas asignadas a cajero en este rango",
+                              "pendrec",    "No hay tulas pendientes de revisión por recuento en este rango",
+                              "procesadas", "No hay tulas recontadas en este rango",
+                              "No hay tulas para mostrar"
+                          )
+                        Visible: |-
+                          =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) = 0
+                          && !ctxCargandoTula
+                        Width: =cardTablaTula.Width - 32
+                        X: =16
+                        Y: =cardTablaTula.Height / 2 - 18
+      - cntCargandoTula:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =RGBA(0, 0, 0, 0.35)
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =ctxCargandoTula
+            Width: =Parent.Width
+          Children:
+            - lblCargandoTula:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  Color: =Color.White
+                  Font: =Font.'Segoe UI'
+                  Height: =24
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =12
+                  Text: ="Cargando tulas..."
+                  Width: =cntCargandoTula.Width
+                  Y: =cntCargandoTula.Height / 2 - 12

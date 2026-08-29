@@ -151,19 +151,6 @@ App:
 
       HtmlApEncabezadoTablaSimple =
       "<table><tr><th>Campo</th><th>Valor</th></tr>";
-    OnError: |-
-      =Trace(
-          $"[Reception] {FirstError.Message} | Kind: {FirstError.Kind} | Origen: {FirstError.Source} | Obs: {FirstError.Observed}",
-          TraceSeverity.Error
-      );
-      Notify(
-          If(
-              FirstError.Kind = ErrorKind.Validation || FirstError.Kind = ErrorKind.Conflict || FirstError.Kind = ErrorKind.Sync,
-              FirstError.Message,   // mensaje de negocio del GuardReceptionPlugin, TAL CUAL
-              "Ocurrió un error inesperado. El detalle quedó registrado para soporte."
-          ),
-          NotificationType.Error
-      )
     OnStart: |-
       =// ===== 1. Semilla de ESQUEMA de las colecciones (Collect + Clear) =====
       // Sin esto, las colecciones no existen en tiempo de diseño y toda referencia a sus

@@ -1,0 +1,897 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrHub:
+    Properties:
+      Fill: =ThemeBg
+      LoadingSpinnerColor: =RGBA(0, 51, 102, 1)
+    Children:
+      - shpHubHeader:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            Fill: =ThemeSurface
+            Height: =61
+            Width: =Parent.Width
+      - shpHubHeaderLinea:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            Fill: =ThemeLine
+            Height: =1
+            Width: =Parent.Width
+            Y: =shpHubHeader.Y + shpHubHeader.Height
+      - shpHubMarca:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =Color.White
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccent
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =36
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeAccent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeAccent
+            RadiusBottomLeft: =9
+            RadiusBottomRight: =9
+            RadiusTopLeft: =9
+            RadiusTopRight: =9
+            Size: =14.25
+            Text: ="₵"
+            Width: =36
+            X: =22
+            Y: =(shpHubHeader.Height - Self.Height) / 2
+      - lblHubMarca:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10.88
+            Text: ="CashHub"
+            Width: =170
+            Wrap: =false
+            X: =68
+            Y: =shpHubMarca.Y
+      - lblHubMarcaSub:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Segoe UI'
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="Portal de operaciones"
+            Width: =220
+            Wrap: =false
+            X: =68
+            Y: =lblHubMarca.Y + lblHubMarca.Height
+      - shpHubUserChip:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLineSoft
+            BorderThickness: =1
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Normal
+            HoverBorderColor: =ThemeLineSoft
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =ThemeLineSoft
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =20
+            RadiusBottomRight: =20
+            RadiusTopLeft: =20
+            RadiusTopRight: =20
+            Size: =9
+            Text: =""
+            Width: =If(Parent.Width < 900, 40, 232)
+            X: =Parent.Width - Self.Width - 22
+            Y: =(shpHubHeader.Height - Self.Height) / 2
+      - shpHubAvatar:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeAccent
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccentSoft
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeAccentSoft
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =15
+            RadiusBottomRight: =15
+            RadiusTopLeft: =15
+            RadiusTopRight: =15
+            Size: =9
+            Text: |-
+              =Upper(
+                  Left(First(Split(Trim(User().FullName), " ")).Value, 1) &
+                  If(
+                      CountRows(Split(Trim(User().FullName), " ")) > 1,
+                      Left(Last(FirstN(Split(Trim(User().FullName), " "), 2)).Value, 1),
+                      ""
+                  )
+              )
+            Tooltip: =User().FullName & " · " & User().Email
+            Width: =30
+            X: =shpHubUserChip.X + 5
+            Y: =shpHubUserChip.Y + 5
+      - lblHubUserNombre:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =User().FullName
+            Visible: =Parent.Width >= 900
+            Width: =Max(0, shpHubUserChip.Width - 48)
+            Wrap: =false
+            X: =shpHubAvatar.X + 38
+            Y: =shpHubUserChip.Y + 5
+      - lblHubUserMail:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Segoe UI'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: =User().Email
+            Visible: =Parent.Width >= 900
+            Width: =lblHubUserNombre.Width
+            Wrap: =false
+            X: =lblHubUserNombre.X
+            Y: =lblHubUserNombre.Y + lblHubUserNombre.Height
+      - shpHubBanner:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            Fill: =ThemeAccentSoft
+            Height: =44
+            Visible: =gvarAccessError
+            Width: =Parent.Width
+            Y: =shpHubHeaderLinea.Y + shpHubHeaderLinea.Height
+      - shpHubBannerBarra:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            Fill: =ThemeAccent
+            Height: =shpHubBanner.Height
+            Visible: =gvarAccessError
+            Width: =3
+            Y: =shpHubBanner.Y
+      - icoHubBanner:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeAccent
+            DisabledBorderColor: =RGBA(56, 56, 56, 1)
+            DisabledColor: =RGBA(119, 119, 119, 1)
+            Height: =16
+            HoverColor: =ThemeAccent
+            Icon: =Icon.Warning
+            PressedColor: =ThemeAccent
+            Visible: =gvarAccessError
+            Width: =16
+            X: =galHubApps.X
+            Y: =shpHubBanner.Y + 14
+      - lblHubBanner:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeAccentDark
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =shpHubBanner.Height
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="No pudimos verificar tus accesos con Azure AD. Se muestran todas las aplicaciones; si alguna no te corresponde, no vas a poder usarla."
+            Visible: =gvarAccessError
+            Width: =galHubApps.Width - 18 - 24
+            X: =icoHubBanner.X + 24
+            Y: =shpHubBanner.Y
+      - htmHubSaludo:
+          Control: HtmlViewer@2.1.0
+          Properties:
+            DisabledBorderColor: =RGBA(56, 56, 56, 1)
+            Font: =Font.'Open Sans'
+            Height: =44
+            HtmlText: |-
+              ="<div style='font-family:Segoe UI,sans-serif;font-size:26px;font-weight:600;color:#201C1D;letter-spacing:-0.2px'>" &
+              If(
+                  Hour(Now()) < 12, "Buenos días",
+                  Hour(Now()) < 19, "Buenas tardes",
+                  "Buenas noches"
+              ) &
+              ", <span style='color:#C8102E'>" &
+              First(Split(Trim(User().FullName), " ")).Value &
+              "</span></div>"
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Width: =galHubApps.Width - 18
+            X: =galHubApps.X
+            Y: =shpHubBanner.Y + If(gvarAccessError, shpHubBanner.Height, 0) + 34
+      - lblHubFecha:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Segoe UI'
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10.13
+            Text: |-
+              =If(
+                  gvarLoaded,
+                  $"{Text(Now(), "dddd", "es-ES")} {Day(Now())} de {Text(Now(), "mmmm", "es-ES")} · Estas son tus aplicaciones de tesorería.",
+                  "Verificando tus accesos…"
+              )
+            Width: =galHubApps.Width - 18
+            Wrap: =false
+            X: =galHubApps.X
+            Y: =htmHubSaludo.Y + htmHubSaludo.Height + 2
+      - shpHubPildoraAccesos:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOkSoft, ThemeInfoSoft)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Normal
+            Height: =26
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOkSoft, ThemeInfoSoft)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOkSoft, ThemeInfoSoft)
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: =""
+            Visible: =gvarLoaded && !gvarAccessError && CountRows(colAppData) > 0
+            Width: =Min(galHubApps.Width - 18, Len(lblHubAccesos.Text) * 6.4 + 46)
+            X: =galHubApps.X
+            Y: =lblHubFecha.Y + lblHubFecha.Height + 14
+      - icoHubAccesos:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOk, ThemeInfo)
+            DisabledBorderColor: =RGBA(56, 56, 56, 1)
+            DisabledColor: =RGBA(119, 119, 119, 1)
+            Height: =14
+            HoverColor: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOk, ThemeInfo)
+            Icon: =Icon.Check
+            PressedColor: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOk, ThemeInfo)
+            Visible: =shpHubPildoraAccesos.Visible
+            Width: =14
+            X: =shpHubPildoraAccesos.X + 12
+            Y: =shpHubPildoraAccesos.Y + 6
+      - lblHubAccesos:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =If(CountRows(colAppData) = CountRows(colCatalog), ThemeOk, ThemeInfo)
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =shpHubPildoraAccesos.Height
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =$"Tenés acceso a {CountRows(colAppData)} de {CountRows(colCatalog)} aplicaciones según tus grupos"
+            Visible: =shpHubPildoraAccesos.Visible
+            Width: =shpHubPildoraAccesos.Width - 46
+            Wrap: =false
+            X: =icoHubAccesos.X + icoHubAccesos.Width + 7
+            Y: =shpHubPildoraAccesos.Y
+      - galHubSkeleton:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Height: =galHubApps.Height
+            Items: =Sequence(6)
+            ShowScrollbar: =false
+            TemplateFill: =Color.Transparent
+            TemplatePadding: =0
+            TemplateSize: =214
+            Visible: =!gvarLoaded
+            Width: =galHubApps.Width
+            WrapCount: =Max(1, RoundDown(Self.Width / 300, 0))
+            X: =galHubApps.X
+            Y: =galHubApps.Y
+          Children:
+            - shpHubSkTarjeta:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Color: =RGBA(255, 255, 255, 1)
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =ThemeSurface
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Normal
+                  Height: =Parent.TemplateHeight - 18
+                  HoverBorderColor: =ThemeLine
+                  HoverColor: =Self.Color
+                  HoverFill: =ThemeSurface
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =ThemeLine
+                  PressedColor: =Self.Fill
+                  PressedFill: =ThemeSurface
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =9
+                  Text: =""
+                  Width: =Parent.TemplateWidth - 18
+            - shpHubSkGlifo:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =RGBA(255, 255, 255, 1)
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =ThemeLineSoft
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Normal
+                  Height: =44
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =ThemeLineSoft
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =ThemeLineSoft
+                  RadiusBottomLeft: =11
+                  RadiusBottomRight: =11
+                  RadiusTopLeft: =11
+                  RadiusTopRight: =11
+                  Size: =9
+                  Text: =""
+                  Width: =44
+                  X: =20
+                  Y: =20
+            - shpHubSkBarra1:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =RGBA(255, 255, 255, 1)
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =ThemeLineSoft
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Normal
+                  Height: =12
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =ThemeLineSoft
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =ThemeLineSoft
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  Size: =9
+                  Text: =""
+                  Width: =(Parent.TemplateWidth - 58) * 0.55
+                  X: =20
+                  Y: =82
+            - shpHubSkBarra2:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =RGBA(255, 255, 255, 1)
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =ThemeLineSoft
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Normal
+                  Height: =10
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =ThemeLineSoft
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =ThemeLineSoft
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  Size: =9
+                  Text: =""
+                  Width: =(Parent.TemplateWidth - 58) * 0.85
+                  X: =20
+                  Y: =106
+            - shpHubSkBarra3:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =RGBA(255, 255, 255, 1)
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =ThemeLineSoft
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Normal
+                  Height: =10
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =ThemeLineSoft
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =ThemeLineSoft
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                  Size: =9
+                  Text: =""
+                  Width: =(Parent.TemplateWidth - 58) * 0.6
+                  X: =20
+                  Y: =124
+      - galHubApps:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Height: =shpHubFooter.Y - Self.Y - 20
+            Items: =Sort(colAppData, 'Order')
+            OnSelect: =Launch(galHubApps.Selected.AppURL, {}, LaunchTarget.Replace)
+            TemplateFill: =Color.Transparent
+            TemplatePadding: =0
+            TemplateSize: =214
+            Visible: =gvarLoaded && CountRows(colAppData) > 0
+            Width: =Parent.Width - Self.X * 2 + 18
+            WrapCount: =Max(1, RoundDown(Self.Width / 300, 0))
+            X: =If(Parent.Width < 900, 20, 46)
+            Y: =shpHubPildoraAccesos.Y + shpHubPildoraAccesos.Height + 24
+          Children:
+            - btnHubTarjeta:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Color: =RGBA(255, 255, 255, 1)
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =ThemeSurface
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Normal
+                  Height: =Parent.TemplateHeight - 18
+                  HoverBorderColor: =ThemeAccent
+                  HoverColor: =Self.Color
+                  HoverFill: =ThemeSurface
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =ThemeAccent
+                  PressedColor: =Self.Fill
+                  PressedFill: =ThemeAccentSoft
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =9
+                  Text: =""
+                  Tooltip: ="Abrir " & ThisItem.'Display Name'
+                  Width: =Parent.TemplateWidth - 18
+            - shpHubGlifo:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =RGBA(255, 255, 255, 1)
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =ThemeAccentSoft
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Normal
+                  Height: =44
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =ThemeAccentSoft
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =ThemeAccentSoft
+                  RadiusBottomLeft: =11
+                  RadiusBottomRight: =11
+                  RadiusTopLeft: =11
+                  RadiusTopRight: =11
+                  Size: =9
+                  Text: =""
+                  Width: =44
+                  X: =20
+                  Y: =20
+            - imgHubGlifo:
+                Control: Image@2.2.3
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                  DisabledFill: =RGBA(119, 119, 119, 1)
+                  Height: =44
+                  Image: =ThisItem.Icon
+                  OnSelect: =Select(Parent)
+                  Visible: =!IsBlank(ThisItem.Icon)
+                  Width: =44
+                  X: =20
+                  Y: =20
+            - lblHubGlifoInicial:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeAccent
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =44
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =11.25
+                  Text: |-
+                    =Upper(
+                        With(
+                            { _k: Trim(Coalesce(ThisItem.'App Key', ThisItem.'Display Name')) },
+                            Left(_k, 1) & If(Len(_k) > 1, Right(_k, 1), "")
+                        )
+                    )
+                  Visible: =IsBlank(ThisItem.Icon)
+                  Width: =44
+                  Wrap: =false
+                  X: =20
+                  Y: =20
+            - lblHubTarjetaTitulo:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =11.25
+                  Text: =ThisItem.'Display Name'
+                  Width: =Parent.TemplateWidth - 58
+                  Wrap: =false
+                  X: =20
+                  Y: =78
+            - lblHubTarjetaDesc:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk2
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =Parent.TemplateHeight - 163
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9
+                  Text: =ThisItem.Description
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =Parent.TemplateWidth - 58
+                  X: =20
+                  Y: =102
+            - shpHubTarjetaSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 255, 1)
+                  Fill: =ThemeLineSoft
+                  Height: =1
+                  OnSelect: =Select(Parent)
+                  Width: =Parent.TemplateWidth - 58
+                  X: =20
+                  Y: =Parent.TemplateHeight - 61
+            - lblHubTarjetaAbrir:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeAccent
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =18
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9
+                  Text: ="Abrir aplicación"
+                  Width: =140
+                  Wrap: =false
+                  X: =20
+                  Y: =shpHubTarjetaSep.Y + 12
+            - lblHubTarjetaFlecha:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk3
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Segoe UI'
+                  Height: =18
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9
+                  Text: ="→"
+                  Width: =14
+                  Wrap: =false
+                  X: =Parent.TemplateWidth - 52
+                  Y: =lblHubTarjetaAbrir.Y
+      - shpHubVacio:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Normal
+            Height: =150
+            HoverBorderColor: =ThemeLine
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =ThemeLine
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: =""
+            Visible: =gvarLoaded && CountRows(colAppData) = 0
+            Width: =galHubApps.Width - 18
+            X: =galHubApps.X
+            Y: =galHubApps.Y
+      - lblHubVacioTitulo:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11.25
+            Text: ="No tenés aplicaciones asignadas"
+            Visible: =shpHubVacio.Visible
+            Width: =shpHubVacio.Width - 56
+            Wrap: =false
+            X: =shpHubVacio.X + 28
+            Y: =shpHubVacio.Y + 44
+      - lblHubVacioSub:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Segoe UI'
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10.13
+            Text: ="Contactá a tu supervisor para que te agregue a los grupos de Azure AD que correspondan a tu rol."
+            Visible: =shpHubVacio.Visible
+            Width: =lblHubVacioTitulo.Width
+            X: =lblHubVacioTitulo.X
+            Y: =lblHubVacioTitulo.Y + 30
+      - shpHubFooter:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            Fill: =ThemeSurface2
+            Height: =46
+            Width: =Parent.Width
+            Y: =Parent.Height - Self.Height
+      - shpHubFooterLinea:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            Fill: =ThemeLineSoft
+            Height: =1
+            Width: =Parent.Width
+            Y: =shpHubFooter.Y
+      - lblHubFooterIzq:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Segoe UI'
+            Height: =46
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="CashHub · CH-App-Hub"
+            Width: =240
+            Wrap: =false
+            X: =galHubApps.X
+            Y: =shpHubFooter.Y
+      - lblHubFooterDer:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Segoe UI'
+            Height: =46
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="Los accesos se administran por grupos de Azure AD · ¿Te falta una app? Contactá a tu supervisor"
+            Visible: =Parent.Width >= 900
+            Width: =Min(560, galHubApps.Width - 18 - 260)
+            Wrap: =false
+            X: =galHubApps.X + galHubApps.Width - 18 - Self.Width
+            Y: =shpHubFooter.Y

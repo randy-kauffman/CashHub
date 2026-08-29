@@ -8,12 +8,50 @@
 # ************************************************************************************************
 App:
   Properties:
-    OnStart: |-
-      =Set(gvarUser, LookUp(Users, 'Primary Email' =  User().Email));
-      Set(gvarNavItems, Table(
-      {Icon: "ProductRelease", Label: "Aprobaciones", Screen:'Screen Approvals', Tooltip:"Aprobaciones de solicitudes"}, 
-      {Icon: "ProductVariant", Label: "Localizacion de tulas", Screen:'Screen BagLocation', Tooltip:"Tulas en tesoreria"},
-      {Icon: "ExploreData", Label: "Resumen de operaciones", Screen:'Screen OperationSummary', Tooltip:"Resumen de operaciones por cajero"},
-      {Icon: "StackIndicator", Label: "Administracion de cheques", Screen:'Screen ChecksSummary', Tooltip:"Estatus de cheques en tesoreriaDo"}
-      ));
+    Formulas: |-
+      =// ===== Paleta (verde-tesorería, prototipo aprobado) =====
+      ThemeAccent = ColorValue("#0F7A5A");
+      ThemeAccentSoft = ColorValue("#DCEFE7");
+      ThemeAccentInk = ColorValue("#FFFFFF");
+      ThemeBg = ColorValue("#EEF1EF");
+      ThemeSurface = ColorValue("#FFFFFF");
+      ThemeSurface2 = ColorValue("#F6F8F6");
+      ThemeSunk = ColorValue("#EAEEEB");
+      ThemeInk = ColorValue("#1A231E");
+      ThemeInk2 = ColorValue("#46534B");
+      ThemeInk3 = ColorValue("#6D7A72");
+      ThemeLine = ColorValue("#D6DDD8");
+      ThemeLineStrong = ColorValue("#BCC6C0");
+      ThemePos = ColorValue("#0E7490");   ThemePosSoft = ColorValue("#D7EEF3");   // sobrante (teal)
+      ThemeAccentMoney = ColorValue("#0F7772");  // barra de KPIs de dinero (mezcla accent/teal del mockup)
+      ThemeNeg = ColorValue("#B45309");   ThemeNegSoft = ColorValue("#FBEBD4");   // faltante (ámbar)
+      ThemeWarn = ColorValue("#A16207");  ThemeWarnSoft = ColorValue("#FBF1D3");
+      ThemeDanger = ColorValue("#B42318"); ThemeDangerSoft = ColorValue("#FBE6E3");
+
+      // ===== Formato =====
+      FmtMoney = "#,##0.00";                 // el '0' fuerza el entero; #,### daba "C$ .00"
+      FmtFecha = "dd/mm/yyyy HH:mm";         // HH = 24 h; hh seria 12 h sin AM/PM
+      FmtFechaCorta = "dd/mm HH:mm";
+
+      // ===== Símbolos de moneda (optionset sanic_chchcurrency: NIO/USD/EUR) =====
+      SimboloNIO = "C$"; SimboloUSD = "US$"; SimboloEUR = "€";
+
+      // ===== Usuario actual (fallback de identidad — UPN puede != Primary Email) =====
+      UsuarioActual = With(
+          { u: LookUp(Users, 'Primary Email' = User().Email) },
+          If(IsBlank(u.'Primary Email'), LookUp(Users, 'User Name' = User().Email), u)
+      );
+    OnError: |-
+      =/*Trace(
+          $"[Supervisor] {FirstError.Message} | Kind: {FirstError.Kind} | Origen: {FirstError.Source}",
+          TraceSeverity.Error
+      );
+      Notify(
+          If(
+              FirstError.Kind = ErrorKind.Validation || FirstError.Kind = ErrorKind.Conflict || FirstError.Kind = ErrorKind.Sync,
+              FirstError.Message,   // mensaje de negocio del guard, tal cual
+              "Ocurrió un error inesperado. El detalle quedó registrado para soporte."
+          ),
+          NotificationType.Error
+      )*/
     Theme: =PowerAppsTheme
