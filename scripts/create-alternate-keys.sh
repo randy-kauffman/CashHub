@@ -5,8 +5,14 @@
 # 1. sanic_chtblclientemail: par (sanic_name, sanic_client) — un correo puede
 #    pertenecer a varios clientes, pero el par dirección+cliente es único.
 #    (Decisión de negocio 2026-08-04: el correo AUTORIZA, el contenido ATRIBUYE.)
-# 2. sanic_chtblclientaccount: sanic_name único — un número de cuenta existe
-#    una sola vez en el banco.
+# 2. sanic_chtblclientaccount: OJO — esta key era (sanic_name) sola, bajo la
+#    suposición equivocada de que "un número de cuenta existe una sola vez en el
+#    banco". La tabla NO es el maestro de cuentas: dice a qué números de cuenta
+#    está AUTORIZADO a depositar cada cliente, así que la misma cuenta puede
+#    estar autorizada a varios clientes (grupo empresarial con cuenta recolectora,
+#    red de franquicias). La reemplaza sanic_KeyCuentaPorCliente sobre el PAR
+#    (sanic_client, sanic_name) — misma forma que sanic_KeyCorreoPorCliente.
+#    Ver scripts/fix-clientaccount-alternate-key.sh.
 # 4. sanic_chtbltransactions: par (sanic_relateddepositrecounting,
 #    sanic_transactiontype) — un depósito recontado genera COMO MÁXIMO UN asiento
 #    de cada tipo. En particular los `Deposito` legítimos por depósito recontado
