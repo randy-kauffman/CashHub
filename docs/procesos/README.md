@@ -6,10 +6,6 @@ quién puede qué, qué apps/flujos/tablas/APIs/plugins lo componen, el catálog
 de acciones (quién/cuándo/por qué/cómo/qué valida el servidor/qué pasa si
 falla), sus supuestos y sus pruebas.
 
-Todos los documentos obedecen el mismo contrato de formato:
-**[CONTRATO.md](CONTRATO.md)** (las 11 secciones, el formato de acciones y las
-reglas de verificación). Escritos contra el código vivo del repo y verificados
-por revisión adversarial (autor → antagonista → coordinación).
 
 ## Los 9 procesos
 
@@ -42,15 +38,3 @@ flowchart LR
     P07["07 Tracking"] -.observa 02/03/05/06.-> P06
     P08["08 Operación"] -.sostiene a todos.-> P02
 ```
-
-## Relación con el resto de la documentación
-
-- **Contratos globales** (modelo de datos, roles, choices, convenciones):
-  [`../referencia/`](../referencia/00-indice.md) — los procesos los linkean, no
-  los duplican.
-- **Manuales por rol** (paso a paso operativo): [`../guias/`](../guias/00-indice.md).
-- **Plan de pruebas integral** (certificación pre-producción):
-  [`../guias/09-plan-de-pruebas-integral.md`](../guias/09-plan-de-pruebas-integral.md)
-  — la §11 de cada proceso linkea sus casos.
-- **Detalle por solución** (Core/Flows/Apps/Backend): [`../soluciones/`](../soluciones/00-vision-general.md).
-- **Guías de reconstrucción de las apps v2**: `../[app]-rebuild/`.

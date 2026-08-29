@@ -1,13 +1,5 @@
 # 03 — Recepción de tulas en esclusa
 
-> Fuente de verdad de este documento: `src/backend/CashHub.Plugins/` (guard y
-> espejos), `src/backend/CashHub.Validation/Security/ReceptionGuard.cs` (dominio
-> puro), `docs/reception-rebuild/00..03` (v2, verificado contra DEV el 15/16-ago),
-> `scripts/register-reception-guard.sh` y `scripts/register-*mirror*.sh`
-> (registro real de pasos). `docs/guias/01-manual-recepcionista.md` describe la
-> semántica pero cita nombres de pantalla de la v1 — donde difiere de `reception-
-> rebuild`, manda `reception-rebuild`.
-
 ## 1. Qué es este proceso
 
 Es el punto de entrada físico del efectivo al banco. La transportadora de
@@ -15,7 +7,7 @@ valores llega a la esclusa con una o más **planillas de conducción** (el papel
 que declara el cliente/sucursal remitente y los montos NIO/USD en efectivo y
 cheque) y, por cada planilla, un lote de **tulas** (bolsas de seguridad
 selladas, cada una con su propio código). El oficial de esclusa/bóveda no abre
-ni cuenta las tulas — solo dejar constancia digital de qué entró: agrupa todo
+ las tulas — solo dejar constancia digital de qué entró: agrupa todo
 en un **lote de recepción**, carga cada planilla con su remitente y sus
 montos declarados, y escanea el código de cada tula asociada. Al cerrar el
 lote, éste queda `Recibido`; cuando el oficial mueve la custodia física de la
@@ -25,7 +17,7 @@ a `En bóveda`.
 Este proceso **no compara** lo recibido contra lo que el cliente declaró por
 correo — esa conciliación ocurre en el recuento de caja (proceso 05), que
 además es quien decide cuándo una tula pasa de `Almacenada en bóveda` a
-`Asignada a cajero` (vía aprobación del supervisor). Tampoco calcula
+`Asignada a cajero`. Tampoco calcula
 faltantes ni sobrantes: es un registro de entrada, no de conciliación.
 
 Toda edición de tula o planilla **antes** de cerrar el lote (`En progreso`) es
@@ -45,7 +37,6 @@ flowchart LR
     subgraph boveda["Custodia — CH-App-Reception (scrLotes)"]
         D --> E["Mover a bóveda\n(-> En bóveda)"]
     end
-    E -->|"Supervisor aprueba\nPrimera tula/ Tula sin declaración"| F["proceso 05\nRecuento de tulas"]
     D -.->|"edición post-cierre"| G["ApprovalRequest\npendiente"]
     E -.->|"edición post-cierre"| G
     G --> H["proceso 04\nSupervisión y aprobaciones"]
@@ -65,11 +56,6 @@ flowchart LR
 
 ## 2. Estados y transiciones
 
-Toda la máquina de estados vive en `ReceptionGuard`
-(`src/backend/CashHub.Validation/Security/ReceptionGuard.cs`), consumida por
-el único plugin `GuardReceptionPlugin`. Las apps condicionan botones, pero eso
-es cosmético: la defensa real está acá.
-
 ### 2.1 Lote — `CH-Tbl-ReceptionBatch` (`sanic_chtblreceptionbatch`), columna `ReceptionStatus` (`sanic_receptionstatus`)
 
 | Valor | Label |
@@ -83,13 +69,11 @@ es cosmético: la defensa real está acá.
 stateDiagram-v2
     [*] --> EnProgreso: Create (solo puede nacer así)
     EnProgreso --> Recibido: Cerrar lote (scrCaptura)
-    Recibido --> EnProgreso: reabrir
     Recibido --> EnBoveda: Mover a bóveda (scrLotes)
     EnBoveda --> [*]: congelado — no admite más transiciones
 ```
 
-`Anulado` está declarado en el option set pero **ninguna app lo asigna** —
-fuera de alcance funcional (`00-analisis-y-plan.md` §6).
+`Anulado` está declarado en el option set pero **ninguna app lo asigna**.
 
 Quién transiciona / qué guard defiende (`ReceptionGuard.EvaluateBatchCreate` /
 `EvaluateBatchUpdate` / `EvaluateBatchDelete`):
@@ -163,7 +147,7 @@ Reglas (`EvaluateBagCreate` / `EvaluateBagStatusTransition` /
   esclusa` (circuito de aprobación: alta rechazada por lote cerrado) o
   `Almacenada en bóveda` (materialización de un "Agregar tula" ya aprobado por
   el supervisor). Nacer directamente `Asignada a cajero` o cualquier estado
-  del ciclo de recuento se **rechaza** — es el caso que cubre RC-09.
+  del ciclo de recuento se **rechaza**.
 - **Matriz completa de transiciones legales** (el resto es responsabilidad de
   Recounting/Supervisor, procesos 04/05): `esclusa → bóveda / asignada-cajero
   / pendiente-esclusa`; `bóveda → asignada-cajero / pendiente-esclusa`;
@@ -171,8 +155,7 @@ Reglas (`EvaluateBagCreate` / `EvaluateBagStatusTransition` /
   ninguna transición saliente.
 - **Identidad** (`BagID`, `Name`, `ReceptionLookup`, es decir número, nombre y
   planilla de la tula): solo se edita con el lote abierto, salvo que la tula
-  ya esté `Pendiente de revisión - esclusa` (es como el circuito de aprobación
-  materializa remapeos/ediciones con el lote ya en bóveda).
+  ya esté `Pendiente de revisión - esclusa`.
 - **Delete**: se borra con el lote abierto, o si la tula está `Pendiente de
   revisión - esclusa` (denegación de un "Agregar tula" o materialización de un
   "Eliminar tula" aprobado).
@@ -201,26 +184,10 @@ Fuente: [`roles-y-seguridad.md`](../referencia/roles-y-seguridad.md).
 
 **Qué verifica la app vs. qué impone el servidor**: `scrCaptura`/`scrLotes`
 resuelven identidad con `LookUp(Users, 'Primary Email' = User().Email)` y
-**no comprueban** rol ni pertenencia a grupo dentro de Power Fx (verificado
-contra el código de las 8 apps canvas,
-[`roles-y-seguridad.md`](../referencia/roles-y-seguridad.md) §5.1). El control
+**no comprueban** rol ni pertenencia a grupo dentro de Power Fx. El control
 de acceso real depende de dos cosas, ninguna dentro de la app:
-1. **A quién se le comparte** la canvas app `sanic_chappreception_9ff29`.
+1. **A quién se le comparte** la canvas app.
 2. **El Security Role Dataverse** subyacente (la matriz de arriba).
-
-Un ejemplo directo del punto 2: el manual de usuario dice *"no hay forma de
-eliminar un lote completo"* como si fuera una limitación de la app — dejá
-verificar. `EvaluateBatchDelete` sí lo permitiría con el lote `En progreso`,
-pero el rol `CH-SR-Receptionist` **no tiene privilegio Delete sobre
-`ReceptionBatch`** en absoluto: el intento ni siquiera llega al guard, lo
-rechaza el modelo de seguridad de Dataverse antes. Son dos capas
-independientes bloqueando lo mismo, no una.
-
-La autoridad de aprobación de las solicitudes que este proceso crea (grupo AAD
-configurado en `CH-Tbl-Parameter`, clave `Security.ApproverGroup.Supervisor`,
-fail-closed) es responsabilidad y detalle del proceso 04; acá solo importa que
-**quien crea la solicitud no puede resolverla** — la separación de funciones
-también corta contra el propio oficial de esclusa si intentase autoaprobarse.
 
 ## 4. Aplicaciones
 
@@ -228,38 +195,20 @@ también corta contra el propio oficial de esclusa si intentase autoaprobarse.
 |---|---|---|
 | **CH-App-Reception** | `sanic_chappreception_9ff29` | `CH-Tbl-ReceptionBatch`, `CH-Tbl-Receptions`, `CH-Tbl-Bags`, `CH-Tbl-ApprovalRequest`, `CH-Tbl-ClientBranch`, `CH-Tbl-Client`, `CH-Tbl-TransportCompany` |
 
-Es la **v2** (reconstruida, `docs/reception-rebuild/00..03`), desplegada y
-endurecida por QA humano (`Apps 1.31.0.0 → 1.31.0.4`), con **305 controles
-100% nativos y cero componentes de código** tras la purga (CHANGELOG). Reemplaza
-la v1 (`CreacionLotesRecepcion` / `AdministracionDeLotes`), que sí traía
-componentes de código: 4× `FluentDetailsList`, 2× `CommandBar`, `SearchBox`,
-`KeyboardShortcuts` (PCF Creator Kit) y `ExpandMenu`/`Dialog`/`Panel`
-(PowerCAT) — ver `docs/reception-rebuild/00-analisis-y-plan.md` §3. **2 pantallas**:
+**2 pantallas**:
 
 | Pantalla | Reemplaza | Sirve a |
 |---|---|---|
 | `scrCaptura` | CreacionLotesRecepcion | Crear/retomar un lote `En progreso`: transportadora, grilla de planillas, panel de tulas scan-first, validación, Guardar / Cerrar lote (§2.1–2.2 de este doc). |
 | `scrLotes` | AdministracionDeLotes | Administración master-detail (tabs Lotes/Planillas) de lotes `Recibido`/`En bóveda`: Mover a bóveda, las 5 operaciones de tula, editar planilla — con el doble camino directo/aprobación de §2.4. Pantalla de entrada por defecto al abrir la app. |
 
-**Navegación**: conmutador segmentado `[Captura | Lotes]` en el header de las
-dos pantallas. `App.BackEnabled = false` — el botón atrás del navegador no
-puede saltarse la guarda de cambios sin guardar. Un lote `En progreso` **solo**
-se opera desde `scrCaptura`; `scrLotes` deshabilita sus 5 comandos de tula
-sobre esos lotes con el tooltip *"Los lotes En progreso se editan en
-Captura"* (decisión **DL-20**: escribir la misma tula desde las dos pantallas
-dejaría la sesión de Captura en memoria con datos viejos que su próximo
-guardado pisa o duplica sin avisar).
 
 ## 5. Flujos Power Automate
 
 **No aplica.** Verificado con `rg` sobre `solutions/unpacked/flow/`: ningún
 flujo toca las tablas de este proceso (`sanic_chtblreceptionbatch`,
 `sanic_chtblreceptions`, `sanic_chtblbags`) ni referencia `esclusa` o `tula`.
-El único match superficial de la cadena "reception" es `sanic_receptiondatetime`
-en `CH-Flow-ProcessEmail` — el timestamp de recepción de un correo (proceso 02),
-sin relación con `CH-Tbl-ReceptionBatch`. Toda la lógica de este proceso corre
-en Power Fx client-side (las dos pantallas) más los plugins síncronos de §8.
-No hay disparador de flujo, conexión ni owner que documentar acá.
+
 
 ## 6. Tablas
 
@@ -278,8 +227,8 @@ No hay disparador de flujo, conexión ni owner que documentar acá.
 | **CH-Tbl-Bags** (tula) / `sanic_chtblbags` | `BagStatus` (`sanic_bagstatus`) | Ver §2.3. |
 | | `BagID`/`Name` (`sanic_bagid`/`sanic_name`) | Código escaneado; se escriben con el mismo valor (no hay otro dato natural para `Name`, requerida). |
 | | `ReceptionID` (`sanic_receptionid`) | Lookup a la planilla dueña. |
-| | `ReceptionBatchId` (`sanic_receptionbatchid`, **B-2**) | **Mantenido por plugin** (`BagReceptionMirrorPlugin`). No editar a mano — lookup espejo al lote, delegable, evita navegar `ReceptionID.ReceptionBatch`. |
-| | `ReceiptIdMirror` (`sanic_receiptidmirror`, **B-3**) | **Mantenido por plugin** (`BagReceptionMirrorPlugin`). No editar a mano — copia texto del número de planilla. |
+| | `ReceptionBatchId` (`sanic_receptionbatchid`) | **Mantenido por plugin** (`BagReceptionMirrorPlugin`). No editar a mano — lookup espejo al lote, delegable, evita navegar `ReceptionID.ReceptionBatch`. |
+| | `ReceiptIdMirror` (`sanic_receiptidmirror`) | **Mantenido por plugin** (`BagReceptionMirrorPlugin`). No editar a mano — copia texto del número de planilla. |
 | | `BagDeclarationLookup` (`sanic_bagdeclarationid`) | Lookup a `CH-Tbl-DeclaredBags` — fuera de alcance de este proceso (lo consume 05/07). |
 | | `RecountingSessionLookup`, `TotalNio`/`TotalUsd`/`TotalEur`, `DeclTotalNio`/`DeclTotalUsd`/`DeclTotalEur`, `HasDifference` | Columnas del ciclo de recuento (proceso 05); en esclusa nacen vacías. |
 | **CH-Tbl-ApprovalRequest** / `sanic_chtblapprovalrequest` | `Name` (`sanic_name`) | Autonumber `AR-{SEQNUM:8}` — nunca se patchea. |
@@ -287,29 +236,16 @@ No hay disparador de flujo, conexión ni owner que documentar acá.
 | | `RequestType` (`sanic_requesttype`) | Texto libre — comparación **ordinal exacta**; cualquier variante de tipeo crea un tipo fantasma que el guard no reconoce. |
 | | `RequestDetails`/`RequestResources` (`sanic_requestdetails`/`sanic_requestresources`) | HTML (card con estilo, escapado) y JSON de contrato con el proceso 04 — detalle de claves en §9. |
 | | `SolvedBy`/`ResolutionDatetime` (`sanic_solvedby`/`sanic_resolutiondatetime`) | Los estampa el plugin desde `InitiatingUserId` al resolver (proceso 04), no la app. |
-| | `BagNumber` (`sanic_bagnumber`, **B-6**) | **Mantenido por plugin** (`ApprovalRequestBagNumberPlugin`), fuera del alcance de este documento (visor del proceso 04). |
+| | `BagNumber` (`sanic_bagnumber`) | **Mantenido por plugin** (`ApprovalRequestBagNumberPlugin`), fuera del alcance de este documento (visor del proceso 04). |
 | **CH-Tbl-ClientBranch** / `sanic_chtblclientbranch` | `ClientNameMirror` (`sanic_clientnamemirror`) | **Mantenido por plugin** (`ClientBranchNameMirrorPlugin`, documentado en el proceso 01). Referenciado acá porque habilita el combo de remitente server-side de `scrCaptura`; sin cascada por rename de cliente — ver §10. |
 
-Modelo completo de cada tabla (todas las columnas, no solo las de este
-proceso): [`modelo-de-datos.md`](../referencia/modelo-de-datos.md).
+
 
 ## 7. Custom APIs
 
-**No aplica — todavía.** El cierre de lote (`btnDlgOkCerrarCap`) está
-diseñado para invocar una Custom API atómica `sanic_CloseReceptionBatch`
-(backend Fase 0, ítem **B0-3**: validar duplicados contra la tabla completa y
-transicionar el lote en una sola transacción). A la fecha de este documento
-**no existe**: el cierre corre client-side (`Patch` + `IfError` +
-validación local en `App.Formulas`), y el chequeo de duplicado **cross-lote**
-lo detiene el `GuardReceptionPlugin` en el `Patch` — el mensaje llega igual,
-pero por `IfError`, no de forma preventiva. Divergencia declarada **L-1** del
-ledger de `00-analisis-y-plan.md`. Cuando `B0-3` se implemente, este documento
-debe actualizarse con contrato de entrada/salida y `executeprivilegename`.
+**No aplica**
 
 ## 8. Steps de plugins
-
-Todos síncronos, registrados por `scripts/register-reception-guard.sh` y
-`scripts/register-*mirror*.sh`. `mode: 0` = síncrono en las cinco filas.
 
 ### 8.1 `GuardReceptionPlugin` — Pre-validation (stage 10)
 
@@ -321,7 +257,7 @@ Todos síncronos, registrados por `scripts/register-reception-guard.sh` y
 | `sanic_chtblreceptions` | Create | — | No se crean planillas en un lote cerrado. |
 | `sanic_chtblreceptions` | Update | pre-image `sanic_receptionbatch` | Planilla congelada con el lote en bóveda; reparent solo hacia un lote abierto. |
 | `sanic_chtblreceptions` | Delete | pre-image `sanic_receptionbatch` | No se eliminan planillas de un lote cerrado. |
-| `sanic_chtblbags` | Create | — | Una tula no puede nacer en un estado del ciclo de recuento (RC-09). |
+| `sanic_chtblbags` | Create | — | Una tula no puede nacer en un estado del ciclo de recuento. |
 | `sanic_chtblbags` | Update | filtro `sanic_bagstatus,sanic_bagid,sanic_name,sanic_receptionid`; pre-image `sanic_bagstatus,sanic_receptionid` | Matriz de transiciones de `BagStatus` (§2.3) e identidad congelada con el lote en bóveda. |
 | `sanic_chtblbags` | Delete | pre-image `sanic_bagstatus,sanic_receptionid` | Borrado solo con lote abierto o tula `Pendiente de revisión - esclusa`. |
 | `sanic_chtblapprovalrequest` | Create | — | Una solicitud no nace resuelta (la única excepción, sesión de recuento propia, no aplica a esclusa). |
@@ -385,7 +321,7 @@ backfill de estos espejos chocaría contra su propio guard.
 | **Por qué / para qué** | Cierra el registro de esta entrega; habilita el paso siguiente (Mover a bóveda) y saca al lote de edición libre. |
 | **Cómo** | `btnCerrarCap` valida y abre confirmación → `btnDlgOkCerrarCap` marca origen y dispara el mismo guardado de arriba → al terminar sin fallidas, el paso final del `OnTimerEnd` transiciona `ReceptionStatus` a `Recibido` y limpia el lote activo. |
 | **Qué valida el servidor** | `GuardReceptionPlugin.EvaluateBatchUpdate`: solo `En progreso → Recibido` es legal. Hoy **no** es atómico (§7, B0-3 pendiente): si el guardado dejó fallidas, el cierre no ocurre y el operador se queda en Captura con el detalle. |
-| **Qué pasa si falla / deshacer** | Mensaje de error específico por fila fallida; el lote sigue `En progreso`. Reabrir (`Recibido → En progreso`) es legal para volver a editar, pero desde `scrLotes` — no hay un botón directo de "reabrir" documentado en la v2 más allá de esa transición del guard. |
+| **Qué pasa si falla / deshacer** | Mensaje de error específico por fila fallida; el lote sigue `En progreso`. Reabrir (`Recibido → En progreso`) es legal para volver a editar, pero desde `scrLotes` — no hay un botón directo de "reabrir". |
 
 ### Mover a bóveda
 
@@ -433,50 +369,29 @@ backfill de estos espejos chocaría contra su propio guard.
 
 ## 10. Supuestos y limitaciones
 
-- **La app no verifica el rol del usuario dentro de Power Fx.** Cualquiera con
-  la app compartida y el Security Role puede operar; el control real es a
-  quién se comparte la app y qué privilegios tiene su rol (§3).
-- **No hay forma de eliminar un lote completo** — ni por diseño de la app ni
-  por privilegio del rol (`CH-SR-Receptionist` no tiene Delete sobre
-  `ReceptionBatch`, ver §3). Solo se eliminan tulas individuales.
 - **Este proceso no calcula faltantes ni sobrantes.** Termina en dejar
   constancia de la recepción física; la comparación contra lo declarado por
   correo ocurre en el recuento de caja (proceso 05).
-- **Mover a bóveda no es atómico** (DL-19): son dos `Patch` con `IfError`
-  independientes (tulas, luego lote). Es idempotente, pero si falla a mitad
-  puede quedar el lote `Recibido` con algunas tulas ya `Almacenada en bóveda`.
-- **Cerrar lote tampoco es atómico hoy** (§7, L-1): depende de la Custom API
-  `sanic_CloseReceptionBatch` (B0-3), que todavía no existe. El duplicado de
-  tula contra **otro lote** del entorno lo detiene el guard en el `Patch`, no
-  una validación preventiva — el mensaje llega, pero tarde en el flujo.
 - **Los dup-checks del panel de tulas son local-only** (contra las
   colecciones en memoria del lote actual). El duplicado cross-lote real lo
   garantiza únicamente `GuardReceptionPlugin` al momento de guardar.
 - **`ClientNameMirror` no tiene cascada por rename del cliente** (limitación
   deliberada, documentada en el proceso 01): si renombran un cliente, las
-  sucursales ya creadas conservan el nombre viejo en el espejo hasta que
-  corra el backfill.
-- **Grafía esclusa/exclusa**: [`typos-conocidos.md`](../referencia/typos-conocidos.md)
-  §6 documentó (pre-rebuild v2) el esquema cacheado de 4 apps con "exclusa".
-  Verificado contra el código vivo de `CH-App-Reception` v2 (§2.3): ya no
-  aplica — el rebuild resincronizó y usa "esclusa" en todo lado, igual que el
-  `Entity.xml`. No afecta la lógica en ningún caso (se compara por valor
-  numérico), solo lo que el usuario lee.
+  sucursales ya creadas conservan el nombre viejo en el espejo.
 - **Un lote `En progreso` solo se opera desde `scrCaptura`** (DL-20):
   `scrLotes` bloquea sus 5 comandos de tula sobre esos lotes a propósito,
   para no pisar una sesión de captura en memoria.
 
 ## 11. Pruebas
 
-Casos cubiertos en
-[`09-plan-de-pruebas-integral.md`](../guias/09-plan-de-pruebas-integral.md),
-módulo **C Reception**: **RC-01** (lote completo, transportadora + 2
-planillas + tulas → Recibido), **RC-02** (scan-first, foco que retorna),
-**RC-03** (dup-check de tula intra/inter-planilla y cross-lote), **RC-04**
-(guardado delta, cero llamadas sin cambios), **RC-05** (combo de sucursales
-server-side más allá de 500 filas), **RC-06** (Mover a bóveda, incluido el
-lote de 600 tulas del stress), **RC-07** (edición post-cierre = aprobación,
-las 4 operaciones + edición de planilla), **RC-08** (última tula intocable),
-**RC-09** (guard server-side vía Web API: tula naciendo en estado de
-recuento, transición ilegal de lote — ambas rebotan con 400 sin que la app
-sea la única defensa).
+| # | Caso | Pasos | Esperado |
+|---|---|---|---|
+| R01 🔴 | Lote completo | scrCaptura: transportadora + 2 planillas (cliente/sucursal) + tulas escaneadas en cada una → guardar → validar | Lote **Recibido**; planillas y tulas persistidas; guardado planilla por planilla sin duplicar |
+| R02 🔴 | Scan-first | Escanear 5 tulas seguidas en la caja de escaneo | El foco RETORNA a la caja tras cada escaneo; corrección = borrar + re-escanear |
+| R03 🔴 | Dup-check de tula | Escanear un código repetido en la misma planilla y en otra planilla del lote; luego uno que exista en OTRO lote | Rebota con aviso en los tres casos (dup intra e inter-planilla, delegable — la encuentra aunque haya miles) |
+| R04 | Guardado delta | Reabrir un lote En progreso, tocar una sola planilla, guardar | Solo viaja lo modificado |
+| R05 🔴 | Combo de sucursales | Buscar sucursal por nombre de sucursal Y por nombre de cliente | Encuentra más allá de las 500 filas (espejo `ClientNameMirror` delegable) |
+| R06 🔴 | Mover a bóveda | scrLotes: seleccionar el lote Recibido → Mover a bóveda | Todas las tulas pasan a **Almacenada en bóveda**, lote a **En bóveda**. Probar también el lote gordo del stress (600 tulas) |
+| R07 🔴 | Edición post-cierre = aprobación | En un lote Recibido/En bóveda: agregar, eliminar, remapear y editar una tula; modificar número de planilla | NO se aplica directo: se crea la solicitud y la tula queda "Pendiente de revisión por supervisor - esclusa" hasta que Supervisor resuelva (Módulo E) |
+| R08 🔴 | Última tula intocable | Intentar eliminar/remapear la ÚNICA tula de una planilla | Bloqueado — una planilla no puede quedar vacía |
+| R09 🔴 | Guard server-side | Por Web API: crear una tula naciendo en "Asignada a cajero"; transición ilegal de estado de lote | Rebota con 400 del `GuardReceptionPlugin` — la app no es la única defensa |

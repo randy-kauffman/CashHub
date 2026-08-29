@@ -1,11 +1,8 @@
 # Supervisión y aprobaciones
 
-> Proceso transversal — no tiene ingesta propia. Vive de lo que Recepción (03) y
-> Recuento (05) le mandan a firmar, y entrega el gatillo que habilita Digitación (06).
-
 ## 1. Qué es este proceso
 
-Supervisión es el **control de cuatro ojos** de todo el circuito de tulas: cada vez
+Supervisión es el **control** de todo el circuito de tulas: cada vez
 que Recepción o Recuento tocan algo que ya salió de la edición libre (una tula que
 no cuadra, una sesión abierta en mesa ajena, un cambio a un lote cerrado), el
 sistema genera una **solicitud de aprobación** y la manda a esta bandeja. El
@@ -80,77 +77,25 @@ sistema**, no por el texto del JSON). Cualquier otro `RequestType` que intente
 nacer resuelto se bloquea; si la excepción de sesión propia no se puede probar
 con certeza (JSON ilegible, sesión de otro, sesión inexistente) la solicitud **no
 se bloquea**: se **degrada a pendiente** — el cajero no se queda sin poder pedir
-su sesión por un JSON mal armado, y el cuatro ojos igual se preserva.
+su sesión por un JSON mal armado.
 
 **Congelamiento**: una vez que `sanic_approvalstatus` tiene valor, el registro
 queda **congelado** — ningún Update que toque la decisión pasa, salvo la
 excepción de espejo (§6).
 
-### 2.2 Tula (`CH-Tbl-Bags` / `sanic_chtblbags`, columna `sanic_bagstatus`)
-
-| Etiqueta | Valor | Visible en `scrTulas` antes del rediseño |
-|---|---|---|
-| Recibida en esclusa | `159460000` | Sí |
-| Almacenada en boveda | `159460001` | Sí |
-| Asignada a cajero | `159460002` | **No** — invisible en la app vieja |
-| Recontada | `159460003` | Sí (terminal) |
-| Pendiente de revision por supervisor - recuento | `159460004` | **No** — invisible en la app vieja |
-| Pendiente de revision por supervisor - esclusa | `159460005` | Sí |
-
-Matriz de transiciones legales (`ReceptionGuard.EvaluateBagStatusTransition`,
-impuesta server-side, no solo en el canvas):
-
-```mermaid
-stateDiagram-v2
-    [*] --> Esclusa: Create
-    Esclusa --> Boveda
-    Esclusa --> Cajero
-    Esclusa --> PendEsclusa
-    Boveda --> Cajero
-    Boveda --> PendEsclusa
-    Cajero --> Recontada
-    Cajero --> PendRecuento
-    PendRecuento --> Cajero
-    PendRecuento --> Recontada
-    PendEsclusa --> Esclusa
-    PendEsclusa --> Boveda
-    Recontada --> [*]: terminal
-```
-
-`Recontada` es terminal: ningún camino sale de ahí. La identidad de la tula
-(número, nombre, planilla) solo se edita con el lote de recepción abierto — o
-sobre una tula `Pendiente de revision por supervisor - esclusa`, que es como el
-circuito de aprobación materializa remapeos y ediciones con el lote ya en bóveda.
-
-### 2.3 Cheque (`CH-Tbl-Checks` / `sanic_chtblchecks`, columna `sanic_checkstatus`)
-
-Máquina impuesta por `CheckGuard` (guard del proceso 06, referenciado acá porque
-`scrCheques` de Supervisión es la que dispara la única transición que le compete):
-
-| Desde | Hacia | ¿Legal? | Quién la dispara |
-|---|---|---|---|
-| Recontado | Enviado a digitacion | ✅ | botón **Enviar** de `scrCheques` |
-| No Recibido | Enviado a digitacion | ✅ | botón **Reenviar** de `scrCheques` |
-| Enviado a digitacion | Enviado a digitacion | ❌ bloqueada | — (no hay no-op de reenvío) |
-| Recibido | cualquiera | ❌ congelado, terminal | — |
-| Digitado / Rebotado | cualquiera | ❌ reservados | proceso 06 |
-
-Ver el detalle completo del ciclo de vida del cheque en
-[06 — Digitación en core bancario](06-digitacion-core-bancario.md).
 
 ## 3. Roles y acceso
 
-| Rol Dataverse | Grupo AAD asociado | Qué habilita en este proceso |
+| Rol Dataverse | Qué habilita en este proceso |
 |---|---|---|
-| `CH-SR-CountingSupervisor` | *(compartición de app — ver Limitaciones)* | Acceso a `CH-App-Supervisor`: las 4 pantallas |
-| — (parámetro de firma) | Team **"CashHub - Banca de Empresas -Approver"** (`sanic_value` = `17b5e5c7-e7a0-4b61-98cd-ceff67211797` en `CH-Tbl-Parameter`, clave `Security.ApproverGroup.Supervisor`) | Único requisito real para **resolver** una solicitud — ver abajo |
+| `CH-SR-CountingSupervisor`  | Acceso a `CH-App-Supervisor`: las 4 pantallas |
+
 
 **Lo que verifica la app (cosmético) vs. lo que impone el servidor (real)**:
 
 - La app **no verifica ningún rol dentro del código**. Cualquier usuario al que
   se le comparta `CH-App-Supervisor` ve las 4 pantallas; el control de acceso a
-  la app depende exclusivamente de la compartición manual (misma limitación
-  documentada en `docs/guias/02-manual-supervisor.md`).
+  la app depende exclusivamente de la compartición manual .
 - Lo que **sí** es real y server-side es la resolución de una solicitud:
   `GuardReceptionPlugin`, step `CashHub.GuardReception: Update de
   sanic_chtblapprovalrequest` (síncrono, Pre-validation), exige — leyendo como
@@ -163,75 +108,29 @@ Ver el detalle completo del ciclo de vida del cheque en
      (`Security.ApproverGroup.Supervisor`). Esta verificación es **FAIL-CLOSED**:
      si la fila del parámetro no existe, está inactiva, o su valor no es un GUID
      válido, **nadie puede aprobar ni rechazar** — no hay modo degradado que deje
-     pasar por error de configuración.
-- Este guard **jamás debe quedar en `Disabled` en producción**. El seeder de
-  estrés `scripts/seed-supervisor-aprobaciones.py` lo apaga temporalmente para
-  poder sembrar volumen (el service principal no es miembro del grupo aprobador)
-  y lo reactiva con `finally` + verificación explícita — es la única excepción
-  documentada, y es de un script de datos de prueba, no de operación real.
-- **FLS `sanic_accountnumber`** (perfil **CashHub | FLS | Supervisor Cuentas**):
-  la columna tiene `IsSecured=1` en `CH-Tbl-DepositsRecounting`,
-  `CH-Tbl-DeclaredDeposits` y `CH-Tbl-Transactions`. Sin el perfil dando Read (y
-  Update, para que los asientos se posteen con cuenta) al supervisor, la columna
-  **no da error: devuelve `Blank()` en silencio** — el detalle de la solicitud
-  mostraría "—" en Cuenta y los asientos se escribirían con `sanic_accountnumber`
-  vacío. Verificar en vivo que el perfil está aplicado antes de operar con dinero
-  real: no hay ningún archivo de Field Security Profile en el repo, así que su
-  existencia en el entorno **no se puede confirmar desde el código** — es
-  configuración pura de portal.
-- `prvRead sanic_CHTblClient` (Global) — confirmado en
-  `solutions/unpacked/core/Roles/CH-SR-CountingSupervisor.xml` tras la
-  remediación de roles (commit `feat(gobierno): remediacion de roles del
-  circuito supervisor…`). Sin este privilegio, `RemitentClient.Name` cae al
-  `Coalesce` con `RemitentName` (texto plano) — degradación silenciosa, no error.
-- El mismo archivo de rol confirma **C/R/W** sobre
-  `CH-Tbl-RecountingSessionDetail` (antes en cero) y **prvDelete** sobre
-  `CH-Tbl-Bags` (necesario para rechazar "Agregar tula").
-- La contrapartida en `CH-SR-Counter` (rol del cajero) quedó recortada: sin
-  `prvWrite` sobre `CH-Tbl-ApprovalRequests` (verificado — no hay línea para ese
-  privilegio en el XML) y `prvRead` bajado a `Local`. Un cajero puede **crear**
-  su propia solicitud (`prvCreate` `Local`) pero no puede tocarla después de
-  creada ni ver las de otro cajero — cierra la auto/co-aprobación por Web API.
+     pasar por error de configuración..
 
 ## 4. Aplicaciones
 
-App **v2**: `CH-App-Supervisor`. Cuatro pantallas, todas construidas con
-controles clásicos (sin PCF de terceros — ver
-[docs/supervisor-rebuild/00-analisis-y-plan.md](../supervisor-rebuild/00-analisis-y-plan.md)
-para el detalle de qué murió de la app anterior):
+App: `CH-App-Supervisor`. Cuatro pantallas, todas construidas con
+controles clásicos:
 
-| Pantalla v2 | Reemplaza a | Para qué sirve |
+| Pantall | Para qué sirve |
 |---|---|---|
-| `scrResumen` | *Screen OperationSummary* | Resumen de recuentos por cajero/sesión — solo lectura |
-| `scrAprobaciones` | *Screen Approvals* | Bandeja de solicitudes — pantalla principal de trabajo |
-| `scrTulas` | *Screen BagLocation* | Localización de cada tula, cualquier estado — solo lectura |
-| `scrCheques` | *Screen ChecksSummary* | Entrega física de cheques recontados a digitación |
-
-Estado de entrega, según
-[docs/supervisor-rebuild/09-entrega-fase2-qa.md](../supervisor-rebuild/09-entrega-fase2-qa.md):
-**publicado en el entorno** (import `--publish-changes` confirmado), las 4
-pantallas "vestidas" (con lógica completa, no solo maqueta). Los detalles de
-árbol de controles, fórmulas Power Fx completas y las decisiones de layout
-responsive de cada pantalla viven en las guías de rebuild
-([01-app](../supervisor-rebuild/01-app.md),
-[02](../supervisor-rebuild/02-pantalla-resumen.md),
-[03](../supervisor-rebuild/03-pantalla-aprobaciones.md),
-[04](../supervisor-rebuild/04-pantalla-tulas.md),
-[05](../supervisor-rebuild/05-pantalla-cheques.md)) — este documento no las
-repite, solo resume lo que hace falta para entender el proceso de negocio.
+| `scrResumen` | Resumen de recuentos por cajero/sesión — solo lectura |
+| `scrAprobaciones`  | Bandeja de solicitudes — pantalla principal de trabajo |
+| `scrTulas`  | Localización de cada tula, cualquier estado — solo lectura |
+| `scrCheques`  | Entrega física de cheques recontados a digitación |
 
 ## 5. Flujos Power Automate
 
 **No aplica**: este proceso no tiene flujos propios. La resolución de
 solicitudes, la generación de asientos y el envío de cheques corren **dentro de
 la app canvas** (Power Fx) contra Dataverse directo, sin intermediario de
-Power Automate. El handoff hacia Digitación (06) tampoco pasa por un flujo: es
-un `Patch` de estado sobre `CH-Tbl-Checks` que el digitador consulta.
+Power Automate. 
 
 ## 6. Tablas
 
-Modelo completo en [docs/referencia/modelo-de-datos.md](../referencia/modelo-de-datos.md)
-— acá solo lo propio de este proceso.
 
 **`CH-Tbl-ApprovalRequest`** (`sanic_chtblapprovalrequest`) — PK singular
 `sanic_chtblapprovalrequestid`:
@@ -239,14 +138,13 @@ Modelo completo en [docs/referencia/modelo-de-datos.md](../referencia/modelo-de-
 | Columna | Lógico | Notas |
 |---|---|---|
 | RequestType | `sanic_requesttype` | **Texto libre**, NO es picklist. Comparación server-side es **ordinal exacta** (el guard viejo comparaba ignorando mayúsculas — cerrado) |
-| RequestResources | `sanic_requestresources` | JSON plano. Claves **no homogéneas** por tipo — ver la tabla de contrato en [03-pantalla-aprobaciones §0](../supervisor-rebuild/03-pantalla-aprobaciones.md) |
-| RequestDetails | `sanic_requestdetails` | HTML heredado de la app vieja; la v2 ya no lo parsea (se arma el resumen desde `RequestResources` + lookups) |
+| RequestResources | `sanic_requestresources` | JSON plano |
 | ApprovalStatus | `sanic_approvalstatus` | Picklist, `Blank()` = Pendiente — ver §2.1 |
 | SolvedBy | `sanic_solvedby` | Lookup a `systemuser` — quien resolvió (o el plugin de auto-aprobación) |
 | ResolutionDatetime | `sanic_resolutiondatetime` | — |
 | StatusReason | `sanic_statusreason` | Motivo del rechazo (obligatorio en la UI) o de la aprobación |
 | BagNumber | `sanic_bagnumber` | **Mantenido por plugin. No editar a mano.** Número de tula extraído del JSON al crear, para buscar por tula en la bandeja con delegación |
-| *(solicitante)* | `createdby` | `CH-Tbl-ApprovalRequest` **no tiene columna propia de solicitante** — el cuatro ojos compara contra esta columna de sistema |
+| *(solicitante)* | `createdby` | `CH-Tbl-ApprovalRequest` **no tiene columna propia de solicitante**  |
 
 **`CH-Tbl-Bags`** (`sanic_chtblbags`) — columnas propias de este proceso:
 
@@ -267,7 +165,7 @@ esta pantalla:
 | CashAmount / BACLocalCheckAmount / OtherLocalCheckAmount | `sanic_cashamount` / `sanic_baclocalcheckamount` / `sanic_otherlocalcheckamount` | **Por componente** — el neto nunca se calcula ni se guarda |
 | RelatedDepositRecounting | `sanic_relateddepositrecounting` | Ancla al depósito recontado. Vacío solo en el camino "declarado sin recontar" (Faltante + Depósito) |
 | AccountNumber | `sanic_accountnumber` | `IsSecured=1` — ver FLS en §3 |
-| Total | `sanic_total` | **Columna calculada**: Dataverse la rechaza en Create/Update API. **No se puede auditar** (limitación de plataforma: el flag se descarta en silencio sobre una calculada) |
+| Total | `sanic_total` | **Columna calculada**: Dataverse la rechaza en Create/Update API. **No se puede auditar** |
 
 **`CH-Tbl-DepositsRecounting`** (`sanic_chtbldepositsrecounting`) — ojo con la
 ortografía real, verificada contra `Entity.xml`:
@@ -308,42 +206,8 @@ cuatro ojos:
 ## 7. Custom APIs
 
 **No aplica hoy — resolución client-side.** No hay ningún Custom API desplegado
-para este proceso; `sanic_CHResolveApprovalRequest` está **diseñado y
-documentado** (`docs/supervisor-rebuild/03-pantalla-aprobaciones.md §14`) como
-la evolución que movería la resolución de una solicitud (revalidación, dup-checks
-y generación de asientos) a una única transacción server-side, pero **no existe
-en el código del repo** (verificado — sin resultados al buscar el nombre del
-mensaje). Hasta que se implemente, todo el flujo de Aprobar/Rechazar corre en
-Power Fx dentro de `scrAprobaciones`, con el orden fijo: **(1)** revalidar
-estado con lookup fresco → **(2)** patchear la solicitud → **(3)** solo si (2)
-tuvo éxito, ejecutar los efectos → **(4)** apagar el overlay siempre. Esto da
-consistencia razonable pero **no atomicidad real**: si el paso de generar 5
-asientos falla en el 4°, la solicitud ya quedó `Aprobado` con 3 asientos
-creados — la app lo declara con un `Notify` de error explícito, no lo esconde.
+para este proceso;.
 
-## 8. Steps de plugins
-
-Los guards de seguridad son síncronos, Pre-validation (stage 10) — la razón:
-un control de seguridad tiene que abortar la operación **antes** de que nada
-la tome. La excepción es `ApprovalRequestBagNumber` (fila marcada abajo): no
-es seguridad sino infraestructura de búsqueda, y corre en **Pre-operation
-(stage 20)** — verificado en `scripts/register-supervisor-mirrors.sh`, contra
-el stage 10 hardcodeado para los guards en `scripts/register-reception-guard.sh`
-y `scripts/register-transaction-guard.sh`.
-
-| Step | Mensaje / entidad | Etapa | Qué regla de negocio defiende |
-|---|---|---|---|
-| `CashHub.GuardReception: Create de sanic_chtblapprovalrequest` | Create de `CH-Tbl-ApprovalRequest` | Pre-validation (10) | Una solicitud no puede nacer resuelta; la única excepción (sesión propia) se verifica leyendo la sesión **como sistema**, nunca confiando en el texto del JSON — y si no se puede probar, **degrada a pendiente** en vez de bloquear |
-| `CashHub.GuardReception: Update de sanic_chtblapprovalrequest` | Update de `CH-Tbl-ApprovalRequest`, PreImage `sanic_approvalstatus,createdby` | Pre-validation (10) | Congelamiento post-decisión + separación creador/resolutor + pertenencia al grupo AAD aprobador (fail-closed) — es el cuatro ojos real, ver §3 |
-| `CashHub.GuardReception: Update de sanic_chtblbags` | Update de `CH-Tbl-Bags`, filtrado en `sanic_bagstatus,sanic_bagid,sanic_name,sanic_receptionid`, PreImage `sanic_bagstatus,sanic_receptionid` | Pre-validation (10) | Matriz de transiciones de §2.2; identidad de tula congelada salvo lote abierto o tula `Pendiente de revision - esclusa` |
-| `CashHub.GuardReception: Delete de sanic_chtblbags` | Delete de `CH-Tbl-Bags`, PreImage `sanic_bagstatus,sanic_receptionid` | Pre-validation (10) | Solo se borra con lote abierto o tula pendiente de supervisor (denegación de "Agregar tula" / aprobación de "Eliminar tula") |
-| `CashHub.ApprovalRequestBagNumber: Create` | Create de `CH-Tbl-ApprovalRequest` | **Pre-operation (20)** | Estampa el espejo `sanic_bagnumber` desde el JSON — infraestructura de búsqueda, no seguridad; por eso no comparte etapa con los guards |
-| `CashHub.GuardSupervisorAccounting` (B-5) | Create de `CH-Tbl-Transactions`, rank 2 (después de la máquina de estados de lote/transacción) | Pre-validation (10) | **Recalcula server-side** el asiento esperado (`AccountingGuard.EvaluateAccountingCreate`) por depósito × componente y bloquea cualquier monto que no coincida con el recuento aprobado, cualquier duplicado (idempotencia por `RelatedDepositRecounting` + `TransactionType`), y cualquier tipo/moneda inconsistente. **Estado de registro: verificar en vivo** — el runbook (`docs/supervisor-rebuild/08-runbook-backend.md §4`) exige no registrarlo hasta que `scrAprobaciones` v2 esté publicada y en uso (la app vieja emitía el caso "recontado sin declarar" sin ancla y sin cuenta, y este guard lo rechazaría), y a la fecha del último QA (`09-entrega-fase2-qa.md §4`) seguía listado como pendiente fuera de ciclo |
-
-**Guards mencionados de otros procesos, referenciados sin duplicar**: `CheckGuard`
-(máquina de §2.3, ver [06](06-digitacion-core-bancario.md)),
-`ReceptionGuard.EvaluateBatchUpdate`/`EvaluateReceptionUpdate` (congelamiento de
-lote/planilla, ver [03](03-recepcion-tulas-esclusa.md)).
 
 ## 9. Acciones
 
@@ -355,7 +219,7 @@ lote/planilla, ver [03](03-recepcion-tulas-esclusa.md)).
 | **Cuándo** | Solicitud en la bandeja de **Pendientes**, seleccionada, con `cntDetStaleApr` apagado (el detalle cargado corresponde a la solicitud elegida) |
 | **Por qué / para qué** | Aplica el efecto real de la solicitud: alta/baja/remapeo de tula, confirmación de sesión de recuento, o cierre del recuento con generación de asientos. Es el paso que hace que el trabajo de Recepción/Recuento se vuelva definitivo |
 | **Cómo** | `scrAprobaciones` → seleccionar fila de `galBandejaApr` → revisar el detalle (incluida la caja de diferencias por componente si aplica) → botón **"✓ Aprobar y generar asientos"** → diálogo de confirmación → **"Sí, aprobar y contabilizar"** |
-| **Qué valida el servidor** | `GuardReceptionPlugin` en el Update de `CH-Tbl-ApprovalRequest`: congelamiento, `createdby ≠ InitiatingUserId`, pertenencia al grupo aprobador. La app además revalida con un `LookUp` fresco justo antes de patchear (defensa contra doble aprobación concurrente — ver `SU-04`), pero **la defensa real es el guard**, no ese `LookUp` |
+| **Qué valida el servidor** | `GuardReceptionPlugin` en el Update de `CH-Tbl-ApprovalRequest`: congelamiento, `createdby ≠ InitiatingUserId`, pertenencia al grupo aprobador. La app además revalida con un `LookUp` fresco justo antes de patchear, pero **la defensa real es el guard**, no ese `LookUp` |
 | **Qué pasa si falla / deshacer** | Si el guard rechaza el Update, `Notify` con el mensaje del guard, nada cambia. Si la solicitud se marca Aprobada pero los efectos fallan a mitad de camino (sin Custom API atómico — §7), la app lo declara: *"La solicitud quedó APROBADA pero los efectos fallaron… revisá la tula antes de reintentar."* **"Tula con diferencia" y "Tula recontada sin declaracion" NO tienen deshacer**: los asientos ya están posteados. Los demás tipos sí revierten al rechazar, pero aprobar nunca se deshace por sí solo |
 
 ### Resolver una solicitud — Rechazar
@@ -426,56 +290,17 @@ lote/planilla, ver [03](03-recepcion-tulas-esclusa.md)).
 
 ## 10. Supuestos y limitaciones
 
-- **La app no impone ningún rol por código.** El único control de "quién entra a
-  Supervisor" es la compartición manual de la app — documentado también en
-  `docs/guias/02-manual-supervisor.md §Limitaciones`. Quien tenga la app
-  compartida ve las 4 pantallas completas.
-- **El comentario "Rechazar no hace nada" no siempre se cumple.** Para varios
-  tipos (`Agregar tula`, `Eliminar tula`, `Primera tula en planilla`…), rechazar
-  sí ejecuta una reversión real. Confirmar el estado en `scrTulas` si el
-  resultado de un rechazo no es el esperado.
-- **`Tula sin declaracion` es el único tipo que no revierte nada al rechazar** —
-  es deliberado: el productor (Recuento) nunca patchea la tula al crear esta
-  solicitud, así que no hay nada que restituir.
-- **Ni `Editar tula` ni `Primera tula en planilla` traen `BagPreviousState`** en
-  su contrato JSON. Los dos productores dejan la tula pre-patcheada antes de
-  pedir la aprobación, así que rechazar cae a un estado terminal seguro
-  (*Almacenada en boveda*) con aviso de advertencia en vez de perder el registro
-  — mejor que la app anterior, que dejaba esas tulas atrapadas para siempre, pero
-  no es la reconstrucción exacta del estado previo.
-- **Sin el Custom API B-4, no hay atomicidad real en Aprobar/Rechazar** (§7): un
-  fallo a mitad de la cadena de efectos deja la solicitud resuelta con efectos
-  parciales. La app lo declara con un mensaje explícito; no lo esconde.
-- **B-5 (`GuardSupervisorAccountingPlugin`) — estado de registro sin confirmar
-  en este documento.** El código y los tests existen en el repo
-  (`src/backend/CashHub.Plugins/GuardSupervisorAccountingPlugin.cs`,
-  `AccountingGuardTests.cs`), pero el runbook de despliegue exige un orden
-  estricto de co-despliegue con la app v2, y la última entrega de QA revisada
-  lo listaba como pendiente. **Verificar en vivo** antes de asumir que la
-  contabilidad tiene defensa server-side.
-- **FLS de `sanic_accountnumber`** (B-8): sin el Field Security Profile aplicado
-  en el entorno, la cuenta se lee `Blank()` sin error y los asientos se postean
-  sin número de cuenta — falla muda. No hay artefacto de FSP en el repo para
-  confirmar su existencia; **verificar en vivo**.
 - **El contador `pilBandejaCountApr` de la bandeja puede mentir hacia abajo**
   con más de una página de pendientes (usa `AllItems`, que solo cuenta filas ya
   paginadas). El número que manda para "cuánto falta firmar" es el del
   segmento (`CountRows(Filter(...))`, delegado).
-- **Divergencia declarada de diseño**: la tabla de diferencias del mockup
-  original tenía 3 filas fijas en córdobas; la app real usa filas dinámicas por
-  componente × moneda — necesario porque una tula puede traer depósitos en
-  NIO/USD/EUR y el diseño anterior los perdía.
 
 ## 11. Pruebas
-
-Casos cubiertos en
-[docs/guias/09-plan-de-pruebas-integral.md](../guias/09-plan-de-pruebas-integral.md),
-bloque **E Supervisor**: `SU-01` a `SU-08`.
 
 | ID | Qué cubre |
 |---|---|
 | `SU-01` 🔴 | Bandeja completa — los 10 tipos de solicitud, aprobar aplica el efecto real, rechazar revierte donde aplica |
-| `SU-02` 🔴 | Cuatro ojos — resolver una solicitud propia, y resolver siendo ajeno al grupo AAD aprobador; el guard rebota server-side, no solo por botones ocultos |
+| `SU-02` 🔴 | Resolver una solicitud propia, y resolver siendo ajeno al grupo AAD aprobador; el guard rebota server-side, no solo por botones ocultos |
 | `SU-03` 🔴 | Tula con diferencia — el caso sagrado: caja por componente × moneda, Sobrante/Faltante sin compensar, sin deshacer |
 | `SU-04` 🔴 | Doble aprobación concurrente — la segunda revalida y no duplica el asiento |
 | `SU-05` | Resumen de operaciones — KPIs consistentes con lo hecho en Recuento |

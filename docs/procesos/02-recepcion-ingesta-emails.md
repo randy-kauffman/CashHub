@@ -1,13 +1,5 @@
 # Recepción e ingesta de emails
 
-> Fuente de verdad: `src/backend/CashHub.Plugins/` (`ReceivedEmailValidationService.cs`,
-> `DeclarationMaterializer.cs`, `ValidateReceivedEmailPlugin.cs`, `Schema.cs`) y
-> `src/backend/CashHub.Validation/` (motor, 28 reglas, `SenderTriage`), más
-> `solutions/unpacked/flow/` (1.6.5.0) y `solutions/unpacked/core/` (1.14.0.0)
-> para option sets y logical names. Ante conflicto con `docs/guias/04-manual-validacion-correos.md`
-> manda este documento: ese manual describe la **era pre-plugin** (23 reglas en
-> Power Fx, dentro de la Console); hoy el motor corre 28 reglas en un plugin C#
-> y la Console es la vía de **contingencia**, no el camino normal.
 
 ## 1. Qué es este proceso
 
@@ -32,7 +24,7 @@ automático.
 ```mermaid
 flowchart TD
     Cliente["Cliente\n(Excel + asunto 'Pre-registro')"] -->|1| Buzon["Buzón compartido\n(Outlook)"]
-    Buzon -->|IngestEmails, cada 1 min| Ingest["CH-Flow-IngestEmails"]
+    Buzon -->|IngestEmails, por trigger| Ingest["CH-Flow-IngestEmails"]
     Ingest -->|MessageId| Process["CH-Flow-ProcessEmail\n(dedup por InternetMessageId)"]
     Process -->|crea ReceivedEmail + Attachment,\nmueve a Procesados| API["Custom API\nsanic_CHValidateReceivedEmail"]
     API --> Motor["ReceivedEmailValidationService\n28 reglas (VR-01..VR-28)"]
@@ -43,7 +35,8 @@ flowchart TD
     Triage -->|Cliente sin registrar| Manual["Revisión manual\n(Banca de Empresas, vía Console)"]
     Triage -->|Sospechoso / No corresponde| Cuarentena["Carpeta Cuarentena\n(Outlook) + alerta"]
     Sweep["CH-Flow-MailboxSweep\ncada 10 min"] -.->|sana pendientes,\nrescata huérfanos,\nheartbeat| Process
-    Console["Email Validation Console\n(contingencia)"] -.->|reproceso, override,\ningesta manual| API
+    Console["Email Validation Console\n(contingencia)"] -.->|reproceso,\ningesta manual| API
+    Console -->|"Mover a cuarentena"\n(manual, Operaciones)| Cuarentena
 ```
 
 **Handoffs**:
@@ -61,16 +54,21 @@ flowchart TD
 ## 2. Estados y transiciones
 
 Todo vive en `CH-Tbl-Received Emails` (`sanic_chtblreceivedemails`), una fila
-por correo. Cinco atributos independientes, todos escritos por
-`ReceivedEmailValidationService.UpdateEmail` (nunca por la app, salvo el
-override manual de la Console):
+por correo. Cinco atributos independientes. `sanic_validationstatus`,
+`sanic_emailreviewstatus`, `sanic_senderclassification` y
+`sanic_emailreviewmethod` los escribe siempre
+`ReceivedEmailValidationService.UpdateEmail` — la app **no** tiene ninguna
+facultad de override sobre ellos (se sacó el "Denegar/Aceptar manualmente",
+ver §9). La Console sí puede escribir `sanic_emailreplystatus` (Resuelto por
+fuera, Mover a cuarentena) y `sanic_receivedemailoutlookuniqueid` (Mover a
+cuarentena, tras mover el mensaje de carpeta).
 
 ### `sanic_validationstatus` — veredicto del archivo
 
 | Valor | Etiqueta | Quién transiciona | Guard |
 |---|---|---|---|
 | `159460000` | Pendiente | Valor inicial (`AppDefaultValue`) | — |
-| `159460001` | Válido | Motor: `result.Passed = true` | Ninguna reescritura fuera del plugin (no hay Guard de Update registrado sobre la tabla) |
+| `159460001` | Válido | Motor: `result.Passed = true` | Ninguna reescritura fuera del plugin |
 | `159460002` | Inválido | Motor: `result.Passed = false` con hallazgos de negocio | ídem |
 
 ### `sanic_emailreviewstatus` — estado operativo del correo
@@ -80,7 +78,7 @@ override manual de la Console):
 | `159460000` | Pendiente | Alta (ingesta) | — |
 | `159460001` | Aceptado | Motor, si `Passed` | Requiere `Passed` Y `ResolvedClientId` Y `Workbook` no nulo para que exista `Declaration` (§10) |
 | `159460002` | Omitido | Motor, si el triage es Sospechoso/No corresponde y no hay respuesta | — |
-| `159460003` | Revisión manual | Motor, si el triage es Cliente sin registrar | Le toca a Banca de Empresas vía Console |
+| `159460003` | Revisión manual | Motor, si el triage es Cliente sin registrar | Le toca a Banca de Empresas |
 | `159460004` | Error | Motor, si `HasSystemIssues` sin hallazgos de negocio (falla de sistema, no del cliente) | `ErrorText` lleva la nota técnica cruda |
 | `159460005` | Denegado | Motor, si `Passed = false` con hallazgos de negocio | `ErrorText` lleva los mensajes que el cliente ya vio en el correo de rechazo |
 
@@ -94,8 +92,7 @@ override manual de la Console):
 
 Si el envío falla, el flujo **no** cambia el estado a Respondido: concatena en
 `sanic_errortext` el aviso `"[SISTEMA] No se pudo enviar la respuesta…"` y el
-correo queda con `ReplyStatus = Pendiente` — la Console ofrece reenviar
-(guía 08, caso D-CO-05).
+correo queda con `ReplyStatus = Pendiente.
 
 ### `sanic_senderclassification` — triage del remitente
 
@@ -106,92 +103,86 @@ correo queda con `ReplyStatus = Pendiente` — la Console ofrece reenviar
 | `159460002` | Sospechoso | VR-03 ≠ Pass, VR-27 = Pass, VR-25 ≠ Pass |
 | `159460003` | No corresponde | VR-03 ≠ Pass, VR-27 ≠ Pass |
 
-El guard real es de negocio, no de plataforma: `SenderTriage.Classify`
-(`CashHub.Validation/Engine/SenderTriage.cs`) es puro dominio, corre siempre
-sobre el mismo `RunResult`, y **una regla Omitida por dependencia nunca cuenta
+**una regla Omitida por dependencia nunca cuenta
 como aprobada** — sin evidencia no se otorga confianza. `sanic_triagenotes`
 siempre cita los VR concretos (regla de la casa: nunca un motivo genérico).
 
 ### `sanic_emailreviewmethod`
 
-`159460000` Manual (lo estampa la Console en el override auditado) /
-`159460001` Auto (lo estampa siempre el motor). Es la única columna que
-distingue una decisión humana de una automática.
+`159460000` Manual / `159460001` Auto (lo estampa siempre el motor). **Desde
+que se eliminó el override "Denegar/Aceptar manualmente" (§9), nada en el
+sistema vuelve a escribir `Manual`** — el valor queda huérfano en el option
+set, solo por compatibilidad con filas históricas. No confundir con
+`sanic_emailreplystatus = Omitido`, que sí lo sigue estampando la Console
+("Resuelto por fuera" y "Mover a cuarentena").
 
 ## 3. Roles y acceso
 
-**Hallazgo verificado** (contra `solutions/unpacked/core/Roles/*.xml` — hoy
-son **9** archivos `CH-SR-*.xml`; `docs/referencia/roles-y-seguridad.md` dice
-"6" y quedó desactualizado, manda el código): **ninguno de los 9 Security
-Roles de CashHub otorga privilegio alguno sobre las 7 tablas de este dominio**
-(`ReceivedEmails`, `EmailsAttachments`, `ValidationRules`, `ValidationRuns`,
-`ValidationResults`, y transitivamente `Declaration`/`DeclaredBags` para
-quien no sea Counter/Receptionist). El rol físico "Analista de correos" de la
-Email Validation Console **no tiene rol de seguridad Dataverse mapeado**. Todo
-acceso real a estas tablas hoy sale de fuera de los 9 roles: System
-Administrator implícito, o la cuenta de sistema con la que corre el plugin
-(`serviceFactory.CreateOrganizationService(null)` — el motor **siempre** corre
-como sistema, nunca como el llamante).
+Este proceso pasó de "sin ningún rol de seguridad Dataverse mapeado" a tener
+2 roles nuevos, creados por API (sin import de solución, para no arriesgar
+cambios en vivo que el repo local no tenía — `scripts/provision-email-ingestion-roles.sh`,
+idempotente). Los dos están en la BU raíz, agregados a `CashHubCore`, pero
+**todavía sin asignar a ningún usuario/team/Service Principal** — eso queda
+pendiente de los GUID de grupo AAD correspondientes.
+
+**`CH-SR-EmailIngestionFlow`** — la conexión Dataverse de los Cloud Flows de
+ingesta (`IngestEmails`/`ProcessEmail`/`MailboxSweep`/`Reply to client email`).
+El motor de validación corre como sistema (ver abajo), así que este rol NO lo
+gobierna a él — solo lo que los flujos tocan directo:
+
+| Tabla | Privilegios | Depth |
+|---|---|---|
+| `sanic_chtblreceivedemails` | Create, Read, Write, Append, AppendTo | Global |
+| `sanic_chtblemailsattachments` | Create, Read, Append | Global |
+| `sanic_chtblsystemheartbeat` | Create, Read, Write | Global |
+
+**`CH-SR-EmailOperationsConsole`** — humanos de Operaciones en la Console
+(Marcar para reproceso, Reenviar respuesta, Resuelto por fuera, Mover a
+cuarentena). Solo lectura salvo Write sobre ReceivedEmails; `ValidationResults`
+queda de solo lectura a propósito — lo mantiene el plugin, no se edita a mano:
+
+| Tabla | Privilegios | Depth |
+|---|---|---|
+| `sanic_chtblreceivedemails` | Read, Write | Global |
+| `sanic_chtblemailsattachments`, `sanic_chtblvalidationruns`, `sanic_chtblvalidationresults`, `sanic_validationrules`, `sanic_chtblclientemail`, `sanic_chtblemailtemplate`, `sanic_chtblplaybook`, `sanic_chtbldeclaration`, `sanic_chtbldeclaredbags`, `sanic_chtbldeclareddeposits`, `sanic_chtbldeclaredchecks` | Read | Global |
 
 **Qué verifica la app vs. qué impone el servidor**:
-- La Console **no verifica pertenencia a grupo ni rol de seguridad en Power
-  Fx** — resuelve identidad con `LookUp(Users, PrimaryEmail = User().Email)` y
-  listo; solo oculta botones que no corresponden al caso. El control de acceso
+- Solo oculta botones que no corresponden al caso. El control de acceso
   real, tal como está exportado, depende de a quién se comparte la app.
 - El servidor **sí** impone dos cosas server-side: (1) `sanic_sourceemailaddress`
-  tiene `IsSecured=1` (columna segura — requiere un Field Security Profile con
-  lectura habilitada; qué perfil lo otorga hoy: verificar en vivo); (2) el
-  motor de validación corre como sistema, así que ningún privilegio de tabla
-  del usuario condiciona si el correo se valida o no.
-- No hay ningún `Guard*Plugin` registrado sobre `Create`/`Update` de
-  `sanic_chtblreceivedemails` (a diferencia de otros dominios como
-  `GuardChangeRequestApprovalPlugin` o `GuardTransactionPlugin`): la única
-  defensa de negocio sobre esta tabla es el propio motor.
+  tiene `IsSecured=1` (columna segura) — **pendiente crear el Field Security
+  Profile** que la exponga; sin esto, `CH-SR-EmailOperationsConsole` va a
+  poder leer la bandeja pero no el remitente, aunque tenga Read sobre la
+  tabla; (2) el motor de validación corre como sistema, así que ningún
+  privilegio de tabla del usuario condiciona si el correo se valida o no.
 
 | Rol físico | App | Rol de seguridad Dataverse | Acceso real a este dominio |
 |---|---|---|---|
 | Cliente (externo) | — (envía correo) | — | Ninguno directo; su remitente debe estar en `CH-Tbl-ClientEmail` |
-| Analista de correos | Email Validation Console | — (sin rol mapeado) | Resuelto fuera del paquete de roles (verificar en vivo) |
-| Banca de Empresas | Email Validation Console (vista "Esperando a Banca") | — (sin rol mapeado) | ídem |
-| Sistema (plugin) | — | Corre como sistema | CRUD completo, sin restricción |
+| Operaciones (§9 la llama "Operaciones"; §3 legado la llamaba "Analista de correos" — mismo perfil, nombre sin unificar en este doc) | Email Validation Console | `CH-SR-EmailOperationsConsole` (creado, sin asignar) | Ver grilla arriba |
+| Banca de Empresas | Email Validation Console (vista "Esperando a Banca") — solo recibe el aviso de `btnAvisarBanca`; el alta real del correo la hace en `CH-App-ClientAdministration` | — (no necesita rol en *este* proceso; usa `CH-SR-ClientAdminContributor` para el alta en [01-administracion-datos-clientes](01-administracion-datos-clientes.md)) | Ninguno directo en este dominio |
+| Sistema — conexión de los Cloud Flows | — | `CH-SR-EmailIngestionFlow` (creado, sin asignar a SP) | Ver grilla arriba |
+| Sistema (plugin, `ValidateReceivedEmailPlugin`) | — | Corre como sistema (`CreateOrganizationService(null)`) | CRUD completo, sin restricción — ningún Security Role lo condiciona |
 
 ## 4. Aplicaciones
 
 | App | Pantalla | Sirve para |
 |---|---|---|
 | **CH-App-EmailValidationConsole** (`sanic_chappemailvalidationconsole`) | `ColaDeProcesamiento` | Bandeja de contingencia: banda de salud (semáforo contra el heartbeat `ingesta-correos`), 4 contadores, vistas por caso ("Esperando a Banca", "Sospechosos", "Errores", "Sin responder"), panel de detalle con "Qué pasó" / "Qué hacer" (`CH-Tbl-Playbook`) / reglas fallidas, y las acciones del §9. |
-| **CH-App-EmailValidationConsole** | `CorreosElectronicos` | Vía manual de contingencia: lee el buzón directo por Microsoft Graph (`Office365Outlook.HttpRequest`, no invoca ningún flujo) y permite "Incluir + Validar" cuando el pipeline automático no llegó al correo. |
 | **CH-App-DepositsTracker** (`sanic_chappdepositstracker`) | `scrCorreo` (guía [`06-pantalla-correo`](../tracker-rebuild/06-pantalla-correo.md)) | Trazabilidad de solo lectura: la raíz donde aterriza cualquier búsqueda por número de gestión (`Email-N`), con las 4 pestañas Validaciones / Declaración / Cheques declarados / Respuesta al cliente. |
 
-**Nota de versión**: la pantalla de plantillas de correo (edición de
-`CH-Tbl-EmailTemplate` desde la Console) **no existe en la app** — su fuente
-quedó estacionada sin integrar en
-`docs/pendiente/screen-PlantillasCorreo.fx.yaml.guardado`. Hoy la plantilla
-solo se edita por Web API/Excel directo sobre la tabla.
 
 ## 5. Flujos Power Automate
 
-Fuente: `solutions/unpacked/flow/` 1.6.5.0. Owner real de cada conexión:
-verificar en vivo (el export de solución no lo registra; ver memoria de
-sesión sobre reactivación de flujos como owner). **Ningún** `.json`/`.json.data.xml`
-de `solutions/unpacked/flow/Workflows/` trae `statecode`/`state` — el export
-no registra ON/OFF de ninguno de los 4 flujos de este proceso; la columna de
-abajo es, en todos los casos, lo mejor que da el repo, nunca un hecho
-confirmado (regla del contrato).
 
-| Flujo | Trigger | Qué toca | Estado (export 1.6.5.0) | Conexión |
-|---|---|---|---|---|
-| `CH-Flow-IngestEmails` | `SharedMailboxOnNewEmailV2` cada 1 min, buzón `sanic_CHEVSharedMailboxAddress` — **hardcodeado literal en el trigger**, no leído de la env var (§10) | Invoca `ProcessEmail` con el `MessageId`. Sin manejo de error propio a propósito: si el hijo falla, el correo queda en Inbox y lo recoge el barrido | verificar en vivo — CHANGELOG registra que este flujo **importa en borrador** (conexión de Outlook por activar en make.powerautomate.com) | `sanic_conn_wfe_office365outlook` (Office 365 Outlook) |
-| `CH-Flow-ProcessEmail` | `Request` (hijo, param `MessageId`) | Dedup por `sanic_receivedemailinternetmessageid`; si es nuevo: crea `ReceivedEmail` + `EmailsAttachments` (sube `sanic_filecontent`), mueve a `Procesados`, **refresca `sanic_receivedemailoutlookuniqueid`** (Exchange cambia el id al mover — este refresh es el fix del bug que dejaba respuestas en Pendiente para siempre), invoca la Custom API (retry ×4), y si el triage sale Sospechoso/No corresponde mueve el mensaje a `Cuarentena` | verificar en vivo (el export no trae `statecode`) | Office 365 Outlook |
-| `CH-Flow-MailboxSweep` | Recurrence 10 min | 5 etapas: sana pendientes (top 20 sin corrida o con corrida más vieja que `modifiedon`), vigila que `IngestEmails` esté activo, rescata del Inbox lo que lleve >5 min sin registro (invocando `ProcessEmail`), **reintenta respuestas encoladas** (top 20 con `ReplyStatus = Pendiente`, cuerpo ya armado y `sanic_replyattempts < 3`, quietas >5 min: incrementa `sanic_replyattempts` y lo deja en el log de notas — no vuelve a invocar `ReplyToV3` directo), y siempre actualiza/crea el heartbeat `sanic_name = 'ingesta-correos'` en `CH-Tbl-SystemHeartbeat` con `sanic_details = "sanados=… faltantes=… notas=…"` y `sanic_lastrunon` | verificar en vivo — CHANGELOG registra que este flujo **importa en borrador** (conexión de Outlook por activar en make.powerautomate.com) | Office 365 Outlook + Dataverse |
-| `CH-Flow-Reply to client email` | Webhook `Update` sobre `ReceivedEmails`, filtrado por `sanic_replybodyhtml,sanic_emailreplystatus` (**no incluye `sanic_replysubject`** — un cambio solo de asunto no dispara el flujo, limitación conocida) | `ReplyToV3` sobre el hilo original desde el buzón compartido; marca Respondido + fecha + `repliedby = "CashHub (automatico)"`; si falla, concatena el aviso de sistema en `sanic_errortext` | verificar en vivo (el export no trae `statecode`) | Office 365 Outlook (`runtimeSource: invoker`) |
+| Flujo | Trigger | Qué toca  |
+|---|---|---|
+| `CH-Flow-IngestEmails` | `SharedMailboxOnNewEmailV2`, buzón `sanic_CHEVSharedMailboxAddress` — **hardcodeado literal en el trigger**, no leído de la env var (§10) | Invoca `ProcessEmail` con el `MessageId`. Sin manejo de error propio a propósito: si el hijo falla, el correo queda en Inbox y lo recoge el barrido |
+| `CH-Flow-ProcessEmail` | `Request` (hijo, param `MessageId`) | Dedup por `sanic_receivedemailinternetmessageid`; si es nuevo: crea `ReceivedEmail` + `EmailsAttachments` (sube `sanic_filecontent`), mueve a `Procesados`, **refresca `sanic_receivedemailoutlookuniqueid`** (Exchange cambia el id al mover), invoca la Custom API (retry ×4), y si el triage sale Sospechoso/No corresponde mueve el mensaje a `Cuarentena` |  
+| `CH-Flow-MailboxSweep` | Recurrence 10 min | 5 etapas: sana pendientes (top 20 sin corrida o con corrida más vieja que `modifiedon`), vigila que `IngestEmails` esté activo, rescata del Inbox lo que lleve >5 min sin registro (invocando `ProcessEmail`), **reintenta respuestas encoladas** (top 20 con `ReplyStatus = Pendiente`, cuerpo ya armado y `sanic_replyattempts < 3`, quietas >5 min: incrementa `sanic_replyattempts` y lo deja en el log de notas — no vuelve a invocar `ReplyToV3` directo), y siempre actualiza/crea el heartbeat `sanic_name = 'ingesta-correos'` en `CH-Tbl-SystemHeartbeat` con `sanic_details = "sanados=… faltantes=… notas=…"` y `sanic_lastrunon` | 
+| `CH-Flow-Reply to client email` | Webhook `Update` sobre `ReceivedEmails`, filtrado por `sanic_replybodyhtml,sanic_emailreplystatus`  | `ReplyToV3` sobre el hilo original desde el buzón compartido; marca Respondido + fecha + `repliedby = "CashHub (automatico)"`; si falla, concatena el aviso de sistema en `sanic_errortext` |
 
 ## 6. Tablas
-
-Modelo completo en [`../referencia/modelo-de-datos.md`](../referencia/modelo-de-datos.md)
-(sección 4) — acá solo lo propio del proceso, con los nombres verificados
-contra `Schema.cs` y `DeclarationMaterializer.cs` (fuente de verdad; el
-modelo de referencia tiene notas desactualizadas, ver §10).
 
 | Tabla | Logical name | Columnas propias del proceso |
 |---|---|---|
@@ -203,7 +194,7 @@ modelo de referencia tiene notas desactualizadas, ver §10).
 | **CH-Tbl-ClientEmail** | `sanic_chtblclientemail` | `sanic_name` = dirección de correo, `sanic_client` (lookup). Único remitente que dispara VR-03=Pass |
 | **CH-Tbl-Declarations** | `sanic_chtbldeclaration` | `sanic_name` = `"Declaracion {fecha} {Email-N}"`, `sanic_client`, `sanic_receivedemail` (lookup real al correo) — **Mantenido por plugin.** Solo existe si `Passed` |
 | **CH-Tbl-DeclaredBags** | `sanic_chtbldeclaredbags` | `sanic_bagnumber`, `sanic_declarationid` (lookup), `sanic_totalnio/usd/eur`, **`sanic_totaldeposits`: entero simple escrito por `DeclarationMaterializer` con el conteo real de depósitos por bolsa — NO es rollup** (lo era hasta el fix reciente, §10) — **Mantenido por plugin, no editar a mano** |
-| **CH-Tbl-DeclaredDeposits** | `sanic_chtbldeclareddeposits` | `sanic_transactionno`, `sanic_accountnumber` (int 32 bits, deuda de esquema §10), `sanic_currency`, `sanic_cashamount`/`sanic_baclocalcheckamount`/`sanic_otherlocalcheckamount`, `sanic_declaredbag` (lookup), `sanic_declaration` (denormalizado a la raíz) — **Mantenido por plugin.** |
+| **CH-Tbl-DeclaredDeposits** | `sanic_chtbldeclareddeposits` | `sanic_transactionno`, `sanic_accountnumber`, `sanic_currency`, `sanic_cashamount`/`sanic_baclocalcheckamount`/`sanic_otherlocalcheckamount`, `sanic_declaredbag` (lookup), `sanic_declaration` (denormalizado a la raíz) — **Mantenido por plugin.** |
 | **CH-Tbl-DeclaredChecks** | `sanic_chtbldeclaredchecks` | `sanic_checknumber`, `sanic_checkamount`, `sanic_checkcurrency`, `sanic_checktype` (BAC si el texto de tipo contiene "BAC", si no Otros), `sanic_declareddepositid` (lookup) — **Mantenido por plugin.** |
 | **CH-Tbl-EmailTemplate** | `sanic_chtblemailtemplate` | Claves `reply-accepted`/`reply-rejected`, `IsActive` (`sanic_isactive`). Si falta, está inactiva o falla: cae al HTML embebido de respaldo — nunca se deja de responder por un problema de plantilla |
 | **CH-Tbl-Playbook** | `sanic_chtblplaybook` | `sanic_titulo`, `sanic_pasos`, `sanic_orden`, `sanic_nota`, `sanic_isactive` — el "Qué hacer" que la Console arma por clave de caso |
@@ -218,8 +209,8 @@ modelo de referencia tiene notas desactualizadas, ver §10).
 | Tipo | Global, síncrona (`allowedcustomprocessingsteptype: 0`, `bindingtype: 0`) |
 | Entrada | `ReceivedEmailId` (Guid, requerido) |
 | Salida | `RunId` (Guid), `Result` (`"Pass"`/`"Fail"`), `FailedFindings` (entero) |
-| Plugin | `CashHub.Plugins.ValidateReceivedEmailPlugin` — asociado directo vía `PluginTypeId@odata.bind` sobre el `customapi` (no es un `sdkmessageprocessingstep` clásico sobre una tabla) |
-| `executeprivilegename` | No se registra ningún `customapiprivilege` en `register-validation-plugin.sh` — la API queda sin privilegio dedicado atado. Alcance real de quién puede invocarla: **verificar en vivo** |
+| Plugin | `CashHub.Plugins.ValidateReceivedEmailPlugin` — asociado directo sobre el `customapi` |
+| `executeprivilegename` | La API queda sin privilegio dedicado atado. Alcance real de quién puede invocarla |
 | Quién la invoca | `CH-Flow-ProcessEmail` (tras subir adjuntos, orden garantizado, retry ×4), `CH-Flow-MailboxSweep` (pendientes sin corrida o con corrida vieja), Custom API directa desde la Console ("Marcar para reproceso", indirecto — lo levanta el barrido en ≤10 min) o invocación manual con Web API para pruebas (guía 08, caso D1) |
 
 Corre como sistema (`serviceFactory.CreateOrganizationService(null)`) y tiene
@@ -228,26 +219,7 @@ guarda anti-bucle: si `context.Depth > 2` se omite sin error.
 ## 8. Steps de plugins
 
 **No hay steps clásicos de plugin (Pre-validation/Pre-operation/Post-operation)
-sobre `sanic_chtblreceivedemails` hoy.** El único paso asíncrono en `Create`
-que existió (`"CashHub.ValidateReceivedEmail: Create de correo recibido"`) fue
-**retirado deliberadamente** (fase D del rediseño): `register-validation-plugin.sh`
-lo borra si lo encuentra, porque la ingesta ahora invoca el Custom API de
-forma explícita después de subir los adjuntos (orden garantizado — evita la
-condición de carrera de validar antes de que el archivo termine de subir).
-
-El único "step" real del dominio es la asociación directa entre el
-`plugintype` `ValidateReceivedEmailPlugin` y el `customapi`
-`sanic_CHValidateReceivedEmail` descrita en §7. Ninguna otra tabla de este
-proceso (`EmailsAttachments`, `ValidationRuns`, `ValidationResults`,
-`Declaration`, `DeclaredBags/Deposits/Checks`) tiene un `Guard*Plugin`
-registrado que defienda su escritura — a diferencia de dominios como
-Digitación o RFC de clientes, este pipeline confía en que solo el plugin
-(corriendo como sistema) escribe estas tablas.
-
-**Deuda documentada**: el doc-comment de `ValidateReceivedEmailPlugin.cs`
-todavía describe la arquitectura vieja de "dos puertas" (Custom API + paso
-asíncrono en Create) — el código real ya solo tiene una puerta. No corregido
-al momento de este documento.
+sobre `sanic_chtblreceivedemails` hoy.
 
 ## 9. Acciones
 
@@ -277,30 +249,30 @@ al momento de este documento.
 
 | Campo | Detalle |
 |---|---|
-| **Quién** | Analista de correos / Banca de Empresas |
+| **Quién** | Banca de Empresas |
 | **Cuándo** | Correo en triage "Cliente sin registrar" (plantilla oficial + CIF válido, remitente no autorizado) |
 | **Por qué / para qué** | Habilitar que ese remitente reciba respuesta en futuros envíos |
 | **Cómo** | Console → `ColaDeProcesamiento` → correo → "Registrar correo" |
-| **Qué valida el servidor** | Crea un RFC (`ClientDataChangeRequest`) de alta de correo autorizado — solo disponible para quien pertenece al grupo aprobador y con cliente ya atribuido. La aprobación real del RFC la defiende `GuardChangeRequestApprovalPlugin` de [01-administracion-datos-clientes](01-administracion-datos-clientes.md), no este proceso |
+| **Qué valida el servidor** | Crea un RFC (`ClientDataChangeRequest`) de alta de correo autorizado. La aprobación real del RFC la defiende `GuardChangeRequestApprovalPlugin` de [01-administracion-datos-clientes](01-administracion-datos-clientes.md), no este proceso |
 | **Qué pasa si falla / deshacer** | El correo original no se reprocesa solo: hay que "Marcar para reproceso" después de que el RFC se apruebe |
 
 ### Marcar para reproceso
 
 | Campo | Detalle |
 |---|---|
-| **Quién** | Analista de correos |
-| **Cuándo** | Cualquier correo que necesite re-evaluarse (dato corregido, RFC de remitente ya aprobado) |
-| **Por qué / para qué** | Forzar una nueva corrida del motor sin esperar los 10 minutos del barrido |
+| **Quién** | Operaciones |
+| **Cuándo** | Cualquier correo que necesite re-evaluarse (RFC de remitente ya aprobado) |
+| **Por qué / para qué** | Forzar una nueva corrida del motor |
 | **Cómo** | Console → correo → "Marcar para reproceso" |
 | **Qué valida el servidor** | Es indirecto: el `MailboxSweep` lo levanta en su próxima corrida (≤10 min) y vuelve a invocar la Custom API — las mismas 28 reglas, sin atajos |
-| **Qué pasa si falla / deshacer** | Sin deshacer; **si el correo ya estaba Aceptado, esto crea una SEGUNDA `Declaration`** (§10 — el materializador no dedupea) |
+| **Qué pasa si falla / deshacer** | Sin deshacer |
 
 ### Reenviar respuesta
 
 | Campo | Detalle |
 |---|---|
-| **Quién** | Analista de correos |
-| **Cuándo** | `EmailReplyStatus = Pendiente` con `sanic_errortext` mostrando `"[SISTEMA] No se pudo enviar…"` (el flujo de respuesta falló) |
+| **Quién** | Operaciones |
+| **Cuándo** | `EmailReplyStatus = Pendiente` con `sanic_errortext` (el flujo de respuesta falló) |
 | **Por qué / para qué** | El cliente no quede sin la respuesta que ya se compuso |
 | **Cómo** | Console → correo → "Reenviar respuesta" |
 | **Qué valida el servidor** | El disparo real sigue siendo el webhook de `CH-Flow-Reply to client email` sobre `sanic_replybodyhtml`/`sanic_emailreplystatus` — la acción de la Console solo re-arma las condiciones para que el webhook dispare |
@@ -310,94 +282,131 @@ al momento de este documento.
 
 | Campo | Detalle |
 |---|---|
-| **Quién** | Analista de correos |
+| **Quién** | Operaciones |
 | **Cuándo** | El caso se resolvió por un canal fuera del sistema (llamada, correo manual) |
 | **Por qué / para qué** | Sacar el correo de la bandeja accionable sin fingir que el motor lo aprobó |
 | **Cómo** | Console → correo → "Resuelto por fuera" + nota |
 | **Qué valida el servidor** | Cierra con `EmailReplyStatus = Omitido` — no hay guard server-side, es un cierre administrativo |
 | **Qué pasa si falla / deshacer** | Sin deshacer registrado |
 
-### Denegar/Aceptar manualmente (override auditado)
+### Mover a cuarentena (manual)
+
+> Reemplaza a "Denegar/Aceptar manualmente" (eliminado). Decisión del usuario:
+> Operaciones no debería tener la facultad de aprobar/denegar el veredicto de
+> negocio del motor — solo puede escalar un caso a cuarentena, igual que ya
+> hace el motor automáticamente para Sospechoso/No corresponde (§1, Bloque E).
 
 | Campo | Detalle |
 |---|---|
-| **Quién** | Analista de correos |
-| **Cuándo** | Cuando el criterio humano difiere del veredicto automático del motor |
-| **Por qué / para qué** | Cerrar casos límite que las 28 reglas no capturan bien, dejando trazabilidad de que fue una decisión humana |
-| **Cómo** | Console → correo → "Denegar/Aceptar manualmente", motivo de **mínimo 10 caracteres** obligatorio |
-| **Qué valida el servidor** | `EmailReviewMethod = Manual` (`159460000`) queda estampado junto con `OverrideBy`/`On`/`Reason` — la app exige el mínimo de caracteres, pero **no hay guard server-side confirmado** que impida un override sin motivo por Web API directo (verificar en vivo) |
-| **Qué pasa si falla / deshacer** | Sin deshacer: es un override de estado, no una transacción reversible |
+| **Quién** | Operaciones |
+| **Cuándo** | Cualquier correo que Operaciones decida escalar a cuarentena a criterio propio — típicamente un caso "Revisión manual" (Cliente sin registrar) que no conviene dejar accionable, o cualquier otro que amerite sacarlo de circulación sin fingir una aprobación de negocio |
+| **Por qué / para qué** | Sacar el correo de la bandeja accionable sin que Operaciones tenga poder de aprobar/denegar contenido — mismo criterio de seguridad que ya aplica el triage automático (no se le confirma nada al remitente) |
+| **Cómo** | Console → correo → "Mover a cuarentena". Conector Office 365 Outlook (`MoveEmailV2`) mueve el mensaje a la carpeta `Cuarentena` del buzón compartido (mismo buzón que lee `sanic_CHEVSharedMailboxAddress`); en el mismo paso, un `Patch` sobre el registro deja `EmailReplyStatus = Omitido` y refresca `sanic_receivedemailoutlookuniqueid` con el id que Exchange asigna al mover el mensaje |
+| **Qué valida el servidor** | Nada server-side — mismo patrón sin guard que "Resuelto por fuera". **Ojo**: ambas acciones dejan `EmailReplyStatus = Omitido`; se distinguen solo por si `ReplyCloseNote`/`RepliedBy` quedaron poblados (los pone "Resuelto por fuera", no "Mover a cuarentena") |
+| **Qué pasa si falla / deshacer** | Sin deshacer registrado. No toca `EmailReviewStatus` ni `EmailReviewMethod` — a diferencia del override eliminado, esta acción no se disfraza de veredicto del motor |
 
-### Incluir + Validar (vía manual del buzón)
-
-| Campo | Detalle |
-|---|---|
-| **Quién** | Analista de correos |
-| **Cuándo** | El pipeline automático no generó el `ReceivedEmail` (p. ej. `IngestEmails` caído, correo huérfano que el barrido no llegó a rescatar todavía) |
-| **Por qué / para qué** | Dar de alta el correo a mano para que entre al mismo motor de 28 reglas |
-| **Cómo** | Console → `CorreosElectronicos` → seleccionar correo del buzón (leído por Graph) → "Incluir + Validar" |
-| **Qué valida el servidor** | Las mismas 28 reglas — esta vía no las evita, solo reemplaza el disparo automático |
-| **Qué pasa si falla / deshacer** | Si el correo ya fue ingerido por el flujo mientras tanto, puede duplicar el registro (esta vía no comparte el dedup por `InternetMessageId` de `ProcessEmail` — verificar en vivo si la Console valida duplicados antes de crear) |
 
 ## 10. Supuestos y limitaciones
 
 1. **Re-validar un correo ya Aceptado crea una SEGUNDA `Declaration`.** El
    `DeclarationMaterializer` no dedupea: cada corrida en verde con
    `ResolvedClientId` materializa bolsas/depósitos/cheques nuevos. "Marcar
-   para reproceso" sobre un correo ya Aceptado duplica la declaración. Ya
-   pasó en vivo (Email-1265) y se limpió a mano.
-2. **`CH-Flow-IngestEmails` tiene el buzón hardcodeado en el trigger**, no
-   leído de `sanic_CHEVSharedMailboxAddress`: el JSON exportado apunta
-   literalmente a `no-reply-powerplatform-dev@baccredomatic.ni`. Promover a
-   producción sin editar el flujo a mano deja la ingesta escuchando el buzón
-   de dev.
-3. **El folder de archivado de la Console está hardcodeado** en `OnStart`
-   (`varIDFolderArchivado`); la lectura de la env var
-   `sanic_CHEVSharedMailboxArchiveFolderID` quedó comentada. La pantalla de
-   correos sí la resuelve por env var en su `OnVisible` — inconsistencia entre
-   las dos pantallas de la misma app.
-4. **La Console no verifica rol ni grupo dentro de Power Fx** (§3): el control
-   de acceso depende de a quién se comparte la app en Power Platform.
-5. **VR-25 tiene la celda `Depositos!J2` hardcodeada** en vez de tomarla de
+   para reproceso" sobre un correo ya Aceptado duplica la declaración. 
+2. **VR-25 tiene la celda `Depositos!J2` hardcodeada** en vez de tomarla de
    parámetro (VR-24 sí lo hace) — deuda documentada en el backend.
-6. **`sanic_accountnumber` es entero de 32 bits.** Una cuenta que no parsee a
-   `int` hace que el materializador tire un error explícito nombrando la
-   invariante rota; requiere migrar el campo a texto para levantar el límite.
-7. **`sanic_totaldeposits` de `CH-Tbl-DeclaredBags` fue rollup hasta hace
-   poco** — el `FormulaDefinition` era nulo y nunca calculaba (siempre 0). Se
-   reemplazó por la columna entera simple que hoy escribe el materializador
-   (backfill de 4.323 bolsas hecho). El `Entity.xml` versionado en
-   `solutions/unpacked/core/Entities/sanic_CHTblDeclaredBags/` **ya refleja el
-   fix** (`Type=int`, `SourceType=0`, sin `FormulaDefinition`, descripción
-   "Mantenido por el materializador del plugin. No editar a mano.") — la
-   re-exportación pendiente que mencionaban entregas anteriores de este doc
-   **ya se hizo**.
-8. **El doc-comment del plugin describe "dos puertas"** (Custom API + paso
-   asíncrono en Create) que ya no existen — el paso fue retirado (§8), el
-   comentario no se actualizó.
-9. **El filtro del webhook de `CH-Flow-Reply to client email` no incluye
+3. **El filtro del webhook de `CH-Flow-Reply to client email` no incluye
    `sanic_replysubject`**: cambiar solo el asunto de la respuesta no dispara
    el envío. Limitación conocida, no un bug nuevo.
-10. **El manual `docs/guias/04-manual-validacion-correos.md` describe la era
-    pre-plugin** (23 reglas corridas manualmente en Power Fx dentro de la
-    Console, con dos reglas rotas que siempre daban Pass). Ya no es el camino
-    real: el motor vigente corre 28 reglas en el plugin C#, automático. Ese
-    manual queda como referencia histórica, no operativa.
-11. **`executeprivilegename` de la Custom API no está confirmado** (§7): el
-    script de registro no crea ningún `customapiprivilege`. Alcance real de
-    invocación: verificar en vivo.
 
 ## 11. Pruebas
 
-No se duplican casos acá — ver la
-[guía 09, Plan de pruebas integral](../guias/09-plan-de-pruebas-integral.md),
-§2 (Módulo B · Pipeline de correo):
+### Antes de empezar
 
-- **Guía 08 completa** (bloques A–D, obligatoria): A1–A3 aceptados,
-  B1–B12 rechazos de contenido, C1–C7 rechazos de sobre, D1–D6 contingencia.
-  Ver [`08-plan-de-pruebas-validacion.md`](../guias/08-plan-de-pruebas-validacion.md).
-- **CO-01..CO-07**: triage de remitentes (Registrado / Cliente sin registrar /
-  Sospechoso / No corresponde / respuesta fallida / auto-sanado / asunto no
-  dispara).
-- **CO-08..CO-10**: salud de la Console (bandeja vacía en día sano, casos
-  CO-02/03/04 visibles con su triage, heartbeat `ingesta-correos` actualizándose).
+| Requisito | Cómo se verifica |
+|---|---|
+| Flujos activos: `CH-Flow-IngestEmails`, `CH-Flow-Reply to client email`, `CH-Flow-MailboxSweep` | make.powerautomate.com → Soluciones → CashHubFlows |
+| Su remitente autorizado| Tabla `CH-Tbl-ClientEmail`, o agréguelo desde la app de administración de clientes |
+| Plantillas de correo activas | Tabla `CH-Tbl-EmailTemplate`: `reply-accepted` y `reply-rejected` |
+
+
+**Cómo se envía cada prueba**: correo al buzón de CashHub con asunto que empiece con
+**"Pre-registro"** y el archivo del caso como **único adjunto**.
+
+
+---
+
+### Bloque A — Casos aceptados (notificación de éxito)
+
+| # | Archivo | Qué prueba | Resultado esperado |
+|---|---|---|---|
+| A1 | `01-OK-completo.xlsx` | Camino feliz completo: 3 depósitos, 2 bolsas, dos monedas, efectivo + cheques | **Correo verde** "Declaración recibida y validada" con tabla de 2 bolsas ( USD 800 / NIO 15,000; USD 1,200). Declaración materializada con 3 depósitos y 2 cheques colgando del depósito 1. |
+| A2 | `02-OK-minimo.xlsx` | Mínimo aceptable: un depósito, solo efectivo, sin cheques | Correo verde con una sola bolsa (NIO 5,000). |
+| A3 | `14-OK-volumen.xlsx` | 25 depósitos en 25 bolsas alternando monedas | Correo verde con las 25 bolsas listadas.  |
+
+---
+
+### Bloque B — Errores de negocio del cliente (notificación de corrección)
+
+| # | Archivo | Regla | Resultado esperado en el correo |
+|---|---|---|---|
+| B1 | `03-ERR-cuenta-ajena.xlsx` | VR-23 | 1 error: la cuenta `999999999` (fila 7) no pertenece al cliente. **Con celda `Depositos!K7`.** |
+| B2 | `04-ERR-sin-cif.xlsx` | VR-24 | 1 error: la celda `Depositos!J2` debe contener el CIF. |
+| B3 | `05-ERR-cif-desconocido.xlsx` | VR-25 | 1 error: el CIF `0099999999` no corresponde a ningún cliente. El correo **no queda atribuido** a ningún cliente. |
+| B4 | `06-ERR-sin-bolsa-ni-cuenta.xlsx` | VR-10, VR-11 | 2 errores ubicados: `J6` sin bolsa, `K7` sin cuenta. |
+| B5 | `07-ERR-montos-invalidos.xlsx` | VR-20 | Errores por valores negativos en `O6` y `P6`. **Nota**: VR-21 (total en cero) se omite porque depende de VR-20 — es la cadena anti-ruido funcionando. |
+| B6 | `08-ERR-tipos-y-moneda.xlsx` | VR-17, VR-18 | 2 errores: `O6` contiene texto donde va número; `L6` declara moneda `CAD` no soportada. |
+| B7 | `09-ERR-cuenta-dos-monedas.xlsx` | VR-13 | 1 error: la cuenta `100200112` aparece con dos monedas (fila 7). |
+| B8 | `10-ERR-cheques.xlsx` | VR-14 | Cheque `CHQ-REP` repetido (fila 3). **Nota**: VR-22 (huérfano) y VR-12 (descuadre) se omiten por dependencia de VR-14. |
+| B9 | `11-ERR-cheque-incompleto.xlsx` | VR-15 | 2 errores: celdas `C2` (tipo) y `D2` (moneda) vacías en el cheque. |
+| B10 | `12-ERR-sin-depositos.xlsx` | VR-09 | 1 error: no hay depósitos declarados. |
+| B11 | `13-ERR-multiple.xlsx` | VR-10, VR-20, VR-13, VR-22, VR-23 | **6 errores mezclados**: es la prueba del agrupado del correo — verificar que la tabla los liste ordenados por hoja y fila, y que se lea sin esfuerzo. |
+| B12 | `15-ERR-desglose-cheques.xlsx` | VR-28 | El **total** de cheques cuadra (300 = 300) pero el desglose está cruzado: se declaran como cheques del BAC y el cheque listado es de otro banco. 2 errores, uno por cada columna del desglose. |
+
+---
+
+### Bloque C — Errores del sobre (sin abrir el archivo)
+
+Estos no necesitan archivo especial: se prueban con cualquiera de los anteriores.
+
+| # | Cómo provocarlo | Regla | Resultado esperado |
+|---|---|---|---|
+| C1 | Enviar con asunto **sin** "Pre-registro" (ej. "Depósitos de hoy") | VR-04 | Error de sobre: el asunto debe comenzar con 'Pre-registro'. |
+| C2 | Enviar **sin adjunto** | VR-02 | Error: debe traer 1 adjunto y trae 0. Las reglas del archivo se omiten en cadena. |
+| C3 | Enviar con **dos adjuntos** | VR-02 | Error: debe traer 1 adjunto y trae 2. |
+| C4 | Enviar un **PDF o Word** en vez del Excel | VR-05 | Error: el adjunto debe ser .xlsx. |
+| C5 | Enviar desde una dirección **no registrada** | VR-03 | Error: el correo no está registrado como remitente autorizado. |
+| C6 | Enviar un Excel cualquiera (no la plantilla) | VR-27 / VR-07 | Error: el archivo no es la plantilla oficial o no tiene las 2 tablas. |
+| C7 | Enviar un archivo `.xlsx` **corrupto** (renombrar un .txt) | VR-07 | Error explícito: no se pudo abrir como paquete ZIP. |
+
+---
+
+### Bloque D — Contingencia y operación
+
+| # | Escenario | Cómo probarlo | Resultado esperado |
+|---|---|---|---|
+| D1 | **Correo huérfano** | Apagar `CH-Flow-IngestEmails`, enviar un correo, esperar 10 min | El barrido detecta el flujo apagado / el correo sin registrar y alerta por Teams (si está configurada la variable `sanic_CHEVOpsTeamsGroupId`); deja latido en `CH-Tbl-SystemHeartbeat`. |
+| D2 | **Pendiente sin validar** | Crear a mano un `ReceivedEmail` en estado Pendiente | El barrido lo re-valida solo en su próxima corrida (≤10 min). |
+| D3 | **Plantilla de correo editada** | Cambiar un texto o color en `CH-Tbl-EmailTemplate` (`reply-rejected`) y reenviar un caso del bloque B | El correo sale con el diseño nuevo **sin redesplegar nada**. |
+| D4 | **Plantilla desactivada** | Poner `IsActive = No` en `reply-accepted` y enviar `02-OK-minimo.xlsx` | El correo llega igual, con el diseño embebido de respaldo (nunca queda sin respuesta). |
+
+
+### Bloque E Triage de remitentes — cuarentena y no respondidos 🔴
+
+El motor clasifica al remitente combinando VR-03 (remitente registrado), VR-27
+(plantilla oficial) y VR-25 (CIF conocido). **Solo "Registrado" recibe
+respuesta** — a los demás NO se les responde (responder confirmaría a un
+tercero que ese CIF es cliente del banco).
+
+| # | Caso | Cómo provocarlo | Esperado |
+|---|---|---|---|
+| E1 🔴 | Cliente sin registrar | Remitente NO autorizado + plantilla oficial + CIF válido | Clasificación "Cliente sin registrar". **SIN respuesta al remitente**. Queda para revisión de Banca de Empresas (visible en la Console). |
+| E2 🔴 | Sospechoso | Remitente NO autorizado + plantilla oficial + CIF inexistente | Clasificación "Sospechoso": sin respuesta, correo movido a carpeta **Cuarentena** en Outlook |
+| E3 🔴 | No corresponde | Remitente NO autorizado + adjunto que no es la plantilla (o sin adjunto) | Clasificación "No corresponde": sin respuesta, a **Cuarentena** |
+| E4 | Cuarentena manual (Operaciones) | Console → cualquier correo → "Mover a cuarentena" | Mensaje movido a la carpeta **Cuarentena** del buzón compartido, `EmailReplyStatus = Omitido`, `sanic_receivedemailoutlookuniqueid` actualizado con el id post-movimiento. `EmailReviewStatus`/`EmailReviewMethod` **sin tocar** |
+
+### Bloque D Email Validation Console (contingencia)
+
+- D1: en un día sano, con el pipeline ON, la bandeja de la Console está
+      **vacía** — todo entra y se responde solo.
+- D2: heartbeat `ingesta-correos` en `CH-Tbl-SystemHeartbeat`
+      actualizándose cada ~10 min (el semáforo de la Console).

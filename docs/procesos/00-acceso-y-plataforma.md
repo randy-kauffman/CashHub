@@ -2,13 +2,8 @@
 
 ## 1. Qué es este proceso
 
-Es el proceso 0: lo primero que toca cualquier usuario de CashHub, antes de
-tocar un solo dato de negocio. Un usuario entra a **CH-App-Hub**
-(`sanic_chapphub_2038c`, pantalla única `scrHub`), el hub lee el catálogo de
-apps y resuelve — contra Azure AD, no contra Dataverse — a cuáles de esas apps
-pertenece el usuario, y lanza la elegida en la misma pestaña
-(`Launch(AppURL, {}, LaunchTarget.Replace)`). Si el usuario solo tiene acceso a
-una app, ni siquiera ve el hub: aterriza directo.
+Es el proceso 0: lo primero que toca cualquier usuario de CashHub, antes de tocar un solo dato de negocio. Un usuario entra a **CH-App-Hub**, el hub lee el catálogo de apps y resuelve — contra Azure AD, no contra Dataverse — a cuáles de esas apps
+pertenece el usuario, y lanza la elegida en la misma pestaña (`Launch(AppURL, {}, LaunchTarget.Replace)`). Si el usuario solo tiene acceso a una app, ni siquiera ve el hub: aterriza directo.
 
 El catálogo (`CH-Tbl-AppCatalog` / `sanic_chtblappcatalog`) es la única fuente
 de verdad de qué apps existen, su URL y su orden. El gating por grupo es
@@ -48,16 +43,14 @@ entrada. Entrega a **todos** los demás procesos (1 a 8) un usuario ya
 autenticado por Entra ID que aterriza en la app correcta; la autorización de
 grano fino dentro de cada proceso (qué tabla puede leer, qué acción puede
 ejecutar) la resuelve el rol `CH-SR-*` asignado en esa app, documentado en
-cada proceso vecino y en la referencia
-[roles-y-seguridad.md](../referencia/roles-y-seguridad.md) (con el caveat de
-§3 sobre su vigencia).
+cada proceso vecino.
 
 ## 2. Estados y transiciones
 
 Este proceso **no tiene una máquina de estados de negocio** con valores
 `159460xxx` — ni `CH-Tbl-AppCatalog` ni `CH-Tbl-AppCatalogAccess` declaran un
 option set local de estado. Lo que gobierna la visibilidad de una app son dos
-mecanismos independientes, verificados contra `Entity.xml` de ambas tablas:
+mecanismos independientes:
 
 | Mecanismo | Tabla | Columna | Tipo | Quién lo cambia | Qué defiende |
 |---|---|---|---|---|---|
@@ -87,48 +80,7 @@ privilegios** — la app destino igual bloquea por rol. Si el hub muestra de
 menos, es un problema de experiencia (falta una fila en
 `CH-Tbl-AppCatalogAccess`), no de seguridad.
 
-### 3.2 Los 10 roles `CH-SR-*` (verificado contra `solutions/unpacked/core/Roles/*.xml`)
-
-Todos los roles listados abajo tienen, hoy, exactamente los mismos dos
-privilegios sobre el catálogo: `prvReadsanic_CHTblAppCatalog` y
-`prvReadsanic_CHTblAppCatalogAccess`, ambos con **profundidad Global** (grep
-`name="prv...sanic_"` sobre cada XML — cero excepciones). Es decir: **todo
-usuario con cualquier rol `CH-SR-*` puede leer el catálogo completo**; lo que
-cambia entre roles es el acceso a las tablas de negocio de *otros* procesos
-(documentado en cada proceso vecino), no el acceso al catálogo del hub.
-
-| Rol de seguridad | Rol físico esperado | App asociada |
-|---|---|---|
-| `CH-Role` | Rol base/plantilla — todo usuario CashHub | — (solo catálogo) |
-| `CH-SR-Receptionist` | Oficial de esclusa/bóveda | Reception |
-| `CH-SR-Counter` | Cajero de recuento | Recounting |
-| `CH-SR-CountingSupervisor` | Supervisor de recuento | Supervisor |
-| `CH-SR-Digitizer` | Digitador (transición a IBS Branch) | Digitization |
-| `CH-SR-DepositsTracker` | Auditoría/consulta (visor, cero escritura) | Deposits Tracker |
-| `CH-SR-AnalyticsRead` | Auditoría/consulta (histórico) | — |
-| `CH-SR-ClientAdminContributor` | Gestor de RFC de datos de cliente | Client Administration |
-| `CH-SR-ClientAdminApprover` | Aprobador de RFC de datos de cliente | Client Administration |
-| `CH-SR-OpsAdmin` | Administración de operaciones | — (sin app mapeada) |
-
-Ningún rol de la lista tiene privilegio de **write** sobre `CH-Tbl-AppCatalog`
-ni `CH-Tbl-AppCatalogAccess` — la escritura del catálogo queda reservada a
-`System Administrator`/`System Customizer` (ver §6.2 del guard). Y para esos
-roles de plataforma también rige el guard: no hay atajo de escritura sin
-pasar por `GuardAppCatalogPlugin`.
-
-> ⚠️ **Divergencia con `docs/referencia/roles-y-seguridad.md`**: ese documento
-> lista solo 6 roles y afirma que `CH-SR-AnalyticsRead` y `CH-SR-OpsAdmin`
-> tienen **cero** privilegios sobre cualquier tabla custom. Dejá de confiar en
-> esa afirmación para este proceso: **verificado en esta sesión** contra el
-> XML vivo (`sanic_CHTblAppCatalog` publicado en el repo) que hoy existen 10
-> roles (`CH-SR-ClientAdminApprover/Contributor`, `CH-SR-DepositsTracker` y
-> `CH-SR-Digitizer` no aparecen en esa referencia), y que `CH-SR-AnalyticsRead`
-> y `CH-SR-OpsAdmin` tienen exactamente el mismo privilegio de catálogo que
-> `CH-Role` (diff de privilegios entre ambos XML: vacío). El documento de
-> referencia quedó desactualizado en este punto — el código manda (regla 1 del
-> contrato de esta carpeta).
-
-### 3.3 Grupos de Azure AD
+### 3.2 Grupos de Azure AD
 
 El acceso por grupo no vive en variables de entorno ni en Security Roles: vive
 en filas de `CH-Tbl-AppCatalogAccess`, cada una con el GUID crudo del grupo en
@@ -137,45 +89,13 @@ de membresía — el hub llama a Graph `checkMemberGroups` **en el contexto del
 usuario logueado** en cada arranque, así que la membresía transitiva (grupos
 anidados incluidos) se resuelve en tiempo real, sin caché ni backfill.
 
-Las variables de entorno `sanic_CHEVAADGroup_*` (`_Admin`, `_ClientAdmin`,
-`_Counting`, `_EmailValidation`, `_Reception`, `_Supervisor`, documentadas en
-[variables-de-entorno.md](../referencia/variables-de-entorno.md)) **no
-alimentan este mecanismo**: ninguna fórmula de `CH-App-Hub` las referencia por
-nombre. Son una convención de configuración de otros dominios (o un
-remanente); el patrón vivo de este proceso es el GUID guardado directo en la
-fila de `CH-Tbl-AppCatalogAccess`.
-
-### 3.4 Matriz rápida por app del catálogo
-
-| App | Rol de seguridad esperado dentro | Filtrado por grupo hoy (fila en `AppCatalogAccess`) |
-|---|---|---|
-| Reception | `CH-SR-Receptionist` | verificar en vivo (dato de negocio, no de código) |
-| Supervisor | `CH-SR-CountingSupervisor` | ídem |
-| Recounting | `CH-SR-Counter` | ídem |
-| Digitization | `CH-SR-Digitizer` | ídem |
-| Ingesta de correos | — (sin rol mapeado en los 10 roles) | ídem |
-| Deposits Tracker | `CH-SR-DepositsTracker` | verificar en vivo (dato de negocio, no de código) |
-| Client Administration | `CH-SR-ClientAdminContributor` / `Approver` | 4 grupos (Contributor/Approver de Banca y Bóveda) |
-
-Cuáles GUIDs de grupo están cargados hoy en cada fila es un dato del entorno
-vivo, no del repo — **verificar en vivo** contra `CH-Tbl-AppCatalogAccess`.
-
 ## 4. Aplicaciones
 
-Una sola app pertenece a este proceso: **CH-App-Hub** (`sanic_chapphub_2038c`,
-Apps 1.30.0.7). Es una app de **una sola pantalla**, `scrHub`, documentada
-control por control en
-[docs/hub-rebuild/01-pantalla-hub.md](../hub-rebuild/01-pantalla-hub.md).
+Una sola app pertenece a este proceso: **CH-App-Hub**. Es una app de **una sola pantalla**.
 
 | Pantalla | Sirve a | No hace |
 |---|---|---|
 | `scrHub` | Todo el flujo de §1: lee catálogo + accesos, resuelve membresía, lanza la app elegida (o redirige directo si hay una sola) | No navega a otra pantalla (no hay otra). No escribe nada en Dataverse. No hace ninguna llamada de red fuera de las de `OnStart` |
-
-Las **7 apps que el catálogo lanza hoy** (`data/seed/30-appcatalogs.json`,
-orden por `'Order'`) son las de los procesos 1 a 7 de este mismo directorio:
-Reception, Supervisor, Recounting, Digitization, Email Validation Console,
-Deposits Tracker y Client Administration. Cada una tiene su propio proceso
-documentado por separado — este documento no repite su UI.
 
 ## 5. Flujos Power Automate
 
@@ -222,7 +142,7 @@ RemoveLink` y el resto (`Assign`/`Reparent`/`Share`/`Unshare`/`RollupView`) en
 > ⚠️ **Las dos tablas comparten el display name `'AAD Group Id'`.** La regla
 > operativa: se lee y se escribe **solo** desde `CH-Tbl-AppCatalogAccess`. Si
 > una fórmula o un script combina `'CH-Tbl-AppCatalogs'` con `'AAD Group Id'`
-> en la misma expresión, es un bug — ver checklist §6.4 del rebuild guide.
+> en la misma expresión.
 
 Ninguna columna de estas dos tablas está **mantenida por plugin** en el
 sentido de espejo/materializada — los guards de §8 **validan y normalizan** lo
@@ -260,9 +180,7 @@ etapa donde el pipeline permite tocar el `Target` que se va a persistir y hacer
 lecturas consistentes con la transacción en curso.
 
 La lógica de decisión de ambos vive en el dominio puro
-`CashHub.Validation.Security.AppCatalogGuard` (16 casos de test, verificado
-contra `AppCatalogGuardTests.cs` — el changelog que introdujo el guard cita
-17/132, desactualizado frente al código vivo) — los plugins son cáscara: leen
+`CashHub.Validation.Security.AppCatalogGuard` — los plugins son cáscara: leen
 el `Target`, delegan y propagan el bloqueo con `InvalidPluginExecutionException`.
 
 ## 9. Acciones
@@ -352,32 +270,14 @@ el `Target`, delegan y propagan el bloqueo con `InvalidPluginExecutionException`
   2000). Con la cantidad de filas de hoy no es un problema; si el catálogo
   creciera mucho, la solución documentada es mover el filtro a una vista o un
   Custom API, no subir el número indefinidamente.
-- **Las variables `sanic_CHEVAADGroup_*` no gobiernan este proceso.** El
-  patrón vivo es el GUID crudo guardado en la fila de
-  `CH-Tbl-AppCatalogAccess`; esas variables de entorno son una convención de
-  configuración de otros dominios (o remanente sin lectura programática
-  verificada) — no las cites como el mecanismo de control de acceso del hub.
 - **`gvarEntorno` en la píldora "Producción" es un literal**, no una lectura
   del entorno real — en cualquier ambiente que no sea el que lo tenga escrito
   a mano, la píldora miente. Divergencia declarada en el rebuild guide.
-- **Sin auditoría de quién agrega/quita un grupo de acceso** dentro de este
-  proceso más allá del audit log estándar de Dataverse sobre
-  `CH-Tbl-AppCatalogAccess` — no hay un `ApprovalRequest` ni flujo de
-  aprobación para tocar el gating de acceso (a diferencia de, por ejemplo, el
-  proceso de datos de cliente).
-- **La referencia de roles (`roles-y-seguridad.md`) está desactualizada en el
-  conteo de roles y en el estado de `AnalyticsRead`/`OpsAdmin`** — corregido
-  en §3.2 de este documento contra el XML vivo. No asumas que ese documento
-  refleja los 10 roles actuales sin cruzar contra `solutions/unpacked/core/Roles/`.
 - **Qué GUIDs de grupo están cargados hoy en `CH-Tbl-AppCatalogAccess` para
   cada app es un dato del entorno, no del repo.** Este documento no lo
   inventa — se marca "verificar en vivo" en §3.4.
 
 ## 11. Pruebas
-
-No se duplican casos acá — ver
-[09-plan-de-pruebas-integral.md](../guias/09-plan-de-pruebas-integral.md),
-bloque **H Hub**: `HU-01` a `HU-06`.
 
 | ID | Cubre |
 |---|---|
