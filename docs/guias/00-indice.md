@@ -31,6 +31,7 @@ operaciones, sin conocimientos técnicos de Power Platform.
 | [08-plan-de-pruebas-validacion.md](08-plan-de-pruebas-validacion.md) | Batería de pruebas del motor de validación y las notificaciones al cliente: 14 archivos de prueba verificados contra el motor, casos de sobre, contingencia y registro de resultados. |
 | [09-plan-de-pruebas-integral.md](09-plan-de-pruebas-integral.md) | Plan de pruebas integral de 0 a 100 para certificar la salida a producción: pre-vuelo del entorno, batería por módulo (clientes, correo, recepción, recuento, supervisión, digitación, tracker, hub), el "hilo de oro" end-to-end y el checklist Go/No-Go. |
 | [10-plan-de-pruebas-recounting.md](10-plan-de-pruebas-recounting.md) | Plan de pruebas de 0 a 100 de **CH-App-Recounting**: expande los 8 casos de humo del plan integral a cobertura completa por pantalla, agrega la batería responsive y —lo que no está en ningún otro lado— el análisis de **delegación** con los conteos reales de las 13 tablas que toca la app. |
+| [11-plan-de-pruebas-aprobaciones.md](11-plan-de-pruebas-aprobaciones.md) | Plan de pruebas de los **10 tipos de solicitud** que resuelve el supervisor, en orden de proceso: primero las que nacen en la esclusa (Reception), después las del recuento. Cada tipo se prueba aprobando **y** rechazando, con los casos borde que destaparon bugs reales, la verificación de los asientos contables componente por componente, y la batería transversal de transaccionalidad. |
 
 ## Cómo usar estos manuales
 
