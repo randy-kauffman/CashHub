@@ -30,6 +30,7 @@ operaciones, sin conocimientos técnicos de Power Platform.
 | 07 | [Manual de trazabilidad](07-manual-trazabilidad.md) | Cualquier rol de consulta/auditoría | **Deposits Tracker** + **Hub** | Consulta de solo lectura del estado de lotes, planillas, tulas y depósitos; el Hub es la puerta de entrada a todas las apps. |
 | [08-plan-de-pruebas-validacion.md](08-plan-de-pruebas-validacion.md) | Batería de pruebas del motor de validación y las notificaciones al cliente: 14 archivos de prueba verificados contra el motor, casos de sobre, contingencia y registro de resultados. |
 | [09-plan-de-pruebas-integral.md](09-plan-de-pruebas-integral.md) | Plan de pruebas integral de 0 a 100 para certificar la salida a producción: pre-vuelo del entorno, batería por módulo (clientes, correo, recepción, recuento, supervisión, digitación, tracker, hub), el "hilo de oro" end-to-end y el checklist Go/No-Go. |
+| [10-plan-de-pruebas-recounting.md](10-plan-de-pruebas-recounting.md) | Plan de pruebas de 0 a 100 de **CH-App-Recounting**: expande los 8 casos de humo del plan integral a cobertura completa por pantalla, agrega la batería responsive y —lo que no está en ningún otro lado— el análisis de **delegación** con los conteos reales de las 13 tablas que toca la app. |
 
 ## Cómo usar estos manuales
 
