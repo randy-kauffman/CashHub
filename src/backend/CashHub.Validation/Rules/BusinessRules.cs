@@ -35,17 +35,34 @@ namespace CashHub.Validation.Rules
         {
             var cif = context.Workbook!.ReadCell("Depositos!J2")!.Trim();
             context.DeclaredCif = cif;
-            var clientId = context.DataAccess.FindClientIdByCif(cif);
-            if (clientId == null)
-            {
-                return new[] { new Finding(Key, sheet: "Depositos", cellRef: "J2", actualValue: cif) };
-            }
-            context.ResolvedClientId = clientId; // el contenido ATRIBUYE
-            return Array.Empty<Finding>();
+
+            var lookup = context.DataAccess.FindClientByCif(cif);
+            context.ClientVigency = lookup.Vigency;
+
+            // ATRIBUYE aunque el cliente esté dado de baja: sin sanic_client el correo
+            // queda huérfano y no hay forma de rastrearlo desde la ficha del cliente.
+            // No habilita nada: la regla igual falla, así que nunca se materializa.
+            if (lookup.Id != null) context.ResolvedClientId = lookup.Id;
+
+            // Un solo mensaje para las dos causas de fallo — "no corresponde a ningún
+            // cliente ACTIVO" es verdad tanto si el CIF no existe como si el cliente existe
+            // dado de baja. Además borra un oráculo: con dos textos distintos, quien mande
+            // CIFs al voleo podría distinguir "no existe" de "existe pero está inactivo".
+            // Con uno solo no aprende nada, y negocio conserva el control del texto.
+            if (lookup.Vigency == Vigency.Vigente) return Array.Empty<Finding>();
+
+            return new[] { new Finding(Key, sheet: "Depositos", cellRef: "J2", actualValue: cif) };
         }
     }
 
-    /// <summary>VR-26: el remitente está autorizado para el cliente resuelto. El correo AUTORIZA.</summary>
+    /// <summary>
+    /// VR-26: el vínculo entre el remitente y el cliente resuelto está VIGENTE. El correo
+    /// AUTORIZA.
+    ///
+    /// Es la puerta de CONTENIDO: solo un vínculo vigente habilita contarle detalles del
+    /// cliente. Un vínculo revocado o pendiente falla acá aunque el remitente tenga otros
+    /// vínculos vivos — la revocación es por PAR (dirección × cliente), no por dirección.
+    /// </summary>
     public sealed class Vr26SenderAuthorizedForClient : IValidationRule
     {
         public string Key => "VR-26";
@@ -54,11 +71,15 @@ namespace CashHub.Validation.Rules
         {
             var sender = context.Envelope.SenderEmail!;
             var clientId = context.ResolvedClientId!.Value;
-            if (!context.DataAccess.IsSenderAuthorizedForClient(sender, clientId))
+
+            foreach (var link in context.EnsureSenderLinks())
             {
-                return new[] { new Finding(Key, actualValue: sender) };
+                if (link.ClientId != clientId) continue;
+                return link.State == Vigency.Vigente
+                    ? Array.Empty<Finding>()
+                    : new[] { new Finding(Key, actualValue: sender) };
             }
-            return Array.Empty<Finding>();
+            return new[] { new Finding(Key, actualValue: sender) };
         }
     }
 

@@ -24,11 +24,22 @@ namespace CashHub.Plugins
             public const string TriageNotes = "sanic_triagenotes";
             public const string DeclaredCif = "sanic_declaredcif";
 
-            // Triage del remitente. Solo Registrado habilita que salga correo del banco.
+            // Triage del remitente. Solo Registrado habilita CONTAR DETALLES del cliente;
+            // la puerta de respuesta es aparte (ver TriageDecision.MayReplyToSender).
             public const int SenderRegistrado = 159460000;
             public const int SenderClienteSinRegistrar = 159460001;
             public const int SenderSospechoso = 159460002;
             public const int SenderNoCorresponde = 159460003;
+
+            // Baldes nuevos del rediseño de vínculos:
+            //   RevocadoParaCliente  — el vínculo con ESTE cliente no autoriza (revocado o
+            //                          pendiente de aprobación: por decisión de negocio van
+            //                          al mismo balde, ante la duda se trabaja seguro)
+            //   ContactoDeOtroCliente— contacto vivo del banco que erró de CIF
+            //   Revocado             — le cortamos en todos lados y sigue insistiendo
+            public const int SenderRevocadoParaCliente = 159460004;
+            public const int SenderContactoDeOtroCliente = 159460005;
+            public const int SenderRevocado = 159460006;
 
             public const int ReplyPendiente = 159460000;
             public const int ReplyRespondido = 159460001;

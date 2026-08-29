@@ -9,6 +9,37 @@ namespace CashHub.Validation.Tests
     {
         private static readonly DateTime Recibido = new(2026, 8, 5, 15, 7, 0, DateTimeKind.Utc);
 
+        /// <summary>
+        /// La respuesta generica va a un contacto vigente del banco que NO esta autorizado
+        /// para el cliente que declara. No puede confirmar que ese CIF exista, ni nombrar al
+        /// cliente, ni listar hallazgos: cualquiera de esas tres cosas es la fuga que la
+        /// puerta de respuesta pretende evitar.
+        ///
+        /// Por eso la firma no recibe clientName ni issues: no es que se acuerde de no
+        /// imprimirlos — es que no los tiene.
+        /// </summary>
+        [Fact]
+        public void Generico_no_nombra_al_cliente_ni_lista_hallazgos()
+        {
+            var html = ClientReplyBuilder.BuildGeneric("declaracion.xlsx", Recibido, "Email-42");
+
+            Assert.DoesNotContain("Distribuidora El Porvenir", html);
+            Assert.DoesNotContain("no esta autorizado", html);
+            Assert.DoesNotContain("CIF", html);
+            Assert.Contains("declaracion.xlsx", html);
+            Assert.Contains("Email-42", html);
+            Assert.Contains("ejecutivo", html);
+        }
+
+        [Fact]
+        public void Generico_dice_que_no_se_registro_para_que_nadie_quede_esperando()
+        {
+            var html = ClientReplyBuilder.BuildGeneric("d.xlsx", Recibido);
+
+            Assert.Contains("no", html);
+            Assert.Contains("registrada", html);
+        }
+
         [Fact]
         public void Aceptado_muestra_totales_por_moneda_y_pasos_siguientes()
         {

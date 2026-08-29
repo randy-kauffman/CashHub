@@ -164,6 +164,29 @@ namespace CashHub.Validation.Reporting
             return Shell(clientName, fileName, receivedOn, body.ToString(), trackingId, runId);
         }
 
+        /// <summary>
+        /// Respuesta para un contacto VIGENTE del banco que no está autorizado para el
+        /// cliente que declara (vínculo inexistente, revocado o pendiente).
+        ///
+        /// No recibe clientName ni issues a propósito: no puede filtrar lo que no tiene.
+        /// Confirmar que el CIF existe, nombrar al cliente o listar los hallazgos le
+        /// revelaría a un tercero que ese cliente opera con el banco — exactamente la fuga
+        /// que la puerta de respuesta existe para evitar.
+        /// </summary>
+        public static string BuildGeneric(string fileName, DateTime receivedOn,
+            string? trackingId = null, string? runId = null)
+        {
+            var body = new StringBuilder();
+            body.Append(Banner(false, "No pudimos procesar esta declaracion",
+                "Su declaracion NO fue registrada."));
+            body.Append(Note("Como continuar",
+                "Los datos indicados en el archivo no corresponden a una cuenta que podamos procesar " +
+                "desde esta direccion de correo. Contacte a su ejecutivo de Banca de Empresas para " +
+                "revisar el envio."));
+
+            return Shell(null, fileName, receivedOn, body.ToString(), trackingId, runId);
+        }
+
         // ---------- piezas compartidas ----------
 
         private static string Shell(string? clientName, string fileName, DateTime receivedOn, string inner,

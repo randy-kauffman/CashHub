@@ -75,22 +75,32 @@ namespace CashHub.Plugins
             }
 
             _tracing.Trace("Validate[{0}]: etapa 8 — clasificando al remitente.", receivedEmailId);
-            var triage = SenderTriage.Classify(result);
-            _tracing.Trace("Validate[{0}]: remitente '{1}' clasificado como {2}; responder={3}. Motivo: {4}",
+            var facts = context.BuildTriageFacts();
+            _tracing.Trace(
+                "Validate[{0}]: vinculo con el cliente declarado={1}; algun vinculo vigente={2}; " +
+                "algun vinculo revocado={3}; vigencia del cliente={4}.",
+                receivedEmailId, facts.LinkToClient, facts.HasAnyActiveLink,
+                facts.HasAnyRevokedLink, facts.Client);
+
+            var triage = SenderTriage.Classify(result, facts);
+            _tracing.Trace(
+                "Validate[{0}]: remitente '{1}' clasificado como {2}; responder={3}; detalle={4}. Motivo: {5}",
                 receivedEmailId, envelope.SenderEmail ?? "(sin direccion)", triage.Trust,
-                triage.MayReplyToSender, triage.Reason);
+                triage.MayReplyToSender, triage.MayDiscloseClientDetail, triage.Reason);
 
             (string Subject, string Body)? reply = null;
             if (triage.MayReplyToSender)
             {
-                _tracing.Trace("Validate[{0}]: etapa 9 — componiendo respuesta al cliente (gestion {1}).",
-                    receivedEmailId, trackingId);
-                reply = ComposeReply(receivedEmailId, result, context, envelope, trackingId, receivedOn, runId, declarationId);
+                _tracing.Trace("Validate[{0}]: etapa 9 — componiendo respuesta {1} (gestion {2}).",
+                    receivedEmailId, triage.MayDiscloseClientDetail ? "con detalle" : "GENERICA", trackingId);
+                reply = ComposeReply(receivedEmailId, result, context, envelope, trackingId, receivedOn,
+                    runId, declarationId, triage.MayDiscloseClientDetail);
             }
             else
             {
-                // Puerta de seguridad: escribirle a una direccion sin verificar le confirmaria a
-                // un tercero que ese CIF es cliente del banco. No se responde, se escala adentro.
+                // Puerta de RESPUESTA: sin ningun vinculo vigente con el banco no hay a quien
+                // escribirle. Hacerlo le confirmaria a un tercero que ese CIF es cliente
+                // nuestro, o contradiria una revocacion que hicimos a proposito.
                 _tracing.Trace(
                     "Validate[{0}]: etapa 9 — respuesta SUPRIMIDA hacia '{1}' por clasificacion {2}. {3}",
                     receivedEmailId, envelope.SenderEmail ?? "(sin direccion)", triage.Trust, triage.Reason);
@@ -324,12 +334,22 @@ namespace CashHub.Plugins
         /// </summary>
         private (string Subject, string Body)? ComposeReply(Guid emailId, RunResult result,
             ValidationContext context, EmailEnvelope envelope, string trackingId,
-            DateTime receivedOn, Guid runId, Guid? declarationId)
+            DateTime receivedOn, Guid runId, Guid? declarationId, bool mayDiscloseClientDetail)
         {
             try
             {
                 var composer = new ClientReplyComposer(_service, _tracing);
                 var fileName = envelope.AttachmentFileName ?? "(sin adjunto)";
+
+                if (!mayDiscloseClientDetail)
+                {
+                    // Puerta de CONTENIDO cerrada: es un contacto vigente del banco, pero no
+                    // de ESTE cliente. Ni el nombre, ni el CIF, ni los hallazgos — listarlos
+                    // le confirmaria que ese cliente opera con nosotros.
+                    _tracing.Trace("Validate[{0}]: respuesta GENERICA (sin datos del cliente).", emailId);
+                    return composer.BuildGeneric(fileName, receivedOn, trackingId, runId);
+                }
+
                 var clientName = ClientName(context.ResolvedClientId);
 
                 if (result.Passed && declarationId != null)
@@ -464,10 +484,18 @@ namespace CashHub.Plugins
             {
                 // Omitido, no Pendiente: el flujo de respuesta jamas debe levantar este correo.
                 update[Schema.ReceivedEmail.ReplyStatus] = new OptionSetValue(Schema.ReceivedEmail.ReplyOmitido);
-                update[Schema.ReceivedEmail.ReviewStatus] =
-                    new OptionSetValue(triage.Trust == SenderTrust.UnregisteredClient
-                        ? Schema.ReceivedEmail.ReviewManual   // le toca a Banca de Empresas
-                        : Schema.ReceivedEmail.ReviewOmitido);
+            }
+
+            // Ruteo de cola: INDEPENDIENTE de si salio respuesta. Un vinculo revocado exige
+            // ojo humano lo mismo si le contestamos generico que si no le contestamos nada;
+            // colgar esto del else de la respuesta dejaba el caso "revocado para este cliente
+            // pero vigente con otro" —el unico intento de usar un acceso que quitamos— sin
+            // escalar, que es exactamente el escenario que motivo el balde nuevo.
+            // MayDiscloseClientDetail solo es true en Registered, asi que esta condicion
+            // cubre los otros siete estados de confianza.
+            if (triage != null && !triage.MayDiscloseClientDetail)
+            {
+                update[Schema.ReceivedEmail.ReviewStatus] = new OptionSetValue(ReviewFor(triage.Trust));
             }
 
             _service.Update(update);
@@ -478,6 +506,9 @@ namespace CashHub.Plugins
             switch (trust)
             {
                 case SenderTrust.Registered: return Schema.ReceivedEmail.SenderRegistrado;
+                case SenderTrust.RevokedForClient: return Schema.ReceivedEmail.SenderRevocadoParaCliente;
+                case SenderTrust.OtherClientContact: return Schema.ReceivedEmail.SenderContactoDeOtroCliente;
+                case SenderTrust.Revoked: return Schema.ReceivedEmail.SenderRevocado;
                 case SenderTrust.UnregisteredClient: return Schema.ReceivedEmail.SenderClienteSinRegistrar;
                 case SenderTrust.Suspicious: return Schema.ReceivedEmail.SenderSospechoso;
                 case SenderTrust.Unrelated: return Schema.ReceivedEmail.SenderNoCorresponde;
@@ -485,6 +516,33 @@ namespace CashHub.Plugins
                     throw new InvalidPluginExecutionException(
                         $"Triage desconocido '{trust}' al clasificar el remitente: no hay valor de " +
                         "opcion equivalente en sanic_senderclassification. Revisar SenderTriage.");
+            }
+        }
+
+        /// <summary>
+        /// A que cola va el correo. Manual = necesita una persona: Banca de Empresas para
+        /// registrar o firmar un alta, seguridad para un acceso revocado.
+        /// </summary>
+        private static int ReviewFor(SenderTrust trust)
+        {
+            switch (trust)
+            {
+                // El vinculo con este cliente no autoriza (revocado, o pedido y sin firmar).
+                // Necesita ojo humano: seguridad si le quitamos el acceso, Banca si hay un
+                // RFC de alta esperando firma. El recordstatus del vinculo dice cual es.
+                case SenderTrust.RevokedForClient:
+                // Contacto legitimo sin registrar todavia.
+                case SenderTrust.UnregisteredClient:
+                    return Schema.ReceivedEmail.ReviewManual;
+
+                // Contacto vivo del banco que erro de CIF: ya se le respondio, la pelota
+                // esta de su lado. No inflamos la cola de revision con esto.
+                case SenderTrust.OtherClientContact:
+                    return Schema.ReceivedEmail.ReviewDenegado;
+
+                // Revocado en todos lados, plantilla ajena o ruido: cuarentena visible.
+                default:
+                    return Schema.ReceivedEmail.ReviewOmitido;
             }
         }
     }
@@ -501,44 +559,61 @@ namespace CashHub.Plugins
             _tracing = tracing;
         }
 
-        public bool IsSenderRegistered(string senderEmail)
+        /// <summary>
+        /// Trae TODOS los vinculos de la direccion, de todos los clientes, con su vigencia.
+        /// Una sola consulta por corrida (el ValidationContext la cachea).
+        /// </summary>
+        public IReadOnlyList<SenderLink> GetSenderLinks(string senderEmail)
         {
-            var query = ActiveQuery(Schema.ClientEmail.LogicalName);
+            var query = new QueryExpression(Schema.ClientEmail.LogicalName)
+            {
+                ColumnSet = new ColumnSet("sanic_client", Schema.MasterRecordStatus.FieldName)
+            };
             query.Criteria.AddCondition(Schema.ClientEmail.Address, ConditionOperator.Equal, senderEmail);
-            var found = _service.RetrieveMultiple(query).Entities.Count > 0;
-            _tracing.Trace("DataAccess.IsSenderRegistered('{0}') = {1}", senderEmail, found);
-            return found;
+
+            var links = new List<SenderLink>();
+            foreach (var row in _service.RetrieveMultiple(query).Entities)
+            {
+                var client = row.GetAttributeValue<EntityReference>("sanic_client");
+                if (client == null) continue;   // sanic_client es required; defensivo igual
+                var vigency = RecordVigencyMap.FromRecordStatus(row.GetAttributeValue<OptionSetValue>(
+                    Schema.MasterRecordStatus.FieldName)?.Value);
+                links.Add(new SenderLink(client.Id, vigency));
+                _tracing.Trace("DataAccess.GetSenderLinks('{0}'): cliente {1} => {2}",
+                    senderEmail, client.Id, vigency);
+            }
+            _tracing.Trace("DataAccess.GetSenderLinks('{0}') = {1} vinculo(s).", senderEmail, links.Count);
+            return links;
         }
 
-        public Guid? FindClientIdByCif(string cif)
+        public ClientLookup FindClientByCif(string cif)
         {
-            var query = ActiveQuery("sanic_chtblclient");
-            query.ColumnSet = new ColumnSet("sanic_chtblclientid");
+            var query = new QueryExpression("sanic_chtblclient")
+            {
+                ColumnSet = new ColumnSet(Schema.MasterRecordStatus.FieldName),
+                TopCount = 1
+            };
             var filter = new FilterExpression(LogicalOperator.Or);
             filter.AddCondition("sanic_cifbco", ConditionOperator.Equal, cif);
             filter.AddCondition("sanic_cifcom", ConditionOperator.Equal, cif);
             query.Criteria.AddFilter(filter);
 
             var rows = _service.RetrieveMultiple(query).Entities;
-            _tracing.Trace("DataAccess.FindClientIdByCif('{0}') = {1}", cif,
-                rows.Count > 0 ? rows[0].Id.ToString("D") : "(no existe)");
-            return rows.Count > 0 ? rows[0].Id : (Guid?)null;
-        }
+            if (rows.Count == 0)
+            {
+                _tracing.Trace("DataAccess.FindClientByCif('{0}') = (no existe)", cif);
+                return ClientLookup.NotFound;
+            }
 
-        public bool IsSenderAuthorizedForClient(string senderEmail, Guid clientId)
-        {
-            var query = ActiveQuery(Schema.ClientEmail.LogicalName);
-            query.Criteria.AddCondition(Schema.ClientEmail.Address, ConditionOperator.Equal, senderEmail);
-            query.Criteria.AddCondition("sanic_client", ConditionOperator.Equal, clientId);
-            var found = _service.RetrieveMultiple(query).Entities.Count > 0;
-            _tracing.Trace("DataAccess.IsSenderAuthorizedForClient('{0}', {1}) = {2}",
-                senderEmail, clientId, found);
-            return found;
+            var vigency = RecordVigencyMap.FromRecordStatus(rows[0].GetAttributeValue<OptionSetValue>(
+                Schema.MasterRecordStatus.FieldName)?.Value);
+            _tracing.Trace("DataAccess.FindClientByCif('{0}') = {1} ({2})", cif, rows[0].Id, vigency);
+            return new ClientLookup(rows[0].Id, vigency);
         }
 
         public bool AccountBelongsToClient(string accountNumber, Guid clientId)
         {
-            var query = ActiveQuery("sanic_chtblclientaccount");
+            var query = VigentQuery("sanic_chtblclientaccount");
             query.Criteria.AddCondition("sanic_name", ConditionOperator.Equal, accountNumber);
             query.Criteria.AddCondition("sanic_client", ConditionOperator.Equal, clientId);
             var found = _service.RetrieveMultiple(query).Entities.Count > 0;
@@ -547,10 +622,26 @@ namespace CashHub.Plugins
             return found;
         }
 
-        private static QueryExpression ActiveQuery(string entity)
+        /// <summary>
+        /// Consulta filtrada a los registros vigentes. Los valores salen de
+        /// RecordVigencyMap.VigentValues — la MISMA fuente que traduce la fila leida, para
+        /// que el filtro y la traduccion no puedan divergir (hay un test que lo verifica).
+        ///
+        /// Antes esto filtraba por statecode = 0, y CashHub nunca escribe statecode en las
+        /// tablas maestras: la baja va por sanic_recordstatus (ver
+        /// ResolveChangeRequestPlugin.ApplyRecordStatusChange). El filtro era un no-op —
+        /// siempre daba verdadero — y con eso un cliente dado de baja o una direccion
+        /// revocada pasaban las cuatro reglas de autorizacion.
+        /// </summary>
+        private static QueryExpression VigentQuery(string entity)
         {
             var query = new QueryExpression(entity) { ColumnSet = new ColumnSet(false), TopCount = 1 };
-            query.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
+            var vigente = new FilterExpression(LogicalOperator.Or);
+            foreach (var value in RecordVigencyMap.VigentValues)
+            {
+                vigente.AddCondition(Schema.MasterRecordStatus.FieldName, ConditionOperator.Equal, value);
+            }
+            query.Criteria.AddFilter(vigente);
             return query;
         }
     }

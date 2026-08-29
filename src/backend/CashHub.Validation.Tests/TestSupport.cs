@@ -7,21 +7,66 @@ namespace CashHub.Validation.Tests
 {
     internal sealed class FakeDataAccess : IValidationDataAccess
     {
+        /// <summary>Vinculo vigente con un cliente "cualquiera", sin nombrarlo.</summary>
         public HashSet<string> RegisteredSenders { get; } = new(StringComparer.OrdinalIgnoreCase);
+
         public Dictionary<string, Guid> ClientsByCif { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, Guid> InactiveClientsByCif { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, Guid> PendingClientsByCif { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Vinculos VIGENTES (sender, cliente).</summary>
         public HashSet<(string sender, Guid client)> Authorizations { get; } = new();
+        public HashSet<(string sender, Guid client)> RevokedLinks { get; } = new();
+        public HashSet<(string sender, Guid client)> PendingLinks { get; } = new();
+
         public HashSet<(string account, Guid client)> Accounts { get; } = new();
 
-        public bool IsSenderRegistered(string senderEmail) => RegisteredSenders.Contains(senderEmail);
+        /// <summary>Cuenta consultas para probar que los vinculos se cargan una sola vez.</summary>
+        public int SenderLinkQueries { get; private set; }
 
-        public Guid? FindClientIdByCif(string cif) =>
-            ClientsByCif.TryGetValue(cif, out var id) ? id : (Guid?)null;
+        /// <summary>Cliente sintetico para RegisteredSenders: "vigente con alguien, no importa quien".</summary>
+        private static readonly Guid OtroCliente = Guid.Parse("00000000-0000-0000-0000-0000000000AA");
 
-        public bool IsSenderAuthorizedForClient(string senderEmail, Guid clientId) =>
-            Authorizations.Contains((senderEmail.ToLowerInvariant(), clientId));
+        public IReadOnlyList<SenderLink> GetSenderLinks(string senderEmail)
+        {
+            SenderLinkQueries++;
+            var links = new List<SenderLink>();
+
+            foreach (var (sender, client) in Authorizations)
+            {
+                if (Eq(sender, senderEmail)) links.Add(new SenderLink(client, Vigency.Vigente));
+            }
+            foreach (var (sender, client) in RevokedLinks)
+            {
+                if (Eq(sender, senderEmail)) links.Add(new SenderLink(client, Vigency.Revocado));
+            }
+            foreach (var (sender, client) in PendingLinks)
+            {
+                if (Eq(sender, senderEmail)) links.Add(new SenderLink(client, Vigency.Pendiente));
+            }
+
+            // Los tests viejos declaran "remitente registrado" sin decir con que cliente.
+            // Se traduce a un vinculo vigente con un cliente que no es ninguno de los suyos.
+            if (RegisteredSenders.Contains(senderEmail) &&
+                !links.Any(l => l.State == Vigency.Vigente))
+            {
+                links.Add(new SenderLink(OtroCliente, Vigency.Vigente));
+            }
+            return links;
+        }
+
+        public ClientLookup FindClientByCif(string cif)
+        {
+            if (ClientsByCif.TryGetValue(cif, out var vigente)) return new ClientLookup(vigente, Vigency.Vigente);
+            if (InactiveClientsByCif.TryGetValue(cif, out var baja)) return new ClientLookup(baja, Vigency.Revocado);
+            if (PendingClientsByCif.TryGetValue(cif, out var pend)) return new ClientLookup(pend, Vigency.Pendiente);
+            return ClientLookup.NotFound;
+        }
 
         public bool AccountBelongsToClient(string accountNumber, Guid clientId) =>
             Accounts.Contains((accountNumber, clientId));
+
+        private static bool Eq(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Construye WorkbookModel en memoria para testear reglas sin tocar xlsx.</summary>

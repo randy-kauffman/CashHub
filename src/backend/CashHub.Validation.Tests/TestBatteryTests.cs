@@ -129,9 +129,10 @@ namespace CashHub.Validation.Tests
         {
             private readonly Guid _cliente;
             public BatteryData(Guid cliente) => _cliente = cliente;
-            public bool IsSenderRegistered(string senderEmail) => true;
-            public Guid? FindClientIdByCif(string cif) => cif == "0012024001" ? _cliente : (Guid?)null;
-            public bool IsSenderAuthorizedForClient(string senderEmail, Guid clientId) => true;
+            public IReadOnlyList<SenderLink> GetSenderLinks(string senderEmail) =>
+                new[] { new SenderLink(_cliente, Vigency.Vigente) };
+            public ClientLookup FindClientByCif(string cif) =>
+                cif == "0012024001" ? new ClientLookup(_cliente, Vigency.Vigente) : ClientLookup.NotFound;
             public bool AccountBelongsToClient(string accountNumber, Guid clientId) =>
                 accountNumber == "100200111" || accountNumber == "100200112";
         }

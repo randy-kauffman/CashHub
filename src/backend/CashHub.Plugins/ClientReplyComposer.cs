@@ -16,6 +16,7 @@ namespace CashHub.Plugins
     {
         public const string TemplateAccepted = "reply-accepted";
         public const string TemplateRejected = "reply-rejected";
+        public const string TemplateGeneric = "reply-generic";
 
         private readonly IOrganizationService _service;
         private readonly ITracingService _tracing;
@@ -56,6 +57,42 @@ namespace CashHub.Plugins
 
             _tracing.Trace("Reply[{0}]: usando plantilla '{1}' de Dataverse ({2} bolsas).",
                 trackingId, TemplateAccepted, bags.Count);
+            return (TemplateEngine.Render(template.Value.Subject, data),
+                    TemplateEngine.Render(template.Value.Body, data));
+        }
+
+        /// <summary>
+        /// Respuesta para un contacto VIGENTE del banco que no está autorizado para el
+        /// cliente declarado. No recibe clientName ni issues: no puede filtrar lo que no
+        /// tiene. Ver ClientReplyBuilder.BuildGeneric.
+        ///
+        /// La plantilla editable es opcional igual que las otras dos, pero acá el diseño
+        /// embebido es la red de seguridad que importa: una plantilla mal redactada por
+        /// negocio que nombre al cliente reabriría la fuga. El asunto tampoco lleva datos.
+        /// </summary>
+        public (string Subject, string BodyHtml) BuildGeneric(string fileName, DateTime receivedOn,
+            string trackingId, Guid runId)
+        {
+            var template = LoadTemplate(TemplateGeneric);
+            if (template == null)
+            {
+                _tracing.Trace("Reply[{0}]: sin plantilla '{1}' activa — usando diseño embebido.",
+                    trackingId, TemplateGeneric);
+                return ($"No pudimos procesar su declaracion — {trackingId}",
+                    ClientReplyBuilder.BuildGeneric(fileName, receivedOn, trackingId, runId.ToString("D")));
+            }
+
+            // Deliberadamente SIN "cliente": si la plantilla usa {cliente}, renderiza vacío
+            // en lugar de filtrar el nombre.
+            var data = new TemplateEngine.TemplateData()
+                .Set("archivo", fileName)
+                .Set("recibido", receivedOn.ToString("dd/MM/yyyy HH:mm"))
+                .Set("gestion", trackingId)
+                .Set("validacion", runId.ToString("D"))
+                .Set("estado", "no procesado");
+
+            _tracing.Trace("Reply[{0}]: usando plantilla '{1}' de Dataverse (sin datos del cliente).",
+                trackingId, TemplateGeneric);
             return (TemplateEngine.Render(template.Value.Subject, data),
                     TemplateEngine.Render(template.Value.Body, data));
         }

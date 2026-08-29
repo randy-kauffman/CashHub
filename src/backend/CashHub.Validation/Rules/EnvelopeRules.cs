@@ -39,7 +39,13 @@ namespace CashHub.Validation.Rules
         }
     }
 
-    /// <summary>VR-03: el remitente está registrado en CashHub (depende de VR-01).</summary>
+    /// <summary>
+    /// VR-03: el remitente tiene al menos un vínculo VIGENTE con el banco (depende de VR-01).
+    ///
+    /// Es la puerta de RESPUESTA: establece que hay relación comercial viva y una dirección
+    /// a la que estamos autorizados a escribir. NO dice nada sobre el cliente declarado —
+    /// eso es VR-26, y corre 200 posiciones después, cuando el CIF ya se leyó.
+    /// </summary>
     public sealed class Vr03SenderRegistered : IValidationRule
     {
         public string Key => "VR-03";
@@ -47,11 +53,11 @@ namespace CashHub.Validation.Rules
         public IReadOnlyList<Finding> Evaluate(RuleDefinition definition, ValidationContext context)
         {
             var sender = context.Envelope.SenderEmail!;
-            if (!context.DataAccess.IsSenderRegistered(sender))
+            foreach (var link in context.EnsureSenderLinks())
             {
-                return new[] { new Finding(Key, actualValue: sender) };
+                if (link.State == Vigency.Vigente) return Array.Empty<Finding>();
             }
-            return Array.Empty<Finding>();
+            return new[] { new Finding(Key, actualValue: sender) };
         }
     }
 
