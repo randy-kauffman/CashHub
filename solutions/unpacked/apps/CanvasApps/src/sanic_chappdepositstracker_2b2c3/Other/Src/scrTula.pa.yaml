@@ -1,0 +1,1542 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrTula:
+    Properties:
+      Fill: =ThemeBg
+      OnVisible: |-
+        =// ===== 1. Cachés de la tula (dos queries en paralelo) =====
+        Concurrent(
+            ClearCollect(colDeps,
+                AddColumns(
+                    Filter('CH-Tbl-DepositsRecountings',
+                        BagID.'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags'),
+                    decEf,  Coalesce(RelatedDeclaredDeposit.CashAmount, 0),
+                    decBac, Coalesce(RelatedDeclaredDeposit.BACLocalCheckAmount, 0),
+                    decOtr, Coalesce(RelatedDeclaredDeposit.OtherLocalCheckAmount, 0),
+                    decRef, RelatedDeclaredDeposit.DepositReference
+                )),
+            ClearCollect(colChequesTula,
+                Filter('CH-Tbl-Checks', Bag.'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags'))
+        );
+
+        // ===== 2. Conciliación por moneda (sin Collect dentro de ForAll:
+        //         cada iteración DEVUELVE sus 4 filas y Ungroup las aplana) =====
+        ClearCollect(colConc,
+            Ungroup(
+                ForAll(
+                    Filter(
+                        Table(
+                            {mon: "NIO", monval: 'CH-Ch-Currency'.NIO, simbolo: SimboloNIO},
+                            {mon: "USD", monval: 'CH-Ch-Currency'.USD, simbolo: SimboloUSD},
+                            {mon: "EUR", monval: 'CH-Ch-Currency'.EUR, simbolo: SimboloEUR}
+                        ) As m0,
+                        !IsEmpty(Filter(colDeps, Currency = m0.monval))
+                    ) As m,
+                    {r: With({_ds: Filter(colDeps, Currency = m.monval)},
+                        Table(
+                            {mon: m.mon, orden: 0, concepto: $"{m.mon} · {m.simbolo}",
+                             dec: Blank(), rec: Blank()},
+                            {mon: m.mon, orden: 1, concepto: "Efectivo",
+                             dec: Sum(_ds, decEf), rec: Sum(_ds, CashAmount)},
+                            {mon: m.mon, orden: 2, concepto: "Cheques",
+                             dec: Sum(_ds, decBac + decOtr),
+                             rec: Sum(_ds, BACLocalCheckAmount + OtherLocaCheckAmount)},
+                            {mon: m.mon, orden: 3, concepto: "Total",
+                             dec: Sum(_ds, decEf + decBac + decOtr),
+                             rec: Sum(_ds, CashAmount + BACLocalCheckAmount + OtherLocaCheckAmount)}
+                        ))}
+                ),
+                r));
+
+        // ===== 3. Transacciones de la tula (una query delegable por depósito;
+        //         forma invertida: sin mutación dentro del ForAll) =====
+        ClearCollect(colTxTula,
+            Ungroup(
+                ForAll(colDeps As d,
+                    {r: Filter('CH-Tbl-Transactions',
+                            RelatedDepositRecounting.'CH-Tbl-DepositsRecounting' = d.'CH-Tbl-DepositsRecounting')}),
+                r));
+
+        // ===== 4. Cronología (hechos con sello real + hitos pendientes punteados) =====
+        Clear(colCrono);
+        If(!IsBlank(gvarTula.BagDeclarationID),
+            Collect(colCrono, {orden: 1, pendiente: false,
+                cuando: gvarTula.BagDeclarationID.DeclarationID.'Created On',
+                que: "Depósito declarado por el cliente" &
+                    If(!IsBlank(gvarTula.BagDeclarationID.DeclarationID.ReceivedEmail),
+                       $" · Tracking {gvarTula.BagDeclarationID.DeclarationID.ReceivedEmail.Name}", ""),
+                quien: Coalesce(gvarTula.BagDeclarationID.DeclarationID.'Cliente atribuido'.Name, "")}));
+        Collect(colCrono, {orden: 2, pendiente: false,
+            cuando: gvarLote.'Created On',
+            que: $"Tula recibida en lote {gvarLote.Name}",
+            quien: gvarLote.'Created By'.'Full Name' & " · " & gvarLote.Transportadora});
+        If(IsBlank(gvarTula.RecountingSession),
+            Collect(colCrono, {orden: 3, pendiente: true, cuando: Blank(),
+                que: "Asignación a sesión de recuento pendiente", quien: ""}),
+            Collect(colCrono, {orden: 3, pendiente: false,
+                cuando: gvarTula.RecountingSession.'Created On',
+                que: $"Asignada a sesión de recuento {gvarTula.RecountingSession.Name}",
+                quien: gvarTula.RecountingSession.Cashier.'Full Name'});
+            If(gvarTula.BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada,
+                Collect(colCrono, {orden: 4, pendiente: false,
+                    cuando: gvarTula.'Modified On',
+                    que: If(gvarTula.HasDifference,
+                        "Recuento completado — con diferencias",
+                        "Recuento completado — sin diferencias"),
+                    quien: gvarTula.RecountingSession.Cashier.'Full Name'});
+                With({_aplicadas: Filter(colTxTula, sanic_batchstatus = 159460003)},
+                If(!IsEmpty(_aplicadas),
+                    With({_b: First(_aplicadas).sanic_TransactionBatch},
+                        Collect(colCrono, {orden: 5, pendiente: false,
+                            cuando: _b.'Aplicado el',
+                            que: $"Transacciones acreditadas en core bancario (lote {_b.Name})",
+                            quien: Coalesce(_b.'Aplicado por'.'Full Name', "")})),
+                    Collect(colCrono, {orden: 5, pendiente: true, cuando: Blank(),
+                        que: "Acreditación en core bancario pendiente", quien: ""}))),
+                Collect(colCrono, {orden: 4, pendiente: true, cuando: Blank(),
+                    que: "Recuento pendiente", quien: ""})));
+
+        // ===== 5. Cada tula arranca en Conciliación (el estado del tab persiste) =====
+        Reset(tabDetalleTula)
+    Children:
+      - shpDetalleCardTula:
+          Control: Rectangle@2.3.0
+          Group: CardDetallePestanaTula
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =488
+            Width: =1318
+            X: =24
+            Y: =256
+      - tabDetalleTula:
+          Control: ModernTabList@1.0.1
+          Group: CardDetallePestanaTula
+          Properties:
+            AccessibleLabel: ="Detalle de la tula"
+            Default: ={Value:"Conciliación"}
+            Height: =40
+            Items: =["Conciliación", "Por depósito", "Cheques", "Cronología"]
+            Width: =700
+            X: =44
+            Y: =268
+      - galCrono:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            Height: =390
+            Items: =SortByColumns(colCrono, "orden", SortOrder.Ascending)
+            TemplatePadding: =0
+            TemplateSize: =74
+            Visible: =tabDetalleTula.Selected.Value = "Cronología"
+            Width: =840
+            X: =44
+            Y: =330
+          Children:
+            - shpCronoLinea:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =ThemeLine
+                  Height: =74
+                  OnSelect: =Select(Parent)
+                  Width: =2
+                  X: =7
+            - shpCronoDot:
+                Control: Circle@2.3.0
+                Properties:
+                  BorderColor: =If(ThisItem.pendiente, ThemeInk3, ThemeAccent)
+                  BorderStyle: =If(ThisItem.pendiente, BorderStyle.Dashed, BorderStyle.Solid)
+                  BorderThickness: =2
+                  Fill: =ThemeSurface
+                  Height: =16
+                  OnSelect: =Select(Parent)
+                  Width: =16
+                  Y: =6
+            - lblCronoCuando:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk3
+                  Height: =16
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =8
+                  Text: =If(ThisItem.pendiente, "", Text(ThisItem.cuando, FmtFecha))
+                  Width: =300
+                  X: =30
+                  Y: =2
+            - lblCronoQue:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =If(ThisItem.que = "Recuento completado — con diferencias", ThemeCrit, If(ThisItem.pendiente, ThemeInk3, ThemeInk))
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.que
+                  Width: =780
+                  X: =30
+                  Y: =18
+            - lblCronoQuien:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk2
+                  Height: =18
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9
+                  Text: =ThisItem.quien
+                  Width: =780
+                  X: =30
+                  Y: =40
+      - btnVerDeposito:
+          Control: ModernButton@1.0.0
+          Group: PestanaPorDepositoTula
+          Properties:
+            BasePaletteColor: =ThemeAccent
+            Height: =36
+            OnSelect: =Set(gvarDep, galDepsTula.Selected); Navigate(scrDeposito)
+            Text: ="Ver transacciones y cheques del depósito →"
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
+            Width: =340
+            X: =724
+            Y: =540
+      - lblDepConcNota:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Color: =ThemeInk2
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.5
+            Text: =$"Montos en {galDepsTula.Selected.Currency} ({Switch(galDepsTula.Selected.Currency, 'CH-Ch-Currency'.NIO, SimboloNIO, 'CH-Ch-Currency'.USD, SimboloUSD, SimboloEUR)}). Declarado proviene del depósito declarado relacionado."
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
+            Width: =550
+            X: =724
+            Y: =514
+      - galDepConcMini:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Group: PestanaPorDepositoTula
+          Properties:
+            Height: =140
+            Items: |-
+              =With({_d: galDepsTula.Selected},
+              Table(
+                  {c: "Efectivo",     dec: _d.decEf,  rec: _d.CashAmount},
+                  {c: "Cheque BAC",   dec: _d.decBac, rec: _d.BACLocalCheckAmount},
+                  {c: "Cheque otros", dec: _d.decOtr, rec: _d.OtherLocaCheckAmount},
+                  {c: "Total", dec: _d.decEf + _d.decBac + _d.decOtr,
+                   rec: _d.CashAmount + _d.BACLocalCheckAmount + _d.OtherLocaCheckAmount}
+              ))
+            TemplatePadding: =0
+            TemplateSize: =32
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
+            Width: =550
+            X: =724
+            Y: =372
+          Children:
+            - lblMFilaC:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  FontWeight: =If(ThisItem.c = "Total", FontWeight.Semibold, FontWeight.Normal)
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.c
+                  Width: =160
+                  Y: =5
+            - lblMFilaDec:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  FontWeight: =If(ThisItem.c = "Total", FontWeight.Semibold, FontWeight.Normal)
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.dec, FmtMoney)
+                  Width: =130
+                  X: =160
+                  Y: =5
+            - lblMFilaRec:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  FontWeight: =If(ThisItem.c = "Total", FontWeight.Semibold, FontWeight.Normal)
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.rec, FmtMoney)
+                  Width: =130
+                  X: =290
+                  Y: =5
+            - lblMFilaDif:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: |-
+                    =With({_d: Coalesce(ThisItem.rec, 0) - Coalesce(ThisItem.dec, 0)}, If(Abs(_d) < 0.005, ThemeOk, ThemeCrit))
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: |-
+                    =With({_d: ThisItem.rec - ThisItem.dec}, If(Abs(_d) < 0.005, "0.00", If(_d > 0, "+", "−") & Text(Abs(_d), FmtMoney)))
+                  Width: =130
+                  X: =420
+                  Y: =5
+      - lblMCol4:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DIFERENCIA"
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
+            Width: =130
+            X: =1144
+            Y: =350
+      - lblMCol3:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECONTADO"
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
+            Width: =130
+            X: =1014
+            Y: =350
+      - lblMCol2:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DECLARADO"
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
+            Width: =130
+            X: =884
+            Y: =350
+      - lblMCol1:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CONCEPTO"
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
+            Width: =160
+            X: =725
+            Y: =350
+      - lblDepSelTitulo:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =Upper($"DEPÓSITO {Coalesce(galDepsTula.Selected.decRef, galDepsTula.Selected.Name)} · {galDepsTula.Selected.Currency}")
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) > 0
+            Width: =560
+            X: =724
+            Y: =320
+      - lblDepSelVacio:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="Sin depósitos recontados todavía."
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito" && CountRows(colDeps) = 0
+            Width: =560
+            X: =724
+            Y: =430
+      - galDepsTula:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Group: PestanaPorDepositoTula
+          Properties:
+            Height: =380
+            Items: =SortByColumns(colDeps, "createdon", SortOrder.Descending)
+            TemplatePadding: =0
+            TemplateSize: =40
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito"
+            X: =44
+            Y: =342
+          Children:
+            - shpDepSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =ThemeLineSoft
+                  Height: =1
+                  Width: =640
+                  Y: =39
+            - shpDepSel:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+                  Height: =40
+                  OnSelect: =Select(Parent)
+                  Width: =640
+            - shpDepSelBarra:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =ThemeAccent
+                  Height: =40
+                  OnSelect: =Select(Parent)
+                  Visible: =ThisItem.IsSelected
+                  Width: =3
+            - lblDFilaFecha:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.'Created On', FmtFecha)
+                  Width: =160
+                  Y: =9
+            - lblDFilaMon:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.Currency
+                  Width: =90
+                  X: =160
+                  Y: =9
+            - lblDFilaEf:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.CashAmount, FmtMoney)
+                  Width: =130
+                  X: =250
+                  Y: =9
+            - lblDFilaChq:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.BACLocalCheckAmount + ThisItem.OtherLocaCheckAmount, FmtMoney)
+                  Width: =130
+                  X: =380
+                  Y: =9
+            - lblDFilaTotal:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.Total, FmtMoney)
+                  Width: =130
+                  X: =510
+                  Y: =9
+      - shpDepsLinea:
+          Control: Rectangle@2.3.0
+          Group: PestanaPorDepositoTula
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito"
+            Width: =640
+            X: =44
+            Y: =340
+      - lblDCol5:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL"
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito"
+            Width: =130
+            X: =554
+            Y: =320
+      - lblDCol4:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CHEQUES"
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito"
+            Width: =130
+            X: =424
+            Y: =320
+      - lblDCol3:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="EFECTIVO"
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito"
+            Width: =130
+            X: =294
+            Y: =320
+      - lblDCol2:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONEDA"
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito"
+            Width: =90
+            X: =204
+            Y: =320
+      - lblDCol1:
+          Control: Label@2.5.1
+          Group: PestanaPorDepositoTula
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="FECHA RECUENTO"
+            Visible: =tabDetalleTula.Selected.Value = "Por depósito"
+            Width: =160
+            X: =44
+            Y: =320
+      - lblChequesVacio:
+          Control: Label@2.5.1
+          Group: PestanaCheques
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="Esta tula no tiene cheques registrados."
+            Visible: =tabDetalleTula.Selected.Value = "Cheques" && CountRows(colChequesTula) = 0
+            Width: =840
+            X: =44
+            Y: =420
+      - shpChequesLineaTula:
+          Control: Rectangle@2.3.0
+          Group: PestanaCheques
+          Properties:
+            BorderColor: =ThemeLine
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabDetalleTula.Selected.Value = "Cheques"
+            Width: =840
+            X: =44
+            Y: =340
+      - galChequesTula:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Group: PestanaCheques
+          Properties:
+            Height: =380
+            Items: =colChequesTula
+            TemplatePadding: =0
+            TemplateSize: =40
+            Visible: =tabDetalleTula.Selected.Value = "Cheques"
+            Width: =840
+            X: =44
+            Y: =342
+          Children:
+            - pilChFilaEstado:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLineSoft
+                  BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                  Color: |-
+                    =Switch(
+                        ThisItem.CheckStatus,
+                        'CheckStatus (CH-Tbl-Checks)'.Recontado,
+                        ThemeInfo,
+                        'CheckStatus (CH-Tbl-Checks)'.Digitado,
+                        ThemeOk,
+                        'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',
+                        ThemeWarn,
+                        'CheckStatus (CH-Tbl-Checks)'.Recibido,
+                        ThemeInfo,
+                        'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
+                        ThemeCrit,
+                        'CheckStatus (CH-Tbl-Checks)'.Rebotado,
+                        ThemeCrit,
+                        ThemeInk2
+                    )
+                  DisplayMode: =DisplayMode.View
+                  Fill: =Switch(ThisItem.CheckStatus, 'CheckStatus (CH-Tbl-Checks)'.Recontado, ThemeInfoSoft, 'CheckStatus (CH-Tbl-Checks)'.Digitado, ThemeOkSoft, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', ThemeWarnSoft, 'CheckStatus (CH-Tbl-Checks)'.Recibido, ThemeInfoSoft, 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', ThemeCritSoft, 'CheckStatus (CH-Tbl-Checks)'.Rebotado, ThemeCritSoft, ThemeSurface2)
+                  Height: =26
+                  OnSelect: =
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Size: =9
+                  Text: =ThisItem.CheckStatus
+                  Width: =210
+                  X: =570
+                  Y: =7
+            - lblChFilaMonto:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.CheckAmount, FmtMoney)
+                  Width: =140
+                  X: =410
+                  Y: =9
+            - lblChFilaMon:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.CheckCurrency
+                  Width: =90
+                  X: =320
+                  Y: =9
+            - lblChFilaTipo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.CheckTypes
+                  Width: =160
+                  X: =160
+                  Y: =9
+            - lblChFilaNo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.CheckNumber
+                  Width: =160
+                  Y: =9
+      - lblChCol5:
+          Control: Label@2.5.1
+          Group: PestanaCheques
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ESTADO"
+            Visible: =tabDetalleTula.Selected.Value = "Cheques"
+            Width: =220
+            X: =614
+            Y: =320
+      - lblChCol4:
+          Control: Label@2.5.1
+          Group: PestanaCheques
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONTO"
+            Visible: =tabDetalleTula.Selected.Value = "Cheques"
+            Width: =140
+            X: =454
+            Y: =320
+      - lblChCol3:
+          Control: Label@2.5.1
+          Group: PestanaCheques
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONEDA"
+            Visible: =tabDetalleTula.Selected.Value = "Cheques"
+            Width: =90
+            X: =364
+            Y: =320
+      - lblChCol2:
+          Control: Label@2.5.1
+          Group: PestanaCheques
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TIPO"
+            Visible: =tabDetalleTula.Selected.Value = "Cheques"
+            Width: =160
+            X: =204
+            Y: =320
+      - lblChCol1:
+          Control: Label@2.5.1
+          Group: PestanaCheques
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="NO. CHEQUE"
+            Visible: =tabDetalleTula.Selected.Value = "Cheques"
+            Width: =160
+            X: =44
+            Y: =320
+      - lblConcVacio:
+          Control: Label@2.5.1
+          Group: PestanaConciliacionTula
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="Sin depósitos recontados todavía."
+            Visible: =tabDetalleTula.Selected.Value = "Conciliación" && CountRows(colConc) = 0
+            Width: =840
+            X: =44
+            Y: =420
+      - lblConcNota:
+          Control: Label@2.5.1
+          Group: PestanaConciliacionTula
+          Properties:
+            Color: =ThemeInk2
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.5
+            Text: ="Diferencia = Recontado − Declarado. Solo se listan monedas con movimientos en la tula."
+            Visible: =tabDetalleTula.Selected.Value = "Conciliación"
+            Width: =840
+            X: =44
+            Y: =690
+      - galConc:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Group: PestanaConciliacionTula
+          Properties:
+            Height: =340
+            Items: =SortByColumns(colConc, "mon", SortOrder.Ascending, "orden", SortOrder.Ascending)
+            TemplatePadding: =0
+            TemplateSize: =34
+            Visible: =tabDetalleTula.Selected.Value = "Conciliación"
+            Width: =840
+            X: =44
+            Y: =342
+          Children:
+            - lblConcDif:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: |-
+                    =With({_d: Coalesce(ThisItem.rec, 0) - Coalesce(ThisItem.dec, 0)}, If(Abs(_d) < 0.005, ThemeOk, ThemeCrit))
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: |-
+                    =If(ThisItem.orden = 0, "", With({_d: ThisItem.rec - ThisItem.dec}, If(Abs(_d) < 0.005, "0.00", If(_d > 0, "+", "−") & Text(Abs(_d), FmtMoney))))
+                  Width: =180
+                  X: =660
+                  Y: =6
+            - lblConcRec:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  FontWeight: =If(ThisItem.orden = 3, FontWeight.Semibold, FontWeight.Normal)
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =If(ThisItem.orden = 0, "", Text(ThisItem.rec, FmtMoney))
+                  Width: =180
+                  X: =480
+                  Y: =6
+            - lblConcDec:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  FontWeight: =If(ThisItem.orden = 3, FontWeight.Semibold, FontWeight.Normal)
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =If(ThisItem.orden = 0, "", Text(ThisItem.dec, FmtMoney))
+                  Width: =180
+                  X: =300
+                  Y: =6
+            - lblConcConcepto:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =If(ThisItem.orden = 0, ThemeInk, If(ThisItem.orden = 3, ThemeInk, ThemeInk2))
+                  FontWeight: =If(ThisItem.orden = 0 || ThisItem.orden = 3, FontWeight.Semibold, FontWeight.Normal)
+                  PaddingBottom: =0
+                  PaddingLeft: =If(ThisItem.orden = 1 || ThisItem.orden = 2, 20, 0)
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.concepto
+                  Width: =300
+                  Y: =6
+      - shpConcLinea:
+          Control: Rectangle@2.3.0
+          Group: PestanaConciliacionTula
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabDetalleTula.Selected.Value = "Conciliación"
+            Width: =840
+            X: =44
+            Y: =340
+      - lblCCol4:
+          Control: Label@2.5.1
+          Group: PestanaConciliacionTula
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DIFERENCIA"
+            Visible: =tabDetalleTula.Selected.Value = "Conciliación"
+            Width: =180
+            X: =704
+            Y: =320
+      - lblCCol3:
+          Control: Label@2.5.1
+          Group: PestanaConciliacionTula
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECONTADO"
+            Visible: =tabDetalleTula.Selected.Value = "Conciliación"
+            Width: =180
+            X: =524
+            Y: =320
+      - lblCCol2:
+          Control: Label@2.5.1
+          Group: PestanaConciliacionTula
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DECLARADO"
+            Visible: =tabDetalleTula.Selected.Value = "Conciliación"
+            Width: =180
+            X: =344
+            Y: =320
+      - lblCCol1:
+          Control: Label@2.5.1
+          Group: PestanaConciliacionTula
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONEDA / CONCEPTO"
+            Visible: =tabDetalleTula.Selected.Value = "Conciliación"
+            Width: =300
+            X: =44
+            Y: =320
+      - shpFichaCardTula:
+          Control: Rectangle@2.3.0
+          Group: FichaTula
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =150
+            Width: =1318
+            X: =24
+            Y: =94
+      - lblFichaV8Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =If(IsBlank(gvarTula.BagDeclarationID), "No", "Sí")
+            Width: =200
+            X: =704
+            Y: =210
+      - lblFichaK8Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DECLARACIÓN RELACIONADA"
+            Width: =200
+            X: =704
+            Y: =194
+      - lblFichaV7Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =If(gvarTula.BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada, Text(gvarTula.'Modified On', FmtFecha), "—")
+            Width: =180
+            X: =504
+            Y: =210
+      - lblFichaK7Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="FECHA DE RECUENTO"
+            Width: =180
+            X: =504
+            Y: =194
+      - lblFichaV6Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Coalesce(gvarTula.RecountingSession.Cashier.'Full Name', "—")
+            Width: =220
+            X: =264
+            Y: =210
+      - lblFichaK6Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CAJERO"
+            Width: =220
+            X: =264
+            Y: =194
+      - lblFichaV5Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Coalesce(gvarTula.RecountingSession.Name, "—")
+            Width: =200
+            X: =44
+            Y: =210
+      - lblFichaK5Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="SESIÓN DE RECUENTO"
+            Width: =200
+            X: =44
+            Y: =194
+      - lblLinkPlanilla:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeAccent
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            OnSelect: =Navigate(scrLote)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =$"{gvarPlanilla.ReceiptID} · {gvarPlanilla.RemitentName}"
+            Underline: =true
+            Width: =570
+            Wrap: =false
+            X: =764
+            Y: =164
+      - lblFichaK4Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="PLANILLA"
+            Width: =170
+            X: =764
+            Y: =148
+      - lblLinkLote:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeAccent
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            OnSelect: =Navigate(scrLote)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =gvarLote.Name
+            Underline: =true
+            X: =594
+            Y: =164
+      - lblFichaK3Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="LOTE DE RECEPCIÓN"
+            X: =594
+            Y: =148
+      - lblLinkTracking:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =If(IsBlank(gvarTula.BagDeclarationID), ThemeInk, ThemeAccent)
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            OnSelect: =If(!IsBlank(gvarTula.BagDeclarationID) && !IsBlank(gvarTula.BagDeclarationID.DeclarationID.ReceivedEmail), Set(gvarCorreo, LookUp('CH-Tbl-Received Emails', 'CH-Tbl-Received Emails' = gvarTula.BagDeclarationID.DeclarationID.ReceivedEmail.'CH-Tbl-Received Emails')); Navigate(scrCorreo))
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =If(IsBlank(gvarTula.BagDeclarationID), "—", Coalesce(gvarTula.BagDeclarationID.DeclarationID.ReceivedEmail.Name, "—"))
+            Underline: =!IsBlank(gvarTula.BagDeclarationID)
+            Width: =170
+            X: =404
+            Y: =164
+      - lblFichaK2Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TRACKING (CORREO)"
+            Width: =170
+            X: =404
+            Y: =148
+      - lblFichaV1Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Coalesce(gvarTula.ReceptionID.RemitentClient.Name, gvarTula.ReceptionID.RemitentName)
+            Width: =340
+            Wrap: =false
+            X: =44
+            Y: =164
+      - lblFichaK1Tula:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CLIENTE"
+            Width: =280
+            X: =44
+            Y: =148
+      - pilTulaDif:
+          Control: Classic/Button@2.2.0
+          Group: FichaTula
+          Properties:
+            BorderColor: =ThemeLineSoft
+            BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+            Color: =If(gvarTula.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.Recontada, ThemeInk2, If(gvarTula.HasDifference, ThemeCrit, ThemeOk))
+            DisplayMode: =DisplayMode.View
+            Fill: =If(gvarTula.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.Recontada, ThemeSurface2, If(gvarTula.HasDifference, ThemeCritSoft, ThemeOkSoft))
+            Height: =26
+            OnSelect: =
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =9
+            Text: =If(gvarTula.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.Recontada, "Pendiente", If(gvarTula.HasDifference, "Con diferencia", "Sin diferencia"))
+            Visible: =gvarTula.BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada
+            Width: =8 + 7*Len(Self.Text)
+            X: =570
+            Y: =110
+      - pilTulaEstado:
+          Control: Classic/Button@2.2.0
+          Group: FichaTula
+          Properties:
+            BorderColor: =ThemeLineSoft
+            BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+            Color: |-
+              =Switch(
+                  gvarTula.BagStatus,
+                  'BagStatus (CH-Tbl-Bags)'.Recontada,
+                  ThemeOk,
+                  'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',
+                  ThemeWarn,
+                  'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',
+                  ThemeInfo,
+                  'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                  ThemeInfo,
+                  ThemeCrit
+              )
+            DisplayMode: =DisplayMode.View
+            Fill: =Switch(gvarTula.BagStatus, 'BagStatus (CH-Tbl-Bags)'.Recontada, ThemeOkSoft, 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero', ThemeWarnSoft, 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa', ThemeInfoSoft, 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeInfoSoft, ThemeCritSoft)
+            Height: =26
+            OnSelect: =
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =9
+            Text: =gvarTula.BagStatus
+            Width: =8 + 7*Len(Self.Text)
+            X: =310
+            Y: =110
+      - lblTulaTitulo:
+          Control: Label@2.5.1
+          Group: FichaTula
+          Properties:
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =15
+            Text: =$"Tula {gvarTula.BagID}"
+            Width: =260
+            X: =44
+            Y: =108
+      - lblCrumbActualTula:
+          Control: Label@2.5.1
+          Group: BreadcrumbsTula
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk2
+            Height: =22
+            Size: =9
+            Text: =$"Tula {gvarTula.BagID}"
+            Width: =160
+            X: =346
+            Y: =64
+      - lblCrumbSep3Tula:
+          Control: Label@2.5.1
+          Group: BreadcrumbsTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =332
+            Y: =64
+      - lblCrumbPlanillaTula:
+          Control: Label@2.5.1
+          Group: BreadcrumbsTula
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeAccent
+            Height: =22
+            OnSelect: =Navigate(scrLote)
+            Size: =9
+            Text: =gvarPlanilla.ReceiptID
+            Width: =100
+            X: =232
+            Y: =64
+      - lblCrumbSep2Tula:
+          Control: Label@2.5.1
+          Group: BreadcrumbsTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =218
+            Y: =64
+      - lblCrumbLoteTula:
+          Control: Label@2.5.1
+          Group: BreadcrumbsTula
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeAccent
+            Height: =22
+            OnSelect: =Navigate(scrLote);
+            Size: =9
+            Text: =$"Lote {gvarLote.Name}"
+            Width: =110
+            X: =108
+            Y: =64
+      - lblCrumbSep1Tula:
+          Control: Label@2.5.1
+          Group: BreadcrumbsTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =94
+            Y: =64
+      - lblCrumbBusquedaTula:
+          Control: Label@2.5.1
+          Group: BreadcrumbsTula
+          Properties:
+            Color: =ThemeAccent
+            Height: =22
+            OnSelect: =Navigate(scrBusqueda)
+            Size: =9
+            Text: ="Búsqueda"
+            Width: =70
+            X: =24
+            Y: =64
+      - shpHeaderTula:
+          Control: Rectangle@2.3.0
+          Group: EncabezadoTula
+          Properties:
+            Fill: =ThemeSurface
+            Height: =52
+            Width: =1366
+      - shpHeaderLineaTula:
+          Control: Rectangle@2.3.0
+          Group: EncabezadoTula
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Width: =1366
+            Y: =52
+      - shpMarcaTula:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoTula
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccent
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =9
+            Text: ="CH"
+            Width: =30
+            X: =24
+            Y: =11
+      - lblMarcaTula:
+          Control: Label@2.5.1
+          Group: EncabezadoTula
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="CashHub"
+            Width: =90
+            X: =64
+            Y: =11
+      - lblMarcaSubTula:
+          Control: Label@2.5.1
+          Group: EncabezadoTula
+          Properties:
+            Color: =ThemeInk3
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="· Tracking de Depósitos"
+            Width: =330
+            X: =154
+            Y: =11

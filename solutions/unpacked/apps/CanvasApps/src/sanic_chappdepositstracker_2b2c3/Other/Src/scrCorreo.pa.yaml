@@ -1,0 +1,1485 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrCorreo:
+    Properties:
+      Fill: =ThemeBg
+      OnVisible: |-
+        =// ===== Ola 1: tres consultas independientes EN PARALELO =====
+        Concurrent(
+            Set(gvarRun,
+                First(Sort(
+                    Filter('CH-Tbl-ValidationRuns',
+                        ReceivedEmail.'CH-Tbl-Received Emails' = gvarCorreo.'CH-Tbl-Received Emails'),
+                    RunStart, SortOrder.Descending))),
+            Set(gvarDecl,
+                LookUp('CH-Tbl-Declarations',
+                    ReceivedEmail.'CH-Tbl-Received Emails' = gvarCorreo.'CH-Tbl-Received Emails')),
+            ClearCollect(colAdjuntos,
+                Filter('CH-Tbl-EmailsAttachments',
+                    Email.'CH-Tbl-Received Emails' = gvarCorreo.'CH-Tbl-Received Emails'))
+        );
+
+        // ===== Ola 2: validaciones (depende de gvarRun) =====
+        ClearCollect(colVals,
+            AddColumns(
+                Filter('CH-Tbl-ValidationResults',
+                    ValidationRun.'CH-Tbl-ValidationRuns' = gvarRun.'CH-Tbl-ValidationRuns'),
+                regla,       ValidationRule.'Validation Name',
+                reglaNombre, ValidationRule.Name,
+                reglaOrden,  ValidationRule.ValidationOrder));
+
+        // ===== Ola 3: la cadena declarada — el If POR FUERA de los ClearCollect
+        //       (ClearCollect con Blank() adentro tira ErrorKind.Internal) =====
+        If(IsBlank(gvarDecl),
+            Clear(colBolsas); Clear(colDDeps); Clear(colDCheques),
+            Concurrent(
+                ClearCollect(colBolsas,
+                    Filter('CH-Tbl-DeclaredBags',
+                        DeclarationID.'CH-Tbl-Declaration' = gvarDecl.'CH-Tbl-Declaration')),
+                ClearCollect(colDDeps,
+                    AddColumns(
+                        Filter('CH-Tbl-DeclaredDeposits',
+                            Declaration.'CH-Tbl-Declaration' = gvarDecl.'CH-Tbl-Declaration'),
+                        bolsaNumero, DeclaredBag.BagNumber)),
+                ClearCollect(colDCheques,
+                    Filter('CH-Tbl-DeclaredChecks',
+                        Declaration.'CH-Tbl-Declaration' = gvarDecl.'CH-Tbl-Declaration'))
+            ));
+
+        Reset(tabDetalleCorreo)
+    Children:
+      - shpDetalleCardCorr:
+          Control: Rectangle@2.3.0
+          Group: PestanasCorr
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =488
+            Width: =1318
+            X: =24
+            Y: =256
+      - tabDetalleCorreo:
+          Control: ModernTabList@1.0.1
+          Group: PestanasCorr
+          Properties:
+            Default: |-
+              ={Value: "Validaciones"}
+            Height: =40
+            Items: =["Validaciones", "Declaración", "Cheques declarados", "Respuesta al cliente"]
+            Width: =760
+            X: =44
+            Y: =268
+      - htmlRespuesta:
+          Control: HtmlViewer@2.1.0
+          Group: PestanaRespuestaAlClienteCorr
+          Properties:
+            BorderColor: =ThemeLineSoft
+            BorderStyle: =BorderStyle.Solid
+            BorderThickness: =1
+            Fill: =ThemeSurface2
+            Height: =350
+            HtmlText: =Coalesce(gvarCorreo.ReplyBodyHtml, "<i>Sin respuesta registrada.</i>")
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.5
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =1260
+            X: =44
+            Y: =370
+      - lblRespV3:
+          Control: Label@2.5.1
+          Group: PestanaRespuestaAlClienteCorr
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Coalesce(gvarCorreo.ReplySubject, "—")
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =600
+            X: =524
+            Y: =336
+      - lblRespK3:
+          Control: Label@2.5.1
+          Group: PestanaRespuestaAlClienteCorr
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ASUNTO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =600
+            X: =524
+            Y: =320
+      - lblRespV2:
+          Control: Label@2.5.1
+          Group: PestanaRespuestaAlClienteCorr
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =If(IsBlank(gvarCorreo.ReplyDateTime), "—", Text(gvarCorreo.ReplyDateTime, FmtFecha))
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =180
+            X: =324
+            Y: =336
+      - lblRespK2:
+          Control: Label@2.5.1
+          Group: PestanaRespuestaAlClienteCorr
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ENVIADA EL"
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =180
+            X: =324
+            Y: =320
+      - lblRespV1:
+          Control: Label@2.5.1
+          Group: PestanaRespuestaAlClienteCorr
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Switch(gvarCorreo.EmailReplyStatus, 'EmailReplyStatus (CH-Tbl-Received Emails)'.Respondido, $"Enviada · {Text(gvarCorreo.ReplyDateTime, FmtFecha)}", 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido, "Omitida (triage)", "Pendiente de envío")
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =260
+            X: =44
+            Y: =336
+      - lblRespK1:
+          Control: Label@2.5.1
+          Group: PestanaRespuestaAlClienteCorr
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ESTADO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =260
+            X: =44
+            Y: =320
+      - lblDChequesVacio:
+          Control: Label@2.5.1
+          Group: ChequesDeclarCorr
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="La declaración no incluía cheques."
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados" && CountRows(colDCheques) = 0
+            Width: =1260
+            X: =44
+            Y: =420
+      - galDCheques:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Group: ChequesDeclarCorr
+          Properties:
+            Height: =380
+            Items: =colDCheques
+            TemplatePadding: =0
+            TemplateSize: =40
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =1260
+            X: =44
+            Y: =342
+          Children:
+            - lblKFilaNo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.CheckNumber
+                  Width: =160
+                  Y: =9
+            - lblKFilaTipo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.CheckType
+                  Width: =160
+                  X: =160
+                  Y: =9
+            - lblKFilaMon:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.CheckCurrency
+                  Width: =90
+                  X: =320
+                  Y: =9
+            - lblKFilaMonto:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.CheckAmount, FmtMoney)
+                  Width: =140
+                  X: =410
+                  Y: =9
+            - lblKFilaRel:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =If(IsBlank(ThisItem.MatchedCheck), ThemeInk3, ThemeAccent)
+                  Height: =22
+                  OnSelect: =If(!IsBlank(ThisItem.MatchedCheck), Set(gvarTula, LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ThisItem.MatchedCheck.Bag.'CH-Tbl-Bags')); Set(gvarPlanilla, gvarTula.ReceptionID); Set(gvarLote, gvarTula.ReceptionID.ReceptionBatch); Navigate(scrTula))
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =If(IsBlank(ThisItem.MatchedCheck), "No", $"Sí · {ThisItem.MatchedCheck.Bag.BagID}")
+                  Underline: =!IsBlank(ThisItem.MatchedCheck)
+                  Width: =260
+                  X: =570
+                  Y: =9
+      - shpDChequesLinea:
+          Control: Rectangle@2.3.0
+          Group: ChequesDeclarCorr
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =1260
+            X: =44
+            Y: =340
+      - lblKCol5:
+          Control: Label@2.5.1
+          Group: ChequesDeclarCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RELACIONADO CON RECUENTO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =260
+            X: =614
+            Y: =320
+      - lblKCol4:
+          Control: Label@2.5.1
+          Group: ChequesDeclarCorr
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONTO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =140
+            X: =454
+            Y: =320
+      - lblKCol3:
+          Control: Label@2.5.1
+          Group: ChequesDeclarCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONEDA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =90
+            X: =364
+            Y: =320
+      - lblKCol2:
+          Control: Label@2.5.1
+          Group: ChequesDeclarCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TIPO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =160
+            X: =204
+            Y: =320
+      - lblKCol1:
+          Control: Label@2.5.1
+          Group: ChequesDeclarCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="NO. CHEQUE"
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =160
+            X: =44
+            Y: =320
+      - galDDeps:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Height: =180
+            Items: =colDDeps
+            TemplatePadding: =0
+            TemplateSize: =40
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =1160
+            X: =44
+            Y: =542
+          Children:
+            - lblYFilaRef:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Coalesce(ThisItem.DepositReference, ThisItem.Name)
+                  Width: =140
+                  Wrap: =false
+                  Y: =9
+            - lblYFilaBolsa:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.bolsaNumero
+                  Width: =100
+                  Wrap: =false
+                  X: =140
+                  Y: =9
+            - lblYFilaMon:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.Currency
+                  Width: =90
+                  X: =240
+                  Y: =9
+            - lblYFilaEf:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.CashAmount, FmtMoney)
+                  Width: =130
+                  X: =330
+                  Y: =9
+            - lblYFilaChq:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.BACLocalCheckAmount + ThisItem.OtherLocalCheckAmount, FmtMoney)
+                  Width: =130
+                  X: =460
+                  Y: =9
+            - lblYFilaTotal:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.Total, FmtMoney)
+                  Width: =120
+                  X: =590
+                  Y: =9
+            - lblYFilaRecuento:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =If(IsBlank(ThisItem.RelatedRecountedDeposit), ThemeInk3, ThemeAccent)
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  OnSelect: =If(!IsBlank(ThisItem.RelatedRecountedDeposit), Set(gvarTula, LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ThisItem.RelatedRecountedDeposit.BagID.'CH-Tbl-Bags')); Set(gvarPlanilla, gvarTula.ReceptionID); Set(gvarLote, gvarTula.ReceptionID.ReceptionBatch); Navigate(scrTula))
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =If(IsBlank(ThisItem.RelatedRecountedDeposit), "Pendiente", $"Recontado en {ThisItem.RelatedRecountedDeposit.BagID.BagID}")
+                  Underline: =!IsBlank(ThisItem.RelatedRecountedDeposit)
+                  Width: =260
+                  X: =720
+                  Y: =9
+      - shpDDepsLinea:
+          Control: Rectangle@2.3.0
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =1160
+            X: =44
+            Y: =540
+      - lblYCol7:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECUENTO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =260
+            X: =764
+            Y: =520
+      - lblYCol6:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =120
+            X: =634
+            Y: =520
+      - lblYCol5:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CHEQUES"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =130
+            X: =504
+            Y: =520
+      - lblYCol4:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="EFECTIVO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =130
+            X: =374
+            Y: =520
+      - lblYCol3:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONEDA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =90
+            X: =284
+            Y: =520
+      - lblYCol2:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="BOLSA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =100
+            X: =184
+            Y: =520
+      - lblYCol1:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="REFERENCIA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =140
+            X: =44
+            Y: =520
+      - lblDDepsTitulo:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="DEPÓSITOS DECLARADOS"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =400
+            X: =44
+            Y: =496
+      - lblDeclVacio:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="Este correo no generó declaración (fue rechazado por las validaciones)."
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && IsBlank(gvarDecl)
+            Width: =1160
+            X: =44
+            Y: =420
+      - galBolsas:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Height: =120
+            Items: =colBolsas
+            TemplatePadding: =0
+            TemplateSize: =40
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =1160
+            X: =44
+            Y: =364
+          Children:
+            - lblBFilaBolsa:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.BagNumber
+                  Width: =120
+                  Wrap: =false
+                  Y: =9
+            - lblBFilaDeps:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =CountIf(colDDeps, bolsaNumero = ThisItem.BagNumber)
+                  Width: =100
+                  X: =120
+                  Y: =9
+            - lblBFilaNio:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =If(Coalesce(ThisItem.TotalNIO, 0) = 0, "—", Text(ThisItem.TotalNIO, FmtMoney))
+                  Width: =140
+                  X: =220
+                  Y: =9
+            - lblBFilaUsd:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =If(Coalesce(ThisItem.TotalUSD, 0) = 0, "—", Text(ThisItem.TotalUSD, FmtMoney))
+                  Width: =140
+                  X: =360
+                  Y: =9
+            - lblBFilaEur:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =If(Coalesce(ThisItem.TotalEUR, 0) = 0, "—", Text(ThisItem.TotalEUR, FmtMoney))
+                  Width: =120
+                  X: =500
+                  Y: =9
+            - lblBFilaTula:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =If(IsBlank(ThisItem.BagID), ThemeInk3, ThemeAccent)
+                  Height: =22
+                  OnSelect: =If(!IsBlank(ThisItem.BagID), Set(gvarTula, LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ThisItem.BagID.'CH-Tbl-Bags')); Set(gvarPlanilla, gvarTula.ReceptionID); Set(gvarLote, gvarTula.ReceptionID.ReceptionBatch); Navigate(scrTula))
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =If(IsBlank(ThisItem.BagID), "Sin tula vinculada todavía", ThisItem.BagID.BagID)
+                  Underline: =!IsBlank(ThisItem.BagID)
+                  Width: =220
+                  X: =640
+                  Y: =9
+            - pilBFilaRecuento:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLineSoft
+                  BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                  Color: =Switch(ThisItem.BagID.BagStatus, 'BagStatus (CH-Tbl-Bags)'.Recontada, ThemeOk, 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero', ThemeWarn, 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa', ThemeInfo, 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeInfo, ThemeInk2)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =Switch(ThisItem.BagID.BagStatus, 'BagStatus (CH-Tbl-Bags)'.Recontada, ThemeOkSoft, 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero', ThemeWarnSoft, 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa', ThemeInfoSoft, 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeInfoSoft, ThemeSurface2)
+                  Height: =26
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Size: =9
+                  Text: =If(IsBlank(ThisItem.BagID), "—", ThisItem.BagID.BagStatus)
+                  Width: =240
+                  X: =860
+                  Y: =7
+      - shpBolsasLinea:
+          Control: Rectangle@2.3.0
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =1160
+            X: =44
+            Y: =362
+      - lblBCol7:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECUENTO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =240
+            X: =904
+            Y: =342
+      - lblBCol6:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TULA VINCULADA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =220
+            X: =684
+            Y: =342
+      - lblBCol5:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL €"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =120
+            X: =544
+            Y: =342
+      - lblBCol4:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL US$"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =140
+            X: =404
+            Y: =342
+      - lblBCol3:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL C$"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =140
+            X: =264
+            Y: =342
+      - lblBCol2:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DEPÓSITOS"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =100
+            X: =164
+            Y: =342
+      - lblBCol1:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="BOLSA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =120
+            X: =44
+            Y: =342
+      - lblBolsasTitulo:
+          Control: Label@2.5.1
+          Group: PestanaDeclaracionCorr
+          Properties:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="BOLSAS DECLARADAS"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =400
+            X: =44
+            Y: =318
+      - lblValsVacio:
+          Control: Label@2.5.1
+          Group: PestanaValidacionesCorr
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="Este correo aún no tiene corridas de validación."
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones" && CountRows(colVals) = 0
+            Width: =1260
+            X: =44
+            Y: =420
+      - galVals:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Group: PestanaValidacionesCorr
+          Properties:
+            Height: =380
+            Items: =SortByColumns(colVals, "reglaOrden", SortOrder.Ascending)
+            TemplatePadding: =0
+            TemplateSize: =44
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =1260
+            X: =44
+            Y: =342
+          Children:
+            - shpVFilaSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =ThemeLineSoft
+                  Height: =1
+                  OnSelect: =Select(Parent)
+                  Width: =1260
+                  Y: =43
+            - lblVFilaRegla:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.regla
+                  Width: =100
+                  Y: =11
+            - lblVFilaNombre:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.reglaNombre
+                  Width: =430
+                  X: =100
+                  Y: =2
+            - pilVFilaResultado:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLineSoft
+                  BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                  Color: =Switch(ThisItem.ValidationResult, 'ValidationResult (CH-Tbl-ValidationResults)'.Pass, ThemeOk, 'ValidationResult (CH-Tbl-ValidationResults)'.Fail, ThemeCrit, ThemeInk2)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =Switch(ThisItem.ValidationResult, 'ValidationResult (CH-Tbl-ValidationResults)'.Pass, ThemeOkSoft, 'ValidationResult (CH-Tbl-ValidationResults)'.Fail, ThemeCritSoft, ThemeSurface2)
+                  Height: =26
+                  OnSelect: =
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Size: =9
+                  Text: =Switch(ThisItem.ValidationResult, 'ValidationResult (CH-Tbl-ValidationResults)'.Pass, "Pasó", 'ValidationResult (CH-Tbl-ValidationResults)'.Fail, "Falló", "Omitida")
+                  Width: =110
+                  X: =530
+                  Y: =9
+            - lblVFilaDetalle:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk2
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =8.5
+                  Text: =Coalesce(ThisItem.Detalle, "—") & If(!IsBlank(ThisItem.Hoja), $" · {ThisItem.Hoja}" & If(!IsBlank(ThisItem.Celda), $"!{ThisItem.Celda}", ""), "")
+                  Width: =600
+                  X: =660
+                  Y: =2
+      - shpValsLinea:
+          Control: Rectangle@2.3.0
+          Group: PestanaValidacionesCorr
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =1260
+            X: =44
+            Y: =340
+      - lblVCol4:
+          Control: Label@2.5.1
+          Group: PestanaValidacionesCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DETALLE"
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =600
+            X: =704
+            Y: =320
+      - lblVCol3:
+          Control: Label@2.5.1
+          Group: PestanaValidacionesCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RESULTADO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =130
+            X: =574
+            Y: =320
+      - lblVCol2:
+          Control: Label@2.5.1
+          Group: PestanaValidacionesCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DESCRIPCIÓN"
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =430
+            X: =144
+            Y: =320
+      - lblVCol1:
+          Control: Label@2.5.1
+          Group: PestanaValidacionesCorr
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="REGLA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =100
+            X: =44
+            Y: =320
+      - shpFichaCardCorr:
+          Control: Rectangle@2.3.0
+          Group: FichaCorr
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =150
+            Width: =1318
+            X: =24
+            Y: =94
+      - lblCorreoTitulo:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =15
+            Text: =$"Correo {gvarCorreo.Name}"
+            Width: =300
+            X: =44
+            Y: =108
+      - pilCorreoResultado:
+          Control: Classic/Button@2.2.0
+          Group: FichaCorr
+          Properties:
+            BorderColor: =ThemeLineSoft
+            BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+            Color: =Switch(gvarCorreo.EmailReviewStatus, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Aceptado, ThemeOk, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Denegado, ThemeCrit, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, ThemeCrit, 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual', ThemeWarn, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente, ThemeWarn, ThemeSurface2)
+            DisplayMode: =DisplayMode.View
+            Fill: =Switch(gvarCorreo.EmailReviewStatus, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Aceptado, ThemeOkSoft, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Denegado, ThemeCritSoft, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, ThemeCritSoft, 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual', ThemeWarnSoft, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente, ThemeWarnSoft, ThemeSurface2)
+            Height: =26
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =9
+            Text: =gvarCorreo.EmailReviewStatus
+            Width: =8 + 7*Len(Self.Text)
+            X: =350
+            Y: =110
+      - lblFichaV6Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =If(IsBlank(gvarDecl), "—", Text(CountRows(colBolsas)))
+            Width: =170
+            X: =344
+            Y: =210
+      - lblFichaK6Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="BOLSAS DECLARADAS"
+            Width: =170
+            X: =344
+            Y: =194
+      - lblFichaV5Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Switch(gvarCorreo.EmailReplyStatus, 'EmailReplyStatus (CH-Tbl-Received Emails)'.Respondido, $"Enviada · {Text(gvarCorreo.ReplyDateTime, FmtFecha)}", 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido, "Omitida (triage)", "Pendiente de envío")
+            Width: =280
+            X: =44
+            Y: =210
+      - lblFichaK5Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RESPUESTA"
+            Width: =280
+            X: =44
+            Y: =194
+      - lblFichaV4Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: |-
+              =If(CountRows(colAdjuntos) = 0, "—", "📎 " & First(colAdjuntos).Filename & If(CountRows(colAdjuntos) > 1, $" (+{CountRows(colAdjuntos) - 1})", ""))
+            Width: =300
+            X: =814
+            Y: =164
+      - lblFichaK4Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ADJUNTO"
+            Width: =300
+            X: =814
+            Y: =148
+      - lblFichaV3Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarCorreo.ReceptionDateTime, FmtFecha)
+            Width: =170
+            X: =624
+            Y: =164
+      - lblFichaK3Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECIBIDO EL"
+            Width: =170
+            X: =624
+            Y: =148
+      - lblFichaV2Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =gvarCorreo.SourceEmailAddress
+            Width: =280
+            X: =324
+            Y: =164
+      - lblFichaK2Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="REMITENTE"
+            Width: =280
+            X: =324
+            Y: =148
+      - lblFichaV1Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Coalesce(gvarCorreo.'Cliente atribuido'.Name, "Sin atribuir")
+            Width: =260
+            X: =44
+            Y: =164
+      - lblFichaK1Corr:
+          Control: Label@2.5.1
+          Group: FichaCorr
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CLIENTE"
+            Width: =260
+            X: =44
+            Y: =148
+      - lblCrumbActualCorr:
+          Control: Label@2.5.1
+          Group: BreadcrumbsCorr
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk2
+            Height: =22
+            Size: =9
+            Text: =$"Correo {gvarCorreo.Name}"
+            Width: =220
+            X: =108
+            Y: =64
+      - lblCrumbSep1Corr:
+          Control: Label@2.5.1
+          Group: BreadcrumbsCorr
+          Properties:
+            Color: =ThemeInk3
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =94
+            Y: =64
+      - lblCrumbBusquedaCorr:
+          Control: Label@2.5.1
+          Group: BreadcrumbsCorr
+          Properties:
+            Color: =ThemeAccent
+            Height: =22
+            OnSelect: =Navigate(scrBusqueda)
+            Size: =9
+            Text: ="Búsqueda"
+            Width: =70
+            X: =24
+            Y: =64
+      - shpHeaderCorr:
+          Control: Rectangle@2.3.0
+          Group: EncabezadoCorr
+          Properties:
+            Fill: =ThemeSurface
+            Height: =52
+            Width: =1366
+      - shpHeaderLineaCorr:
+          Control: Rectangle@2.3.0
+          Group: EncabezadoCorr
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Width: =1366
+            Y: =52
+      - shpMarcaCorr:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoCorr
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccent
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =9
+            Text: ="CH"
+            Width: =30
+            X: =24
+            Y: =11
+      - lblMarcaCorr:
+          Control: Label@2.5.1
+          Group: EncabezadoCorr
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="CashHub"
+            Width: =90
+            X: =64
+            Y: =11
+      - lblMarcaSubCorr:
+          Control: Label@2.5.1
+          Group: EncabezadoCorr
+          Properties:
+            Color: =ThemeInk3
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="· Tracking de Depósitos"
+            Width: =330
+            X: =154
+            Y: =11

@@ -1,0 +1,1117 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrDeposito:
+    Properties:
+      Fill: =ThemeBg
+    Children:
+      - shpChequesCard:
+          Control: Rectangle@2.3.0
+          Group: ChequesDep
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =196
+            Width: =1318
+            X: =24
+            Y: =548
+      - lblChequesDepVacio:
+          Control: Label@2.5.1
+          Group: ChequesDep
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="Este depósito no incluye cheques."
+            Visible: =galChequesDep.AllItemsCount = 0
+            Width: =1278
+            X: =44
+            Y: =660
+      - galChequesDep:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Group: ChequesDep
+          Properties:
+            Height: =120
+            Items: |-
+              =Filter(colChequesTula,
+                  RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting' = gvarDep.'CH-Tbl-DepositsRecounting')
+            TemplatePadding: =0
+            TemplateSize: =40
+            Width: =1278
+            X: =44
+            Y: =612
+          Children:
+            - pilQFilaEstado:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLineSoft
+                  BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                  Color: |-
+                    =Switch(
+                        ThisItem.CheckStatus,
+                        'CheckStatus (CH-Tbl-Checks)'.Recontado,
+                        ThemeInfo,
+                        'CheckStatus (CH-Tbl-Checks)'.Digitado,
+                        ThemeOk,
+                        'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',
+                        ThemeWarn,
+                        'CheckStatus (CH-Tbl-Checks)'.Recibido,
+                        ThemeInfo,
+                        'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
+                        ThemeCrit,
+                        'CheckStatus (CH-Tbl-Checks)'.Rebotado,
+                        ThemeCrit,
+                        ThemeInk2
+                    )
+                  DisplayMode: =DisplayMode.View
+                  Fill: =Switch(ThisItem.CheckStatus, 'CheckStatus (CH-Tbl-Checks)'.Recontado, ThemeInfoSoft, 'CheckStatus (CH-Tbl-Checks)'.Digitado, ThemeOkSoft, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', ThemeWarnSoft, 'CheckStatus (CH-Tbl-Checks)'.Recibido, ThemeInfoSoft, 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', ThemeCritSoft, 'CheckStatus (CH-Tbl-Checks)'.Rebotado, ThemeCritSoft, ThemeSurface2)
+                  Height: =26
+                  OnSelect: =
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Size: =9
+                  Text: =ThisItem.CheckStatus
+                  Width: =210
+                  X: =570
+                  Y: =7
+            - lblQFilaMonto:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.CheckAmount, FmtMoney)
+                  Width: =140
+                  X: =410
+                  Y: =9
+            - lblQFilaMon:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.CheckCurrency
+                  Width: =90
+                  X: =320
+                  Y: =9
+            - lblQFilaTipo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.CheckTypes
+                  Width: =160
+                  X: =160
+                  Y: =9
+            - lblQFilaNo:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.CheckNumber
+                  Width: =160
+                  Y: =9
+      - shpQLineaDep:
+          Control: Rectangle@2.3.0
+          Group: ChequesDep
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Width: =1278
+            X: =44
+            Y: =610
+      - lblQCol5:
+          Control: Label@2.5.1
+          Group: ChequesDep
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ESTADO"
+            Width: =220
+            X: =614
+            Y: =590
+      - lblQCol4:
+          Control: Label@2.5.1
+          Group: ChequesDep
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONTO"
+            Width: =140
+            X: =454
+            Y: =590
+      - lblQCol3:
+          Control: Label@2.5.1
+          Group: ChequesDep
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONEDA"
+            Width: =90
+            X: =364
+            Y: =590
+      - lblQCol2:
+          Control: Label@2.5.1
+          Group: ChequesDep
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TIPO"
+            Width: =160
+            X: =204
+            Y: =590
+      - lblQCol1:
+          Control: Label@2.5.1
+          Group: ChequesDep
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="NO. CHEQUE"
+            Width: =160
+            X: =44
+            Y: =590
+      - lblChequesTitulo:
+          Control: Label@2.5.1
+          Group: ChequesDep
+          Properties:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="CHEQUES DEL DEPÓSITO"
+            Width: =400
+            X: =44
+            Y: =562
+      - shpTxsCard:
+          Control: Rectangle@2.3.0
+          Group: TransacGeneradasDep
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =280
+            Width: =1318
+            X: =24
+            Y: =256
+      - lblTxsNota:
+          Control: Label@2.5.1
+          Group: TransacGeneradasDep
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk2
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.5
+            Text: |-
+              ="Un depósito puede generar más de una transacción: el monto recontado viaja como Deposito y las diferencias como Faltante o Sobrante. Si la tula llegó sin declaración, la transacción nace como Sin declaracion."
+            Width: =1278
+            X: =44
+            Y: =498
+      - lblTxsVacio:
+          Control: Label@2.5.1
+          Group: TransacGeneradasDep
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="Todavía no se han generado transacciones para este depósito."
+            Visible: =galTxs.AllItemsCount = 0
+            Width: =1278
+            X: =44
+            Y: =380
+      - galTxs:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Group: TransacGeneradasDep
+          Properties:
+            Height: =170
+            Items: =Filter('CH-Tbl-Transactions', RelatedDepositRecounting.'CH-Tbl-DepositsRecounting' = gvarDep.'CH-Tbl-DepositsRecounting')
+            TemplatePadding: =0
+            TemplateSize: =42
+            Width: =1278
+            X: =44
+            Y: =320
+          Children:
+            - shpXFilaSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =ThemeLineSoft
+                  Height: =1
+                  OnSelect: =Select(Parent)
+                  Width: =1278
+                  Y: =41
+            - lblXFilaId:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.Name
+                  Width: =130
+                  Y: =10
+            - pilXFilaTipo:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLineSoft
+                  BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                  Color: =Switch(ThisItem.TransactionType, 'TransactionType (CH-Tbl-Transactions)'.Deposito, ThemeInfo, 'TransactionType (CH-Tbl-Transactions)'.Faltante, ThemeCrit, 'TransactionType (CH-Tbl-Transactions)'.Sobrante, ThemeWarn, ThemeInk2)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =Switch(ThisItem.TransactionType, 'TransactionType (CH-Tbl-Transactions)'.Deposito, ThemeInfoSoft, 'TransactionType (CH-Tbl-Transactions)'.Faltante, ThemeCritSoft, 'TransactionType (CH-Tbl-Transactions)'.Sobrante, ThemeWarnSoft, ThemeSurface2)
+                  Height: =26
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Size: =9
+                  Text: =ThisItem.TransactionType
+                  Width: =130
+                  X: =130
+                  Y: =8
+            - lblXFilaMonto:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Text(ThisItem.Total, FmtMoney)
+                  Width: =110
+                  X: =270
+                  Y: =10
+            - lblXFilaLote:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.'Transaction Batch'.Name
+                  Width: =120
+                  X: =390
+                  Y: =10
+            - lblXFilaGen:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Coalesce(ThisItem.'Transaction Batch'.'Generado por'.'Full Name', "—")
+                  Width: =180
+                  X: =510
+                  Y: =10
+            - lblXFilaProc:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =ThisItem.TransactionProcessingType
+                  Width: =80
+                  X: =690
+                  Y: =10
+            - pilXFilaCore:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLineSoft
+                  BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                  Color: =If(ThisItem.BatchStatus = 159460003, ThemeOk, ThemeWarn)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =If(ThisItem.BatchStatus = 159460003, ThemeOkSoft, ThemeWarnSoft)
+                  Height: =26
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Size: =9
+                  Text: =If(ThisItem.BatchStatus = 159460003, $"Acreditada · {Text(ThisItem.'Transaction Batch'.'Aplicado el', FmtFecha)}", "Pendiente")
+                  Width: =230
+                  X: =770
+                  Y: =8
+            - lblXFilaRef:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =10
+                  Text: =Coalesce(ThisItem.TransactionReference, "—")
+                  Width: =240
+                  X: =1010
+                  Y: =10
+      - shpTxsLinea:
+          Control: Rectangle@2.3.0
+          Group: TransacGeneradasDep
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Width: =1278
+            X: =44
+            Y: =318
+      - lblXCol8:
+          Control: Label@2.5.1
+          Group: TransacGeneradasDep
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="REFERENCIA"
+            Width: =240
+            X: =1054
+            Y: =298
+      - lblXCol7:
+          Control: Label@2.5.1
+          Group: TransacGeneradasDep
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CORE BANCARIO"
+            Width: =240
+            X: =814
+            Y: =298
+      - lblXCol6:
+          Control: Label@2.5.1
+          Group: TransacGeneradasDep
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="PROC."
+            Width: =80
+            X: =734
+            Y: =298
+      - lblXCol5:
+          Control: Label@2.5.1
+          Group: TransacGeneradasDep
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="GENERADO POR"
+            Width: =180
+            X: =554
+            Y: =298
+      - lblXCol4:
+          Control: Label@2.5.1
+          Group: TransacGeneradasDep
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="LOTE DIGITACIÓN"
+            Width: =120
+            X: =434
+            Y: =298
+      - lblXCol3:
+          Control: Label@2.5.1
+          Group: TransacGeneradasDep
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONTO"
+            Width: =110
+            X: =314
+            Y: =298
+      - lblXCol2:
+          Control: Label@2.5.1
+          Group: TransacGeneradasDep
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TIPO"
+            Width: =140
+            X: =174
+            Y: =298
+      - lblXCol1:
+          Control: Label@2.5.1
+          Group: TransacGeneradasDep
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TRANSACCIÓN"
+            Width: =130
+            X: =44
+            Y: =298
+      - lblTxsTitulo:
+          Control: Label@2.5.1
+          Group: TransacGeneradasDep
+          Properties:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="TRANSACCIONES GENERADAS POR EL DEPÓSITO"
+            Width: =600
+            X: =44
+            Y: =270
+      - shpFichaCardDep:
+          Control: Rectangle@2.3.0
+          Group: FichaDep
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =150
+            Width: =1318
+            X: =24
+            Y: =94
+      - lblDepTitulo:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =15
+            Text: =$"Depósito {Coalesce(gvarDep.decRef, gvarDep.Name)}"
+            Width: =420
+            X: =44
+            Y: =108
+      - pilDepDif:
+          Control: Classic/Button@2.2.0
+          Group: FichaDep
+          Properties:
+            BorderColor: =ThemeLineSoft
+            BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+            Color: |+
+              =With({
+                  _dif: (gvarDep.CashAmount + gvarDep.BACLocalCheckAmount + gvarDep.OtherLocaCheckAmount)
+                      - (gvarDep.decEf + gvarDep.decBac + gvarDep.decOtr)},
+              If(Abs(_dif) < 0.005, ThemeOk, ThemeCrit))
+
+
+            DisplayMode: =DisplayMode.View
+            Fill: |+
+              =With({
+                  _dif: (gvarDep.CashAmount + gvarDep.BACLocalCheckAmount + gvarDep.OtherLocaCheckAmount)
+                      - (gvarDep.decEf + gvarDep.decBac + gvarDep.decOtr)},
+              If(Abs(_dif) < 0.005, ThemeOkSoft, ThemeCritSoft))
+
+
+            Height: =26
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =9
+            Text: |-
+              =// pilDepDif.Text — la diferencia del depósito, CON símbolo de moneda
+              With({
+                  _dif: (gvarDep.CashAmount + gvarDep.BACLocalCheckAmount + gvarDep.OtherLocaCheckAmount)
+                      - (gvarDep.decEf + gvarDep.decBac + gvarDep.decOtr),
+                  _sim: Switch(gvarDep.Currency,
+                      'CH-Ch-Currency'.NIO, SimboloNIO,
+                      'CH-Ch-Currency'.USD, SimboloUSD,
+                      SimboloEUR)},
+              If(Abs(_dif) < 0.005, "Sin diferencia",
+                 If(_dif < 0, $"Faltante {_sim} {Text(Abs(_dif), FmtMoney)}",
+                    $"Sobrante {_sim} {Text(_dif, FmtMoney)}")))
+            Width: =260
+            X: =470
+            Y: =110
+      - lblFichaV8Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarDep.decEf + gvarDep.decBac + gvarDep.decOtr, FmtMoney)
+            Width: =170
+            X: =614
+            Y: =210
+      - lblFichaK8Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL DECLARADO"
+            Width: =170
+            X: =614
+            Y: =194
+      - lblFichaV7Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarDep.Total, FmtMoney)
+            Width: =170
+            X: =424
+            Y: =210
+      - lblFichaK7Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL RECONTADO"
+            Width: =170
+            X: =424
+            Y: =194
+      - lblFichaV6Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarDep.BACLocalCheckAmount + gvarDep.OtherLocaCheckAmount, FmtMoney)
+            Width: =170
+            X: =234
+            Y: =210
+      - lblFichaK6Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECONTADO CHEQUES"
+            Width: =170
+            X: =234
+            Y: =194
+      - lblFichaV5Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarDep.CashAmount, FmtMoney)
+            Width: =170
+            X: =44
+            Y: =210
+      - lblFichaK5Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECONTADO EFECTIVO"
+            Width: =170
+            X: =44
+            Y: =194
+      - lblFichaV4Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarDep.'Created On', FmtFecha)
+            Width: =180
+            X: =604
+            Y: =164
+      - lblFichaK4Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="FECHA DE RECUENTO"
+            Width: =180
+            X: =604
+            Y: =148
+      - lblFichaV3Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =$"{gvarDep.Currency} · {Switch(gvarDep.Currency, 'CH-Ch-Currency'.NIO, SimboloNIO, 'CH-Ch-Currency'.USD, SimboloUSD, SimboloEUR)}"
+            Width: =100
+            X: =484
+            Y: =164
+      - lblFichaK3Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONEDA"
+            Width: =100
+            X: =484
+            Y: =148
+      - lblFichaV2Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Coalesce(gvarTula.ReceptionID.RemitentClient.Name, gvarTula.ReceptionID.RemitentName)
+            Width: =260
+            Wrap: =false
+            X: =204
+            Y: =164
+      - lblFichaK2Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CLIENTE"
+            Width: =260
+            X: =204
+            Y: =148
+      - lblFichaV1Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeAccent
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            OnSelect: =Navigate(scrTula)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =gvarTula.BagID
+            Underline: =true
+            Width: =140
+            X: =44
+            Y: =164
+      - lblFichaK1Dep:
+          Control: Label@2.5.1
+          Group: FichaDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TULA"
+            Width: =140
+            X: =44
+            Y: =148
+      - lblCrumbActualDep:
+          Control: Label@2.5.1
+          Group: BreadcrumbsDep
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk2
+            Height: =22
+            Size: =9
+            Text: =$"Depósito {Coalesce(gvarDep.decRef, gvarDep.Name)}"
+            Width: =220
+            X: =480
+            Y: =64
+      - lblCrumbSep4Dep:
+          Control: Label@2.5.1
+          Group: BreadcrumbsDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =466
+            Y: =64
+      - lblCrumbTulaDep:
+          Control: Label@2.5.1
+          Group: BreadcrumbsDep
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeAccent
+            Height: =22
+            OnSelect: =Navigate(scrTula)
+            Size: =9
+            Text: =$"Tula {gvarTula.BagID}"
+            Width: =120
+            X: =346
+            Y: =64
+      - lblCrumbSep3Dep:
+          Control: Label@2.5.1
+          Group: BreadcrumbsDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =332
+            Y: =64
+      - lblCrumbPlanillaDep:
+          Control: Label@2.5.1
+          Group: BreadcrumbsDep
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeAccent
+            Height: =22
+            OnSelect: =Navigate(scrLote)
+            Size: =9
+            Text: =gvarPlanilla.ReceiptID
+            Width: =100
+            X: =232
+            Y: =64
+      - lblCrumbSep2Dep:
+          Control: Label@2.5.1
+          Group: BreadcrumbsDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =218
+            Y: =64
+      - lblCrumbLoteDep:
+          Control: Label@2.5.1
+          Group: BreadcrumbsDep
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeAccent
+            Height: =22
+            OnSelect: =Navigate(scrLote)
+            Size: =9
+            Text: =$"Lote {gvarLote.Name}"
+            Width: =110
+            X: =108
+            Y: =64
+      - lblCrumbSep1Dep:
+          Control: Label@2.5.1
+          Group: BreadcrumbsDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =94
+            Y: =64
+      - lblCrumbBusquedaDep:
+          Control: Label@2.5.1
+          Group: BreadcrumbsDep
+          Properties:
+            Color: =ThemeAccent
+            Height: =22
+            OnSelect: =Navigate(scrBusqueda)
+            Size: =9
+            Text: ="Búsqueda"
+            Width: =70
+            X: =24
+            Y: =64
+      - shpHeaderDep:
+          Control: Rectangle@2.3.0
+          Group: EncabezadoDep
+          Properties:
+            Fill: =ThemeSurface
+            Height: =52
+            Width: =1366
+      - shpHeaderLineaDep:
+          Control: Rectangle@2.3.0
+          Group: EncabezadoDep
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Width: =1366
+            Y: =52
+      - shpMarcaDep:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoDep
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccent
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =9
+            Text: ="CH"
+            Width: =30
+            X: =24
+            Y: =11
+      - lblMarcaDep:
+          Control: Label@2.5.1
+          Group: EncabezadoDep
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="CashHub"
+            Width: =90
+            X: =64
+            Y: =11
+      - lblMarcaSubDep:
+          Control: Label@2.5.1
+          Group: EncabezadoDep
+          Properties:
+            Color: =ThemeInk3
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="· Tracking de Depósitos"
+            Width: =330
+            X: =154
+            Y: =11

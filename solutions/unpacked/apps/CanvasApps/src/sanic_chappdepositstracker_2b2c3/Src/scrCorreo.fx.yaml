@@ -1,0 +1,1746 @@
+scrCorreo As screen:
+    Fill: =ThemeBg
+    LoadingSpinnerColor: =App.Theme.Colors.Primary
+    OnVisible: |-
+        =// ===== Ola 1: tres consultas independientes EN PARALELO =====
+        Concurrent(
+            Set(gvarRun,
+                First(Sort(
+                    Filter('CH-Tbl-ValidationRuns',
+                        ReceivedEmail.'CH-Tbl-Received Emails' = gvarCorreo.'CH-Tbl-Received Emails'),
+                    RunStart, SortOrder.Descending))),
+            Set(gvarDecl,
+                LookUp('CH-Tbl-Declarations',
+                    ReceivedEmail.'CH-Tbl-Received Emails' = gvarCorreo.'CH-Tbl-Received Emails')),
+            ClearCollect(colAdjuntos,
+                Filter('CH-Tbl-EmailsAttachments',
+                    Email.'CH-Tbl-Received Emails' = gvarCorreo.'CH-Tbl-Received Emails'))
+        );
+        
+        // ===== Ola 2: validaciones (depende de gvarRun) =====
+        ClearCollect(colVals,
+            AddColumns(
+                Filter('CH-Tbl-ValidationResults',
+                    ValidationRun.'CH-Tbl-ValidationRuns' = gvarRun.'CH-Tbl-ValidationRuns'),
+                regla,       ValidationRule.'Validation Name',
+                reglaNombre, ValidationRule.Name,
+                reglaOrden,  ValidationRule.ValidationOrder));
+        
+        // ===== Ola 3: la cadena declarada — el If POR FUERA de los ClearCollect
+        //       (ClearCollect con Blank() adentro tira ErrorKind.Internal) =====
+        If(IsBlank(gvarDecl),
+            Clear(colBolsas); Clear(colDDeps); Clear(colDCheques),
+            Concurrent(
+                ClearCollect(colBolsas,
+                    Filter('CH-Tbl-DeclaredBags',
+                        DeclarationID.'CH-Tbl-Declaration' = gvarDecl.'CH-Tbl-Declaration')),
+                ClearCollect(colDDeps,
+                    AddColumns(
+                        Filter('CH-Tbl-DeclaredDeposits',
+                            Declaration.'CH-Tbl-Declaration' = gvarDecl.'CH-Tbl-Declaration'),
+                        bolsaNumero, DeclaredBag.BagNumber)),
+                ClearCollect(colDCheques,
+                    Filter('CH-Tbl-DeclaredChecks',
+                        Declaration.'CH-Tbl-Declaration' = gvarDecl.'CH-Tbl-Declaration'))
+            ));
+        
+        Reset(tabDetalleCorreo)
+
+    EncabezadoCorr As group:
+        Height: =5
+        minimumHeight: =5
+        minimumWidth: =5
+        Visible: =true
+        Width: =5
+        X: =0
+        Y: =0
+        ZIndex: =1
+
+        shpHeaderCorr As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeSurface
+            Height: =52
+            Width: =App.Width
+            ZIndex: =64
+
+        shpHeaderLineaCorr As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeLine
+            Height: =1
+            Width: =App.Width
+            Y: =52
+            ZIndex: =65
+
+        shpMarcaCorr As button:
+            BorderColor: =App.Theme.Colors.Primary
+            BorderThickness: =0
+            Color: =Color.White
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccent
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =App.Theme.Colors.Darker10
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =9
+            Text: ="CH"
+            Width: =30
+            X: =24
+            Y: =11
+            ZIndex: =66
+
+        lblMarcaCorr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="CashHub"
+            Width: =90
+            X: =64
+            Y: =11
+            ZIndex: =67
+
+        lblMarcaSubCorr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="· Tracking de Depósitos"
+            Width: =330
+            X: =154
+            Y: =11
+            ZIndex: =68
+
+    BreadcrumbsCorr As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =20
+
+        lblCrumbActualCorr As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            Size: =9
+            Text: =$"Correo {gvarCorreo.Name}"
+            Width: =220
+            X: =108
+            Y: =64
+            ZIndex: =61
+
+        lblCrumbSep1Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =94
+            Y: =64
+            ZIndex: =62
+
+        lblCrumbBusquedaCorr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeAccent
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            OnSelect: =Navigate(scrBusqueda)
+            Size: =9
+            Text: ="Búsqueda"
+            Width: =70
+            X: =24
+            Y: =64
+            ZIndex: =63
+
+    PestanasCorr As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =39
+
+        shpDetalleCardCorr As rectangle:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =App.Height - Self.Y - 24
+            Width: =App.Width - 48
+            X: =24
+            Y: =256
+            ZIndex: =1
+
+        tabDetalleCorreo As modernTabList:
+            Default: |-
+                ={Value: "Validaciones"}
+            Height: =40
+            Items: =["Validaciones", "Declaración", "Cheques declarados", "Respuesta al cliente"]
+            Width: =shpDetalleCardCorr.Width * 0.57663
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =268
+            ZIndex: =2
+
+    FichaCorr As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =61
+
+        shpFichaCardCorr As rectangle:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =150
+            Width: =App.Width - 48
+            X: =24
+            Y: =94
+            ZIndex: =46
+
+        lblCorreoTitulo As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =15
+            Text: =$"Correo {gvarCorreo.Name}"
+            Width: =shpFichaCardCorr.Width * 0.22762
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.01517
+            Y: =108
+            ZIndex: =47
+
+        pilCorreoResultado As button:
+            BorderColor: =ThemeLineSoft
+            BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+            Color: =Switch(gvarCorreo.EmailReviewStatus, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Aceptado, ThemeOk, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Denegado, ThemeCrit, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, ThemeCrit, 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual', ThemeWarn, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente, ThemeWarn, ThemeSurface2)
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            DisplayMode: =DisplayMode.View
+            Fill: =Switch(gvarCorreo.EmailReviewStatus, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Aceptado, ThemeOkSoft, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Denegado, ThemeCritSoft, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, ThemeCritSoft, 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual', ThemeWarnSoft, 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente, ThemeWarnSoft, ThemeSurface2)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =App.Theme.Colors.Darker10
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =9
+            Text: =gvarCorreo.EmailReviewStatus
+            Width: =8 + 7*Len(Self.Text)
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.24734
+            Y: =110
+            ZIndex: =48
+
+        lblFichaV6Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =If(IsBlank(gvarDecl), "—", Text(CountRows(colBolsas)))
+            Width: =shpFichaCardCorr.Width * 0.12898
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.24279
+            Y: =210
+            ZIndex: =49
+
+        lblFichaK6Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="BOLSAS DECLARADAS"
+            Width: =shpFichaCardCorr.Width * 0.12898
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.24279
+            Y: =194
+            ZIndex: =50
+
+        lblFichaV5Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Switch(gvarCorreo.EmailReplyStatus, 'EmailReplyStatus (CH-Tbl-Received Emails)'.Respondido, $"Enviada · {Text(gvarCorreo.ReplyDateTime, FmtFecha)}", 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido, "Omitida (triage)", "Pendiente de envío")
+            Width: =shpFichaCardCorr.Width * 0.21245
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.01517
+            Y: =210
+            ZIndex: =51
+
+        lblFichaK5Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RESPUESTA"
+            Width: =shpFichaCardCorr.Width * 0.21245
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.01517
+            Y: =194
+            ZIndex: =52
+
+        lblFichaV4Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =If(CountRows(colAdjuntos) = 0, "—", "📎 " & First(colAdjuntos).Filename & If(CountRows(colAdjuntos) > 1, $" (+{CountRows(colAdjuntos) - 1})", ""))
+            Width: =shpFichaCardCorr.Width * 0.22762
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.59939
+            Y: =164
+            ZIndex: =53
+
+        lblFichaK4Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ADJUNTO"
+            Width: =shpFichaCardCorr.Width * 0.22762
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.59939
+            Y: =148
+            ZIndex: =54
+
+        lblFichaV3Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarCorreo.ReceptionDateTime, FmtFecha)
+            Width: =shpFichaCardCorr.Width * 0.12898
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.45524
+            Y: =164
+            ZIndex: =55
+
+        lblFichaK3Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECIBIDO EL"
+            Width: =shpFichaCardCorr.Width * 0.12898
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.45524
+            Y: =148
+            ZIndex: =56
+
+        lblFichaV2Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =gvarCorreo.SourceEmailAddress
+            Width: =shpFichaCardCorr.Width * 0.21245
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.22762
+            Y: =164
+            ZIndex: =57
+
+        lblFichaK2Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="REMITENTE"
+            Width: =shpFichaCardCorr.Width * 0.21245
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.22762
+            Y: =148
+            ZIndex: =58
+
+        lblFichaV1Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Coalesce(gvarCorreo.'Cliente atribuido'.Name, "Sin atribuir")
+            Width: =shpFichaCardCorr.Width * 0.19727
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.01517
+            Y: =164
+            ZIndex: =59
+
+        lblFichaK1Corr As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CLIENTE"
+            Width: =shpFichaCardCorr.Width * 0.19727
+            X: =shpFichaCardCorr.X + shpFichaCardCorr.Width * 0.01517
+            Y: =148
+            ZIndex: =60
+
+    PestanaValidacionesCorr As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =69
+
+        lblValsVacio As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="Este correo aún no tiene corridas de validación."
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones" && CountRows(colVals) = 0
+            Width: =shpDetalleCardCorr.Width * 0.95599
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =420
+            ZIndex: =39
+
+        galVals As gallery.galleryVertical:
+            BorderColor: =App.Theme.Colors.Darker40
+            DelayItemLoading: =true
+            Height: =shpDetalleCardCorr.Y + shpDetalleCardCorr.Height - 22 - Self.Y
+            Items: =SortByColumns(colVals, "reglaOrden", SortOrder.Ascending)
+            Layout: =Layout.Vertical
+            LoadingSpinner: =LoadingSpinner.Data
+            TemplatePadding: =0
+            TemplateSize: =44
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =shpDetalleCardCorr.Width * 0.95599
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =342
+            ZIndex: =40
+
+            shpVFilaSep As rectangle:
+                BorderColor: =App.Theme.Colors.Darker40
+                Fill: =ThemeLineSoft
+                Height: =1
+                OnSelect: =Select(Parent)
+                Width: =1260
+                Y: =43
+                ZIndex: =1
+
+            lblVFilaRegla As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.regla
+                Width: =Parent.TemplateWidth * 0.07937
+                Y: =11
+                ZIndex: =2
+
+            lblVFilaNombre As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.reglaNombre
+                Width: =Parent.TemplateWidth * 0.34127
+                X: =Parent.TemplateWidth * 0.07937
+                Y: =2
+                ZIndex: =3
+
+            pilVFilaResultado As button:
+                BorderColor: =ThemeLineSoft
+                BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                Color: =Switch(ThisItem.ValidationResult, 'ValidationResult (CH-Tbl-ValidationResults)'.Pass, ThemeOk, 'ValidationResult (CH-Tbl-ValidationResults)'.Fail, ThemeCrit, ThemeInk2)
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                DisplayMode: =DisplayMode.View
+                Fill: =Switch(ThisItem.ValidationResult, 'ValidationResult (CH-Tbl-ValidationResults)'.Pass, ThemeOkSoft, 'ValidationResult (CH-Tbl-ValidationResults)'.Fail, ThemeCritSoft, ThemeSurface2)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =26
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =App.Theme.Colors.Darker10
+                OnSelect: =
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =12
+                RadiusBottomRight: =12
+                RadiusTopLeft: =12
+                RadiusTopRight: =12
+                Size: =9
+                Text: =Switch(ThisItem.ValidationResult, 'ValidationResult (CH-Tbl-ValidationResults)'.Pass, "Pasó", 'ValidationResult (CH-Tbl-ValidationResults)'.Fail, "Falló", "Omitida")
+                Width: =Parent.TemplateWidth * 0.0873
+                X: =Parent.TemplateWidth * 0.42063
+                Y: =9
+                ZIndex: =4
+
+            lblVFilaDetalle As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.5
+                Text: =Coalesce(ThisItem.Detalle, "—") & If(!IsBlank(ThisItem.Hoja), $" · {ThisItem.Hoja}" & If(!IsBlank(ThisItem.Celda), $"!{ThisItem.Celda}", ""), "")
+                Width: =Parent.TemplateWidth * 0.47619
+                X: =Parent.TemplateWidth * 0.52381
+                Y: =2
+                ZIndex: =5
+
+        shpValsLinea As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =shpDetalleCardCorr.Width * 0.95599
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =340
+            ZIndex: =41
+
+        lblVCol4 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DETALLE"
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =galVals.Width * 0.47619
+            X: =galVals.X + galVals.Width * 0.52381
+            Y: =320
+            ZIndex: =42
+
+        lblVCol3 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RESULTADO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =galVals.Width * 0.10317
+            X: =galVals.X + galVals.Width * 0.42063
+            Y: =320
+            ZIndex: =43
+
+        lblVCol2 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DESCRIPCIÓN"
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =galVals.Width * 0.34127
+            X: =galVals.X + galVals.Width * 0.07937
+            Y: =320
+            ZIndex: =44
+
+        lblVCol1 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="REGLA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Validaciones"
+            Width: =galVals.Width * 0.07937
+            X: =galVals.X
+            Y: =320
+            ZIndex: =45
+
+    PestanaDeclaracionCorr As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =74
+
+        galDDeps As gallery.galleryVertical:
+            BorderColor: =App.Theme.Colors.Darker40
+            DelayItemLoading: =true
+            Height: =shpDetalleCardCorr.Y + shpDetalleCardCorr.Height - 22 - Self.Y
+            Items: =colDDeps
+            Layout: =Layout.Vertical
+            LoadingSpinner: =LoadingSpinner.Data
+            TemplatePadding: =0
+            TemplateSize: =40
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =shpDetalleCardCorr.Width * 0.88012
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =542
+            ZIndex: =18
+
+            lblYFilaRef As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =Coalesce(ThisItem.DepositReference, ThisItem.Name)
+                Width: =Parent.TemplateWidth * 0.12069
+                Wrap: =false
+                Y: =9
+                ZIndex: =12
+
+            lblYFilaBolsa As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.bolsaNumero
+                Width: =Parent.TemplateWidth * 0.08621
+                Wrap: =false
+                X: =Parent.TemplateWidth * 0.12069
+                Y: =9
+                ZIndex: =13
+
+            lblYFilaMon As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.Currency
+                Width: =Parent.TemplateWidth * 0.07759
+                X: =Parent.TemplateWidth * 0.2069
+                Y: =9
+                ZIndex: =14
+
+            lblYFilaEf As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =Text(ThisItem.CashAmount, FmtMoney)
+                Width: =Parent.TemplateWidth * 0.11207
+                X: =Parent.TemplateWidth * 0.28448
+                Y: =9
+                ZIndex: =15
+
+            lblYFilaChq As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =Text(ThisItem.BACLocalCheckAmount + ThisItem.OtherLocalCheckAmount, FmtMoney)
+                Width: =Parent.TemplateWidth * 0.11207
+                X: =Parent.TemplateWidth * 0.39655
+                Y: =9
+                ZIndex: =16
+
+            lblYFilaTotal As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =22
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =Text(ThisItem.Total, FmtMoney)
+                Width: =Parent.TemplateWidth * 0.10345
+                X: =Parent.TemplateWidth * 0.50862
+                Y: =9
+                ZIndex: =17
+
+            lblYFilaRecuento As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =If(IsBlank(ThisItem.RelatedRecountedDeposit), ThemeInk3, ThemeAccent)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =22
+                OnSelect: =If(!IsBlank(ThisItem.RelatedRecountedDeposit), Set(gvarTula, LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ThisItem.RelatedRecountedDeposit.BagID.'CH-Tbl-Bags')); Set(gvarPlanilla, gvarTula.ReceptionID); Set(gvarLote, gvarTula.ReceptionID.ReceptionBatch); Navigate(scrTula))
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =If(IsBlank(ThisItem.RelatedRecountedDeposit), "Pendiente", $"Recontado en {ThisItem.RelatedRecountedDeposit.BagID.BagID}")
+                Underline: =!IsBlank(ThisItem.RelatedRecountedDeposit)
+                Width: =Parent.TemplateWidth * 0.22414
+                X: =Parent.TemplateWidth * 0.62069
+                Y: =9
+                ZIndex: =18
+
+        shpDDepsLinea As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =shpDetalleCardCorr.Width * 0.88012
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =540
+            ZIndex: =19
+
+        lblYCol7 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECUENTO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galDDeps.Width * 0.22414
+            X: =galDDeps.X + galDDeps.Width * 0.62069
+            Y: =520
+            ZIndex: =20
+
+        lblYCol6 As label:
+            Align: =Align.Right
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galDDeps.Width * 0.10345
+            X: =galDDeps.X + galDDeps.Width * 0.50862
+            Y: =520
+            ZIndex: =21
+
+        lblYCol5 As label:
+            Align: =Align.Right
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CHEQUES"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galDDeps.Width * 0.11207
+            X: =galDDeps.X + galDDeps.Width * 0.39655
+            Y: =520
+            ZIndex: =22
+
+        lblYCol4 As label:
+            Align: =Align.Right
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="EFECTIVO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galDDeps.Width * 0.11207
+            X: =galDDeps.X + galDDeps.Width * 0.28448
+            Y: =520
+            ZIndex: =23
+
+        lblYCol3 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONEDA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galDDeps.Width * 0.07759
+            X: =galDDeps.X + galDDeps.Width * 0.2069
+            Y: =520
+            ZIndex: =24
+
+        lblYCol2 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="BOLSA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galDDeps.Width * 0.08621
+            X: =galDDeps.X + galDDeps.Width * 0.12069
+            Y: =520
+            ZIndex: =25
+
+        lblYCol1 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="REFERENCIA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galDDeps.Width * 0.12069
+            X: =galDDeps.X
+            Y: =520
+            ZIndex: =26
+
+        lblDDepsTitulo As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="DEPÓSITOS DECLARADOS"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =400
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =496
+            ZIndex: =27
+
+        lblDeclVacio As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="Este correo no generó declaración (fue rechazado por las validaciones)."
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && IsBlank(gvarDecl)
+            Width: =shpDetalleCardCorr.Width * 0.88012
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =420
+            ZIndex: =28
+
+        galBolsas As gallery.galleryVertical:
+            BorderColor: =App.Theme.Colors.Darker40
+            DelayItemLoading: =true
+            Height: =120
+            Items: =colBolsas
+            Layout: =Layout.Vertical
+            LoadingSpinner: =LoadingSpinner.Data
+            TemplatePadding: =0
+            TemplateSize: =40
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =shpDetalleCardCorr.Width * 0.88012
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =364
+            ZIndex: =29
+
+            lblBFilaBolsa As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.BagNumber
+                Width: =Parent.TemplateWidth * 0.10345
+                Wrap: =false
+                Y: =9
+                ZIndex: =1
+
+            lblBFilaDeps As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =CountIf(colDDeps, bolsaNumero = ThisItem.BagNumber)
+                Width: =Parent.TemplateWidth * 0.08621
+                X: =Parent.TemplateWidth * 0.10345
+                Y: =9
+                ZIndex: =6
+
+            lblBFilaNio As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =If(Coalesce(ThisItem.TotalNIO, 0) = 0, "—", Text(ThisItem.TotalNIO, FmtMoney))
+                Width: =Parent.TemplateWidth * 0.12069
+                X: =Parent.TemplateWidth * 0.18966
+                Y: =9
+                ZIndex: =7
+
+            lblBFilaUsd As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =If(Coalesce(ThisItem.TotalUSD, 0) = 0, "—", Text(ThisItem.TotalUSD, FmtMoney))
+                Width: =Parent.TemplateWidth * 0.12069
+                X: =Parent.TemplateWidth * 0.31034
+                Y: =9
+                ZIndex: =8
+
+            lblBFilaEur As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =If(Coalesce(ThisItem.TotalEUR, 0) = 0, "—", Text(ThisItem.TotalEUR, FmtMoney))
+                Width: =Parent.TemplateWidth * 0.10345
+                X: =Parent.TemplateWidth * 0.43103
+                Y: =9
+                ZIndex: =9
+
+            lblBFilaTula As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =If(IsBlank(ThisItem.BagID), ThemeInk3, ThemeAccent)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =If(!IsBlank(ThisItem.BagID), Set(gvarTula, LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ThisItem.BagID.'CH-Tbl-Bags')); Set(gvarPlanilla, gvarTula.ReceptionID); Set(gvarLote, gvarTula.ReceptionID.ReceptionBatch); Navigate(scrTula))
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =If(IsBlank(ThisItem.BagID), "Sin tula vinculada todavía", ThisItem.BagID.BagID)
+                Underline: =!IsBlank(ThisItem.BagID)
+                Width: =Parent.TemplateWidth * 0.18966
+                X: =Parent.TemplateWidth * 0.55172
+                Y: =9
+                ZIndex: =10
+
+            pilBFilaRecuento As button:
+                BorderColor: =ThemeLineSoft
+                BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                Color: =Switch(ThisItem.BagID.BagStatus, 'BagStatus (CH-Tbl-Bags)'.Recontada, ThemeOk, 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero', ThemeWarn, 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa', ThemeInfo, 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeInfo, ThemeInk2)
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                DisplayMode: =DisplayMode.View
+                Fill: =Switch(ThisItem.BagID.BagStatus, 'BagStatus (CH-Tbl-Bags)'.Recontada, ThemeOkSoft, 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero', ThemeWarnSoft, 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa', ThemeInfoSoft, 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeInfoSoft, ThemeSurface2)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =26
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =App.Theme.Colors.Darker10
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =12
+                RadiusBottomRight: =12
+                RadiusTopLeft: =12
+                RadiusTopRight: =12
+                Size: =9
+                Text: =If(IsBlank(ThisItem.BagID), "—", ThisItem.BagID.BagStatus)
+                Width: =Parent.TemplateWidth * 0.2069
+                X: =Parent.TemplateWidth * 0.74138
+                Y: =7
+                ZIndex: =11
+
+        shpBolsasLinea As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =shpDetalleCardCorr.Width * 0.88012
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =362
+            ZIndex: =30
+
+        lblBCol7 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECUENTO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galBolsas.Width * 0.2069
+            X: =galBolsas.X + galBolsas.Width * 0.74138
+            Y: =342
+            ZIndex: =31
+
+        lblBCol6 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TULA VINCULADA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galBolsas.Width * 0.18966
+            X: =galBolsas.X + galBolsas.Width * 0.55172
+            Y: =342
+            ZIndex: =32
+
+        lblBCol5 As label:
+            Align: =Align.Right
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL €"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galBolsas.Width * 0.10345
+            X: =galBolsas.X + galBolsas.Width * 0.43103
+            Y: =342
+            ZIndex: =33
+
+        lblBCol4 As label:
+            Align: =Align.Right
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL US$"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galBolsas.Width * 0.12069
+            X: =galBolsas.X + galBolsas.Width * 0.31034
+            Y: =342
+            ZIndex: =34
+
+        lblBCol3 As label:
+            Align: =Align.Right
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL C$"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galBolsas.Width * 0.12069
+            X: =galBolsas.X + galBolsas.Width * 0.18966
+            Y: =342
+            ZIndex: =35
+
+        lblBCol2 As label:
+            Align: =Align.Right
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DEPÓSITOS"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galBolsas.Width * 0.08621
+            X: =galBolsas.X + galBolsas.Width * 0.10345
+            Y: =342
+            ZIndex: =36
+
+        lblBCol1 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="BOLSA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =galBolsas.Width * 0.10345
+            X: =galBolsas.X
+            Y: =342
+            ZIndex: =37
+
+        lblBolsasTitulo As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="BOLSAS DECLARADAS"
+            Visible: =tabDetalleCorreo.Selected.Value = "Declaración" && !IsBlank(gvarDecl)
+            Width: =400
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =318
+            ZIndex: =38
+
+    PestanaRespuestaAlClienteCorr As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =74
+
+        htmlRespuesta As htmlViewer:
+            BorderColor: =ThemeLineSoft
+            BorderStyle: =BorderStyle.Solid
+            BorderThickness: =1
+            DisabledBorderColor: =RGBA(166, 166, 166, 1)
+            Fill: =ThemeSurface2
+            Font: =App.Theme.Font
+            Height: =shpDetalleCardCorr.Y + shpDetalleCardCorr.Height - 24 - Self.Y
+            HtmlText: =Coalesce(gvarCorreo.ReplyBodyHtml, "<i>Sin respuesta registrada.</i>")
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.5
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =shpDetalleCardCorr.Width * 0.95599
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =370
+            ZIndex: =3
+
+        lblRespV3 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Coalesce(gvarCorreo.ReplySubject, "—")
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =shpDetalleCardCorr.Width * 0.45524
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.37936
+            Y: =336
+            ZIndex: =4
+
+        lblRespK3 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ASUNTO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =shpDetalleCardCorr.Width * 0.45524
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.37936
+            Y: =320
+            ZIndex: =5
+
+        lblRespV2 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =If(IsBlank(gvarCorreo.ReplyDateTime), "—", Text(gvarCorreo.ReplyDateTime, FmtFecha))
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =shpDetalleCardCorr.Width * 0.13657
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.22762
+            Y: =336
+            ZIndex: =6
+
+        lblRespK2 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ENVIADA EL"
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =shpDetalleCardCorr.Width * 0.13657
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.22762
+            Y: =320
+            ZIndex: =7
+
+        lblRespV1 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Switch(gvarCorreo.EmailReplyStatus, 'EmailReplyStatus (CH-Tbl-Received Emails)'.Respondido, $"Enviada · {Text(gvarCorreo.ReplyDateTime, FmtFecha)}", 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido, "Omitida (triage)", "Pendiente de envío")
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =shpDetalleCardCorr.Width * 0.19727
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =336
+            ZIndex: =8
+
+        lblRespK1 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ESTADO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Respuesta al cliente"
+            Width: =shpDetalleCardCorr.Width * 0.19727
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =320
+            ZIndex: =9
+
+    ChequesDeclarCorr As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =75
+
+        lblDChequesVacio As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="La declaración no incluía cheques."
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados" && CountRows(colDCheques) = 0
+            Width: =shpDetalleCardCorr.Width * 0.95599
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =420
+            ZIndex: =10
+
+        galDCheques As gallery.galleryVertical:
+            BorderColor: =App.Theme.Colors.Darker40
+            DelayItemLoading: =true
+            Height: =shpDetalleCardCorr.Y + shpDetalleCardCorr.Height - 22 - Self.Y
+            Items: =colDCheques
+            Layout: =Layout.Vertical
+            LoadingSpinner: =LoadingSpinner.Data
+            TemplatePadding: =0
+            TemplateSize: =40
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =shpDetalleCardCorr.Width * 0.95599
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =342
+            ZIndex: =11
+
+            lblKFilaNo As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.CheckNumber
+                Width: =Parent.TemplateWidth * 0.12698
+                Y: =9
+                ZIndex: =1
+
+            lblKFilaTipo As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.CheckType
+                Width: =Parent.TemplateWidth * 0.12698
+                X: =Parent.TemplateWidth * 0.12698
+                Y: =9
+                ZIndex: =19
+
+            lblKFilaMon As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.CheckCurrency
+                Width: =Parent.TemplateWidth * 0.07143
+                X: =Parent.TemplateWidth * 0.25397
+                Y: =9
+                ZIndex: =20
+
+            lblKFilaMonto As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =Text(ThisItem.CheckAmount, FmtMoney)
+                Width: =Parent.TemplateWidth * 0.11111
+                X: =Parent.TemplateWidth * 0.3254
+                Y: =9
+                ZIndex: =21
+
+            lblKFilaRel As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =If(IsBlank(ThisItem.MatchedCheck), ThemeInk3, ThemeAccent)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =If(!IsBlank(ThisItem.MatchedCheck), Set(gvarTula, LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ThisItem.MatchedCheck.Bag.'CH-Tbl-Bags')); Set(gvarPlanilla, gvarTula.ReceptionID); Set(gvarLote, gvarTula.ReceptionID.ReceptionBatch); Navigate(scrTula))
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =If(IsBlank(ThisItem.MatchedCheck), "No", $"Sí · {ThisItem.MatchedCheck.Bag.BagID}")
+                Underline: =!IsBlank(ThisItem.MatchedCheck)
+                Width: =Parent.TemplateWidth * 0.20635
+                X: =Parent.TemplateWidth * 0.45238
+                Y: =9
+                ZIndex: =22
+
+        shpDChequesLinea As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeLine
+            Height: =1
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =shpDetalleCardCorr.Width * 0.95599
+            X: =shpDetalleCardCorr.X + shpDetalleCardCorr.Width * 0.01517
+            Y: =340
+            ZIndex: =12
+
+        lblKCol5 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RELACIONADO CON RECUENTO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =galDCheques.Width * 0.20635
+            X: =galDCheques.X + galDCheques.Width * 0.45238
+            Y: =320
+            ZIndex: =13
+
+        lblKCol4 As label:
+            Align: =Align.Right
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONTO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =galDCheques.Width * 0.11111
+            X: =galDCheques.X + galDCheques.Width * 0.3254
+            Y: =320
+            ZIndex: =14
+
+        lblKCol3 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONEDA"
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =galDCheques.Width * 0.07143
+            X: =galDCheques.X + galDCheques.Width * 0.25397
+            Y: =320
+            ZIndex: =15
+
+        lblKCol2 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TIPO"
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =galDCheques.Width * 0.12698
+            X: =galDCheques.X + galDCheques.Width * 0.12698
+            Y: =320
+            ZIndex: =16
+
+        lblKCol1 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="NO. CHEQUE"
+            Visible: =tabDetalleCorreo.Selected.Value = "Cheques declarados"
+            Width: =galDCheques.Width * 0.12698
+            X: =galDCheques.X
+            Y: =320
+            ZIndex: =17
+

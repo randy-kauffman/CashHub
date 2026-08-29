@@ -1,0 +1,499 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrBusqueda:
+    Properties:
+      Fill: =ThemeBg
+      OnVisible: |-
+        =UpdateContext({ctxError: ""})
+    Children:
+      - shpRecientesCard:
+          Control: Rectangle@2.3.0
+          Group: LotesRecientesBusq
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =420
+            Width: =1120
+            X: =123
+            Y: =290
+      - shpRecientesLinea:
+          Control: Rectangle@2.3.0
+          Group: LotesRecientesBusq
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Width: =1072
+            X: =147
+            Y: =358
+      - lblRecientesTitulo:
+          Control: Label@2.5.1
+          Group: EncabezadoLotesRecientBusq
+          Properties:
+            Color: =ThemeInk2
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="LOTES DE RECEPCIÓN RECIENTES"
+            Width: =500
+            X: =147
+            Y: =306
+      - lblColEstado:
+          Control: Label@2.5.1
+          Group: EncabezadoLotesRecientBusq
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ESTADO"
+            Width: =170
+            X: =1037
+            Y: =338
+      - lblColUsd:
+          Control: Label@2.5.1
+          Group: EncabezadoLotesRecientBusq
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DECL. US$"
+            Width: =140
+            X: =877
+            Y: =338
+      - lblColNio:
+          Control: Label@2.5.1
+          Group: EncabezadoLotesRecientBusq
+          Properties:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="DECL. C$"
+            Width: =140
+            X: =737
+            Y: =338
+      - lblColTransp:
+          Control: Label@2.5.1
+          Group: EncabezadoLotesRecientBusq
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TRANSPORTADORA"
+            Width: =160
+            X: =587
+            Y: =338
+      - lblColPor:
+          Control: Label@2.5.1
+          Group: EncabezadoLotesRecientBusq
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECIBIDO POR"
+            Width: =180
+            X: =407
+            Y: =338
+      - lblColRecibido:
+          Control: Label@2.5.1
+          Group: EncabezadoLotesRecientBusq
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECIBIDO"
+            X: =257
+            Y: =338
+      - lblColLote:
+          Control: Label@2.5.1
+          Group: EncabezadoLotesRecientBusq
+          Properties:
+            Color: =ThemeInk3
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="LOTE"
+            Width: =110
+            X: =147
+            Y: =338
+      - shpHeaderBusq:
+          Control: Rectangle@2.3.0
+          Group: EncabezadoBusq
+          Properties:
+            Fill: =ThemeSurface
+            Height: =52
+            Width: =1366
+      - shpHeaderLineaBusq:
+          Control: Rectangle@2.3.0
+          Group: EncabezadoBusq
+          Properties:
+            Fill: =ThemeLine
+            Height: =1
+            Width: =1366
+            Y: =52
+      - galRecientes:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            Height: =336
+            Items: =FirstN(Sort('CH-Tbl-ReceptionBatches', 'Created On', SortOrder.Descending), 8)
+            OnSelect: =Set(gvarLote, ThisItem); Set(gvarPlanilla, Blank()); Navigate(scrLote)
+            TemplatePadding: =0
+            TemplateSize: =42
+            Width: =1072
+            X: =147
+            Y: =360
+          Children:
+            - btnFilaAbrir:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Fill: =Color.Transparent
+                  Height: =42
+                  HoverFill: =ThemeSurface2
+                  OnSelect: =Select(Parent)
+                  PressedFill: =ThemeAccentSoft
+                  Text: =
+                  Tooltip: ="Abrir lote " & ThisItem.Name
+                  Width: =1072
+            - shpFilaSep:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =ThemeLineSoft
+                  Height: =1
+                  OnSelect: =Select(Parent)
+                  Width: =1072
+                  Y: =41
+            - lblFilaLote:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  FontWeight: =FontWeight.Semibold
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9.5
+                  Text: =ThisItem.Name
+                  Width: =110
+                  Y: =10
+            - lblFilaFecha:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9.5
+                  Text: =Text(ThisItem.'Created On', FmtFecha)
+                  X: =110
+                  Y: =10
+            - lblFilaPor:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9.5
+                  Text: =ThisItem.'Created By'.'Full Name'
+                  Width: =180
+                  X: =260
+                  Y: =10
+            - lblFilaTransp:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9.5
+                  Text: =ThisItem.Transportadora
+                  X: =440
+                  Y: =10
+            - lblFilaNio:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9.5
+                  Text: =Text(Coalesce(ThisItem.DecNIOTotal, 0), FmtMoney)
+                  Width: =140
+                  X: =590
+                  Y: =10
+            - lblFilaUsd:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  Color: =ThemeInk
+                  Height: =22
+                  OnSelect: =Select(Parent)
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9.5
+                  Text: =Text(Coalesce(ThisItem.DecUSDTotal, 0), FmtMoney)
+                  Width: =140
+                  X: =730
+                  Y: =10
+            - pilFilaEstado:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLineSoft
+                  BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                  Color: =Switch(ThisItem.ReceptionStatus, 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', ThemeWarn, 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido, ThemeInfo, 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda', ThemeOk, 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado, ThemeCrit, ThemeInk2)
+                  DisplayMode: =DisplayMode.View
+                  Fill: =Switch(ThisItem.ReceptionStatus, 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En progreso', ThemeWarnSoft, 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Recibido, ThemeInfoSoft, 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.'En boveda', ThemeOkSoft, 'ReceptionStatus (CH-Tbl-ReceptionBatches)'.Anulado, ThemeCritSoft, ThemeSurface2)
+                  Height: =26
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Size: =9
+                  Text: =ThisItem.ReceptionStatus
+                  Width: =8 + 7*Len(Self.Text)
+                  X: =890
+                  Y: =8
+      - lblErrorBusqueda:
+          Control: Label@2.5.1
+          Group: BuscadorBusq
+          Properties:
+            Color: =ThemeWarn
+            Fill: =ThemeWarnSoft
+            PaddingBottom: =0
+            PaddingLeft: =12
+            PaddingRight: =0
+            PaddingTop: =6
+            Size: =9
+            Text: =ctxError
+            Visible: =!IsBlank(ctxError)
+            Width: =680
+            X: =343
+            Y: =218
+      - btnBuscar:
+          Control: ModernButton@1.0.0
+          Group: BuscadorBusq
+          Properties:
+            BasePaletteColor: =ThemeAccent
+            Height: =40
+            OnSelect: |-
+              =UpdateContext({ctxError: ""});
+              With({_q: Trim(inpBuscar.Text)},
+              If(IsBlank(_q),
+                  UpdateContext({ctxError: "Escribí un identificador para buscar."}),
+                  Switch(drpTipoBusqueda.Selected.Value,
+
+                  "Tracking (correo)",
+                      With({_c: LookUp('CH-Tbl-Received Emails', Name = _q)},
+                      If(IsBlank(_c),
+                          UpdateContext({ctxError: $"Tracking ""{_q}"" no encontrado. Verificá el identificador (formato Email-N)."}),
+                          Set(gvarCorreo, _c); Navigate(scrCorreo))),
+
+                  "Lote de recepción",
+                      With({_rb: LookUp('CH-Tbl-ReceptionBatches', Name = _q)},
+                      If(IsBlank(_rb),
+                          UpdateContext({ctxError: $"Lote ""{_q}"" no encontrado. Verificá el identificador (formato RB-N)."}),
+                          Set(gvarLote, _rb); Set(gvarPlanilla, Blank()); Navigate(scrLote))),
+
+                  "Planilla",
+                      With({_p: LookUp('CH-Tbl-Receptions', ReceiptID = _q)},
+                      If(IsBlank(_p),
+                          UpdateContext({ctxError: $"Planilla ""{_q}"" no encontrada. Verificá el identificador."}),
+                      If(IsBlank(_p.ReceptionBatch),
+                          UpdateContext({ctxError: $"La planilla ""{_q}"" existe pero no está asociada a ningún lote de recepción."}),
+                          Set(gvarLote, _p.ReceptionBatch); Set(gvarPlanilla, _p); Navigate(scrLote)))),
+
+                  "Tula",
+                      With({_t: LookUp('CH-Tbl-Bags', BagID = _q)},
+                      If(IsBlank(_t),
+                          UpdateContext({ctxError: $"Tula ""{_q}"" no encontrada. Verificá el identificador."}),
+                          Set(gvarTula, _t);
+                          Set(gvarPlanilla, _t.ReceptionID);
+                          Set(gvarLote, _t.ReceptionID.ReceptionBatch);
+                          Navigate(scrTula)))
+                  )
+              ))
+            Text: ="Buscar"
+            Width: =114
+            X: =909
+            Y: =170
+      - inpBuscar:
+          Control: ModernTextInput@1.1.1
+          Group: BuscadorBusq
+          Properties:
+            AccessibleLabel: ="Identificador a buscar"
+            Color: =ThemeInk
+            Height: =40
+            Placeholder: |-
+              =Switch(drpTipoBusqueda.Selected.Value, "Tracking (correo)", "Ej.: Email-1042", "Lote de recepción", "Ej.: RB-00012", "Planilla", "Número de planilla (ReceiptID)", "Tula", "Número de tula impreso en la bolsa")
+            Width: =360
+            X: =541
+            Y: =170
+      - drpTipoBusqueda:
+          Control: ModernDropdown@1.0.2
+          Group: BuscadorBusq
+          Properties:
+            AccessibleLabel: ="Tipo de identificador"
+            Color: =ThemeInk
+            Default: |-
+              ={Value: "Tracking (correo)"}
+            Height: =40
+            ItemDisplayText: =ThisItem.Value
+            Items: =["Tracking (correo)", "Lote de recepción", "Planilla", "Tula"]
+            Width: =190
+            X: =343
+            Y: =170
+      - lblHeroSub:
+          Control: Label@2.5.1
+          Group: HeroBusq
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk
+            Height: =24
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.5
+            Text: ="Buscá por tracking del correo, lote de recepción, planilla o tula. Te llevamos directo al nivel que corresponde."
+            Width: =680
+            X: =343
+            Y: =132
+      - lblHeroTitulo:
+          Control: Label@2.5.1
+          Group: HeroBusq
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =17
+            Text: ="¿Qué querés rastrear?"
+            Width: =680
+            X: =343
+            Y: =92
+      - shpMarcaBusq:
+          Control: Classic/Button@2.2.0
+          Group: EncabezadoBusq
+          Properties:
+            BorderThickness: =0
+            Color: =Color.White
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccent
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =9
+            Text: ="CH"
+            Width: =30
+            X: =24
+            Y: =11
+      - lblMarcaBusq:
+          Control: Label@2.5.1
+          Group: EncabezadoBusq
+          Properties:
+            Color: =ThemeInk
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="CashHub"
+            Width: =90
+            X: =64
+            Y: =11
+      - lblMarcaSubBusq:
+          Control: Label@2.5.1
+          Group: EncabezadoBusq
+          Properties:
+            Color: =ThemeInk3
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="· Tracking de Depósitos"
+            Width: =330
+            X: =154
+            Y: =11

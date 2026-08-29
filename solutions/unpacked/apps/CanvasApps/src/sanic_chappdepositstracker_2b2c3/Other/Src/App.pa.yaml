@@ -8,4 +8,37 @@
 # ************************************************************************************************
 App:
   Properties:
+    Formulas: |-
+      =// ===== Paleta (rojo BAC, prototipo v3) =====
+      ThemeAccent = ColorValue("#C8102E");
+      ThemeAccentSoft = ColorValue("#FBEBED");
+      ThemeBg = ColorValue("#F6F5F4");
+      ThemeSurface = Color.White;
+      ThemeSurface2 = ColorValue("#FAF8F7");
+      ThemeInk = ColorValue("#201C1D");
+      ThemeInk2 = ColorValue("#66595C");
+      ThemeInk3 = ColorValue("#948A8C");
+      ThemeLine = ColorValue("#E2DCDD");
+      ThemeLineSoft = ColorValue("#EDE8E9");
+      ThemeOk = ColorValue("#0E7A3C");   ThemeOkSoft = ColorValue("#E2F2E8");
+      ThemeWarn = ColorValue("#96610A"); ThemeWarnSoft = ColorValue("#F7EDD8");
+      ThemeCrit = ColorValue("#A4262C"); ThemeCritSoft = ColorValue("#F9E6E4");
+      ThemeInfo = ColorValue("#23557D"); ThemeInfoSoft = ColorValue("#E4EEF6");
+
+      // ===== Formato =====
+      FmtMoney = "#,##0.00";
+      FmtFecha = "dd/mm/yyyy HH:mm";   // HH = 24 horas; hh seria 12h sin AM/PM
+
+      // ===== Símbolos de moneda =====
+      SimboloNIO = "C$"; SimboloUSD = "US$"; SimboloEUR = "€";
+    OnError: |-
+      =Trace(
+          $"[Tracker] {FirstError.Message} | Kind: {FirstError.Kind} | Origen: {FirstError.Source} | Obs: {FirstError.Observed}",
+          TraceSeverity.Error
+      );
+      Notify(
+          "Ocurrió un error inesperado. El detalle quedó registrado para soporte: "&$"[Tracker] {FirstError.Message} | Kind: {FirstError.Kind} | Origen: {FirstError.Source} | Obs: {FirstError.Observed}",
+          NotificationType.Error
+      );
+    StartScreen: =scrBusqueda
     Theme: =PowerAppsTheme

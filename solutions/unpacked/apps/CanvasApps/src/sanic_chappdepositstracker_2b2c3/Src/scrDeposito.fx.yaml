@@ -1,0 +1,1322 @@
+scrDeposito As screen:
+    Fill: =ThemeBg
+    LoadingSpinnerColor: =App.Theme.Colors.Primary
+
+    EncabezadoDep As group:
+        Height: =5
+        minimumHeight: =5
+        minimumWidth: =5
+        Visible: =true
+        Width: =5
+        X: =0
+        Y: =0
+        ZIndex: =1
+
+        shpHeaderDep As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeSurface
+            Height: =52
+            Width: =App.Width
+            ZIndex: =53
+
+        shpHeaderLineaDep As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeLine
+            Height: =1
+            Width: =App.Width
+            Y: =52
+            ZIndex: =54
+
+        shpMarcaDep As button:
+            BorderColor: =App.Theme.Colors.Primary
+            BorderThickness: =0
+            Color: =Color.White
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccent
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =App.Theme.Colors.Darker10
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =9
+            Text: ="CH"
+            Width: =30
+            X: =24
+            Y: =11
+            ZIndex: =55
+
+        lblMarcaDep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="CashHub"
+            Width: =90
+            X: =64
+            Y: =11
+            ZIndex: =56
+
+        lblMarcaSubDep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: ="· Tracking de Depósitos"
+            Width: =330
+            X: =154
+            Y: =11
+            ZIndex: =57
+
+    BreadcrumbsDep As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =18
+
+        lblCrumbActualDep As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            Size: =9
+            Text: =$"Depósito {Coalesce(gvarDep.decRef, gvarDep.Name)}"
+            Width: =220
+            X: =480
+            Y: =64
+            ZIndex: =44
+
+        lblCrumbSep4Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =466
+            Y: =64
+            ZIndex: =45
+
+        lblCrumbTulaDep As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeAccent
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            OnSelect: =Navigate(scrTula)
+            Size: =9
+            Text: =$"Tula {gvarTula.BagID}"
+            Width: =120
+            X: =346
+            Y: =64
+            ZIndex: =46
+
+        lblCrumbSep3Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =332
+            Y: =64
+            ZIndex: =47
+
+        lblCrumbPlanillaDep As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeAccent
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            OnSelect: =Navigate(scrLote)
+            Size: =9
+            Text: =gvarPlanilla.ReceiptID
+            Width: =100
+            X: =232
+            Y: =64
+            ZIndex: =48
+
+        lblCrumbSep2Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =218
+            Y: =64
+            ZIndex: =49
+
+        lblCrumbLoteDep As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeAccent
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            OnSelect: =Navigate(scrLote)
+            Size: =9
+            Text: =$"Lote {gvarLote.Name}"
+            Width: =110
+            X: =108
+            Y: =64
+            ZIndex: =50
+
+        lblCrumbSep1Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            Size: =9
+            Text: =">"
+            Width: =14
+            X: =94
+            Y: =64
+            ZIndex: =51
+
+        lblCrumbBusquedaDep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeAccent
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =22
+            OnSelect: =Navigate(scrBusqueda)
+            Size: =9
+            Text: ="Búsqueda"
+            Width: =70
+            X: =24
+            Y: =64
+            ZIndex: =52
+
+    FichaDep As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =41
+
+        shpFichaCardDep As rectangle:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =150
+            Width: =App.Width - 48
+            X: =24
+            Y: =94
+            ZIndex: =25
+
+        lblDepTitulo As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =15
+            Text: =$"Depósito {Coalesce(gvarDep.decRef, gvarDep.Name)}"
+            Width: =shpFichaCardDep.Width * 0.31867
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.01517
+            Y: =108
+            ZIndex: =26
+
+        pilDepDif As button:
+            BorderColor: =ThemeLineSoft
+            BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+            Color: |+
+                =With({
+                    _dif: (gvarDep.CashAmount + gvarDep.BACLocalCheckAmount + gvarDep.OtherLocaCheckAmount)
+                        - (gvarDep.decEf + gvarDep.decBac + gvarDep.decOtr)},
+                If(Abs(_dif) < 0.005, ThemeOk, ThemeCrit))
+                
+                
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            DisplayMode: =DisplayMode.View
+            Fill: |+
+                =With({
+                    _dif: (gvarDep.CashAmount + gvarDep.BACLocalCheckAmount + gvarDep.OtherLocaCheckAmount)
+                        - (gvarDep.decEf + gvarDep.decBac + gvarDep.decOtr)},
+                If(Abs(_dif) < 0.005, ThemeOkSoft, ThemeCritSoft))
+                
+                
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =App.Theme.Colors.Darker10
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =9
+            Text: |-
+                =// pilDepDif.Text — la diferencia del depósito, CON símbolo de moneda
+                With({
+                    _dif: (gvarDep.CashAmount + gvarDep.BACLocalCheckAmount + gvarDep.OtherLocaCheckAmount)
+                        - (gvarDep.decEf + gvarDep.decBac + gvarDep.decOtr),
+                    _sim: Switch(gvarDep.Currency,
+                        'CH-Ch-Currency'.NIO, SimboloNIO,
+                        'CH-Ch-Currency'.USD, SimboloUSD,
+                        SimboloEUR)},
+                If(Abs(_dif) < 0.005, "Sin diferencia",
+                   If(_dif < 0, $"Faltante {_sim} {Text(Abs(_dif), FmtMoney)}",
+                      $"Sobrante {_sim} {Text(_dif, FmtMoney)}")))
+            Width: =shpFichaCardDep.Width * 0.19727
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.33839
+            Y: =110
+            ZIndex: =27
+
+        lblFichaV8Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarDep.decEf + gvarDep.decBac + gvarDep.decOtr, FmtMoney)
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.44765
+            Y: =210
+            ZIndex: =28
+
+        lblFichaK8Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL DECLARADO"
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.44765
+            Y: =194
+            ZIndex: =29
+
+        lblFichaV7Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarDep.Total, FmtMoney)
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.30349
+            Y: =210
+            ZIndex: =30
+
+        lblFichaK7Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TOTAL RECONTADO"
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.30349
+            Y: =194
+            ZIndex: =31
+
+        lblFichaV6Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarDep.BACLocalCheckAmount + gvarDep.OtherLocaCheckAmount, FmtMoney)
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.15933
+            Y: =210
+            ZIndex: =32
+
+        lblFichaK6Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECONTADO CHEQUES"
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.15933
+            Y: =194
+            ZIndex: =33
+
+        lblFichaV5Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarDep.CashAmount, FmtMoney)
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.01517
+            Y: =210
+            ZIndex: =34
+
+        lblFichaK5Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="RECONTADO EFECTIVO"
+            Width: =shpFichaCardDep.Width * 0.12898
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.01517
+            Y: =194
+            ZIndex: =35
+
+        lblFichaV4Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Text(gvarDep.'Created On', FmtFecha)
+            Width: =shpFichaCardDep.Width * 0.13657
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.43991
+            Y: =164
+            ZIndex: =36
+
+        lblFichaK4Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="FECHA DE RECUENTO"
+            Width: =shpFichaCardDep.Width * 0.13657
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.43991
+            Y: =148
+            ZIndex: =37
+
+        lblFichaV3Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =$"{gvarDep.Currency} · {Switch(gvarDep.Currency, 'CH-Ch-Currency'.NIO, SimboloNIO, 'CH-Ch-Currency'.USD, SimboloUSD, SimboloEUR)}"
+            Width: =shpFichaCardDep.Width * 0.07587
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.34901
+            Y: =164
+            ZIndex: =38
+
+        lblFichaK3Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONEDA"
+            Width: =shpFichaCardDep.Width * 0.07587
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.34901
+            Y: =148
+            ZIndex: =39
+
+        lblFichaV2Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =Coalesce(gvarTula.ReceptionID.RemitentClient.Name, gvarTula.ReceptionID.RemitentName)
+            Width: =shpFichaCardDep.Width * 0.19727
+            Wrap: =false
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.13657
+            Y: =164
+            ZIndex: =40
+
+        lblFichaK2Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CLIENTE"
+            Width: =shpFichaCardDep.Width * 0.19727
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.13657
+            Y: =148
+            ZIndex: =41
+
+        lblFichaV1Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeAccent
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            OnSelect: =Navigate(scrTula)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: =gvarTula.BagID
+            Underline: =true
+            Width: =shpFichaCardDep.Width * 0.10622
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.01517
+            Y: =164
+            ZIndex: =42
+
+        lblFichaK1Dep As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TULA"
+            Width: =shpFichaCardDep.Width * 0.10622
+            X: =shpFichaCardDep.X + shpFichaCardDep.Width * 0.01517
+            Y: =148
+            ZIndex: =43
+
+    TransacGeneradasDep As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =56
+
+        shpTxsCard As rectangle:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =(App.Height - Self.Y - 36) * 0.58824
+            Width: =App.Width - 48
+            X: =24
+            Y: =256
+            ZIndex: =11
+
+        lblTxsNota As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.5
+            Text: |-
+                ="Un depósito puede generar más de una transacción: el monto recontado viaja como Deposito y las diferencias como Faltante o Sobrante. Si la tula llegó sin declaración, la transacción nace como Sin declaracion."
+            Width: =shpTxsCard.Width * 0.96966
+            X: =shpTxsCard.X + shpTxsCard.Width * 0.01517
+            Y: =shpTxsCard.Y + shpTxsCard.Height - 38
+            ZIndex: =12
+
+        lblTxsVacio As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="Todavía no se han generado transacciones para este depósito."
+            Visible: =galTxs.AllItemsCount = 0
+            Width: =shpTxsCard.Width * 0.96966
+            X: =shpTxsCard.X + shpTxsCard.Width * 0.01517
+            Y: =380
+            ZIndex: =13
+
+        galTxs As gallery.galleryVertical:
+            BorderColor: =App.Theme.Colors.Darker40
+            DelayItemLoading: =true
+            Height: =lblTxsNota.Y - 8 - Self.Y
+            Items: =Filter('CH-Tbl-Transactions', RelatedDepositRecounting.'CH-Tbl-DepositsRecounting' = gvarDep.'CH-Tbl-DepositsRecounting')
+            Layout: =Layout.Vertical
+            LoadingSpinner: =LoadingSpinner.Data
+            TemplatePadding: =0
+            TemplateSize: =42
+            Width: =shpTxsCard.Width * 0.96966
+            X: =shpTxsCard.X + shpTxsCard.Width * 0.01517
+            Y: =320
+            ZIndex: =14
+
+            shpXFilaSep As rectangle:
+                BorderColor: =App.Theme.Colors.Darker40
+                Fill: =ThemeLineSoft
+                Height: =1
+                OnSelect: =Select(Parent)
+                Width: =Parent.TemplateWidth
+                Y: =41
+                ZIndex: =2
+
+            lblXFilaId As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.Name
+                Width: =Parent.TemplateWidth * 0.10172
+                Y: =10
+                ZIndex: =3
+
+            pilXFilaTipo As button:
+                BorderColor: =ThemeLineSoft
+                BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                Color: =Switch(ThisItem.TransactionType, 'TransactionType (CH-Tbl-Transactions)'.Deposito, ThemeInfo, 'TransactionType (CH-Tbl-Transactions)'.Faltante, ThemeCrit, 'TransactionType (CH-Tbl-Transactions)'.Sobrante, ThemeWarn, ThemeInk2)
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                DisplayMode: =DisplayMode.View
+                Fill: =Switch(ThisItem.TransactionType, 'TransactionType (CH-Tbl-Transactions)'.Deposito, ThemeInfoSoft, 'TransactionType (CH-Tbl-Transactions)'.Faltante, ThemeCritSoft, 'TransactionType (CH-Tbl-Transactions)'.Sobrante, ThemeWarnSoft, ThemeSurface2)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =26
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =App.Theme.Colors.Darker10
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =12
+                RadiusBottomRight: =12
+                RadiusTopLeft: =12
+                RadiusTopRight: =12
+                Size: =9
+                Text: =ThisItem.TransactionType
+                Width: =Parent.TemplateWidth * 0.10172
+                X: =Parent.TemplateWidth * 0.10172
+                Y: =8
+                ZIndex: =4
+
+            lblXFilaMonto As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =Text(ThisItem.Total, FmtMoney)
+                Width: =Parent.TemplateWidth * 0.08607
+                X: =Parent.TemplateWidth * 0.21127
+                Y: =10
+                ZIndex: =5
+
+            lblXFilaLote As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.'Transaction Batch'.Name
+                Width: =Parent.TemplateWidth * 0.0939
+                X: =Parent.TemplateWidth * 0.30516
+                Y: =10
+                ZIndex: =6
+
+            lblXFilaGen As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =Coalesce(ThisItem.'Transaction Batch'.'Generado por'.'Full Name', "—")
+                Width: =Parent.TemplateWidth * 0.14085
+                X: =Parent.TemplateWidth * 0.39906
+                Y: =10
+                ZIndex: =7
+
+            lblXFilaProc As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.TransactionProcessingType
+                Width: =Parent.TemplateWidth * 0.0626
+                X: =Parent.TemplateWidth * 0.53991
+                Y: =10
+                ZIndex: =8
+
+            pilXFilaCore As button:
+                BorderColor: =ThemeLineSoft
+                BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                Color: =If(ThisItem.BatchStatus = 159460003, ThemeOk, ThemeWarn)
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                DisplayMode: =DisplayMode.View
+                Fill: =If(ThisItem.BatchStatus = 159460003, ThemeOkSoft, ThemeWarnSoft)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =26
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =App.Theme.Colors.Darker10
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =12
+                RadiusBottomRight: =12
+                RadiusTopLeft: =12
+                RadiusTopRight: =12
+                Size: =9
+                Text: =If(ThisItem.BatchStatus = 159460003, $"Acreditada · {Text(ThisItem.'Transaction Batch'.'Aplicado el', FmtFecha)}", "Pendiente")
+                Width: =Parent.TemplateWidth * 0.17997
+                X: =Parent.TemplateWidth * 0.60251
+                Y: =8
+                ZIndex: =9
+
+            lblXFilaRef As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =Coalesce(ThisItem.TransactionReference, "—")
+                Width: =Parent.TemplateWidth * 0.18779
+                X: =Parent.TemplateWidth * 0.79028
+                Y: =10
+                ZIndex: =10
+
+        shpTxsLinea As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeLine
+            Height: =1
+            Width: =shpTxsCard.Width * 0.96966
+            X: =shpTxsCard.X + shpTxsCard.Width * 0.01517
+            Y: =318
+            ZIndex: =15
+
+        lblXCol8 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="REFERENCIA"
+            Width: =galTxs.Width * 0.18779
+            X: =galTxs.X + galTxs.Width * 0.79028
+            Y: =298
+            ZIndex: =16
+
+        lblXCol7 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="CORE BANCARIO"
+            Width: =galTxs.Width * 0.18779
+            X: =galTxs.X + galTxs.Width * 0.60251
+            Y: =298
+            ZIndex: =17
+
+        lblXCol6 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="PROC."
+            Width: =galTxs.Width * 0.0626
+            X: =galTxs.X + galTxs.Width * 0.53991
+            Y: =298
+            ZIndex: =18
+
+        lblXCol5 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="GENERADO POR"
+            Width: =galTxs.Width * 0.14085
+            X: =galTxs.X + galTxs.Width * 0.39906
+            Y: =298
+            ZIndex: =19
+
+        lblXCol4 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="LOTE DIGITACIÓN"
+            Width: =galTxs.Width * 0.0939
+            X: =galTxs.X + galTxs.Width * 0.30516
+            Y: =298
+            ZIndex: =20
+
+        lblXCol3 As label:
+            Align: =Align.Right
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONTO"
+            Width: =galTxs.Width * 0.08607
+            X: =galTxs.X + galTxs.Width * 0.21127
+            Y: =298
+            ZIndex: =21
+
+        lblXCol2 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TIPO"
+            Width: =galTxs.Width * 0.10955
+            X: =galTxs.X + galTxs.Width * 0.10172
+            Y: =298
+            ZIndex: =22
+
+        lblXCol1 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TRANSACCIÓN"
+            Width: =galTxs.Width * 0.10172
+            X: =galTxs.X
+            Y: =298
+            ZIndex: =23
+
+        lblTxsTitulo As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="TRANSACCIONES GENERADAS POR EL DEPÓSITO"
+            Width: =600
+            X: =shpTxsCard.X + shpTxsCard.Width * 0.01517
+            Y: =270
+            ZIndex: =24
+
+    ChequesDep As group:
+        Height: =5
+        Width: =5
+        X: =40
+        Y: =40
+        ZIndex: =62
+
+        shpChequesCard As rectangle:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface
+            Height: =App.Height - Self.Y - 24
+            Width: =App.Width - 48
+            X: =24
+            Y: =shpTxsCard.Y + shpTxsCard.Height + 12
+            ZIndex: =1
+
+        lblChequesDepVacio As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10
+            Text: ="Este depósito no incluye cheques."
+            Visible: =galChequesDep.AllItemsCount = 0
+            Width: =shpChequesCard.Width * 0.96966
+            X: =shpChequesCard.X + shpChequesCard.Width * 0.01517
+            Y: =shpChequesCard.Y + 112
+            ZIndex: =2
+
+        galChequesDep As gallery.galleryVertical:
+            '#CopilotOverlayLabel': ="Filtered"
+            BorderColor: =App.Theme.Colors.Darker40
+            DelayItemLoading: =true
+            Height: =shpChequesCard.Y + shpChequesCard.Height - 12 - Self.Y
+            Items: |-
+                =Filter(colChequesTula,
+                    RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting' = gvarDep.'CH-Tbl-DepositsRecounting')
+            Layout: =Layout.Vertical
+            LoadingSpinner: =LoadingSpinner.Data
+            TemplatePadding: =0
+            TemplateSize: =40
+            Width: =shpChequesCard.Width * 0.96966
+            X: =shpChequesCard.X + shpChequesCard.Width * 0.01517
+            Y: =shpChequesCard.Y + 64
+            ZIndex: =3
+
+            pilQFilaEstado As button:
+                BorderColor: =ThemeLineSoft
+                BorderThickness: =If(Self.Fill = ThemeSurface2, 1, 0)
+                Color: |-
+                    =Switch(
+                        ThisItem.CheckStatus,
+                        'CheckStatus (CH-Tbl-Checks)'.Recontado,
+                        ThemeInfo,
+                        'CheckStatus (CH-Tbl-Checks)'.Digitado,
+                        ThemeOk,
+                        'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',
+                        ThemeWarn,
+                        'CheckStatus (CH-Tbl-Checks)'.Recibido,
+                        ThemeInfo,
+                        'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
+                        ThemeCrit,
+                        'CheckStatus (CH-Tbl-Checks)'.Rebotado,
+                        ThemeCrit,
+                        ThemeInk2
+                    )
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                DisplayMode: =DisplayMode.View
+                Fill: =Switch(ThisItem.CheckStatus, 'CheckStatus (CH-Tbl-Checks)'.Recontado, ThemeInfoSoft, 'CheckStatus (CH-Tbl-Checks)'.Digitado, ThemeOkSoft, 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion', ThemeWarnSoft, 'CheckStatus (CH-Tbl-Checks)'.Recibido, ThemeInfoSoft, 'CheckStatus (CH-Tbl-Checks)'.'No Recibido', ThemeCritSoft, 'CheckStatus (CH-Tbl-Checks)'.Rebotado, ThemeCritSoft, ThemeSurface2)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =26
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =App.Theme.Colors.Darker10
+                OnSelect: =
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                RadiusBottomLeft: =12
+                RadiusBottomRight: =12
+                RadiusTopLeft: =12
+                RadiusTopRight: =12
+                Size: =9
+                Text: =ThisItem.CheckStatus
+                Width: =Parent.TemplateWidth * 0.16432
+                X: =Parent.TemplateWidth * 0.44601
+                Y: =7
+                ZIndex: =1
+
+            lblQFilaMonto As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =Text(ThisItem.CheckAmount, FmtMoney)
+                Width: =Parent.TemplateWidth * 0.10955
+                X: =Parent.TemplateWidth * 0.32081
+                Y: =9
+                ZIndex: =2
+
+            lblQFilaMon As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.CheckCurrency
+                Width: =Parent.TemplateWidth * 0.07042
+                X: =Parent.TemplateWidth * 0.25039
+                Y: =9
+                ZIndex: =3
+
+            lblQFilaTipo As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.CheckTypes
+                Width: =Parent.TemplateWidth * 0.1252
+                X: =Parent.TemplateWidth * 0.1252
+                Y: =9
+                ZIndex: =4
+
+            lblQFilaNo As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =App.Theme.Font
+                FontWeight: =FontWeight.Semibold
+                Height: =22
+                OnSelect: =Select(Parent)
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: =ThisItem.CheckNumber
+                Width: =Parent.TemplateWidth * 0.1252
+                Y: =9
+                ZIndex: =5
+
+        shpQLineaDep As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =ThemeLine
+            Height: =1
+            Width: =shpChequesCard.Width * 0.96966
+            X: =shpChequesCard.X + shpChequesCard.Width * 0.01517
+            Y: =shpChequesCard.Y + 62
+            ZIndex: =4
+
+        lblQCol5 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="ESTADO"
+            Width: =galChequesDep.Width * 0.17214
+            X: =galChequesDep.X + galChequesDep.Width * 0.44601
+            Y: =shpChequesCard.Y + 42
+            ZIndex: =5
+
+        lblQCol4 As label:
+            Align: =Align.Right
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONTO"
+            Width: =galChequesDep.Width * 0.10955
+            X: =galChequesDep.X + galChequesDep.Width * 0.32081
+            Y: =shpChequesCard.Y + 42
+            ZIndex: =6
+
+        lblQCol3 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="MONEDA"
+            Width: =galChequesDep.Width * 0.07042
+            X: =galChequesDep.X + galChequesDep.Width * 0.25039
+            Y: =shpChequesCard.Y + 42
+            ZIndex: =7
+
+        lblQCol2 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="TIPO"
+            Width: =galChequesDep.Width * 0.1252
+            X: =galChequesDep.X + galChequesDep.Width * 0.1252
+            Y: =shpChequesCard.Y + 42
+            ZIndex: =8
+
+        lblQCol1 As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =22
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8
+            Text: ="NO. CHEQUE"
+            Width: =galChequesDep.Width * 0.1252
+            X: =galChequesDep.X
+            Y: =shpChequesCard.Y + 42
+            ZIndex: =9
+
+        lblChequesTitulo As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =20
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="CHEQUES DEL DEPÓSITO"
+            Width: =400
+            X: =shpChequesCard.X + shpChequesCard.Width * 0.01517
+            Y: =shpChequesCard.Y + 14
+            ZIndex: =10
+
