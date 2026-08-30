@@ -1058,6 +1058,16 @@ scrConteo As screen:
             );
             
             // ---- Recarga: Q1 + Q5, las mismas dos consultas delegables del paso 4 de btnEnlazarCon ----
+            // El declarado tambien se recarga: al guardar se escribe SU punta del enlace
+            // (RelatedRecountedDeposit) y sin esto la pildora seguia diciendo "Sin
+            // enlazar" con el dato ya correcto en la base.
+            ClearCollect(
+                colDepDeclaradosCon,
+                SortByColumns(
+                    Filter('CH-Tbl-DeclaredDeposits', DeclaredBag.'CH-Tbl-DeclaredBags' = gvarDeclaredBag.'CH-Tbl-DeclaredBags'),
+                    "createdon", SortOrder.Ascending
+                )
+            );
             ClearCollect(
                 colChecksTulaCon,
                 Filter('CH-Tbl-Checks', Bag.'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags')
@@ -1445,10 +1455,22 @@ scrConteo As screen:
             // Mientras el deposito en curso NO este enlazado, lo declarado se hereda de
             // la transaccion que se elija: cuenta, monto y CHEQUES. Por eso la lista se
             // rehace aca. Si ya esta enlazado no se toca nada — para comparar contra otra
-            // transaccion primero hay que desenlazar.
+            // transaccion primero hay que desenlazar, y se avisa en vez de no hacer nada:
+            // un click que no produce ningun efecto se lee como que la app se colgo.
             If(
-                IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits') && ctxHayDepositoCon,
-                Select(btnCargarChequesCon)
+                !ctxHayDepositoCon,
+                false,
+            
+                IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                Select(btnCargarChequesCon),
+            
+                ThisItem.'CH-Tbl-DeclaredDeposits' <> ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits',
+                Notify(
+                    "El depósito recontado ya está enlazado a la cuenta " &
+                    Text(ctxDepDecCursoCon.AccountNumber) &
+                    ". Desenlácelo para compararlo con otra transacción declarada.",
+                    NotificationType.Warning
+                )
             )
         TemplatePadding: =0
         TemplateSize: =34
@@ -1595,23 +1617,56 @@ scrConteo As screen:
         pilEnlaceDepDecCon As button:
             BorderColor: =ThemeLine
             BorderThickness: =If(Self.Fill = ThemeLineSoft, 1, 0)
-            Color: =If(IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), ThemeInk3, ThemeOk)
-            Fill: =If(IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), ThemeLineSoft, ThemeOkSoft)
+            Color: |-
+                =If(
+                    IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), ThemeInk3,
+                    ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting' =
+                    ctxDepositoCon.'CH-Tbl-DepositsRecounting', ThemeAccent,
+                    ThemeOk
+                )
+            Fill: |-
+                =If(
+                    IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), ThemeLineSoft,
+                    ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting' =
+                    ctxDepositoCon.'CH-Tbl-DepositsRecounting', ThemeAccentSoft,
+                    ThemeOkSoft
+                )
             FontWeight: =FontWeight.Semibold
             Height: =20
-            HoverFill: =If(IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), ThemeLineSoft, ThemeOkSoft)
+            HoverFill: |-
+                =If(
+                    IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), ThemeLineSoft,
+                    ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting' =
+                    ctxDepositoCon.'CH-Tbl-DepositsRecounting', ThemeAccentSoft,
+                    ThemeOkSoft
+                )
             OnSelect: =Select(Parent)
             PaddingBottom: =0
             PaddingLeft: =0
             PaddingRight: =0
             PaddingTop: =0
-            PressedFill: =If(IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), ThemeLineSoft, ThemeOkSoft)
+            PressedFill: |-
+                =If(
+                    IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), ThemeLineSoft,
+                    ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting' =
+                    ctxDepositoCon.'CH-Tbl-DepositsRecounting', ThemeAccentSoft,
+                    ThemeOkSoft
+                )
             RadiusBottomLeft: =12
             RadiusBottomRight: =12
             RadiusTopLeft: =12
             RadiusTopRight: =12
             Size: =7.88
-            Text: =If(IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), "Sin enlazar", "Enlazado")
+            Text: |-
+                =// TRES estados, no dos: hace falta distinguir "enlazado a ESTE deposito"
+                // de "enlazado a otro". Con dos, el cajero no sabe cual de los declarados
+                // es el que tiene abierto.
+                If(
+                    IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), "Sin enlazar",
+                    ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting' =
+                    ctxDepositoCon.'CH-Tbl-DepositsRecounting', "Este depósito",
+                    "Enlazado"
+                )
             Width: =14 + 6.2 * Len(Self.Text)
             X: =Parent.TemplateWidth * 0.89
             Y: =7
