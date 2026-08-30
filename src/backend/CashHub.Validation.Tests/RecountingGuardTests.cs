@@ -777,6 +777,95 @@ namespace CashHub.Validation.Tests
             Assert.False(EvaluateBagReturn(true, bagStatus).IsAllowed);
         }
 
+        // =====================================================================
+        // 4-quater. La tula tiene DUEÑO, no solo estado (el resto de S-5)
+        //
+        //   IsWriteAllowed mira UNICAMENTE el estado de la tula. Alcanzaba
+        //   mientras "Asignada a cajero" fuera un punto sin retorno, pero con la
+        //   devolucion dejo de serlo, y se abrio esta secuencia:
+        //
+        //     1. el cajero A esta recontando la tula X
+        //     2. el supervisor la devuelve       -> X queda sin sesion
+        //     3. el cajero B la escanea          -> X vuelve a "Asignada a cajero"
+        //     4. el cajero A, que sigue en la pantalla, guarda
+        //
+        //   En el paso 4 el estado ES "Asignada a cajero", asi que el guard
+        //   autorizaba: A escribia depositos sobre la tula de B, y podia cerrarla
+        //   generando los asientos contables. COMPROBADO contra el entorno antes
+        //   de escribir esto.
+        //
+        //   El estado responde "¿esta sobre una mesa?". Falta "¿sobre CUAL?".
+        // =====================================================================
+
+        [Fact]
+        public void Duenio_ElCajeroDeLaSesion_Escribe()
+        {
+            var cajero = Guid.NewGuid();
+            var result = IsWriteOwner(true, cajero, cajero);
+            Assert.True(result.IsAllowed);
+            Assert.Null(result.Reason);
+        }
+
+        [Fact]
+        public void Duenio_OtroCajero_SeBloquea()
+        {
+            // El caso de la secuencia de arriba, que es el que motiva la regla.
+            var result = IsWriteOwner(true, Guid.NewGuid(), Guid.NewGuid());
+            Assert.False(result.IsAllowed);
+            Assert.Contains("otro cajero", result.Reason, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void Duenio_SesionNoResoluble_SeBloquea()
+        {
+            // Fail-closed, igual que en todo el resto del guard: si no se puede
+            // saber de quien es la tula, no se escribe.
+            Assert.False(IsWriteOwner(false, null, Guid.NewGuid()).IsAllowed);
+        }
+
+        [Fact]
+        public void Duenio_SesionSinCajero_SeBloquea()
+        {
+            // Una sesion sin cajero no es de nadie, y "de nadie" no es "de todos".
+            Assert.False(IsWriteOwner(true, null, Guid.NewGuid()).IsAllowed);
+        }
+
+        [Fact]
+        public void Duenio_ActorVacio_SeBloquea()
+        {
+            var cajero = Guid.NewGuid();
+            Assert.False(IsWriteOwner(true, cajero, Guid.Empty).IsAllowed);
+        }
+
+        [Fact]
+        public void Duenio_ServicePrincipal_Exento()
+        {
+            // El SP siembra y despliega; no es un cajero. La regla existe para que un
+            // cajero no pise la tula de otro, y quien tiene las credenciales del SP ya
+            // puede todo por Web API: exigirle que "sea el cajero" no suma seguridad y
+            // rompe la tooling de datos.
+            Assert.True(IsWriteOwner(true, Guid.NewGuid(), Guid.NewGuid(), true).IsAllowed);
+            Assert.True(IsWriteOwner(false, null, Guid.Empty, true).IsAllowed);
+        }
+
+        [Fact]
+        public void Duenio_ServicePrincipal_NoLoEximeDelControlDeEstado()
+        {
+            // Ni el SP carga plata en una tula que no esta sobre una mesa.
+            Assert.False(IsWriteAllowed(false, true, ReceptionGuard.BagAlmacenadaEnBoveda).IsAllowed);
+            Assert.False(IsWriteAllowed(false, true, ReceptionGuard.BagDevueltaParaReasignacion).IsAllowed);
+        }
+
+        [Fact]
+        public void Duenio_NoReemplazaAlControlDeEstado()
+        {
+            // Las dos reglas son independientes y se piden LAS DOS: ser el dueño no
+            // habilita a escribir sobre una tula que ya no esta en la mesa.
+            var cajero = Guid.NewGuid();
+            Assert.True(IsWriteOwner(true, cajero, cajero).IsAllowed);
+            Assert.False(IsWriteAllowed(false, true, ReceptionGuard.BagRecontada).IsAllowed);
+        }
+
         [Fact]
         public void Devolucion_TulaNoResoluble_SeBloquea()
         {

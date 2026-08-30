@@ -466,6 +466,83 @@ namespace CashHub.Validation.Security
         }
 
         /// <summary>
+        /// La tula tiene DUEÑO, no solo estado. Complementa a
+        /// <see cref="IsWriteAllowed"/>: esa responde "¿esta sobre una mesa?", esta
+        /// responde "¿sobre CUAL?". Se piden LAS DOS.
+        ///
+        /// POR QUE HACE FALTA. Mirar solo el estado alcanzaba mientras
+        /// "Asignada a cajero" fuera un punto sin retorno. La devolucion
+        /// (<see cref="EvaluateBagReturn"/>) lo dejo de ser, y abrio esta secuencia:
+        ///
+        ///   1. el cajero A esta recontando la tula X
+        ///   2. el supervisor la devuelve            -> X queda sin sesion
+        ///   3. el cajero B la escanea                -> X vuelve a "Asignada a cajero"
+        ///   4. el cajero A, que sigue en la pantalla, guarda
+        ///
+        /// En el paso 4 el estado ES "Asignada a cajero", asi que el guard autorizaba:
+        /// A escribia depositos sobre la tula de B, y podia cerrarla generando los
+        /// asientos contables de una plata que conto otro. Se comprobo contra el
+        /// entorno antes de escribir esta regla.
+        ///
+        /// Es el resto del agujero S-5. El texto de la cabecera de este tipo ya decia
+        /// "sin que nadie verificara que la tula estuviera efectivamente asignada A ESE
+        /// CAJERO"; la implementacion se habia quedado en la mitad de esa frase.
+        ///
+        /// Fail-closed en los tres bordes: sin sesion, sin cajero en la sesion, o sin
+        /// actor, no se escribe. Una sesion sin cajero no es de nadie, y "de nadie" no
+        /// es "de todos".
+        /// </summary>
+        /// <param name="sessionResolved">true si se pudo llegar a la sesion de la tula.</param>
+        /// <param name="sessionCashierId">sanic_cashier de esa sesion. null = sin dueño.</param>
+        /// <param name="actorId">Quien ejecuta la escritura (InitiatingUserId).</param>
+        /// <param name="actorIsApplicationUser">
+        /// true si el actor es un usuario de aplicacion (service principal), no una
+        /// persona. Queda EXENTO de esta regla, y conviene decir por que no es una
+        /// firma de goma: la regla existe para que un cajero no escriba sobre la tula
+        /// de OTRO cajero — ese es el modelo de amenaza—. Un service principal no es un
+        /// cajero: es la identidad con la que se despliega y se siembra el entorno, y
+        /// quien tenga sus credenciales ya puede hacer cualquier cosa por Web API.
+        /// Exigirle que "sea el cajero" no agregaria seguridad y romperia toda la
+        /// tooling de datos. Es la misma logica con la que <see cref="IsWriteExempt"/>
+        /// exime al pipeline de plugins.
+        ///
+        /// El control de ESTADO no se exime: ni el SP puede cargar plata en una tula
+        /// que no esta sobre una mesa.
+        /// </param>
+        public static RecountingGuardResult IsWriteOwner(
+            bool sessionResolved, Guid? sessionCashierId, Guid actorId,
+            bool actorIsApplicationUser = false)
+        {
+            if (actorIsApplicationUser)
+            {
+                return RecountingGuardResult.Allow();
+            }
+
+            if (!sessionResolved || sessionCashierId == null || sessionCashierId == Guid.Empty)
+            {
+                return RecountingGuardResult.Block(
+                    "No se pudo determinar a que cajero esta asignada la tula: sin saber de quien " +
+                    "es no se autoriza la escritura de su recuento.");
+            }
+
+            if (actorId == Guid.Empty)
+            {
+                return RecountingGuardResult.Block(
+                    "No se pudo determinar quien ejecuta la escritura del recuento.");
+            }
+
+            if (sessionCashierId.Value == actorId)
+            {
+                return RecountingGuardResult.Allow();
+            }
+
+            return RecountingGuardResult.Block(
+                "La tula esta en la sesion de otro cajero. Si la tenia abierta, fue devuelta y otro " +
+                "la tomo: lo que cargue ahora se sumaria al recuento de esa persona. Vuelva a la " +
+                "lista de tulas y escanee de nuevo si corresponde.");
+        }
+
+        /// <summary>
         /// Autoriza DEVOLVER una tula para reasignacion: sacarla de la mesa y dejarla
         /// libre, borrando todo lo que el cajero alcanzo a cargar.
         ///

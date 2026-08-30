@@ -149,6 +149,36 @@ namespace CashHub.Plugins
                 return current;
             }
 
+            // DE QUIEN ES LA TULA. El control de estado responde "¿esta sobre una
+            // mesa?"; este responde "¿sobre CUAL?". Hacen falta los dos desde que
+            // existe la devolucion: una tula devuelta y retomada por OTRO cajero
+            // vuelve a estar "Asignada a cajero", y el control de estado la
+            // aprobaba mientras el primer cajero seguia con la pantalla abierta.
+            var cashier = ReadSessionCashier(system, tracing, currentBag.SessionId);
+            var owner = RecountingGuard.IsWriteOwner(
+                currentBag.SessionId != null, cashier, context.InitiatingUserId);
+
+            tracing.Trace("GuardRecounting: dueño — sesion {0} cajero {1} actor {2} => {3}.",
+                Fmt(currentBag.SessionId), Fmt(cashier), context.InitiatingUserId, owner.IsAllowed);
+
+            if (!owner.IsAllowed)
+            {
+                // La lectura de "¿es service principal?" se paga UNICAMENTE aca. En el
+                // camino normal —el cajero escribiendo SU tula— no cuesta nada.
+                owner = RecountingGuard.IsWriteOwner(
+                    currentBag.SessionId != null, cashier, context.InitiatingUserId,
+                    IsApplicationUser(system, tracing, context.InitiatingUserId));
+
+                if (!owner.IsAllowed)
+                {
+                    return owner;
+                }
+
+                tracing.Trace("GuardRecounting: actor {0} es usuario de aplicacion; " +
+                              "exento del control de dueño (no del de estado).",
+                              context.InitiatingUserId);
+            }
+
             // RE-COLGADO: si el request mueve el registro a OTRA tula, la tula destino
             // tambien tiene que estar en la mesa. Sin esto, un Update de un deposito
             // legitimo lo re-cuelga de una tula en boveda y el dinero cambia de dueno.
@@ -302,11 +332,17 @@ namespace CashHub.Plugins
             }
 
             int? status;
+            Guid? sessionId;
             try
             {
+                // La sesion se pide en la MISMA lectura que ya se hacia por el estado:
+                // el control de dueño no agrega ni un viaje.
                 var bag = system.Retrieve(
-                    Schema.Bag.LogicalName, bagId.Value, new ColumnSet(Schema.Bag.BagStatus));
+                    Schema.Bag.LogicalName, bagId.Value,
+                    new ColumnSet(Schema.Bag.BagStatus, Schema.Bag.RecountingSessionLookup));
                 status = bag.GetAttributeValue<OptionSetValue>(Schema.Bag.BagStatus)?.Value;
+                sessionId = bag.GetAttributeValue<EntityReference>(
+                    Schema.Bag.RecountingSessionLookup)?.Id;
             }
             catch (Exception ex)
             {
@@ -318,6 +354,7 @@ namespace CashHub.Plugins
             {
                 Id = bagId,
                 Status = status,
+                SessionId = sessionId,
                 Resolved = true,
                 Reparented = reparented,
             };
@@ -572,11 +609,63 @@ namespace CashHub.Plugins
 
         private static string Fmt(Guid? value) => value.HasValue ? value.Value.ToString() : "null";
 
+        /// <summary>
+        /// true si el actor es un usuario de APLICACION (service principal) y no una
+        /// persona. Es la identidad con la que se despliega y se siembra el entorno.
+        /// Fail-closed: si no se puede leer, se lo trata como persona.
+        /// </summary>
+        private static bool IsApplicationUser(
+            IOrganizationService system, ITracingService tracing, Guid actorId)
+        {
+            if (actorId == Guid.Empty)
+            {
+                return false;
+            }
+
+            try
+            {
+                var user = system.Retrieve("systemuser", actorId, new ColumnSet("applicationid"));
+                return user.GetAttributeValue<Guid?>("applicationid") != null;
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("GuardRecounting: no se pudo leer el actor {0}: {1}", actorId, ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>Cajero de la sesion. null si no hay sesion o no se pudo leer (fail-closed).</summary>
+        private static Guid? ReadSessionCashier(
+            IOrganizationService system, ITracingService tracing, Guid? sessionId)
+        {
+            if (sessionId == null || sessionId.Value == Guid.Empty)
+            {
+                return null;
+            }
+
+            try
+            {
+                var session = system.Retrieve(
+                    Schema.RecountingSession.LogicalName, sessionId.Value,
+                    new ColumnSet(Schema.RecountingSession.Cashier));
+                return session.GetAttributeValue<EntityReference>(
+                    Schema.RecountingSession.Cashier)?.Id;
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("GuardRecounting: no se pudo leer la sesion {0}: {1}", sessionId, ex.Message);
+                return null;
+            }
+        }
+
         private struct AncestorBag
         {
             public Guid? Id { get; set; }
             public int? Status { get; set; }
             public bool Resolved { get; set; }
+
+            /// <summary>sanic_recountingsession de la tula. Es lo que dice de QUIEN es.</summary>
+            public Guid? SessionId { get; set; }
 
             /// <summary>true si el request trae el lookup del padre (posible re-colgado).</summary>
             public bool Reparented { get; set; }
