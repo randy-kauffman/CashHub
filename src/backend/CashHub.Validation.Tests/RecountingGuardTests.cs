@@ -677,16 +677,113 @@ namespace CashHub.Validation.Tests
         }
 
         [Fact]
-        public void TulaVarada_SoloPuedeSalirHaciaElSupervisor()
+        public void TulaVarada_NoPuedeVolverSolaABoveda()
         {
-            // Es la restriccion de la que DEPENDE el cierre de jornada. Al corte, la
-            // tula que quedo sobre la mesa no puede volver sola a boveda: la unica
-            // salida no terminal de "Asignada a cajero" es el supervisor, que despues
-            // la reasigna. Plata contada a medias la recibe una persona, no un job.
+            // Plata contada a medias no vuelve sola al cofre. La salida de la tula
+            // varada es "Devuelta para reasignacion", no boveda.
             Assert.False(ReceptionGuard.EvaluateBagStatusTransition(
                 ReceptionGuard.BagAsignadaACajero, ReceptionGuard.BagAlmacenadaEnBoveda).IsAllowed);
+        }
+
+        // =====================================================================
+        // 4-ter. Devolucion para reasignacion
+        //
+        //   Hoy una tula que entra en "Asignada a cajero" queda ENLLAVADA: sus
+        //   unicas salidas son Recontada (terminal) y el estado de revision del
+        //   supervisor, que significa otra cosa —una diferencia que hay que
+        //   aprobar—. Si el cajero se va, si cae el cierre de jornada o si
+        //   simplemente se equivoco de tula, no hay forma de sacarla.
+        //
+        //   El estado nuevo dice lo que de verdad paso: la tula se devolvio para
+        //   que la tome otro. No se reutiliza el estado de supervisor justamente
+        //   para no confundir "hay una diferencia que revisar" con "esta libre".
+        //
+        //   ENTRA SOLO DESDE "Asignada a cajero", y esa restriccion es la que
+        //   mantiene la operacion segura: los asientos contables se arman al pasar
+        //   a Recontada, asi que una tula devuelta NUNCA tiene contabilidad que
+        //   desarmar. Devolver una tula ya recontada seria otro problema.
+        //
+        //   SALE SOLO hacia "Asignada a cajero": la retoma un cajero reescaneandola.
+        // =====================================================================
+
+        [Fact]
+        public void Devolucion_EntraSoloDesdeAsignadaACajero()
+        {
             Assert.True(ReceptionGuard.EvaluateBagStatusTransition(
-                ReceptionGuard.BagAsignadaACajero, ReceptionGuard.BagPendienteSupervisorRecuento).IsAllowed);
+                ReceptionGuard.BagAsignadaACajero,
+                ReceptionGuard.BagDevueltaParaReasignacion).IsAllowed);
+        }
+
+        [Theory]
+        [InlineData(ReceptionGuard.BagRecibidaEnEsclusa)]
+        [InlineData(ReceptionGuard.BagAlmacenadaEnBoveda)]
+        [InlineData(ReceptionGuard.BagRecontada)]
+        [InlineData(ReceptionGuard.BagPendienteSupervisorRecuento)]
+        [InlineData(ReceptionGuard.BagPendienteSupervisorEsclusa)]
+        public void Devolucion_DesdeCualquierOtroEstado_SeBloquea(int previous)
+        {
+            // BagRecontada es el que mas importa: si esta transicion se abriera,
+            // habria que desarmar los asientos contables de la tula.
+            Assert.False(ReceptionGuard.EvaluateBagStatusTransition(
+                previous, ReceptionGuard.BagDevueltaParaReasignacion).IsAllowed);
+        }
+
+        [Fact]
+        public void Devuelta_SoloSaleHaciaAsignadaACajero()
+        {
+            Assert.True(ReceptionGuard.EvaluateBagStatusTransition(
+                ReceptionGuard.BagDevueltaParaReasignacion,
+                ReceptionGuard.BagAsignadaACajero).IsAllowed);
+        }
+
+        [Theory]
+        [InlineData(ReceptionGuard.BagRecibidaEnEsclusa)]
+        [InlineData(ReceptionGuard.BagAlmacenadaEnBoveda)]
+        [InlineData(ReceptionGuard.BagRecontada)]
+        [InlineData(ReceptionGuard.BagPendienteSupervisorRecuento)]
+        [InlineData(ReceptionGuard.BagPendienteSupervisorEsclusa)]
+        public void Devuelta_NoSaleHaciaNingunOtroEstado(int next)
+        {
+            // Decision explicita: NO vuelve a boveda. La tula devuelta se retoma
+            // reescaneandola, y punto.
+            Assert.False(ReceptionGuard.EvaluateBagStatusTransition(
+                ReceptionGuard.BagDevueltaParaReasignacion, next).IsAllowed);
+        }
+
+        [Fact]
+        public void Devolucion_TulaEnMesa_SePermite()
+        {
+            var result = EvaluateBagReturn(true, ReceptionGuard.BagAsignadaACajero);
+            Assert.True(result.IsAllowed);
+            Assert.Null(result.Reason);
+        }
+
+        [Fact]
+        public void Devolucion_TulaYaRecontada_SeBloqueaConMotivoContable()
+        {
+            var result = EvaluateBagReturn(true, ReceptionGuard.BagRecontada);
+            Assert.False(result.IsAllowed);
+            Assert.Contains("Recontada", result.Reason);
+        }
+
+        [Theory]
+        [InlineData(ReceptionGuard.BagRecibidaEnEsclusa)]
+        [InlineData(ReceptionGuard.BagAlmacenadaEnBoveda)]
+        [InlineData(ReceptionGuard.BagPendienteSupervisorRecuento)]
+        [InlineData(ReceptionGuard.BagPendienteSupervisorEsclusa)]
+        [InlineData(ReceptionGuard.BagDevueltaParaReasignacion)]
+        public void Devolucion_TulaFueraDeMesa_SeBloquea(int bagStatus)
+        {
+            Assert.False(EvaluateBagReturn(true, bagStatus).IsAllowed);
+        }
+
+        [Fact]
+        public void Devolucion_TulaNoResoluble_SeBloquea()
+        {
+            // Fail-closed: la operacion BORRA depositos, cheques y denominaciones.
+            // Sin saber en que estado esta la tula no se borra nada.
+            Assert.False(EvaluateBagReturn(false, null).IsAllowed);
+            Assert.False(EvaluateBagReturn(true, null).IsAllowed);
         }
 
         // =====================================================================

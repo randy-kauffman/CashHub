@@ -466,6 +466,54 @@ namespace CashHub.Validation.Security
         }
 
         /// <summary>
+        /// Autoriza DEVOLVER una tula para reasignacion: sacarla de la mesa y dejarla
+        /// libre, borrando todo lo que el cajero alcanzo a cargar.
+        ///
+        /// EL PROBLEMA QUE RESUELVE. "Asignada a cajero" era una trampa sin salida: se
+        /// sale a Recontada (terminal) o al estado de revision del supervisor, que
+        /// significa otra cosa. Un cajero que se va, un cierre de jornada o un escaneo
+        /// equivocado dejaban la tula enllavada para siempre.
+        ///
+        /// POR QUE SOLO DESDE "Asignada a cajero", y esto es lo importante: los asientos
+        /// contables se arman al pasar a Recontada
+        /// (<see cref="ShouldBuildTransactions"/>), y Recontada es terminal. Mientras la
+        /// devolucion entre UNICAMENTE desde la mesa, la tula devuelta no puede tener
+        /// contabilidad que desarmar — solo depositos, cheques y denominaciones, que son
+        /// borrables. Abrir esta transicion desde Recontada convertiria un borrado
+        /// simple en una reversion contable.
+        ///
+        /// Fail-closed: la operacion BORRA. Sin poder resolver la tula, no se borra nada.
+        /// </summary>
+        /// <param name="bagResolved">true si se pudo leer la tula.</param>
+        /// <param name="bagStatus">sanic_bagstatus actual de la tula.</param>
+        public static RecountingGuardResult EvaluateBagReturn(bool bagResolved, int? bagStatus)
+        {
+            if (!bagResolved || bagStatus == null)
+            {
+                return RecountingGuardResult.Block(
+                    "No se pudo resolver la tula a devolver: sin saber en que estado esta " +
+                    "no se borra su recuento.");
+            }
+
+            if (bagStatus == ReceptionGuard.BagAsignadaACajero)
+            {
+                return RecountingGuardResult.Allow();
+            }
+
+            if (bagStatus == ReceptionGuard.BagRecontada)
+            {
+                return RecountingGuardResult.Block(
+                    "La tula ya esta Recontada y su contabilidad esta asentada: devolverla " +
+                    "no seria borrar un recuento sino revertir asientos. Use el circuito de " +
+                    "revision del supervisor.");
+            }
+
+            return RecountingGuardResult.Block(
+                "Solo se puede devolver una tula que este 'Asignada a cajero'. Una tula que " +
+                "no esta sobre una mesa no tiene recuento que borrar.");
+        }
+
+        /// <summary>
         /// Una sesion de recuento vale por UN dia, y esto lo comprueba del lado del
         /// servidor. Es la contraparte de un agujero que el canvas no puede tapar solo.
         ///

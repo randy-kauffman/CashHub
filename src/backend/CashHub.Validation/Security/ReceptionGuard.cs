@@ -113,6 +113,18 @@ namespace CashHub.Validation.Security
         public const int BagPendienteSupervisorRecuento = 159460004;
         public const int BagPendienteSupervisorEsclusa = 159460005;
 
+        /// <summary>
+        /// La tula se saco de la mesa y quedo libre para que la tome otro cajero.
+        ///
+        /// Existe porque "Asignada a cajero" era una trampa: sus unicas salidas eran
+        /// Recontada (terminal) y el estado de revision del supervisor, que significa
+        /// otra cosa —hay una diferencia que aprobar—. Una tula abandonada quedaba
+        /// enllavada para siempre. Reusar el estado de supervisor habria mezclado
+        /// "esto hay que revisarlo" con "esto esta libre", que en la pantalla del
+        /// supervisor son dos colas distintas.
+        /// </summary>
+        public const int BagDevueltaParaReasignacion = 159460006;
+
         // Option set sanic_approvalstatus de CH-Tbl-ApprovalRequests. Pendiente = null.
         public const int ApprovalAprobado = 159460000;
         public const int ApprovalRechazado = 159460001;
@@ -298,7 +310,10 @@ namespace CashHub.Validation.Security
                     break;
                 case BagAsignadaACajero:
                     isLegal = newStatus == BagRecontada
-                              || newStatus == BagPendienteSupervisorRecuento;
+                              || newStatus == BagPendienteSupervisorRecuento
+                              // Devolucion: la unica forma de sacar una tula de la mesa
+                              // sin recontarla. Ver BagDevueltaParaReasignacion.
+                              || newStatus == BagDevueltaParaReasignacion;
                     break;
                 case BagPendienteSupervisorRecuento:
                     isLegal = newStatus == BagAsignadaACajero
@@ -307,6 +322,12 @@ namespace CashHub.Validation.Security
                 case BagPendienteSupervisorEsclusa:
                     isLegal = newStatus == BagRecibidaEnEsclusa
                               || newStatus == BagAlmacenadaEnBoveda;
+                    break;
+                case BagDevueltaParaReasignacion:
+                    // NO vuelve a boveda: decision explicita. La tula devuelta se
+                    // retoma reescaneandola, que es el mismo gesto con el que el
+                    // cajero toma cualquier tula.
+                    isLegal = newStatus == BagAsignadaACajero;
                     break;
                 case BagRecontada:
                 default:
