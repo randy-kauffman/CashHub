@@ -1,4 +1,7 @@
 cmpRailCajeros As CanvasComponent:
+    OnActualizar():
+        ThisProperty:
+            Default: =
     OnSeleccion():
         ThisProperty:
             Default: =
@@ -47,6 +50,24 @@ cmpRailCajeros As CanvasComponent:
         X: =13
         Y: =11
         ZIndex: =3
+
+    icoActualizarRail As icon:
+        Color: =ThemeInk3
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        Height: =18
+        HoverColor: =ThemeAccent
+        Icon: =Icon.Reload
+        OnSelect: =cmpRailCajeros.OnActualizar()
+        PaddingBottom: =2
+        PaddingLeft: =2
+        PaddingRight: =2
+        PaddingTop: =2
+        PressedColor: =ThemeAccent
+        Tooltip: ="Volver a pedir el trabajo pendiente. También se actualiza solo cada minuto."
+        Width: =18
+        X: =Parent.Width - 31
+        Y: =10
+        ZIndex: =4
 
     cntOrdenRail As groupContainer.manualLayoutContainer:
         DropShadow: =DropShadow.Light

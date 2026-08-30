@@ -24,21 +24,7 @@ Screens:
         });
         Reset(tabFechaLot);
         Reset(inpBuscarLot);
-        ClearCollect(colCajerosLot,
-            Filter(
-                ForAll(
-                    ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload) As w,
-                    {
-                        cajero:          GUID(Text(w.cajero)),
-                        cajeroNombre:    Text(w.cajeroNombre),
-                        mesa:            Text(w.mesa),
-                        lotesPorAplicar: Value(w.lotesPorAplicar),
-                        badge:           Value(w.lotesPorAplicar)
-                    }
-                ),
-                lotesPorAplicar > 0
-            )
-        );
+        Select(btnActualizarLot);
         Set(gvarCajeroLot, First(colCajerosLot));
         Set(gvarLote, First(
             SortByColumns(
@@ -79,927 +65,6 @@ Screens:
             Height: =Parent.Height - LayHeaderH
             Width: =Parent.Width
             Y: =LayHeaderH
-          Children:
-            - cmpRailLot:
-                Control: CanvasComponent
-                ComponentName: cmpRailCajeros
-                Properties:
-                  Datos: =AddColumns(DropColumns(colCajerosLot, lotesPorAplicar), pendientesCorte, 0, totalNio, 0, totalUsd, 0, totalEur, 0)
-                  Height: =Parent.Height
-                  OnSeleccion: |-
-                    =Set(gvarCajeroLot, cmpRailLot.CajeroSel);
-                    Set(gvarTxLot, Blank());
-                    Set(gvarLote, First(
-                        SortByColumns(
-                            Filter('CH-Tbl-TransactionBatches',
-                                Cajero.User = gvarCajeroLot.cajero,
-                                ( ctxFiltroEstadoLot = "Todos" )
-                                || ( ctxFiltroEstadoLot = "Aplicados"
-                                     && BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado )
-                                || ( ctxFiltroEstadoLot = "Por aplicar"
-                                     && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
-                                          || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                          || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
-                                ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
-                                ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
-                            ),
-                            "createdon", SortOrder.Descending
-                        )
-                    ))
-                  Titulo: ="CAJEROS CON LOTES"
-                  Width: =LayRailW
-            - cntMainLo:
-                Control: GroupContainer@1.5.0
-                Variant: ManualLayout
-                Properties:
-                  Fill: =Color.Transparent
-                  Height: =Parent.Height
-                  Width: =Parent.Width - LayRailW
-                  X: =LayRailW
-                Children:
-                  - cntListaCardLot:
-                      Control: GroupContainer@1.5.0
-                      Variant: ManualLayout
-                      Properties:
-                        BorderColor: =ThemeLine
-                        BorderThickness: =1
-                        Fill: =ThemeSurface
-                        Height: =Parent.Height - 2*LayGutter
-                        RadiusBottomLeft: =LayCardR
-                        RadiusBottomRight: =LayCardR
-                        RadiusTopLeft: =LayCardR
-                        RadiusTopRight: =LayCardR
-                        Width: =(Parent.Width - 2*LayGutter - LayGap) * 0.385
-                        X: =LayGutter
-                        Y: =LayGutter
-                      Children:
-                        - cntSegEstadoLo:
-                            Control: GroupContainer@1.5.0
-                            Variant: ManualLayout
-                            Properties:
-                              BorderColor: =ThemeLine
-                              BorderThickness: =1
-                              Fill: =ThemeSurface2
-                              Height: =34
-                              RadiusBottomLeft: =9
-                              RadiusBottomRight: =9
-                              RadiusTopLeft: =9
-                              RadiusTopRight: =9
-                              Width: =Parent.Width - 2*12
-                              X: =12
-                              Y: =10
-                            Children:
-                              - btnSegPorAplicarLot:
-                                  Control: Classic/Button@2.2.0
-                                  Properties:
-                                    BorderThickness: =0
-                                    Color: =If(ctxFiltroEstadoLot = "Por aplicar", ThemeAccent, ThemeInk2)
-                                    Fill: =If(ctxFiltroEstadoLot = "Por aplicar", ThemeSurface, Color.Transparent)
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =If(ctxFiltroEstadoLot = "Por aplicar", FontWeight.Semibold, FontWeight.Normal)
-                                    Height: =Parent.Height - 6
-                                    OnSelect: |-
-                                      =UpdateContext({ctxFiltroEstadoLot: "Por aplicar"});
-                                      Set(gvarTxLot, Blank());
-                                      Set(gvarLote, First(
-                                          SortByColumns(
-                                              Filter('CH-Tbl-TransactionBatches',
-                                                  Cajero.User = gvarCajeroLot.cajero,
-                                                  ( ctxFiltroEstadoLot = "Todos" )
-                                                  || ( ctxFiltroEstadoLot = "Aplicados"
-                                                       && BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado )
-                                                  || ( ctxFiltroEstadoLot = "Por aplicar"
-                                                       && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
-                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
-                                                  ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
-                                                  ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
-                                              ),
-                                              "createdon", SortOrder.Descending
-                                          )
-                                      ))
-                                    RadiusBottomLeft: =7
-                                    RadiusBottomRight: =7
-                                    RadiusTopLeft: =7
-                                    RadiusTopRight: =7
-                                    Text: ="Por aplicar"
-                                    Width: =(Parent.Width - 6) / 3
-                                    X: =3
-                                    Y: =3
-                              - btnSegAplicadosLot:
-                                  Control: Classic/Button@2.2.0
-                                  Properties:
-                                    BorderThickness: =0
-                                    Color: =If(ctxFiltroEstadoLot = "Aplicados", ThemeAccent, ThemeInk2)
-                                    Fill: =If(ctxFiltroEstadoLot = "Aplicados", ThemeSurface, Color.Transparent)
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =If(ctxFiltroEstadoLot = "Aplicados", FontWeight.Semibold, FontWeight.Normal)
-                                    Height: =Parent.Height - 6
-                                    OnSelect: |-
-                                      =UpdateContext({ctxFiltroEstadoLot: "Aplicados"});
-                                      Set(gvarTxLot, Blank());
-                                      Set(gvarLote, First(
-                                          SortByColumns(
-                                              Filter('CH-Tbl-TransactionBatches',
-                                                  Cajero.User = gvarCajeroLot.cajero,
-                                                  ( ctxFiltroEstadoLot = "Todos" )
-                                                  || ( ctxFiltroEstadoLot = "Aplicados"
-                                                       && BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado )
-                                                  || ( ctxFiltroEstadoLot = "Por aplicar"
-                                                       && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
-                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
-                                                  ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
-                                                  ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
-                                              ),
-                                              "createdon", SortOrder.Descending
-                                          )
-                                      ))
-                                    RadiusBottomLeft: =7
-                                    RadiusBottomRight: =7
-                                    RadiusTopLeft: =7
-                                    RadiusTopRight: =7
-                                    Text: ="Aplicados"
-                                    Width: =(Parent.Width - 6) / 3
-                                    X: =btnSegPorAplicarLot.X + btnSegPorAplicarLot.Width
-                                    Y: =3
-                              - btnSegTodosLot:
-                                  Control: Classic/Button@2.2.0
-                                  Properties:
-                                    BorderThickness: =0
-                                    Color: =If(ctxFiltroEstadoLot = "Todos", ThemeAccent, ThemeInk2)
-                                    Fill: =If(ctxFiltroEstadoLot = "Todos", ThemeSurface, Color.Transparent)
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =If(ctxFiltroEstadoLot = "Todos", FontWeight.Semibold, FontWeight.Normal)
-                                    Height: =Parent.Height - 6
-                                    OnSelect: |-
-                                      =UpdateContext({ctxFiltroEstadoLot: "Todos"});
-                                      Set(gvarTxLot, Blank());
-                                      Set(gvarLote, First(
-                                          SortByColumns(
-                                              Filter('CH-Tbl-TransactionBatches',
-                                                  Cajero.User = gvarCajeroLot.cajero,
-                                                  ( ctxFiltroEstadoLot = "Todos" )
-                                                  || ( ctxFiltroEstadoLot = "Aplicados"
-                                                       && BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado )
-                                                  || ( ctxFiltroEstadoLot = "Por aplicar"
-                                                       && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
-                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
-                                                  ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
-                                                  ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
-                                              ),
-                                              "createdon", SortOrder.Descending
-                                          )
-                                      ))
-                                    RadiusBottomLeft: =7
-                                    RadiusBottomRight: =7
-                                    RadiusTopLeft: =7
-                                    RadiusTopRight: =7
-                                    Text: ="Todos"
-                                    Width: =(Parent.Width - 6) / 3
-                                    X: =btnSegAplicadosLot.X + btnSegAplicadosLot.Width
-                                    Y: =3
-                        - inpBuscarLot:
-                            Control: Classic/TextInput@2.3.2
-                            Properties:
-                              BorderColor: =ThemeLine
-                              Default: =
-                              DelayOutput: =true
-                              Font: =Font.'Open Sans'
-                              Height: =32
-                              HintText: ="⌕ N° de lote…"
-                              RadiusBottomLeft: =8
-                              RadiusBottomRight: =8
-                              RadiusTopLeft: =8
-                              RadiusTopRight: =8
-                              Size: =9
-                              Width: =Parent.Width - 2*12
-                              X: =12
-                              Y: =cntSegEstadoLo.Y + cntSegEstadoLo.Height + 10
-                        - tabFechaLot:
-                            Control: ModernTabList@1.0.1
-                            Properties:
-                              Font: =Font.'Open Sans'
-                              Height: =30
-                              Items: =Table({Value:"Cualquier fecha"},{Value:"Hoy"},{Value:"Últimos 7 días"},{Value:"Este mes"})
-                              OnChange: |-
-                                =UpdateContext({ctxDesdeFechaLot:
-                                    Switch(tabFechaLot.Selected.Value,
-                                        "Hoy", Today(),
-                                        "Últimos 7 días", DateAdd(Today(), -7, TimeUnit.Days),
-                                        "Este mes", Date(Year(Today()), Month(Today()), 1),
-                                        DateValue("1900-01-01"))});
-                                Set(gvarTxLot, Blank());
-                                Set(gvarLote, First(
-                                    SortByColumns(
-                                        Filter('CH-Tbl-TransactionBatches',
-                                            Cajero.User = gvarCajeroLot.cajero,
-                                            ( ctxFiltroEstadoLot = "Todos" )
-                                            || ( ctxFiltroEstadoLot = "Aplicados"
-                                                 && BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado )
-                                            || ( ctxFiltroEstadoLot = "Por aplicar"
-                                                 && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
-                                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
-                                            ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
-                                            ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
-                                        ),
-                                        "createdon", SortOrder.Descending
-                                    )
-                                ))
-                              Width: =Parent.Width - 2*12
-                              X: =12
-                              Y: =inpBuscarLot.Y + inpBuscarLot.Height + 8
-                        - lblListaSubLot:
-                            Control: Label@2.5.1
-                            Properties:
-                              Color: =ThemeInk3
-                              Fill: =ThemeSurface2
-                              Font: =Font.'Open Sans'
-                              FontWeight: =FontWeight.Semibold
-                              Height: =28
-                              PaddingLeft: =12
-                              Size: =7.88
-                              Text: =$"Lotes de {Coalesce(gvarCajeroLot.cajeroNombre, "—")}"
-                              Width: =Parent.Width
-                              Y: =tabFechaLot.Y + tabFechaLot.Height + 10
-                        - galLotesLot:
-                            Control: Gallery@2.15.0
-                            Variant: Vertical
-                            Properties:
-                              Height: =Parent.Height - Self.Y - 8
-                              Items: |-
-                                =SortByColumns(
-                                    Filter('CH-Tbl-TransactionBatches',
-                                        Cajero.User = gvarCajeroLot.cajero,
-                                        ( ctxFiltroEstadoLot = "Todos" )
-                                        || ( ctxFiltroEstadoLot = "Aplicados"
-                                             && BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado )
-                                        || ( ctxFiltroEstadoLot = "Por aplicar"
-                                             && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
-                                                  || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                  || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
-                                        ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
-                                        ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
-                                    ),
-                                    "createdon", SortOrder.Descending
-                                )
-                              OnSelect: |-
-                                =Set(gvarLote, ThisItem);
-                                Set(gvarTxLot, Blank())
-                              TemplateSize: =52
-                              Width: =Parent.Width - 2*12
-                              X: =12
-                              Y: =lblListaSubLot.Y + lblListaSubLot.Height
-                            Children:
-                              - shpLoteSelLot:
-                                  Control: Rectangle@2.3.0
-                                  Properties:
-                                    Fill: =If(ThisItem.TransactionBatches = gvarLote.TransactionBatches, ThemeAccentSoft, Color.Transparent)
-                                    Height: =52
-                                    Width: =Parent.TemplateWidth
-                              - shpLoteSelBarraLot:
-                                  Control: Rectangle@2.3.0
-                                  Properties:
-                                    Fill: =ThemeAccent
-                                    Height: =52
-                                    Visible: =ThisItem.TransactionBatches = gvarLote.TransactionBatches
-                                    Width: =3
-                              - btnLoteFilaLot:
-                                  Control: Classic/Button@2.2.0
-                                  Properties:
-                                    BorderStyle: =BorderStyle.None
-                                    Fill: =Color.Transparent
-                                    Height: =52
-                                    HoverFill: =Color.Transparent
-                                    OnSelect: =Select(Parent)
-                                    PressedFill: =Color.Transparent
-                                    Text: =""
-                                    Width: =Parent.TemplateWidth
-                              - lblLoteNombreLot:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =FontWeight.Semibold
-                                    Height: =20
-                                    OnSelect: =Select(Parent)
-                                    Text: =ThisItem.Name
-                                    Width: =Parent.TemplateWidth - 110
-                                    X: =13
-                                    Y: =8
-                              - lblLoteMetaLot:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Color: =ThemeInk3
-                                    Font: =Font.'Open Sans'
-                                    Height: =16
-                                    OnSelect: =Select(Parent)
-                                    Text: =Text(ThisItem.'Created On', FmtFecha)
-                                    Width: =Parent.TemplateWidth - 110
-                                    X: =13
-                                    Y: =30
-                              - pilLoteEstadoLot:
-                                  Control: Classic/Button@2.2.0
-                                  Properties:
-                                    Color: |-
-                                      =Switch(ThisItem.BatchStatus,
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado, ThemeWarn,
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado,  ThemeOk, ThemeInfo)
-                                    DisplayMode: =DisplayMode.View
-                                    Fill: |-
-                                      =Switch(ThisItem.BatchStatus,
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado, ThemeWarnSoft,
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado,  ThemeOkSoft, ThemeInfoSoft)
-                                    Font: =Font.'Open Sans'
-                                    Height: =22
-                                    OnSelect: =Select(Parent)
-                                    RadiusBottomLeft: =12
-                                    RadiusBottomRight: =12
-                                    RadiusTopLeft: =12
-                                    RadiusTopRight: =12
-                                    Size: =7.88
-                                    Text: |-
-                                      =Switch(ThisItem.BatchStatus,
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Generado,  "Generado",
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado, "Ingresado",
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado,  "Aprobado",
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado,  "Aplicado", "—")
-                                    Width: =84
-                                    X: =Parent.TemplateWidth - 96
-                                    Y: =15
-                        - cmpEmptyListaLot:
-                            Control: CanvasComponent
-                            ComponentName: cmpEmpty
-                            Properties:
-                              Glifo: ="⛁"
-                              Height: =galLotesLot.Height
-                              Mensaje: ="Sin lotes para este filtro."
-                              Visible: |-
-                                =IsEmpty(
-                                    SortByColumns(
-                                        Filter('CH-Tbl-TransactionBatches',
-                                            Cajero.User = gvarCajeroLot.cajero,
-                                            ( ctxFiltroEstadoLot = "Todos" )
-                                            || ( ctxFiltroEstadoLot = "Aplicados"
-                                                 && BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado )
-                                            || ( ctxFiltroEstadoLot = "Por aplicar"
-                                                 && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
-                                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
-                                            ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
-                                            ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
-                                        ),
-                                        "createdon", SortOrder.Descending
-                                    )
-                                )
-                              Width: =Parent.Width - 2*12
-                              X: =12
-                              Y: =galLotesLot.Y
-                  - cntDetalleCardLot:
-                      Control: GroupContainer@1.5.0
-                      Variant: ManualLayout
-                      Properties:
-                        BorderColor: =ThemeLine
-                        BorderThickness: =1
-                        Fill: =ThemeSurface
-                        Height: =Parent.Height - 2*LayGutter
-                        RadiusBottomLeft: =LayCardR
-                        RadiusBottomRight: =LayCardR
-                        RadiusTopLeft: =LayCardR
-                        RadiusTopRight: =LayCardR
-                        Width: =Parent.Width - LayGutter - Self.X
-                        X: =cntListaCardLot.X + cntListaCardLot.Width + LayGap
-                        Y: =LayGutter
-                      Children:
-                        - cntDetHeadLot:
-                            Control: GroupContainer@1.5.0
-                            Variant: ManualLayout
-                            Properties:
-                              Fill: =Color.Transparent
-                              Height: =54
-                              Visible: =!IsBlank(gvarLote)
-                              Width: =Parent.Width
-                            Children:
-                              - lblDetTituloLot:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =FontWeight.Bold
-                                    Height: =22
-                                    Size: =12
-                                    Text: =$"Lote {gvarLote.Name}"
-                                    Width: =Parent.Width - 130
-                                    X: =16
-                                    Y: =8
-                              - lblDetSubLot:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Color: =ThemeInk3
-                                    Font: =Font.'Open Sans'
-                                    Height: =16
-                                    Size: =8.25
-                                    Text: =$"{Coalesce(gvarCajeroLot.cajeroNombre, gvarLote.Cajero.'Full Name')} · generado {Text(gvarLote.'Created On', FmtFecha)}"
-                                    Width: =Parent.Width - 130
-                                    X: =16
-                                    Y: =30
-                              - cmpPilDetEstadoLot:
-                                  Control: CanvasComponent
-                                  ComponentName: cmpPildora
-                                  Properties:
-                                    Height: =22
-                                    Texto: |-
-                                      =Switch(gvarLote.BatchStatus,
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Generado,  "Generado",
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado, "Ingresado",
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado,  "Aprobado",
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado,  "Aplicado", "—")
-                                    Tono: |-
-                                      =Switch(gvarLote.BatchStatus,
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado, "warn",
-                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado,  "ok", "info")
-                                    Width: =84
-                                    X: =Parent.Width - 16 - Self.Width
-                                    Y: =16
-                              - shpDetHeadLineaLot:
-                                  Control: Rectangle@2.3.0
-                                  Properties:
-                                    Fill: =ThemeLine
-                                    Height: =1
-                                    Width: =Parent.Width
-                                    Y: =Parent.Height - 1
-                        - cntOpsLot:
-                            Control: GroupContainer@1.5.0
-                            Variant: ManualLayout
-                            Properties:
-                              Fill: =Color.Transparent
-                              Height: =48
-                              Visible: =!IsBlank(gvarLote)
-                              Width: =Parent.Width
-                              Y: =cntDetHeadLot.Y + cntDetHeadLot.Height
-                            Children:
-                              - btnMarcarIngresadoLot:
-                                  Control: Classic/Button@2.2.0
-                                  Properties:
-                                    BorderColor: =ThemeAccent
-                                    BorderThickness: =1
-                                    Color: =ThemeAccent
-                                    Fill: =ThemeSurface
-                                    Font: =Font.'Open Sans'
-                                    Height: =32
-                                    HoverFill: =ThemeAccentSoft
-                                    OnSelect: |-
-                                      =IfError(
-                                          Patch('CH-Tbl-TransactionBatches', LookUp('CH-Tbl-TransactionBatches',TransactionBatches = gvarLote.TransactionBatches ),
-                                              { BatchStatus: 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado });
-                                          Set(gvarLote, LookUp('CH-Tbl-TransactionBatches',
-                                              TransactionBatches = gvarLote.TransactionBatches));
-                                          Notify("Lote marcado como Ingresado.", NotificationType.Success),
-                                          Notify("No se pudo marcar Ingresado: " & FirstError.Message, NotificationType.Error)
-                                      )
-                                    Size: =10
-                                    Text: ="Marcar como Ingresado"
-                                    Visible: =gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
-                                    Width: =176
-                                    X: =16
-                                    Y: =8
-                              - btnMarcarAplicadoLot:
-                                  Control: Classic/Button@2.2.0
-                                  Properties:
-                                    BorderColor: =ThemeAccent
-                                    BorderThickness: =1
-                                    Color: =ThemeAccent
-                                    Fill: =ThemeSurface
-                                    Font: =Font.'Open Sans'
-                                    Height: =32
-                                    HoverFill: =ThemeAccentSoft
-                                    OnSelect: |-
-                                      =UpdateContext({ctxDlgAplicadoLot: true})
-                                    Size: =10
-                                    Text: ="Marcar como Aplicado"
-                                    Visible: |-
-                                      =gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                      && Lower(Coalesce(gvarLote.'Ingresado por'.'Primary Email', "")) <> Lower(User().Email)
-                                    Width: =176
-                                    X: =16
-                                    Y: =8
-                              - btnDescargarCsvLot:
-                                  Control: Classic/Button@2.2.0
-                                  Properties:
-                                    BorderColor: =ThemeAccent
-                                    BorderThickness: =1
-                                    Color: =ThemeAccent
-                                    DisabledBorderColor: =Color.Transparent
-                                    DisabledColor: =ThemeInk3
-                                    DisabledFill: =ThemeLineSoft
-                                    DisplayMode: =If(ctxDescargandoLot, DisplayMode.Disabled, DisplayMode.Edit)
-                                    Fill: =ThemeSurface
-                                    Font: =Font.'Open Sans'
-                                    Height: =26
-                                    OnSelect: |-
-                                      =UpdateContext({ctxDescargandoLot: true});
-                                      IfError(
-                                          With(
-                                              { res: 'CH-Flow-DownloadData'.Run(gvarLote.TransactionBatches, gvarLote.Name) },
-                                              Download(LookUp('Environment Variable Values','Schema Name' = "sanic_CHEVEnvironmentURL").Value&"api/data/v9.2/sanic_transactionbatcheses(" & gvarLote.TransactionBatches & ")/sanic_csvcore/$value")
-                                          ),
-                                          Notify("No se pudo generar el CSV: " & FirstError.Message, NotificationType.Error)
-                                      );
-                                      UpdateContext({ctxDescargandoLot: false})
-                                    RadiusBottomLeft: =7
-                                    RadiusBottomRight: =7
-                                    RadiusTopLeft: =7
-                                    RadiusTopRight: =7
-                                    Size: =8.25
-                                    Text: =If(ctxDescargandoLot, "Generando CSV…", "Descargar CSV")
-                                    Width: =118
-                                    X: =Parent.Width - 16 - Self.Width
-                                    Y: =11
-                              - btnSacarLoteLot:
-                                  Control: Classic/Button@2.2.0
-                                  Properties:
-                                    BorderColor: =ThemeDangerLine
-                                    BorderThickness: =1
-                                    Color: =ThemeDanger
-                                    DisabledBorderColor: =Color.Transparent
-                                    DisabledColor: =ThemeInk3
-                                    DisabledFill: =ThemeLineSoft
-                                    DisplayMode: =If(!IsBlank(gvarTxLot), DisplayMode.Edit, DisplayMode.Disabled)
-                                    Fill: =ThemeSurface
-                                    Font: =Font.'Open Sans'
-                                    Height: =26
-                                    OnSelect: |-
-                                      =Reset(inpMotivoLot);
-                                      UpdateContext({ctxDlgSacarLot: true})
-                                    RadiusBottomLeft: =7
-                                    RadiusBottomRight: =7
-                                    RadiusTopLeft: =7
-                                    RadiusTopRight: =7
-                                    Size: =8.25
-                                    Text: ="Sacar del lote"
-                                    Visible: =Or(gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado, gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado)
-                                    Width: =108
-                                    X: =btnDescargarCsvLot.X - 8 - Self.Width
-                                    Y: =11
-                              - shpOpsLineaLot:
-                                  Control: Rectangle@2.3.0
-                                  Properties:
-                                    Fill: =ThemeLineSoft
-                                    Height: =1
-                                    Width: =Parent.Width
-                                    Y: =Parent.Height - 1
-                        - cntProgresoLot:
-                            Control: GroupContainer@1.5.0
-                            Variant: ManualLayout
-                            Properties:
-                              Fill: =Color.Transparent
-                              Height: =22
-                              Visible: =ctxDescargandoLot
-                              Width: =Parent.Width - 2*16
-                              X: =16
-                              Y: =cntOpsLot.Y + cntOpsLot.Height + 6
-                            Children:
-                              - lblProgresoLot:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Color: =ThemeInfo
-                                    Font: =Font.'Open Sans'
-                                    Height: =22
-                                    Size: =8.25
-                                    Text: ="Generando el CSV para el core… no cierres la app."
-                                    Width: =Parent.Width
-                              - shpProgresoTrackLot:
-                                  Control: Rectangle@2.3.0
-                                  Properties:
-                                    Fill: =ThemeLineSoft
-                                    Height: =4
-                                    Visible: =false
-                                    Width: =Parent.Width
-                                    Y: =18
-                              - shpProgresoFillLot:
-                                  Control: Rectangle@2.3.0
-                                  Properties:
-                                    Fill: =ThemeAccent
-                                    Height: =4
-                                    Visible: =false
-                                    Width: =Parent.Width
-                                    Y: =18
-                        - cmpKpiNioLot:
-                            Control: CanvasComponent
-                            ComponentName: cmpKpi
-                            Properties:
-                              Etiqueta: ="TOTAL C$"
-                              Height: =LayKpiH
-                              Valor: =SimboloNIO & " " & Text(gvarLote.TotalNIO, FmtMoney)
-                              Visible: =!IsBlank(gvarLote)
-                              Width: =(Parent.Width - 2*16 - 24) / 3
-                              X: =16
-                              Y: =cntOpsLot.Y + cntOpsLot.Height + 12
-                        - cmpKpiUsdLot:
-                            Control: CanvasComponent
-                            ComponentName: cmpKpi
-                            Properties:
-                              Etiqueta: ="TOTAL US$"
-                              Height: =LayKpiH
-                              Valor: =SimboloUSD & " " & Text(gvarLote.TotalUSD, FmtMoney)
-                              Visible: =!IsBlank(gvarLote)
-                              Width: =cmpKpiNioLot.Width
-                              X: =cmpKpiNioLot.X + cmpKpiNioLot.Width + 12
-                              Y: =cmpKpiNioLot.Y
-                        - cmpKpiEurLot:
-                            Control: CanvasComponent
-                            ComponentName: cmpKpi
-                            Properties:
-                              Etiqueta: ="TOTAL €"
-                              Height: =LayKpiH
-                              Valor: =SimboloEUR & " " & Text(gvarLote.TotalEUR, FmtMoney)
-                              Visible: =!IsBlank(gvarLote)
-                              Width: =cmpKpiNioLot.Width
-                              X: =cmpKpiUsdLot.X + cmpKpiUsdLot.Width + 12
-                              Y: =cmpKpiNioLot.Y
-                        - cntGridCardLot:
-                            Control: GroupContainer@1.5.0
-                            Variant: ManualLayout
-                            Properties:
-                              BorderColor: =ThemeLine
-                              BorderThickness: =1
-                              Fill: =ThemeSurface
-                              Height: =Parent.Height - Self.Y - 16 - If(!IsBlank(gvarTxLot), cntHistCardLot.Height + LayGap, 0)
-                              RadiusBottomLeft: =LayCardR
-                              RadiusBottomRight: =LayCardR
-                              RadiusTopLeft: =LayCardR
-                              RadiusTopRight: =LayCardR
-                              Visible: =!IsBlank(gvarLote)
-                              Width: =Parent.Width - 2*16
-                              X: =16
-                              Y: =cmpKpiNioLot.Y + LayKpiH + 12
-                            Children:
-                              - lblGCol1Lot:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Color: =ThemeInk2
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =FontWeight.Bold
-                                    Height: =16
-                                    Size: =7.5
-                                    Text: ="REFERENCIA"
-                                    Width: =(Parent.Width - 2*16) * 1.1/5.6
-                                    X: =16
-                                    Y: =8
-                              - lblGCol2Lot:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Color: =ThemeInk2
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =FontWeight.Bold
-                                    Height: =16
-                                    Size: =7.5
-                                    Text: ="DEPÓSITO / CLIENTE"
-                                    Width: =(Parent.Width - 2*16) * 2/5.6
-                                    X: =lblGCol1Lot.X + lblGCol1Lot.Width
-                                    Y: =8
-                              - lblGCol3Lot:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Align: =Align.Right
-                                    Color: =ThemeInk2
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =FontWeight.Bold
-                                    Height: =16
-                                    Size: =7.5
-                                    Text: ="CUENTA"
-                                    Width: =(Parent.Width - 2*16) * 1/5.6
-                                    X: =lblGCol2Lot.X + lblGCol2Lot.Width
-                                    Y: =8
-                              - lblGCol4Lot:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Align: =Align.Right
-                                    Color: =ThemeInk2
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =FontWeight.Bold
-                                    Height: =16
-                                    Size: =7.5
-                                    Text: ="MONTO"
-                                    Width: =(Parent.Width - 2*16) * 0.9/5.6
-                                    X: =lblGCol3Lot.X + lblGCol3Lot.Width
-                                    Y: =8
-                              - lblGCol5Lot:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Align: =Align.Right
-                                    Color: =ThemeInk2
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =FontWeight.Bold
-                                    Height: =16
-                                    Size: =7.5
-                                    Text: ="MON."
-                                    Width: =(Parent.Width - 2*16) * 0.6/5.6
-                                    X: =lblGCol4Lot.X + lblGCol4Lot.Width
-                                    Y: =8
-                              - shpGridLineaLot:
-                                  Control: Rectangle@2.3.0
-                                  Properties:
-                                    Fill: =ThemeLine
-                                    Height: =1
-                                    Width: =Parent.Width
-                                    Y: =30
-                              - galTxLot:
-                                  Control: Gallery@2.15.0
-                                  Variant: Vertical
-                                  Properties:
-                                    Height: =Parent.Height - 31
-                                    Items: |-
-                                      =Filter('CH-Tbl-Transactions',
-                                          'Transaction Batch'.TransactionBatches = gvarLote.TransactionBatches)
-                                    OnSelect: |-
-                                      =Set(gvarTxLot, ThisItem);
-                                      ClearCollect(colHistLot,
-                                          Filter(
-                                              Table(
-                                                  { orden: 1, titulo: "Incluida en el corte del lote",
-                                                    meta:   Text(ThisItem.'Created On', FmtFecha) & " · " & ThisItem.'Created By'.'Full Name',
-                                                    motivo: "", dot: ThemeInk3, mostrar: true },
-                                                  { orden: 2, titulo: "Sacada del lote → circuito manual",
-                                                    meta:   Text(ThisItem.'Modified On', FmtFecha),
-                                                    motivo: Coalesce(ThisItem.MotivoRechazoCore, ""),
-                                                    dot:    ThemeWarn,
-                                                    mostrar: !IsBlank(ThisItem.MotivoRechazoCore) },
-                                                  { orden: 3, titulo: "Aplicada",
-                                                    meta:   Text(ThisItem.'Modified On', FmtFecha),
-                                                    motivo: "", dot: ThemeOk,
-                                                    mostrar: ThisItem.TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada }
-                                              ),
-                                              mostrar
-                                          )
-                                      )
-                                    TemplateSize: =44
-                                    Width: =Parent.Width
-                                    Y: =31
-                                  Children:
-                                    - shpTxSelLot:
-                                        Control: Rectangle@2.3.0
-                                        Properties:
-                                          Fill: =If(!IsBlank(gvarTxLot) && ThisItem.TransactionID = gvarTxLot.TransactionID, ThemeAccentSoft, Color.Transparent)
-                                          Height: =44
-                                          Width: =Parent.TemplateWidth
-                                    - btnTxFilaLot:
-                                        Control: Classic/Button@2.2.0
-                                        Properties:
-                                          BorderStyle: =BorderStyle.None
-                                          Fill: =Color.Transparent
-                                          Height: =44
-                                          HoverFill: =Color.Transparent
-                                          OnSelect: =Select(Parent)
-                                          PressedFill: =Color.Transparent
-                                          Text: =""
-                                          Width: =Parent.TemplateWidth
-                                    - lblTxRefLot:
-                                        Control: Label@2.5.1
-                                        Properties:
-                                          Font: =Font.'Open Sans'
-                                          FontWeight: =FontWeight.Semibold
-                                          Height: =44
-                                          OnSelect: =Select(Parent)
-                                          Size: =10
-                                          Text: =ThisItem.Name
-                                          Width: =(Parent.TemplateWidth - 2*16) * 1.1/5.6
-                                          X: =16
-                                    - lblTxDepositoLot:
-                                        Control: Label@2.5.1
-                                        Properties:
-                                          Font: =Font.'Open Sans'
-                                          Height: =44
-                                          OnSelect: =Select(Parent)
-                                          Text: =Coalesce(ThisItem.RelatedDepositRecounting.Name, "—")
-                                          Width: =(Parent.TemplateWidth - 2*16) * 2/5.6
-                                          X: =lblTxRefLot.X + lblTxRefLot.Width
-                                    - lblTxCuentaLot:
-                                        Control: Label@2.5.1
-                                        Properties:
-                                          Align: =Align.Right
-                                          Font: =Font.'Open Sans'
-                                          Height: =44
-                                          OnSelect: =Select(Parent)
-                                          Text: =Coalesce(Text(ThisItem.AccountNumber, "[$-en-US]0"), "—")
-                                          Width: =(Parent.TemplateWidth - 2*16) * 1/5.6
-                                          X: =lblTxDepositoLot.X + lblTxDepositoLot.Width
-                                    - lblTxMontoLot:
-                                        Control: Label@2.5.1
-                                        Properties:
-                                          Align: =Align.Right
-                                          Font: =Font.'Open Sans'
-                                          FontWeight: =FontWeight.Semibold
-                                          Height: =44
-                                          OnSelect: =Select(Parent)
-                                          Text: =Text(ThisItem.Total, FmtMoney)
-                                          Width: =(Parent.TemplateWidth - 2*16) * 0.9/5.6
-                                          X: =lblTxCuentaLot.X + lblTxCuentaLot.Width
-                                    - lblTxMonedaLot:
-                                        Control: Label@2.5.1
-                                        Properties:
-                                          Align: =Align.Right
-                                          Font: =Font.'Open Sans'
-                                          Height: =44
-                                          OnSelect: =Select(Parent)
-                                          Text: |-
-                                            =Switch( Text(ThisItem.Currency),
-                                                "NIO", SimboloNIO, "USD", SimboloUSD, "EUR", SimboloEUR,
-                                                Text(ThisItem.Currency) )
-                                          Width: =(Parent.TemplateWidth - 2*16) * 0.6/5.6
-                                          X: =lblTxMontoLot.X + lblTxMontoLot.Width
-                                    - shpTxSelBarraLot:
-                                        Control: Rectangle@2.3.0
-                                        Properties:
-                                          Fill: =ThemeAccent
-                                          Height: =44
-                                          Visible: =!IsBlank(gvarTxLot) && ThisItem.TransactionID = gvarTxLot.TransactionID
-                                          Width: =3
-                                    - shpTxSepLot:
-                                        Control: Rectangle@2.3.0
-                                        Properties:
-                                          Fill: =ThemeLineSoft
-                                          Height: =1
-                                          Width: =Parent.TemplateWidth
-                                          Y: =Parent.TemplateHeight - 1
-                        - cntHistCardLot:
-                            Control: GroupContainer@1.5.0
-                            Variant: ManualLayout
-                            Properties:
-                              BorderColor: =ThemeLine
-                              BorderThickness: =1
-                              Fill: =ThemeSurface
-                              RadiusBottomLeft: =LayCardR
-                              RadiusBottomRight: =LayCardR
-                              RadiusTopLeft: =LayCardR
-                              RadiusTopRight: =LayCardR
-                              Visible: =!IsBlank(gvarTxLot)
-                              Width: =Parent.Width - 2*16
-                              X: =16
-                              Y: =cntGridCardLot.Y + cntGridCardLot.Height + LayGap
-                            Children:
-                              - lblHistTituloLot:
-                                  Control: Label@2.5.1
-                                  Properties:
-                                    Color: =ThemeInk3
-                                    Font: =Font.'Open Sans'
-                                    FontWeight: =FontWeight.Semibold
-                                    Height: =18
-                                    Size: =7.88
-                                    Text: =$"HISTORIAL · {gvarTxLot.Name}"
-                                    Width: =Parent.Width - 28
-                                    X: =14
-                                    Y: =10
-                              - galHistLot:
-                                  Control: Gallery@2.15.0
-                                  Variant: Vertical
-                                  Properties:
-                                    Height: =Parent.Height - 40
-                                    Items: =colHistLot
-                                    TemplateSize: =58
-                                    Width: =Parent.Width - 28
-                                    X: =14
-                                    Y: =32
-                                  Children:
-                                    - shpHistDotLot:
-                                        Control: Rectangle@2.3.0
-                                        Properties:
-                                          Fill: =ThisItem.dot
-                                          Height: =9
-                                          Width: =9
-                                          X: =2
-                                          Y: =8
-                                    - lblHistItemLot:
-                                        Control: Label@2.5.1
-                                        Properties:
-                                          Font: =Font.'Open Sans'
-                                          FontWeight: =FontWeight.Semibold
-                                          Height: =18
-                                          Text: =ThisItem.titulo
-                                          Width: =Parent.TemplateWidth - 30
-                                          X: =22
-                                          Y: =4
-                                    - lblHistMetaLot:
-                                        Control: Label@2.5.1
-                                        Properties:
-                                          Color: =ThemeInk3
-                                          Font: =Font.'Open Sans'
-                                          Height: =16
-                                          Text: =ThisItem.meta
-                                          Width: =Parent.TemplateWidth - 30
-                                          X: =22
-                                          Y: =22
-                                    - lblHistMotivoLot:
-                                        Control: Label@2.5.1
-                                        Properties:
-                                          Color: =ThemeInk2
-                                          Font: =Font.'Open Sans'
-                                          Height: =18
-                                          Text: =ThisItem.motivo
-                                          Visible: =!IsBlank(ThisItem.motivo)
-                                          Width: =Parent.TemplateWidth - 30
-                                          X: =22
-                                          Y: =38
       - cmpDlgAplicadoLot:
           Control: CanvasComponent
           ComponentName: cmpDialogo
@@ -1209,3 +274,91 @@ Screens:
                         Width: =130
                         X: =Parent.Width - 20 - Self.Width
                         Y: =Parent.Height - 20 - 32
+      - btnActualizarLot:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            Fill: =Color.Transparent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =1
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =Color.Transparent
+            OnSelect: |-
+              =// LA carga de la pantalla, para poder repetirla sin salir y volver a entrar.
+              Refresh('CH-Tbl-TransactionBatches');
+              ClearCollect(colCajerosLot,
+                  Filter(
+                      ForAll(
+                          ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload) As w,
+                          {
+                              cajero:          GUID(Text(w.cajero)),
+                              cajeroNombre:    Text(w.cajeroNombre),
+                              mesa:            Text(w.mesa),
+                              lotesPorAplicar: Value(w.lotesPorAplicar),
+                              badge:           Value(w.lotesPorAplicar)
+                          }
+                      ),
+                      lotesPorAplicar > 0
+                  )
+              );
+              UpdateContext({ ctxUltimaActLot: Now() })
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =Color.Transparent
+            Size: =13
+            TabIndex: =-1
+            Text: =""
+            Visible: =false
+            Width: =1
+            X: =2
+            Y: =758
+      - tmrActualizarLot:
+          Control: Timer@2.1.0
+          Properties:
+            Align: =%Align.RESERVED%.Center
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderStyle: =%BorderStyle.RESERVED%.Solid
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =%DisplayMode.RESERVED%.Edit
+            Fill: =Color.Transparent
+            Font: =%Font.RESERVED%.'Open Sans'
+            FontWeight: =%FontWeight.RESERVED%.Normal
+            Height: =1
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =Color.Transparent
+            OnTimerEnd: |-
+              =// Cada minuto, y NUNCA con una operacion en curso: refrescar debajo de
+              // alguien que esta confirmando algo es la peor forma de ayudar.
+              If(!ctxAplicandoLot && !ctxDescargandoLot && !ctxSacandoLot && !ctxDlgAplicadoLot && !ctxDlgSacarLot, Select(btnActualizarLot))
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =Color.Transparent
+            Repeat: =true
+            Start: =true
+            TabIndex: =-1
+            Text: =""
+            VerticalAlign: =%VerticalAlign.RESERVED%.Middle
+            Visible: =false
+            Width: =1
+            X: =6
+            Y: =758

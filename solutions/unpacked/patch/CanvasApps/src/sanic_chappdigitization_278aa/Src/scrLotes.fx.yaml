@@ -61,74 +61,10 @@ scrLotes As screen:
         Y: =LayHeaderH
         ZIndex: =2
 
-    btnActualizarLot As button:
-        BorderThickness: =0
-        Color: =ThemeInk
-        Fill: =Color.Transparent
-        Height: =1
-        HoverFill: =Color.Transparent
-        OnSelect: |-
-            =// LA carga de la pantalla, para poder repetirla sin salir y volver a entrar.
-            Refresh('CH-Tbl-TransactionBatches');
-            ClearCollect(colCajerosLot,
-                Filter(
-                    ForAll(
-                        ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload) As w,
-                        {
-                            cajero:          GUID(Text(w.cajero)),
-                            cajeroNombre:    Text(w.cajeroNombre),
-                            mesa:            Text(w.mesa),
-                            lotesPorAplicar: Value(w.lotesPorAplicar),
-                            badge:           Value(w.lotesPorAplicar)
-                        }
-                    ),
-                    lotesPorAplicar > 0
-                )
-            );
-            UpdateContext({ ctxUltimaActLot: Now() })
-        PaddingBottom: =0
-        PaddingLeft: =0
-        PaddingRight: =0
-        PaddingTop: =0
-        PressedFill: =Color.Transparent
-        TabIndex: =-1
-        Text: =""
-        Visible: =false
-        Width: =1
-        X: =2
-        Y: =758
-        ZIndex: =96
-
-    tmrActualizarLot As timer:
-        BorderThickness: =0
-        Color: =ThemeInk
-        Duration: =60000
-        Fill: =Color.Transparent
-        Height: =1
-        HoverFill: =Color.Transparent
-        OnTimerEnd: |-
-            =// Cada minuto, y NUNCA con una operacion en curso: refrescar debajo de
-            // alguien que esta confirmando algo es la peor forma de ayudar.
-            If(!ctxAplicandoLot && !ctxDescargandoLot && !ctxSacandoLot && !ctxDlgAplicadoLot && !ctxDlgSacarLot, Select(btnActualizarLot))
-        PaddingBottom: =0
-        PaddingLeft: =0
-        PaddingRight: =0
-        PaddingTop: =0
-        PressedFill: =Color.Transparent
-        Repeat: =true
-        Start: =true
-        TabIndex: =-1
-        Text: =""
-        Visible: =false
-        Width: =1
-        X: =6
-        Y: =758
-        ZIndex: =97
-
         cmpRailLot As cmpRailCajeros:
-            OnActualizar: =Select(btnActualizarLot)
             Datos: =AddColumns(DropColumns(colCajerosLot, lotesPorAplicar), pendientesCorte, 0, totalNio, 0, totalUsd, 0, totalEur, 0)
             Height: =Parent.Height
+            OnActualizar: =Select(btnActualizarLot)
             OnSeleccion: |-
                 =Set(gvarCajeroLot, cmpRailLot.CajeroSel);
                 Set(gvarTxLot, Blank());
@@ -152,27 +88,6 @@ scrLotes As screen:
             Titulo: ="CAJEROS CON LOTES"
             Width: =LayRailW
             ZIndex: =1
-
-        icoActualizarLot As icon:
-            Color: =ThemeInk3
-            DisabledColor: =RGBA(166, 166, 166, 1)
-            Height: =18
-            HoverColor: =ThemeAccent
-            Icon: =Icon.Reload
-            OnSelect: =Select(btnActualizarLot)
-            PaddingBottom: =2
-            PaddingLeft: =2
-            PaddingRight: =2
-            PaddingTop: =2
-            PressedColor: =ThemeAccent
-            Tooltip: |-
-                ="Volver a pedir el trabajo pendiente por cajero" &
-                If(IsBlank(ctxUltimaActLot), "", " · última: " & Text(ctxUltimaActLot, FmtHora)) &
-                ". También se actualiza solo cada minuto."
-            Width: =18
-            X: =LayRailW - 31
-            Y: =10
-            ZIndex: =50
 
         cntMainLo As groupContainer.manualLayoutContainer:
             DropShadow: =DropShadow.Light
@@ -1526,4 +1441,68 @@ scrLotes As screen:
                 X: =Parent.Width - 20 - Self.Width
                 Y: =Parent.Height - 20 - 32
                 ZIndex: =9
+
+    btnActualizarLot As button:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Fill: =Color.Transparent
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnSelect: |-
+            =// LA carga de la pantalla, para poder repetirla sin salir y volver a entrar.
+            Refresh('CH-Tbl-TransactionBatches');
+            ClearCollect(colCajerosLot,
+                Filter(
+                    ForAll(
+                        ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload) As w,
+                        {
+                            cajero:          GUID(Text(w.cajero)),
+                            cajeroNombre:    Text(w.cajeroNombre),
+                            mesa:            Text(w.mesa),
+                            lotesPorAplicar: Value(w.lotesPorAplicar),
+                            badge:           Value(w.lotesPorAplicar)
+                        }
+                    ),
+                    lotesPorAplicar > 0
+                )
+            );
+            UpdateContext({ ctxUltimaActLot: Now() })
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =Color.Transparent
+        TabIndex: =-1
+        Text: =""
+        Visible: =false
+        Width: =1
+        X: =2
+        Y: =758
+        ZIndex: =96
+
+    tmrActualizarLot As timer:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Fill: =Color.Transparent
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnTimerEnd: |-
+            =// Cada minuto, y NUNCA con una operacion en curso: refrescar debajo de
+            // alguien que esta confirmando algo es la peor forma de ayudar.
+            If(!ctxAplicandoLot && !ctxDescargandoLot && !ctxSacandoLot && !ctxDlgAplicadoLot && !ctxDlgSacarLot, Select(btnActualizarLot))
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =Color.Transparent
+        Repeat: =true
+        Start: =true
+        TabIndex: =-1
+        Text: =""
+        Visible: =false
+        Width: =1
+        X: =6
+        Y: =758
+        ZIndex: =97
+
 

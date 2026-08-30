@@ -22,7 +22,17 @@ ComponentDefinitions:
         Description: A custom property
         DataType: Table
         Default: |-
-          =Table({cajeroNombre: "SampleText", pendientesCorte: "", mesa: "", badge: 0, cajero: GUID(), totalEur: 0.00, totalNio: 0.00, totalUsd: 0.00})
+          =// ESTE REGISTRO ES EL CONTRATO, no un ejemplo decorativo: el esquema de la
+          // tabla de entrada lo fija el Default, no lo que le pase la pantalla.
+          // pendientesCorte decia "" —TEXTO— mientras scrCorte, scrLotes y scrManual le
+          // mandan un numero. Queda en 0 para que el tipo sea el real.
+          Table({cajeroNombre: "SampleText", pendientesCorte: 0, mesa: "", badge: 0, cajero: GUID(), totalEur: 0.00, totalNio: 0.00, totalUsd: 0.00})
+      OnActualizar:
+        PropertyKind: Event
+        DisplayName: OnActualizar
+        Description: A custom property
+        ReturnType: None
+        Default: =
       OnSeleccion:
         PropertyKind: Event
         DisplayName: OnSeleccion
@@ -60,7 +70,7 @@ ComponentDefinitions:
             Height: =16
             Size: =7.88
             Text: =Upper(cmpRailCajeros.Titulo)
-            Width: =Parent.Width-26
+            Width: =Parent.Width - 26 - 22
             X: =13
             Y: =11
       - cntOrdenRail:
@@ -114,24 +124,19 @@ ComponentDefinitions:
           Properties:
             Height: =Parent.Height - Self.Y
             Items: |-
-              =Sort(
-                  cmpRailCajeros.Datos,
-                  If(
-                      Coalesce(
-                          ctxOrdenRail,
-                          "cant"
-                      ) = "cant",
-                      badge,
-                      cajeroNombre
-                  ),
-                  If(
-                      Coalesce(
-                          ctxOrdenRail,
-                          "cant"
-                      ) = "cant",
-                      SortOrder.Descending,
-                      SortOrder.Ascending
-                  )
+              =// EL If ELIGE LA TABLA YA ORDENADA, NO LA CLAVE.
+              //   Antes el If estaba ADENTRO del Sort, eligiendo entre badge (numero) y
+              //   cajeroNombre (texto). Un If devuelve UN SOLO TIPO: Power Fx unificaba
+              //   hacia numero —por la primera rama— y convertia el nombre con Value().
+              //   De ahi "The value 'SYSTEM' cannot be converted to a number", y
+              //   'SampleText' por el registro de ejemplo de Datos.
+              //
+              //   No se puede cambiar el TIPO de la clave dentro de un mismo Sort. Se
+              //   cambia el Sort entero.
+              If(
+                  Coalesce(ctxOrdenRail, "cant") = "cant",
+                  Sort(cmpRailCajeros.Datos, badge, SortOrder.Descending),
+                  Sort(cmpRailCajeros.Datos, cajeroNombre, SortOrder.Ascending)
               )
             OnSelect: =cmpRailCajeros.OnSeleccion()
             TemplatePadding: =0

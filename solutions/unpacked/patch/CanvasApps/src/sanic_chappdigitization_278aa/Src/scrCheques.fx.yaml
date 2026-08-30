@@ -43,53 +43,6 @@ scrCheques As screen:
         Y: =LayHeaderH
         ZIndex: =2
 
-        btnActualizarChq As button:
-            BorderThickness: =0
-            Color: =ThemeInk
-            Fill: =Color.Transparent
-            Height: =1
-            HoverFill: =Color.Transparent
-            OnSelect: |-
-                =Refresh('CH-Tbl-Checks');
-                UpdateContext({ ctxUltimaActChq: Now() })
-            PaddingBottom: =0
-            PaddingLeft: =0
-            PaddingRight: =0
-            PaddingTop: =0
-            PressedFill: =Color.Transparent
-            TabIndex: =-1
-            Text: =""
-            Visible: =false
-            Width: =1
-            X: =2
-            Y: =758
-            ZIndex: =96
-
-        tmrActualizarChq As timer:
-            BorderThickness: =0
-            Color: =ThemeInk
-            Duration: =60000
-            Fill: =Color.Transparent
-            Height: =1
-            HoverFill: =Color.Transparent
-            OnTimerEnd: |-
-                =// Cada minuto, salvo con una operacion en curso.
-                If(!ctxBusyChq, Select(btnActualizarChq))
-            PaddingBottom: =0
-            PaddingLeft: =0
-            PaddingRight: =0
-            PaddingTop: =0
-            PressedFill: =Color.Transparent
-            Repeat: =true
-            Start: =true
-            TabIndex: =-1
-            Text: =""
-            Visible: =false
-            Width: =1
-            X: =6
-            Y: =758
-            ZIndex: =97
-
         cntMainChq As groupContainer.manualLayoutContainer:
             DropShadow: =DropShadow.Light
             Fill: =Color.Transparent
@@ -1204,4 +1157,50 @@ scrCheques As screen:
                     Visible: =IsBlank(gvarChq)
                     Width: =Parent.Width
                     ZIndex: =4
+
+        btnActualizarChq As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            Fill: =Color.Transparent
+            Height: =1
+            HoverFill: =Color.Transparent
+            OnSelect: |-
+                =Refresh('CH-Tbl-Checks');
+                UpdateContext({ ctxUltimaActChq: Now() })
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            TabIndex: =-1
+            Text: =""
+            Visible: =false
+            Width: =1
+            X: =2
+            Y: =758
+            ZIndex: =96
+
+        tmrActualizarChq As timer:
+            BorderThickness: =0
+            Color: =ThemeInk
+            Fill: =Color.Transparent
+            Height: =1
+            HoverFill: =Color.Transparent
+            OnTimerEnd: |-
+                =// Cada minuto, salvo con una operacion en curso.
+                If(!ctxBusyChq, Select(btnActualizarChq))
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            Repeat: =true
+            Start: =true
+            TabIndex: =-1
+            Text: =""
+            Visible: =false
+            Width: =1
+            X: =6
+            Y: =758
+            ZIndex: =97
 

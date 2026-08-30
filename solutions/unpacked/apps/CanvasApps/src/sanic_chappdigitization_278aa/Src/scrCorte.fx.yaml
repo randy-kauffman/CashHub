@@ -34,31 +34,11 @@ scrCorte As screen:
         cmpRailCor As cmpRailCajeros:
             Datos: =AddColumns(Filter(colCajerosCor, pendientesCorte > 0), badge, pendientesCorte)
             Height: =Parent.Height
+            OnActualizar: =Select(btnActualizarCor)
             OnSeleccion: =Set(gvarCajeroCor, cmpRailCor.CajeroSel)
             Titulo: ="CAJEROS CON CORTE PENDIENTE"
             Width: =LayRailW
             ZIndex: =1
-
-        icoActualizarCor As icon:
-            Color: =ThemeInk3
-            DisabledColor: =RGBA(166, 166, 166, 1)
-            Height: =18
-            HoverColor: =ThemeAccent
-            Icon: =Icon.Reload
-            OnSelect: =Select(btnActualizarCor)
-            PaddingBottom: =2
-            PaddingLeft: =2
-            PaddingRight: =2
-            PaddingTop: =2
-            PressedColor: =ThemeAccent
-            Tooltip: |-
-                ="Volver a pedir el trabajo pendiente por cajero" &
-                If(IsBlank(ctxUltimaActCor), "", " · última: " & Text(ctxUltimaActCor, FmtHora)) &
-                ". También se actualiza solo cada minuto."
-            Width: =18
-            X: =LayRailW - 31
-            Y: =10
-            ZIndex: =50
 
         cntMainCor As groupContainer.manualLayoutContainer:
             DropShadow: =DropShadow.Light
@@ -522,6 +502,32 @@ scrCorte As screen:
                 Y: =LayGutter
                 ZIndex: =7
 
+    cmpDlgCorteCor As cmpDialogo:
+        AnchoCard: =440
+        Height: =App.Height
+        Mostrar: =ctxDlgCorteCor
+        OkHabilitado: =!ctxCorriendoCor
+        OnCancelar: |-
+            =UpdateContext({ctxDlgCorteCor: false})
+        OnOk: |-
+            =UpdateContext({ctxCorriendoCor: true});
+            'CH-Flow-CreateCut'.Run(gvarCajeroCor.cajero);
+            UpdateContext({ctxCorriendoCor: false, ctxDlgCorteCor: false});
+            Set(gvarCajeroCor, Blank());
+            Select(btnActualizarCor);
+            Notify("Corte generado. El lote quedó en estado Generado.", NotificationType.Success)
+        Texto: |-
+            =$"Se creará un lote en estado Generado con las {ctxCortePreviewCor.EligibleCount} transacciones de efectivo pendientes del cajero (" &
+            SimboloNIO & " " & Text(ctxCortePreviewCor.TotalNIO, FmtMoney) & " · " &
+            SimboloUSD & " " & Text(ctxCortePreviewCor.TotalUSD, FmtMoney) &
+            "). El lote queda a su nombre. El conteo lo confirma el servidor en el momento del corte: las transacciones creadas después entran en el próximo corte."
+        TextoOk: ="Sí, generar corte"
+        Titulo: =$"¿Generar el corte de {gvarCajeroCor.cajeroNombre}?"
+        Tono: ="warn"
+        Visible: =ctxDlgCorteCor
+        Width: =App.Width
+        ZIndex: =3
+
     btnActualizarCor As button:
         BorderThickness: =0
         Color: =ThemeInk
@@ -569,7 +575,6 @@ scrCorte As screen:
     tmrActualizarCor As timer:
         BorderThickness: =0
         Color: =ThemeInk
-        Duration: =60000
         Fill: =Color.Transparent
         Height: =1
         HoverFill: =Color.Transparent
@@ -592,30 +597,4 @@ scrCorte As screen:
         X: =6
         Y: =760
         ZIndex: =99
-
-    cmpDlgCorteCor As cmpDialogo:
-        AnchoCard: =440
-        Height: =App.Height
-        Mostrar: =ctxDlgCorteCor
-        OkHabilitado: =!ctxCorriendoCor
-        OnCancelar: |-
-            =UpdateContext({ctxDlgCorteCor: false})
-        OnOk: |-
-            =UpdateContext({ctxCorriendoCor: true});
-            'CH-Flow-CreateCut'.Run(gvarCajeroCor.cajero);
-            UpdateContext({ctxCorriendoCor: false, ctxDlgCorteCor: false});
-            Set(gvarCajeroCor, Blank());
-            Select(btnActualizarCor);
-            Notify("Corte generado. El lote quedó en estado Generado.", NotificationType.Success)
-        Texto: |-
-            =$"Se creará un lote en estado Generado con las {ctxCortePreviewCor.EligibleCount} transacciones de efectivo pendientes del cajero (" &
-            SimboloNIO & " " & Text(ctxCortePreviewCor.TotalNIO, FmtMoney) & " · " &
-            SimboloUSD & " " & Text(ctxCortePreviewCor.TotalUSD, FmtMoney) &
-            "). El lote queda a su nombre. El conteo lo confirma el servidor en el momento del corte: las transacciones creadas después entran en el próximo corte."
-        TextoOk: ="Sí, generar corte"
-        Titulo: =$"¿Generar el corte de {gvarCajeroCor.cajeroNombre}?"
-        Tono: ="warn"
-        Visible: =ctxDlgCorteCor
-        Width: =App.Width
-        ZIndex: =3
 
