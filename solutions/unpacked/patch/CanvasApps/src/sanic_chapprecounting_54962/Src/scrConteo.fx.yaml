@@ -848,10 +848,18 @@ scrConteo As screen:
         DisabledColor: =ThemeInk3
         DisabledFill: =ThemeLineSoft
         DisplayMode: |-
-            =If(
+            =// Se habilita solo cuando el enlace es POSIBLE. Antes solo pedia que hubiera
+            // uno de cada lado: quedaba habilitado con un deposito ya enlazado o con
+            // monedas distintas, se apretaba y recien ahi saltaba el error. Las tres
+            // condiciones de abajo son las mismas que valida el OnSelect — un boton
+            // habilitado que siempre falla es peor que uno apagado.
+            If(
                 gvarIdentidadOk && !ctxSoloLecturaCon &&
                 !IsBlank(ctxDepSelCon.'CH-Tbl-DepositsRecounting') &&
-                !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits'),
+                !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
+                IsBlank(ctxDepSelCon.RelatedDeclaredDeposit.'CH-Tbl-DeclaredDeposits') &&
+                IsBlank(ctxDepDecSelCon.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting') &&
+                ctxDepSelCon.Currency = ctxDepDecSelCon.Currency,
                 DisplayMode.Edit,
                 DisplayMode.Disabled
             )
@@ -1058,16 +1066,6 @@ scrConteo As screen:
             );
             
             // ---- Recarga: Q1 + Q5, las mismas dos consultas delegables del paso 4 de btnEnlazarCon ----
-            // El declarado tambien se recarga: al guardar se escribe SU punta del enlace
-            // (RelatedRecountedDeposit) y sin esto la pildora seguia diciendo "Sin
-            // enlazar" con el dato ya correcto en la base.
-            ClearCollect(
-                colDepDeclaradosCon,
-                SortByColumns(
-                    Filter('CH-Tbl-DeclaredDeposits', DeclaredBag.'CH-Tbl-DeclaredBags' = gvarDeclaredBag.'CH-Tbl-DeclaredBags'),
-                    "createdon", SortOrder.Ascending
-                )
-            );
             ClearCollect(
                 colChecksTulaCon,
                 Filter('CH-Tbl-Checks', Bag.'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags')
@@ -1220,6 +1218,16 @@ scrConteo As screen:
                     ClearCollect(
                         colChecksTulaCon,
                         Filter('CH-Tbl-Checks', Bag.'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags')
+                    ),
+                    // El DECLARADO tambien: guardar escribe SU punta del enlace
+                    // (RelatedRecountedDeposit). Sin recargarlo, la pildora seguia
+                    // diciendo "Sin enlazar" con el dato ya correcto en la base.
+                    ClearCollect(
+                        colDepDeclaradosCon,
+                        SortByColumns(
+                            Filter('CH-Tbl-DeclaredDeposits', DeclaredBag.'CH-Tbl-DeclaredBags' = gvarDeclaredBag.'CH-Tbl-DeclaredBags'),
+                            "createdon", SortOrder.Ascending
+                        )
                     )
                 );
                 If(
@@ -6484,6 +6492,16 @@ scrConteo As screen:
                     ClearCollect(
                         colChecksTulaCon,
                         Filter('CH-Tbl-Checks', Bag.'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags')
+                    ),
+                    // El DECLARADO tambien: guardar escribe SU punta del enlace
+                    // (RelatedRecountedDeposit). Sin recargarlo aca, la pildora seguia
+                    // diciendo "Sin enlazar" con el dato ya correcto en la base.
+                    ClearCollect(
+                        colDepDeclaradosCon,
+                        SortByColumns(
+                            Filter('CH-Tbl-DeclaredDeposits', DeclaredBag.'CH-Tbl-DeclaredBags' = gvarDeclaredBag.'CH-Tbl-DeclaredBags'),
+                            "createdon", SortOrder.Ascending
+                        )
                     )
                 );
             
