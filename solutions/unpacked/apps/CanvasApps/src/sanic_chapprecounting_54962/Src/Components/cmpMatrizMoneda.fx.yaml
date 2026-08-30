@@ -86,9 +86,9 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =7.13
         Text: ="CHEQUES"
-        Width: =90
+        Width: =(Parent.Width - 28) * 0.18
         Wrap: =false
-        X: =lblThMtoMat.X - 90
+        X: =lblThMtoMat.X - Self.Width
         Y: =27
         ZIndex: =4
 
@@ -103,9 +103,9 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =7.13
         Text: ="MONTO CHEQUES"
-        Width: =110
+        Width: =(Parent.Width - 28) * 0.30
         Wrap: =false
-        X: =lblThEfeMat.X - 110
+        X: =lblThEfeMat.X - Self.Width
         Y: =27
         ZIndex: =5
 
@@ -120,9 +120,9 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =7.13
         Text: ="EFECTIVO"
-        Width: =107
+        Width: =(Parent.Width - 28) * 0.30
         Wrap: =false
-        X: =Parent.Width - 14 - 107
+        X: =Parent.Width - 14 - Self.Width
         Y: =27
         ZIndex: =6
 
@@ -143,7 +143,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =8.25
         Text: ="Recontado"
-        Width: =100
+        Width: =lblThChqMat.X - 14 - 8
         Wrap: =false
         X: =14
         Y: =shpLineaThMat.Y + 3
@@ -159,7 +159,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =9
         Text: =Text(cmpMatrizMoneda.ChequesRec)
-        Width: =90
+        Width: =lblThChqMat.Width
         Wrap: =false
         X: =lblThChqMat.X
         Y: =lblRecLabMat.Y
@@ -175,7 +175,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =9
         Text: =fxMonto(cmpMatrizMoneda.MontoChequesRec, cmpMatrizMoneda.Simbolo)
-        Width: =110
+        Width: =lblThMtoMat.Width
         Wrap: =false
         X: =lblThMtoMat.X
         Y: =lblRecLabMat.Y
@@ -191,7 +191,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =9
         Text: =fxMonto(cmpMatrizMoneda.EfectivoRec, cmpMatrizMoneda.Simbolo)
-        Width: =107
+        Width: =lblThEfeMat.Width
         Wrap: =false
         X: =lblThEfeMat.X
         Y: =lblRecLabMat.Y
@@ -206,7 +206,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =8.25
         Text: ="Declarado"
-        Width: =100
+        Width: =lblThChqMat.X - 14 - 8
         Wrap: =false
         X: =14
         Y: =lblRecLabMat.Y + lblRecLabMat.Height
@@ -222,7 +222,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =9
         Text: =Text(cmpMatrizMoneda.ChequesDec)
-        Width: =90
+        Width: =lblThChqMat.Width
         Wrap: =false
         X: =lblThChqMat.X
         Y: =lblDecLabMat.Y
@@ -238,7 +238,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =9
         Text: =fxMonto(cmpMatrizMoneda.MontoChequesDec, cmpMatrizMoneda.Simbolo)
-        Width: =110
+        Width: =lblThMtoMat.Width
         Wrap: =false
         X: =lblThMtoMat.X
         Y: =lblDecLabMat.Y
@@ -254,7 +254,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =9
         Text: =fxMonto(cmpMatrizMoneda.EfectivoDec, cmpMatrizMoneda.Simbolo)
-        Width: =107
+        Width: =lblThEfeMat.Width
         Wrap: =false
         X: =lblThEfeMat.X
         Y: =lblDecLabMat.Y
@@ -278,7 +278,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =8.25
         Text: ="Diferencia"
-        Width: =100
+        Width: =lblThChqMat.X - 14 - 8
         Wrap: =false
         X: =14
         Y: =shpLineaDifMat.Y + 3
@@ -295,7 +295,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =9
         Text: =fxCantDif(cmpMatrizMoneda.DifCheques)
-        Width: =90
+        Width: =lblThChqMat.Width
         Wrap: =false
         X: =lblThChqMat.X
         Y: =lblDifLabMat.Y
@@ -312,7 +312,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =9
         Text: =fxMontoDif(cmpMatrizMoneda.DifMonto, cmpMatrizMoneda.Simbolo)
-        Width: =110
+        Width: =lblThMtoMat.Width
         Wrap: =false
         X: =lblThMtoMat.X
         Y: =lblDifLabMat.Y
@@ -329,7 +329,7 @@ cmpMatrizMoneda As CanvasComponent:
         PaddingTop: =0
         Size: =9
         Text: =fxMontoDif(cmpMatrizMoneda.DifEfectivo, cmpMatrizMoneda.Simbolo)
-        Width: =107
+        Width: =lblThEfeMat.Width
         Wrap: =false
         X: =lblThEfeMat.X
         Y: =lblDifLabMat.Y

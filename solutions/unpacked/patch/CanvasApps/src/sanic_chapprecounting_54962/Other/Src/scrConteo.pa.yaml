@@ -838,7 +838,7 @@ Screens:
             DisplayMode: =DisplayMode.View
             Fill: =ThemeSurface
             Font: =Font.'Open Sans'
-            Height: =562
+            Height: =Max(Parent.Height - Self.Y - 16, 480)
             HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
             HoverColor: =Self.Color
             HoverFill: =ThemeSurface
@@ -2278,7 +2278,7 @@ Screens:
             DisplayMode: =DisplayMode.View
             Fill: =ThemeSurface
             Font: =Font.'Open Sans'
-            Height: =562
+            Height: =Max(Parent.Height - Self.Y - 16, 480)
             HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
             HoverColor: =Self.Color
             HoverFill: =ThemeSurface
@@ -2445,7 +2445,7 @@ Screens:
                   false,
 
                   // hay algo capturado => se PREGUNTA. Nada se borra todavia (7.2 regla 2).
-                  Sum(colDetalleConteoCon, Auto + Manual) > 0 || CountRows(Filter(colChecksCon, Seleccionado)) > 0,
+                  Sum(galBilletesCon.AllItems As B, B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0)) + Sum(galMonedasCon.AllItems As M, Coalesce(Value(M.inpCantidadMonCon.Text), 0)) > 0 || CountRows(Filter(galChequesCon.AllItems As C, If(C.EsManual, true, C.chkChequeCon.Value))) > 0,
                       UpdateContext({ ctxDlgMonedaCon: true }),
 
                   // no hay nada capturado => se rehace directo, sin preguntar
@@ -2478,26 +2478,30 @@ Screens:
             Visible: =ctxHayDepositoCon
             Width: =50
             Wrap: =false
-            X: =inpCuentaCon.X - 8 - Self.Width
+            X: =ddMonedaCon.X + ddMonedaCon.Width + 24
             Y: =233
       - inpCuentaCon:
           Control: Classic/TextInput@2.3.2
           Properties:
-            Align: =Align.Right
             BorderColor: =ThemeLine
             BorderThickness: =1
             Color: =ThemeInk
-            Default: =If(IsBlank(ctxDepositoCon.AccountNumber), "", Text(ctxDepositoCon.AccountNumber))
+            Default: |-
+              =If(
+                  !IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                  Text(ctxDepDecCursoCon.AccountNumber),
+                  If(IsBlank(ctxDepositoCon.AccountNumber), "", Text(ctxDepositoCon.AccountNumber))
+              )
             DisabledBorderColor: =ColorFade(Self.BorderColor, 40%)
             DisabledColor: =ColorFade(Self.Color, 40%)
             DisabledFill: =Self.Fill
-            DisplayMode: =If(gvarIdentidadOk && !ctxSoloLecturaCon, DisplayMode.Edit, DisplayMode.Disabled)
+            DisplayMode: =DisplayMode.View
             Fill: =ThemeSurface
             FocusedBorderThickness: =3
             Font: =Font.'Open Sans'
             Format: =TextFormat.Number
             Height: =32
-            HintText: ="N° de cuenta"
+            HintText: ="Sin declaración"
             HoverBorderColor: =Self.Color
             HoverColor: =Self.Color
             HoverFill: =Self.Fill
@@ -2509,7 +2513,7 @@ Screens:
             Size: =9
             Visible: =ctxHayDepositoCon
             Width: =160
-            X: =shpCardCurCon.X + shpCardCurCon.Width - 16 - Self.Width
+            X: =lblLabCuentaCon.X + lblLabCuentaCon.Width + 9
             Y: =233
       - shpLineaCurRowCon:
           Control: Rectangle@2.3.0
@@ -2570,9 +2574,9 @@ Screens:
                       )
                   )
               )
-            ChequesRec: =CountRows(Filter(colChecksCon, Seleccionado))
+            ChequesRec: =CountRows(Filter(galChequesCon.AllItems As C, If(C.EsManual, true, C.chkChequeCon.Value)))
             EfectivoDec: =If(IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'), 0, ctxDepDecCursoCon.CashAmount)
-            EfectivoRec: =Sum(colDetalleConteoCon, Denominacion * (Auto + Manual))
+            EfectivoRec: =Sum(galBilletesCon.AllItems As B, B.Denominacion * (B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) + Sum(galMonedasCon.AllItems As M, M.Denominacion * Coalesce(Value(M.inpCantidadMonCon.Text), 0))
             Height: =100
             Moneda: =ctxMonedaCon
             MonedaNombre: =""
@@ -2588,11 +2592,11 @@ Screens:
                       CheckAmount
                   )
               )
-            MontoChequesRec: =Sum(Filter(colChecksCon, Seleccionado), Monto)
+            MontoChequesRec: =Sum(galChequesCon.AllItems As C, If(If(C.EsManual, true, C.chkChequeCon.Value), If(C.EsManual, Coalesce(Value(C.inpMontoChequeCon.Text), 0), C.Monto), 0))
             Simbolo: =fxSimbolo(ctxMonedaCon)
             Titulo: ="Depósito " & If(IsBlank(Trim(inpCuentaCon.Text)), "sin cuenta", Trim(inpCuentaCon.Text))
             Visible: =ctxHayDepositoCon
-            Width: =580
+            Width: =shpCardCurCon.Width - 32
             X: =shpCardCurCon.X + 16
             Y: =278
       - shpLineaMatDepCon:
@@ -2613,7 +2617,7 @@ Screens:
             Items: =["Billetes", "Monedas", "Cheques"]
             Visible: =ctxHayDepositoCon
             Width: =360
-            X: =746
+            X: =shpCardCurCon.X + 10
             Y: =shpLineaMatDepCon.Y + 1
       - shpLineaTabDetCon:
           Control: Rectangle@2.3.0
@@ -3722,7 +3726,7 @@ Screens:
                   "Cheques",  IsEmpty(colChecksCon),
                   false
               )
-            Width: =580
+            Width: =shpCardCurCon.Width - 32
             X: =shpCardCurCon.X + 16
             Y: =galBilletesCon.Y + 40
       - lblVacioCursoCon:
@@ -3744,7 +3748,7 @@ Screens:
               "Los " & Text(CountRows(colDepRecontadosCon)) & " depósitos de la tula ya fueron guardados." & Char(10) &
               "Presione «Nuevo» para capturar otro, o «Terminar tula» para cerrarla."
             Visible: =!ctxHayDepositoCon
-            Width: =580
+            Width: =shpCardCurCon.Width - 32
             X: =shpCardCurCon.X + 16
             Y: =330
       - shpFootBilCon:
@@ -3815,7 +3819,7 @@ Screens:
             PaddingRight: =0
             PaddingTop: =0
             Size: =9.38
-            Text: =Text(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Auto))
+            Text: =Text(Sum(galBilletesCon.AllItems As B, B.Auto))
             Visible: =galBilletesCon.Visible
             Width: =shpCardCurCon.Width * 0.12092
             Wrap: =false
@@ -3836,7 +3840,7 @@ Screens:
             PaddingRight: =0
             PaddingTop: =0
             Size: =9.38
-            Text: =Text(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Manual))
+            Text: =Text(Sum(galBilletesCon.AllItems As B, Coalesce(Value(B.inpCantidadBilCon.Text), 0)))
             Visible: =galBilletesCon.Visible
             Width: =shpCardCurCon.Width * 0.16993
             Wrap: =false
@@ -3857,7 +3861,7 @@ Screens:
             PaddingRight: =0
             PaddingTop: =0
             Size: =9.38
-            Text: =fxMonto(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Denominacion * (Auto + Manual)), fxSimbolo(ctxMonedaCon))
+            Text: =fxMonto(Sum(galBilletesCon.AllItems As B, B.Denominacion * (B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))), fxSimbolo(ctxMonedaCon))
             Visible: =galBilletesCon.Visible
             Width: =shpCardCurCon.Width * 0.30719
             Wrap: =false
@@ -3931,7 +3935,7 @@ Screens:
             PaddingRight: =0
             PaddingTop: =0
             Size: =9.38
-            Text: =Text(Sum(Filter(colDetalleConteoCon, Tipo = "Moneda"), Manual))
+            Text: =Text(Sum(galMonedasCon.AllItems As M, Coalesce(Value(M.inpCantidadMonCon.Text), 0)))
             Visible: =galMonedasCon.Visible
             Width: =shpCardCurCon.Width * 0.16993
             Wrap: =false
@@ -3952,7 +3956,7 @@ Screens:
             PaddingRight: =0
             PaddingTop: =0
             Size: =9.38
-            Text: =fxMonto(Sum(Filter(colDetalleConteoCon, Tipo = "Moneda"), Denominacion * Manual), fxSimbolo(ctxMonedaCon))
+            Text: =fxMonto(Sum(galMonedasCon.AllItems As M, M.Denominacion * Coalesce(Value(M.inpCantidadMonCon.Text), 0)), fxSimbolo(ctxMonedaCon))
             Visible: =galMonedasCon.Visible
             Width: =shpCardCurCon.Width * 0.37908
             Wrap: =false
@@ -4006,7 +4010,7 @@ Screens:
             Size: =9
             Text: |-
               ="Efectivo del depósito (billetes + monedas): " &
-              fxMonto(Sum(colDetalleConteoCon, Denominacion * (Auto + Manual)), fxSimbolo(ctxMonedaCon))
+              fxMonto(Sum(galBilletesCon.AllItems As B, B.Denominacion * (B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) + Sum(galMonedasCon.AllItems As M, M.Denominacion * Coalesce(Value(M.inpCantidadMonCon.Text), 0)), fxSimbolo(ctxMonedaCon))
             Visible: =galMonedasCon.Visible
             Width: =shpCardCurCon.Width * 0.93137
             Wrap: =false
@@ -4060,7 +4064,7 @@ Screens:
             PaddingTop: =0
             Size: =9.38
             Text: |-
-              ="Cheques del depósito: " & Text(CountRows(Filter(colChecksCon, Seleccionado)))
+              ="Cheques del depósito: " & Text(CountRows(Filter(galChequesCon.AllItems As C, If(C.EsManual, true, C.chkChequeCon.Value))))
             Visible: =galChequesCon.Visible
             Width: =300
             Wrap: =false
@@ -4081,7 +4085,7 @@ Screens:
             PaddingRight: =0
             PaddingTop: =0
             Size: =9.38
-            Text: =fxMonto(Sum(Filter(colChecksCon, Seleccionado), Monto), fxSimbolo(ctxMonedaCon))
+            Text: =fxMonto(Sum(galChequesCon.AllItems As C, If(If(C.EsManual, true, C.chkChequeCon.Value), If(C.EsManual, Coalesce(Value(C.inpMontoChequeCon.Text), 0), C.Monto), 0)), fxSimbolo(ctxMonedaCon))
             Visible: =galChequesCon.Visible
             Width: =shpCardCurCon.Width * 0.4281
             Wrap: =false
@@ -4229,8 +4233,8 @@ Screens:
             Text: |-
               ="Total del depósito  " &
               fxMonto(
-                  Sum(colDetalleConteoCon, Denominacion * (Auto + Manual)) +
-                  Sum(Filter(colChecksCon, Seleccionado), Monto),
+                  Sum(galBilletesCon.AllItems As B, B.Denominacion * (B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) + Sum(galMonedasCon.AllItems As M, M.Denominacion * Coalesce(Value(M.inpCantidadMonCon.Text), 0)) +
+                  Sum(galChequesCon.AllItems As C, If(If(C.EsManual, true, C.chkChequeCon.Value), If(C.EsManual, Coalesce(Value(C.inpMontoChequeCon.Text), 0), C.Monto), 0)),
                   fxSimbolo(ctxMonedaCon)
               )
             Visible: =ctxHayDepositoCon
@@ -4265,15 +4269,9 @@ Screens:
               // ---- Validacion LOCAL, con guardas que HABLAN ----
               //   LAS CUATRO RAMAS DE ERROR BAJAN ctxSalirTrasGuardarCon: este OnSelect lo
               //   dispara tambien "Guardar y salir" (§13.1) con la bandera en true.
+              //   Ya NO se valida el numero de cuenta: el cajero no lo escribe. Sale de
+              //   la declaracion enlazada, o va vacio si no hay declaracion.
               If(
-                  IsBlank(Trim(inpCuentaCon.Text)) || Value(inpCuentaCon.Text) <= 0,
-                      UpdateContext({ ctxSalirTrasGuardarCon: false });
-                      Notify("Escriba el número de cuenta del depósito.", NotificationType.Error),
-
-                  Value(inpCuentaCon.Text) > 999999999,
-                      UpdateContext({ ctxSalirTrasGuardarCon: false });
-                      Notify("El número de cuenta no puede tener más de 9 dígitos.", NotificationType.Error),
-
                   CountRows(
                       Filter(
                           colChecksCon,
@@ -4328,8 +4326,8 @@ Screens:
             Subtitulo: |-
               ="El depósito en curso pasa de " & ctxMonedaCon & " a " & Left(ddMonedaCon.Selected.Value, 3) &
               ". La grilla de denominaciones se rehace y se pierde lo capturado: " &
-              Text(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Auto + Manual)) & " billetes y " &
-              Text(Sum(Filter(colDetalleConteoCon, Tipo = "Moneda"), Manual)) & " monedas." & Char(10) & Char(10) &
+              Text(Sum(galBilletesCon.AllItems As B, B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) & " billetes y " &
+              Text(Sum(galMonedasCon.AllItems As M, Coalesce(Value(M.inpCantidadMonCon.Text), 0))) & " monedas." & Char(10) & Char(10) &
               "Los cheques ya marcados se desmarcan."
             TextoCancelar: ="Cancelar"
             TextoConfirmar: ="Cambiar moneda"
@@ -4399,9 +4397,9 @@ Screens:
             Peligro: =false
             Subtitulo: |-
               ="El depósito en curso no está guardado. Si lo descarta se pierden " &
-              Text(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Auto + Manual)) & " billetes, " &
-              Text(Sum(Filter(colDetalleConteoCon, Tipo = "Moneda"), Manual)) & " monedas y " &
-              Text(CountRows(Filter(colChecksCon, Seleccionado))) & " cheques capturados."
+              Text(Sum(galBilletesCon.AllItems As B, B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) & " billetes, " &
+              Text(Sum(galMonedasCon.AllItems As M, Coalesce(Value(M.inpCantidadMonCon.Text), 0))) & " monedas y " &
+              Text(CountRows(Filter(galChequesCon.AllItems As C, If(C.EsManual, true, C.chkChequeCon.Value)))) & " cheques capturados."
             TextoCancelar: ="Seguir capturando"
             TextoConfirmar: ="Descartar"
             Titulo: ="Descartar los cambios del depósito"
@@ -5768,8 +5766,8 @@ Screens:
                         Text: |-
                           =With(
                               {
-                                  u: Sum(colDetalleConteoCon, Auto + Manual),
-                                  c: CountRows(Filter(colChecksCon, Seleccionado))
+                                  u: Sum(galBilletesCon.AllItems As B, B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0)) + Sum(galMonedasCon.AllItems As M, Coalesce(Value(M.inpCantidadMonCon.Text), 0)),
+                                  c: CountRows(Filter(galChequesCon.AllItems As C, If(C.EsManual, true, C.chkChequeCon.Value)))
                               },
                               "El depósito en curso tiene " &
                               Text(u) & If(u = 1, " unidad", " unidades") & " de efectivo y " &
@@ -6968,7 +6966,14 @@ Screens:
                                                 "USD", 'CH-Ch-Currency'.USD,
                                                 "EUR", 'CH-Ch-Currency'.EUR
                                             ),
-                                  AccountNumber:        Value(inpCuentaCon.Text),
+                                  // La cuenta NO se toma del campo: sale de la declarada
+                                  // enlazada, igual que TransactionNumber mas abajo. Sin
+                                  // declaracion se guarda vacia — es el dato real.
+                                  AccountNumber:        If(
+                                                            IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                                                            Blank(),
+                                                            ctxDepDecCursoCon.AccountNumber
+                                                        ),
                                   CashAmount:           Sum(colDetalleConteoCon, Denominacion * (Auto + Manual)),
                                   BACLocalCheckAmount:  Sum(Filter(colChecksCon, Seleccionado && Tipo = "BAC Local"),   Monto),
                                   OtherLocaCheckAmount: Sum(Filter(colChecksCon, Seleccionado && Tipo = "Otros Local"), Monto),
@@ -6980,7 +6985,7 @@ Screens:
                               }
                           )
                   }),
-                  Collect(colFallidasCon, { Clave: Trim(inpCuentaCon.Text), Detalle: "depósito", Mensaje: FirstError.Message });
+                  Collect(colFallidasCon, { Clave: Coalesce(Trim(inpCuentaCon.Text), "sin cuenta"), Detalle: "depósito", Mensaje: FirstError.Message });
                   Blank()
               );
 
