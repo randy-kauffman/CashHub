@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Da Write sobre las tablas DECLARADAS al rol del cajero (CH-SR-Cashier).
+# Cierra los huecos de privilegios del rol del cajero (CH-SR-Cashier).
 # Idempotente: AddPrivilegesRole no duplica lo que ya esta.
 #
 # POR QUE EXISTE. El cajero abria una tula CON declaracion y saltaba
@@ -17,8 +17,11 @@
 # Append/AppendTo NO alcanzan: sirven para colgar un registro de otro, no para
 # modificar el registro apuntado. El Patch necesita Write.
 #
-# SOLO esas dos tablas. DeclaredChecks se queda sin Write a proposito: no hay un
-# solo Patch contra ella en toda la app del cajero.
+# LA PRIMERA VERSION DE ESTE SCRIPT SE QUEDO CORTA, y vale la pena decir por que:
+# la auditoria se hizo con un grep de UNA LINEA (Patch\('CH-Tbl-...'\)), y en esta
+# app la tabla casi siempre va en la linea SIGUIENTE al Patch(. Asi se escaparon
+# DeclaredChecks y tres Delete. El barrido bueno contempla multilinea; de ahi sale
+# la lista de abajo.
 #
 # 🚨 TIENE UNA IMPLICANCIA DE SEGURIDAD, y hay que decirla. Write en Dataverse es
 #    por TABLA, no por columna: el cajero queda pudiendo modificar cualquier campo
@@ -69,22 +72,45 @@ if not rol:
 bu = rol[0]['_businessunitid_value']
 print(f"Rol: {rol[0]['name']}  ({ROL})")
 
-NECESARIOS = ['prvWritesanic_CHTblDeclaredBags', 'prvWritesanic_CHTblDeclaredDeposits']
+# Salido de auditar TODAS las escrituras de la app del cajero (Patch/Remove) con
+# un barrido que contempla MULTILINEA: la tabla suele ir en la linea siguiente al
+# Patch(, y un grep de una sola linea se los pierde. Asi se me habia escapado
+# DeclaredChecks en la primera pasada.
+#
+# Depth BASIC en los Delete: el cajero borra LO SUYO (su sesion, su solicitud
+# pendiente, sus filas de denominacion). Global ahi le dejaria borrar de otros.
+# Depth GLOBAL en el Write de DeclaredChecks: esos registros los creo la ingesta,
+# no el cajero, asi que Basic no alcanzaria.
+NECESARIOS = [
+    ('prvWritesanic_CHTblDeclaredBags',        'Global'),
+    ('prvWritesanic_CHTblDeclaredDeposits',    'Global'),
+    # MatchedCheck: enlaza el cheque declarado con el del recuento (scrConteo 1112, 6185, 6218)
+    ('prvWritesanic_CHTblDeclaredChecks',      'Global'),
+    # el cajero cancela SU solicitud pendiente (scrSesion 1029)
+    ('prvDeletesanic_CHTblApprovalRequest',    'Basic'),
+    # baja de filas de denominacion al descartar o recalcular (scrConteo 1138, 6250)
+    ('prvDeletesanic_CHTblCountedMoneyDetails','Basic'),
+    # libera la mesa / revierte la sesion si la solicitud no entro (scrSesion 864, 1053)
+    ('prvDeletesanic_CHTblRecountingSession',  'Basic'),
+]
+# NO se pide prvWritesanic_CHTblApprovalRequest: los tres Patch contra esa tabla
+# son sobre Defaults(), o sea CREATE, que el rol ya tiene. Write ahi le dejaria
+# modificar solicitudes ajenas sin que ningun flujo de la app lo necesite.
 
 actuales = {x['name'] for x in
             req('GET', f"/roles({ROL})/roleprivileges_association?$select=name").get('value', [])}
 
 faltan = []
-for nombre in NECESARIOS:
+for nombre, depth in NECESARIOS:
     if nombre in actuales:
         print(f"  ya lo tiene: {nombre}")
         continue
     p = find('privileges', f"name eq '{nombre}'", 'name,privilegeid')
     if not p:
         raise SystemExit(f"No existe el privilegio {nombre}.")
-    faltan.append({'Depth': 'Global', 'PrivilegeId': p[0]['privilegeid'],
+    faltan.append({'Depth': depth, 'PrivilegeId': p[0]['privilegeid'],
                    'BusinessUnitId': bu, 'PrivilegeName': nombre})
-    print(f"  agregando:   {nombre}")
+    print(f"  agregando:   {nombre}  ({depth})")
 
 if faltan:
     req('POST', f"/roles({ROL})/Microsoft.Dynamics.CRM.AddPrivilegesRole", {'Privileges': faltan})
@@ -92,7 +118,8 @@ if faltan:
 final = {x['name'] for x in
          req('GET', f"/roles({ROL})/roleprivileges_association?$select=name").get('value', [])}
 print("\nEstado final sobre las tablas declaradas:")
-for tabla in ('DeclaredBags', 'DeclaredDeposits', 'DeclaredChecks'):
+for tabla in ('DeclaredBags', 'DeclaredDeposits', 'DeclaredChecks',
+              'ApprovalRequest', 'CountedMoneyDetails', 'RecountingSession'):
     acc = [a for a in ('Read', 'Write', 'Create', 'Append', 'AppendTo', 'Delete')
            if f"prv{a}sanic_CHTbl{tabla}" in final]
     print(f"  {tabla:<18} {', '.join(acc) if acc else '(ninguno)'}")
