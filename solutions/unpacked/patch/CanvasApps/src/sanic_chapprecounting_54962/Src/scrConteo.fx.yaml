@@ -2169,7 +2169,7 @@ scrConteo As screen:
                 false,
             
                 // hay algo capturado => se PREGUNTA. Nada se borra todavia (7.2 regla 2).
-                Sum(colDetalleConteoCon, Auto + Manual) > 0 || CountRows(Filter(colChecksCon, Seleccionado)) > 0,
+                Sum(galBilletesCon.AllItems As B, B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0)) + Sum(galMonedasCon.AllItems As M, Coalesce(Value(M.inpCantidadMonCon.Text), 0)) > 0 || CountRows(Filter(galChequesCon.AllItems As C, If(C.EsManual, true, C.chkChequeCon.Value))) > 0,
                     UpdateContext({ ctxDlgMonedaCon: true }),
             
                 // no hay nada capturado => se rehace directo, sin preguntar
@@ -2200,6 +2200,7 @@ scrConteo As screen:
         ZIndex: =53
 
     inpCuentaCon As text:
+        Align: =Align.Left
         BorderColor: =ThemeLine
         Color: =ThemeInk
         Default: |-
@@ -2272,9 +2273,9 @@ scrConteo As screen:
                     )
                 )
             )
-        ChequesRec: =CountRows(Filter(colChecksCon, Seleccionado))
+        ChequesRec: =CountRows(Filter(galChequesCon.AllItems As C, If(C.EsManual, true, C.chkChequeCon.Value)))
         EfectivoDec: =If(IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'), 0, ctxDepDecCursoCon.CashAmount)
-        EfectivoRec: =Sum(colDetalleConteoCon, Denominacion * (Auto + Manual))
+        EfectivoRec: =Sum(galBilletesCon.AllItems As B, B.Denominacion * (B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) + Sum(galMonedasCon.AllItems As M, M.Denominacion * Coalesce(Value(M.inpCantidadMonCon.Text), 0))
         Moneda: =ctxMonedaCon
         MonedaNombre: =""
         MontoChequesDec: |-
@@ -2289,7 +2290,7 @@ scrConteo As screen:
                     CheckAmount
                 )
             )
-        MontoChequesRec: =Sum(Filter(colChecksCon, Seleccionado), Monto)
+        MontoChequesRec: =Sum(galChequesCon.AllItems As C, If(If(C.EsManual, true, C.chkChequeCon.Value), If(C.EsManual, Coalesce(Value(C.inpMontoChequeCon.Text), 0), C.Monto), 0))
         Simbolo: =fxSimbolo(ctxMonedaCon)
         Titulo: ="Depósito " & If(IsBlank(Trim(inpCuentaCon.Text)), "sin cuenta", Trim(inpCuentaCon.Text))
         Visible: =ctxHayDepositoCon
@@ -3313,7 +3314,7 @@ scrConteo As screen:
         PaddingRight: =0
         PaddingTop: =0
         Size: =9.38
-        Text: =Text(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Auto))
+        Text: =Text(Sum(galBilletesCon.AllItems As B, B.Auto))
         Visible: =galBilletesCon.Visible
         Width: =shpCardCurCon.Width * 0.12092
         Wrap: =false
@@ -3331,7 +3332,7 @@ scrConteo As screen:
         PaddingRight: =0
         PaddingTop: =0
         Size: =9.38
-        Text: =Text(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Manual))
+        Text: =Text(Sum(galBilletesCon.AllItems As B, Coalesce(Value(B.inpCantidadBilCon.Text), 0)))
         Visible: =galBilletesCon.Visible
         Width: =shpCardCurCon.Width * 0.16993
         Wrap: =false
@@ -3349,7 +3350,7 @@ scrConteo As screen:
         PaddingRight: =0
         PaddingTop: =0
         Size: =9.38
-        Text: =fxMonto(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Denominacion * (Auto + Manual)), fxSimbolo(ctxMonedaCon))
+        Text: =fxMonto(Sum(galBilletesCon.AllItems As B, B.Denominacion * (B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))), fxSimbolo(ctxMonedaCon))
         Visible: =galBilletesCon.Visible
         Width: =shpCardCurCon.Width * 0.30719
         Wrap: =false
@@ -3410,7 +3411,7 @@ scrConteo As screen:
         PaddingRight: =0
         PaddingTop: =0
         Size: =9.38
-        Text: =Text(Sum(Filter(colDetalleConteoCon, Tipo = "Moneda"), Manual))
+        Text: =Text(Sum(galMonedasCon.AllItems As M, Coalesce(Value(M.inpCantidadMonCon.Text), 0)))
         Visible: =galMonedasCon.Visible
         Width: =shpCardCurCon.Width * 0.16993
         Wrap: =false
@@ -3428,7 +3429,7 @@ scrConteo As screen:
         PaddingRight: =0
         PaddingTop: =0
         Size: =9.38
-        Text: =fxMonto(Sum(Filter(colDetalleConteoCon, Tipo = "Moneda"), Denominacion * Manual), fxSimbolo(ctxMonedaCon))
+        Text: =fxMonto(Sum(galMonedasCon.AllItems As M, M.Denominacion * Coalesce(Value(M.inpCantidadMonCon.Text), 0)), fxSimbolo(ctxMonedaCon))
         Visible: =galMonedasCon.Visible
         Width: =shpCardCurCon.Width * 0.37908
         Wrap: =false
@@ -3471,7 +3472,7 @@ scrConteo As screen:
         Size: =9
         Text: |-
             ="Efectivo del depósito (billetes + monedas): " &
-            fxMonto(Sum(colDetalleConteoCon, Denominacion * (Auto + Manual)), fxSimbolo(ctxMonedaCon))
+            fxMonto(Sum(galBilletesCon.AllItems As B, B.Denominacion * (B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) + Sum(galMonedasCon.AllItems As M, M.Denominacion * Coalesce(Value(M.inpCantidadMonCon.Text), 0)), fxSimbolo(ctxMonedaCon))
         Visible: =galMonedasCon.Visible
         Width: =shpCardCurCon.Width * 0.93137
         Wrap: =false
@@ -3515,7 +3516,7 @@ scrConteo As screen:
         PaddingTop: =0
         Size: =9.38
         Text: |-
-            ="Cheques del depósito: " & Text(CountRows(Filter(colChecksCon, Seleccionado)))
+            ="Cheques del depósito: " & Text(CountRows(Filter(galChequesCon.AllItems As C, If(C.EsManual, true, C.chkChequeCon.Value))))
         Visible: =galChequesCon.Visible
         Width: =300
         Wrap: =false
@@ -3533,7 +3534,7 @@ scrConteo As screen:
         PaddingRight: =0
         PaddingTop: =0
         Size: =9.38
-        Text: =fxMonto(Sum(Filter(colChecksCon, Seleccionado), Monto), fxSimbolo(ctxMonedaCon))
+        Text: =fxMonto(Sum(galChequesCon.AllItems As C, If(If(C.EsManual, true, C.chkChequeCon.Value), If(C.EsManual, Coalesce(Value(C.inpMontoChequeCon.Text), 0), C.Monto), 0)), fxSimbolo(ctxMonedaCon))
         Visible: =galChequesCon.Visible
         Width: =shpCardCurCon.Width * 0.4281
         Wrap: =false
@@ -3663,8 +3664,8 @@ scrConteo As screen:
         Text: |-
             ="Total del depósito  " &
             fxMonto(
-                Sum(colDetalleConteoCon, Denominacion * (Auto + Manual)) +
-                Sum(Filter(colChecksCon, Seleccionado), Monto),
+                Sum(galBilletesCon.AllItems As B, B.Denominacion * (B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) + Sum(galMonedasCon.AllItems As M, M.Denominacion * Coalesce(Value(M.inpCantidadMonCon.Text), 0)) +
+                Sum(galChequesCon.AllItems As C, If(If(C.EsManual, true, C.chkChequeCon.Value), If(C.EsManual, Coalesce(Value(C.inpMontoChequeCon.Text), 0), C.Monto), 0)),
                 fxSimbolo(ctxMonedaCon)
             )
         Visible: =ctxHayDepositoCon
@@ -3746,8 +3747,8 @@ scrConteo As screen:
         Subtitulo: |-
             ="El depósito en curso pasa de " & ctxMonedaCon & " a " & Left(ddMonedaCon.Selected.Value, 3) &
             ". La grilla de denominaciones se rehace y se pierde lo capturado: " &
-            Text(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Auto + Manual)) & " billetes y " &
-            Text(Sum(Filter(colDetalleConteoCon, Tipo = "Moneda"), Manual)) & " monedas." & Char(10) & Char(10) &
+            Text(Sum(galBilletesCon.AllItems As B, B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) & " billetes y " &
+            Text(Sum(galMonedasCon.AllItems As M, Coalesce(Value(M.inpCantidadMonCon.Text), 0))) & " monedas." & Char(10) & Char(10) &
             "Los cheques ya marcados se desmarcan."
         TextoConfirmar: ="Cambiar moneda"
         Titulo: ="Cambiar la moneda del depósito"
@@ -3804,9 +3805,9 @@ scrConteo As screen:
             Notify("Cambios descartados.", NotificationType.Information)
         Subtitulo: |-
             ="El depósito en curso no está guardado. Si lo descarta se pierden " &
-            Text(Sum(Filter(colDetalleConteoCon, Tipo = "Billete"), Auto + Manual)) & " billetes, " &
-            Text(Sum(Filter(colDetalleConteoCon, Tipo = "Moneda"), Manual)) & " monedas y " &
-            Text(CountRows(Filter(colChecksCon, Seleccionado))) & " cheques capturados."
+            Text(Sum(galBilletesCon.AllItems As B, B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) & " billetes, " &
+            Text(Sum(galMonedasCon.AllItems As M, Coalesce(Value(M.inpCantidadMonCon.Text), 0))) & " monedas y " &
+            Text(CountRows(Filter(galChequesCon.AllItems As C, If(C.EsManual, true, C.chkChequeCon.Value)))) & " cheques capturados."
         TextoCancelar: ="Seguir capturando"
         TextoConfirmar: ="Descartar"
         Titulo: ="Descartar los cambios del depósito"
@@ -4943,8 +4944,8 @@ scrConteo As screen:
                 Text: |-
                     =With(
                         {
-                            u: Sum(colDetalleConteoCon, Auto + Manual),
-                            c: CountRows(Filter(colChecksCon, Seleccionado))
+                            u: Sum(galBilletesCon.AllItems As B, B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0)) + Sum(galMonedasCon.AllItems As M, Coalesce(Value(M.inpCantidadMonCon.Text), 0)),
+                            c: CountRows(Filter(galChequesCon.AllItems As C, If(C.EsManual, true, C.chkChequeCon.Value)))
                         },
                         "El depósito en curso tiene " &
                         Text(u) & If(u = 1, " unidad", " unidades") & " de efectivo y " &
