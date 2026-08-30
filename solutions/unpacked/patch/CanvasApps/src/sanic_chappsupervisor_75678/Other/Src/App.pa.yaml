@@ -1,0 +1,44 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+App:
+  Properties:
+    Formulas: |-
+      =// ===== Paleta (verde-tesorería, prototipo aprobado) =====
+      ThemeAccent = ColorValue("#0F7A5A");
+      ThemeAccentSoft = ColorValue("#DCEFE7");
+      ThemeAccentInk = ColorValue("#FFFFFF");
+      ThemeBg = ColorValue("#EEF1EF");
+      ThemeSurface = ColorValue("#FFFFFF");
+      ThemeSurface2 = ColorValue("#F6F8F6");
+      ThemeSunk = ColorValue("#EAEEEB");
+      ThemeInk = ColorValue("#1A231E");
+      ThemeInk2 = ColorValue("#46534B");
+      ThemeInk3 = ColorValue("#6D7A72");
+      ThemeLine = ColorValue("#D6DDD8");
+      ThemeLineStrong = ColorValue("#BCC6C0");
+      ThemePos = ColorValue("#0E7490");   ThemePosSoft = ColorValue("#D7EEF3");   // sobrante (teal)
+      ThemeAccentMoney = ColorValue("#0F7772");  // barra de KPIs de dinero (mezcla accent/teal del mockup)
+      ThemeNeg = ColorValue("#B45309");   ThemeNegSoft = ColorValue("#FBEBD4");   // faltante (ámbar)
+      ThemeWarn = ColorValue("#A16207");  ThemeWarnSoft = ColorValue("#FBF1D3");
+      ThemeDanger = ColorValue("#B42318"); ThemeDangerSoft = ColorValue("#FBE6E3");
+
+      // ===== Formato =====
+      FmtMoney = "#,##0.00";                 // el '0' fuerza el entero; #,### daba "C$ .00"
+      FmtFecha = "dd/mm/yyyy HH:mm";         // HH = 24 h; hh seria 12 h sin AM/PM
+      FmtFechaCorta = "dd/mm HH:mm";
+
+      // ===== Símbolos de moneda (optionset sanic_chchcurrency: NIO/USD/EUR) =====
+      SimboloNIO = "C$"; SimboloUSD = "US$"; SimboloEUR = "€";
+
+      // ===== Usuario actual (fallback de identidad — UPN puede != Primary Email) =====
+      UsuarioActual = With(
+          { u: LookUp(Users, 'Primary Email' = User().Email) },
+          If(IsBlank(u.'Primary Email'), LookUp(Users, 'User Name' = User().Email), u)
+      );
+    Theme: =PowerAppsTheme

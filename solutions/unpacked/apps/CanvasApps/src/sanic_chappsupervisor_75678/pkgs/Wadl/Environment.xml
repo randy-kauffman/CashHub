@@ -7602,6 +7602,12 @@
         <property name="TotalUSD" type="number" />
         <property name="TotalEUR" type="number" />
       </object>
+      <string name="Microsoft_Dynamics_CRM_sanic_CHReturnBagForReassignmentResponse_Outcome_def" />
+      <string name="Microsoft_Dynamics_CRM_sanic_CHReturnBagForReassignmentResponse_Message_def" />
+      <object name="Microsoft_Dynamics_CRM_sanic_CHReturnBagForReassignmentResponse">
+        <property name="Outcome" type="string" />
+        <property name="Message" type="string" />
+      </object>
       <string name="Microsoft_Dynamics_CRM_sanic_CHResolveApprovalRequestResponse_Outcome_def" />
       <string name="Microsoft_Dynamics_CRM_sanic_CHResolveApprovalRequestResponse_Message_def" />
       <object name="Microsoft_Dynamics_CRM_sanic_CHResolveApprovalRequestResponse">
@@ -14344,6 +14350,12 @@
         <property name="TransactionId" type="string" />
         <property name="Motivo" type="string" />
       </object>
+      <string name="sanic_CHReturnBagForReassignment_param_body_def_BagId_def" />
+      <string name="sanic_CHReturnBagForReassignment_param_body_def_Reason_def" />
+      <object name="sanic_CHReturnBagForReassignment_param_body_def">
+        <property name="BagId" type="string" />
+        <property name="Reason" type="string" />
+      </object>
       <string name="sanic_CHResolveApprovalRequest_param_body_def_ApprovalRequestId_def" />
       <string name="sanic_CHResolveApprovalRequest_param_body_def_Decision_def" />
       <string name="sanic_CHResolveApprovalRequest_param_body_def_Reason_def" />
@@ -19291,6 +19303,20 @@
         </request>
         <response>
           <representation mediaType="application/json" element="service:Microsoft_Dynamics_CRM_sanic_CHRemoveFromCutResponse" />
+        </response>
+      </method>
+    </resource>
+    <resource path="/sanic_CHReturnBagForReassignment">
+      <method siena:requiresAuthentication="true" name="POST" id="sanic_CHReturnBagForReassignment" actionName="sanic_CHReturnBagForReassignment" siena:isDeprecated="false">
+        <doc title="Invoke actionImport sanic_CHReturnBagForReassignment" />
+        <request>
+          <representation mediaType="application/json">
+            <param style="plain" name="BagId" path="/BagId" type="xs:string" />
+            <param style="plain" name="Reason" path="/Reason" type="xs:string" />
+          </representation>
+        </request>
+        <response>
+          <representation mediaType="application/json" element="service:Microsoft_Dynamics_CRM_sanic_CHReturnBagForReassignmentResponse" />
         </response>
       </method>
     </resource>

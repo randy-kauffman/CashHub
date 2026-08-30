@@ -1,0 +1,225 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpNav:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    Properties:
+      Height: =768
+      Width: =214
+    Children:
+      - shpNavFondo:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =ThemeSurface
+            Height: =cmpNav.Height
+            Width: =cmpNav.Width
+      - shpNavBorde:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =ThemeLine
+            Height: =cmpNav.Height
+            Width: =1
+            X: =cmpNav.Width - 1
+      - cardMarcaNav:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            BorderColor: =ThemeLine
+            DropShadow: =DropShadow.None
+            Fill: =ThemeAccent
+            Height: =34
+            RadiusBottomLeft: =9
+            RadiusBottomRight: =9
+            RadiusTopLeft: =9
+            RadiusTopRight: =9
+            Width: =34
+            X: =12
+            Y: =14
+          Children:
+            - lblMarcaGlifoNav:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  Color: =ThemeAccentInk
+                  Font: =Font.'Segoe UI'
+                  FontWeight: =FontWeight.Bold
+                  Height: =34
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =14
+                  Text: ="₵"
+                  Width: =34
+      - lblMarcaNav:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ThemeInk
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10.5
+            Text: ="CashHub"
+            Width: =110
+            X: =54
+            Y: =16
+      - lblMarcaSubNav:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ThemeInk3
+            Font: =Font.'Segoe UI'
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.5
+            Text: ="Supervisor"
+            Width: =110
+            X: =54
+            Y: =32
+      - btnNavResumen:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderThickness: =0
+            Color: =If(App.ActiveScreen = scrResumen, ThemeAccent, ThemeInk2)
+            Fill: =If(App.ActiveScreen = scrResumen, ThemeAccentSoft, ThemeSurface)
+            Font: =Font.'Segoe UI'
+            Height: =36
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            OnSelect: =Navigate(scrResumen)
+            PaddingLeft: =12
+            PressedColor: =ThemeAccent
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="◈  Resumen de operación"
+            Width: =194
+            X: =10
+            Y: =70
+      - btnNavAprob:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderThickness: =0
+            Color: =If(App.ActiveScreen = scrAprobaciones, ThemeAccent, ThemeInk2)
+            Fill: =If(App.ActiveScreen = scrAprobaciones, ThemeAccentSoft, ThemeSurface)
+            Font: =Font.'Segoe UI'
+            Height: =36
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            OnSelect: =Navigate(scrAprobaciones)
+            PaddingLeft: =12
+            PressedColor: =ThemeAccent
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="⚖  Aprobaciones"
+            Width: =194
+            X: =10
+            Y: =112
+      - btnNavTulas:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderThickness: =0
+            Color: =If(App.ActiveScreen = scrTulas, ThemeAccent, ThemeInk2)
+            Fill: =If(App.ActiveScreen = scrTulas, ThemeAccentSoft, ThemeSurface)
+            Font: =Font.'Segoe UI'
+            Height: =36
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            OnSelect: =Navigate(scrTulas)
+            PaddingLeft: =12
+            PressedColor: =ThemeAccent
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="▦  Localización de tulas"
+            Width: =194
+            X: =10
+            Y: =154
+      - btnNavChq:
+          Control: Classic/Button@2.2.0
+          Properties:
+            Align: =Align.Left
+            BorderThickness: =0
+            Color: =If(App.ActiveScreen = scrCheques, ThemeAccent, ThemeInk2)
+            Fill: =If(App.ActiveScreen = scrCheques, ThemeAccentSoft, ThemeSurface)
+            Font: =Font.'Segoe UI'
+            Height: =36
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            OnSelect: =Navigate(scrCheques)
+            PaddingLeft: =12
+            PressedColor: =ThemeAccent
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =10
+            Text: ="✓  Cheques"
+            Width: =194
+            X: =10
+            Y: =196
+      - pilNavBadgeApr:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =If(Self.Fill = ThemeSunk, 1, 0)
+            Color: =ThemeNeg
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeNegSoft
+            Font: =Font.'Segoe UI'
+            Height: =18
+            HoverBorderColor: =Self.BorderColor
+            HoverColor: =Self.Color
+            HoverFill: =Self.Fill
+            PaddingLeft: =0
+            PaddingRight: =0
+            PressedBorderColor: =Self.BorderColor
+            PressedFill: =Self.Fill
+            Size: =9
+            Text: =Text(CountRows(Filter('CH-Tbl-ApprovalRequests', ApprovalStatus = Blank())))
+            Visible: =Self.Text <> "0"
+            Width: =12 + 7 * Len(Self.Text)
+            X: =176
+            Y: =120
+      - lblQuienNav:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ThemeInk3
+            Font: =Font.'Segoe UI'
+            Height: =32
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.5
+            Text: =UsuarioActual.'Full Name' & " · Supervisor"
+            Width: =190
+            X: =12
+            Y: =cmpNav.Height - 48

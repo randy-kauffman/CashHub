@@ -1,0 +1,1161 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrCheques:
+    Properties:
+      Fill: =ThemeBg
+      LoadingSpinnerColor: =ThemeAccent
+      OnVisible: |-
+        =UpdateContext({ctxStaleChq: false, ctxConfirmReenvChq: false, ctxEnviandoChq: false});
+        Clear(colSelChq);                  // selección stale = doble envío (bug de la vieja)
+        If(
+            IsEmpty(colChequesChq),
+            Select(btnActualizarChq)       // primera visita: carga sola
+        );
+        Reset(drpEstadoChq);
+        Reset(galChequesChq)
+    Children:
+      - cmpNavChq:
+          Control: CanvasComponent
+          ComponentName: cmpNav
+          Properties:
+            Height: =Parent.Height
+            Width: =214
+      - cntBodyChq:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =14
+            LayoutOverflowY: =LayoutOverflow.Scroll
+            PaddingBottom: =18
+            PaddingLeft: =26
+            PaddingRight: =26
+            PaddingTop: =22
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Width: =Parent.Width - cmpNavChq.Width
+            X: =cmpNavChq.Width
+          Children:
+            - cntTituloChq:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =52
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =3
+                  LayoutMinHeight: =52
+                  LayoutMinWidth: =16
+                  RadiusBottomLeft: =0
+                  RadiusBottomRight: =0
+                  RadiusTopLeft: =0
+                  RadiusTopRight: =0
+                Children:
+                  - lblTituloChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =28
+                        LayoutMinHeight: =28
+                        LayoutMinWidth: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =18
+                        Text: ="Cheques"
+                        Width: =560
+                  - lblSubtituloChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        Height: =20
+                        LayoutMinHeight: =20
+                        LayoutMinWidth: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.5
+                        Text: ="Entrega de cheques a digitación. Solo se pueden seleccionar los cheques recontados."
+                        Width: =560
+            - cardFiltrosChq:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  FillPortions: =0
+                  Height: =74
+                  LayoutMinHeight: =74
+                  LayoutMinWidth: =16
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                Children:
+                  - lblFecFiltroChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: ="FECHA"
+                        Width: =200
+                        X: =16
+                        Y: =10
+                  - dtFechaChq:
+                      Control: ModernDatePicker@1.0.1
+                      Properties:
+                        DefaultDate: =Today()
+                        Format: =DatePickerFormat.Short
+                        Height: =34
+                        OnChange: |-
+                          =UpdateContext({ctxStaleChq: true});
+                          Clear(colSelChq)
+                        Width: =200
+                        X: =16
+                        Y: =30
+                  - lblEstFiltroChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: ="ESTADO"
+                        Width: =230
+                        X: =236
+                        Y: =10
+                  - drpEstadoChq:
+                      Control: Classic/DropDown@2.3.1
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        ChevronBackground: =ThemeSurface
+                        ChevronFill: =ThemeInk2
+                        ChevronHoverBackground: =ThemeSurface2
+                        ChevronHoverFill: =ThemeAccent
+                        Color: =ThemeInk
+                        Default: ="Todos"
+                        Fill: =ThemeSurface
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverColor: =ThemeInk
+                        HoverFill: =ThemeSurface2
+                        Items: =["Pendientes de enviar", "Enviados", "No recibidos", "Todos"]
+                        Items.Value: =Value
+                        OnChange: =Clear(colSelChq)
+                        PressedColor: =ThemeAccentInk
+                        PressedFill: =ThemeAccent
+                        SelectionColor: =ThemeAccentInk
+                        SelectionFill: =ThemeAccent
+                        Size: =10
+                        Width: =230
+                        X: =236
+                        Y: =30
+                  - cirSyncChq:
+                      Control: Circle@2.3.0
+                      Properties:
+                        Fill: =ThemeAccent
+                        Height: =8
+                        Visible: =scrCheques.Width >= 1130
+                        Width: =8
+                        X: =cardFiltrosChq.Width - 320
+                        Y: =40
+                  - lblSyncChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        Height: =20
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: =If(IsBlank(ctxUltimaActChq), "Sin actualizar", "Actualizado " & Text(ctxUltimaActChq, "HH:mm:ss"))
+                        Visible: =scrCheques.Width >= 1130
+                        Width: =160
+                        X: =cardFiltrosChq.Width - 304
+                        Y: =32
+                  - btnActualizarChq:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =ThemeAccentInk
+                        Fill: =ThemeAccent
+                        Font: =Font.'Segoe UI'
+                        Height: =36
+                        HoverColor: =ThemeAccentInk
+                        HoverFill: =ColorFade(ThemeAccent, -10%)
+                        OnSelect: |-
+                          =UpdateContext({ctxCargandoChq: true, ctxStaleChq: false});
+                          Clear(colSelChq);
+                          IfError(
+                              // Ventana ACOTADA (fix del OR sin cota que truncaba a 500):
+                              //   (a) TODO lo creado el día elegido, en cualquier estado, y
+                              //   (b) el ARRASTRE: sólo lo que sigue pendiente de acción (Recontado / No
+                              //       Recibido) de los últimos 30 días.
+                              // Todo el predicado es delegable: comparaciones de fecha + igualdad de choice,
+                              // combinadas con && / ||.
+                              ClearCollect(colChequesChq,
+                                  Filter('CH-Tbl-Checks',
+                                      (
+                                          'Created On' >= Coalesce(dtFechaChq.SelectedDate, Today())
+                                          && 'Created On' < DateAdd(Coalesce(dtFechaChq.SelectedDate, Today()), 1, TimeUnit.Days)
+                                      )
+                                      ||
+                                      (
+                                          (
+                                              CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado
+                                              || CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'
+                                          )
+                                          && 'Created On' >= DateAdd(Coalesce(dtFechaChq.SelectedDate, Today()), -30, TimeUnit.Days)
+                                          && 'Created On' < DateAdd(Coalesce(dtFechaChq.SelectedDate, Today()), 1, TimeUnit.Days)
+                                      )
+                                  )
+                              );
+                              UpdateContext({ctxUltimaActChq: Now()}),
+
+                              // rama de error del IfError
+                              Notify("No se pudieron cargar los cheques: " & FirstError.Message, NotificationType.Error)
+                          );
+                          UpdateContext({ctxCargandoChq: false});
+                          Reset(galChequesChq)
+                        PressedColor: =ThemeAccentInk
+                        PressedFill: =ColorFade(ThemeAccent, -20%)
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =10
+                        Text: ="↻  Actualizar"
+                        Width: =124
+                        X: =cardFiltrosChq.Width - 140
+                        Y: =28
+            - cntStaleChq:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeWarn
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.None
+                  Fill: =ThemeWarnSoft
+                  FillPortions: =0
+                  Height: =40
+                  LayoutMinHeight: =40
+                  LayoutMinWidth: =16
+                  RadiusBottomLeft: =8
+                  RadiusBottomRight: =8
+                  RadiusTopLeft: =8
+                  RadiusTopRight: =8
+                  Visible: =ctxStaleChq || CountRows(colChequesChq) >= 2000
+                Children:
+                  - lblStaleChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeWarn
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9
+                        Text: |-
+                          =If(CountRows(colChequesChq) >= 2000,
+                              "Se alcanzó el tope de 2000 filas: hay cheques cargados que no se ven. Acotá la fecha o filtrá por estado.",
+                              "Cambiaste la fecha — los cheques de abajo corresponden a la selección anterior.")
+                        Width: =620
+                        X: =14
+                        Y: =10
+                  - btnStaleChq:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeWarn
+                        BorderThickness: =1
+                        Color: =ThemeWarn
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =26
+                        HoverBorderColor: =ThemeWarn
+                        HoverColor: =ThemeWarn
+                        HoverFill: =RGBA(0, 0, 0, 0)
+                        OnSelect: =Select(btnActualizarChq)
+                        PressedBorderColor: =ThemeWarn
+                        PressedColor: =ThemeWarn
+                        PressedFill: =RGBA(0, 0, 0, 0)
+                        RadiusBottomLeft: =6
+                        RadiusBottomRight: =6
+                        RadiusTopLeft: =6
+                        RadiusTopRight: =6
+                        Size: =9
+                        Text: ="Actualizar ahora"
+                        Visible: =ctxStaleChq
+                        Width: =136
+                        X: =cntStaleChq.Width - 150
+                        Y: =7
+            - cntKpisChq:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =If(scrCheques.Width < 1142, 204, 96)
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =12
+                  LayoutMinHeight: =If(scrCheques.Width < 1142, 204, 96)
+                  LayoutMinWidth: =16
+                  LayoutWrap: =true
+                  RadiusBottomLeft: =0
+                  RadiusBottomRight: =0
+                  RadiusTopLeft: =0
+                  RadiusTopRight: =0
+                Children:
+                  - cmpKpiNioChq:
+                      Control: CanvasComponent
+                      ComponentName: cmpKpi
+                      Properties:
+                        FillPortions: =1
+                        Height: =92
+                        KpiAccent: =ThemeAccentMoney
+                        KpiCur: =SimboloNIO
+                        KpiLabel: ="MONTO · C$"
+                        KpiPie: |-
+                          ="seleccionados: " & CountRows(Filter(colSelChq, CheckCurrency = 'CH-Ch-Currency'.NIO))
+                        KpiPieColor: =ThemeInk3
+                        KpiValor: |-
+                          =Text(Coalesce(Sum(Filter(colChequesChq,
+                              CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado
+                              && CheckCurrency = 'CH-Ch-Currency'.NIO), CheckAmount), 0), FmtMoney)
+                        LayoutMinHeight: =92
+                        LayoutMinWidth: =210
+                        OnKpiSelect: =false
+                        Width: =220
+                  - cmpKpiUsdChq:
+                      Control: CanvasComponent
+                      ComponentName: cmpKpi
+                      Properties:
+                        FillPortions: =1
+                        Height: =92
+                        KpiAccent: =ThemeAccentMoney
+                        KpiCur: =SimboloUSD
+                        KpiLabel: ="MONTO · US$"
+                        KpiPie: |-
+                          ="seleccionados: " & CountRows(Filter(colSelChq, CheckCurrency = 'CH-Ch-Currency'.USD))
+                        KpiPieColor: =ThemeInk3
+                        KpiValor: |-
+                          =Text(Coalesce(Sum(Filter(colChequesChq,
+                              CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado
+                              && CheckCurrency = 'CH-Ch-Currency'.USD), CheckAmount), 0), FmtMoney)
+                        LayoutMinHeight: =92
+                        LayoutMinWidth: =210
+                        OnKpiSelect: =false
+                        Width: =220
+                  - cmpKpiNoRecChq:
+                      Control: CanvasComponent
+                      ComponentName: cmpKpi
+                      Properties:
+                        FillPortions: =1
+                        Height: =92
+                        KpiAccent: =ThemeAccent
+                        KpiCur: =""
+                        KpiLabel: ="NO RECIBIDOS"
+                        KpiPie: ="para reenviar"
+                        KpiPieColor: =ThemeInk3
+                        KpiValor: =Text(CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido')))
+                        LayoutMinHeight: =92
+                        LayoutMinWidth: =210
+                        OnKpiSelect: =false
+                        Width: =220
+                  - cmpKpiPorEnviarChq:
+                      Control: CanvasComponent
+                      ComponentName: cmpKpi
+                      Properties:
+                        FillPortions: =1
+                        Height: =92
+                        KpiAccent: =ThemeAccent
+                        KpiCur: =""
+                        KpiLabel: ="POR ENVIAR"
+                        KpiPie: ="cheques recontados"
+                        KpiPieColor: =ThemeInk3
+                        KpiValor: =Text(CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado)))
+                        LayoutMinHeight: =92
+                        LayoutMinWidth: =210
+                        OnKpiSelect: =false
+                        Width: =220
+            - cardChequesChq:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  LayoutMinHeight: =300
+                  LayoutMinWidth: =16
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                Children:
+                  - lblChqTituloChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.5
+                        Text: ="Cheques del día y pendientes"
+                        Width: =200
+                        X: =16
+                        Y: =12
+                  - pilSelCountChq:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =0
+                        Color: =ThemeInk3
+                        DisplayMode: =DisplayMode.View
+                        Fill: =ThemeSunk
+                        Font: =Font.'Segoe UI'
+                        Height: =22
+                        HoverBorderColor: =Self.BorderColor
+                        HoverColor: =Self.Color
+                        HoverFill: =Self.Fill
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PressedBorderColor: =Self.BorderColor
+                        PressedFill: =Self.Fill
+                        Size: =9
+                        Text: =CountRows(colSelChq) & " seleccionado" & If(CountRows(colSelChq) = 1, "", "s")
+                        Visible: =scrCheques.Width >= 1100
+                        Width: =Len(Self.Text) * 7 + 12
+                        X: =220
+                        Y: =10
+                  - btnReenviarChq:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisplayMode: |-
+                          =If(CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido')) = 0,
+                              DisplayMode.Disabled,
+                              DisplayMode.Edit)
+                        Fill: =ThemeSurface2
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =ThemeInk2
+                        HoverFill: =ThemeSunk
+                        OnSelect: |-
+                          =UpdateContext({ctxConfirmReenvChq: true})
+                        PressedBorderColor: =ThemeLine
+                        PressedColor: =ThemeInk2
+                        PressedFill: =ThemeSunk
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9.5
+                        Text: |-
+                          =If(scrCheques.Width >= 1100,
+                              "↩  Reenviar " & CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido')) & " no recibidos",
+                              "↩  " & CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido')))
+                        Width: =If(scrCheques.Width >= 1100, 216, 150)
+                        X: =cardChequesChq.Width - 16 - If(scrCheques.Width >= 1100, 224, 160) - 8 - Self.Width
+                        Y: =8
+                  - btnEnviarChq:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =ThemeAccentInk
+                        DisplayMode: =If(CountRows(colSelChq) = 0, DisplayMode.Disabled, DisplayMode.Edit)
+                        Fill: =ThemeAccent
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverColor: =ThemeAccentInk
+                        HoverFill: =ColorFade(ThemeAccent, -10%)
+                        OnSelect: |-
+                          =UpdateContext({ctxCargandoChq: true, ctxEnviandoChq: true});
+
+                          // 1) CINTURÓN: aunque el icono sólo deja marcar Recontado, la colección pudo quedar
+                          //    stale (otro supervisor envió el cheque hace 40 segundos). Sólo Recontado sale.
+                          ClearCollect(colEnviarChq,
+                              Filter(colSelChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado)
+                          );
+                          UpdateContext({ctxDescartadosChq: CountRows(colSelChq) - CountRows(colEnviarChq)});
+
+                          // 2) UN Patch por cheque, cada uno envuelto en su IfError: se cuentan éxitos y
+                          //    fallos REALES (la vieja hacía ForAll(Patch(...)) sin IfError: fallos mudos).
+                          //    IfError(Valor, Fallback, Default): con 3 argumentos, el último se devuelve
+                          //    cuando NO hubo error.
+                          ClearCollect(colEnvioResChq,
+                              ForAll(colEnviarChq As C,
+                                  IfError(
+                                      Patch('CH-Tbl-Checks', C,
+                                          { CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion' }
+                                      ),
+                                      { OkChq: false, MsgChq: FirstError.Message },
+                                      { OkChq: true,  MsgChq: "" }
+                                  )
+                              )
+                          );
+                          UpdateContext({
+                              ctxEnviadosChq:   CountRows(Filter(colEnvioResChq, OkChq)),
+                              ctxRechazadosChq: CountRows(Filter(colEnvioResChq, !OkChq))
+                          });
+
+                          // 3) Los sellos ('Enviado el') los estampa el plugin server-side: hay que RELEER.
+                          //    La recarga pasa por el ÚNICO camino de consulta — que además hace Clear(colSelChq).
+                          Refresh('CH-Tbl-Checks');
+                          Select(btnActualizarChq);
+
+                          // 4) Notificación HONESTA (la vieja no notificaba nada en Enviar)
+                          Notify(
+                              ctxEnviadosChq & " enviado(s) a digitación"
+                              & If(ctxRechazadosChq > 0,
+                                   " · " & ctxRechazadosChq & " rechazado(s) por el servidor: "
+                                   & Coalesce(LookUp(colEnvioResChq, !OkChq, MsgChq), ""),
+                                   "")
+                              & If(ctxDescartadosChq > 0,
+                                   " · " & ctxDescartadosChq & " descartado(s) por no estar en Recontado",
+                                   ""),
+                              If(ctxRechazadosChq > 0, NotificationType.Warning, NotificationType.Success)
+                          );
+                          UpdateContext({ctxCargandoChq: false, ctxEnviandoChq: false})
+                        PressedColor: =ThemeAccentInk
+                        PressedFill: =ColorFade(ThemeAccent, -20%)
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9.5
+                        Text: |-
+                          =If(scrCheques.Width >= 1100,
+                              "→  Enviar " & CountRows(colSelChq) & " a digitación",
+                              "→  Enviar " & CountRows(colSelChq))
+                        Width: =If(scrCheques.Width >= 1100, 224, 160)
+                        X: =cardChequesChq.Width - 16 - Self.Width
+                        Y: =8
+                  - shpBandHeadChq:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        Fill: =ThemeSurface2
+                        Height: =24
+                        Visible: =CountRows(colChequesChq) > 0
+                        Width: =cardChequesChq.Width - 32
+                        X: =16
+                        Y: =54
+                  - lblColCheckChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8
+                        Text: =""
+                        Visible: =CountRows(colChequesChq) > 0
+                        Width: =34
+                        X: =16
+                        Y: =58
+                  - lblColNumeroChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8
+                        Text: ="CHEQUE"
+                        Visible: =CountRows(colChequesChq) > 0
+                        Width: =galChequesChq.Width * 0.14
+                        X: =16 + 34
+                        Y: =58
+                  - lblColClienteChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8
+                        Text: ="CLIENTE"
+                        Visible: =CountRows(colChequesChq) > 0 && scrCheques.Width >= 1100
+                        Width: =galChequesChq.Width * 0.24
+                        X: =16 + 34 + galChequesChq.Width * 0.14
+                        Y: =58
+                  - lblColTulaChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8
+                        Text: ="TULA"
+                        Visible: =CountRows(colChequesChq) > 0
+                        Width: =galChequesChq.Width * 0.10
+                        X: =16 + 34 + galChequesChq.Width * 0.38
+                        Y: =58
+                  - lblColMontoChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Right
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8
+                        Text: ="MONTO"
+                        Visible: =CountRows(colChequesChq) > 0
+                        Width: =galChequesChq.Width * 0.16 - 16
+                        X: =16 + 34 + galChequesChq.Width * 0.48
+                        Y: =58
+                  - lblColEstadoChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8
+                        Text: ="ESTADO"
+                        Visible: =CountRows(colChequesChq) > 0
+                        Width: =galChequesChq.Width * 0.16
+                        X: =16 + 34 + galChequesChq.Width * 0.64
+                        Y: =58
+                  - lblColSellosChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =18
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8
+                        Text: ="SELLOS"
+                        Visible: =CountRows(colChequesChq) > 0 && scrCheques.Width >= 1100
+                        Width: =galChequesChq.Width * 0.16 - 34
+                        X: =16 + 34 + galChequesChq.Width * 0.80
+                        Y: =58
+                  - shpLineaHeadChq:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        Fill: =ThemeLine
+                        Height: =1
+                        Visible: =CountRows(colChequesChq) > 0
+                        Width: =cardChequesChq.Width - 32
+                        X: =16
+                        Y: =78
+                  - galChequesChq:
+                      Control: Gallery@2.15.0
+                      Variant: Vertical
+                      Properties:
+                        Height: =cardChequesChq.Height - 96
+                        Items: |-
+                          =// Items — filtro de estado y orden, TODO sobre la colección local.
+                          // Orden por ACCIONABILIDAD (no por valor del option set: ordenar por valor dejaría
+                          // 'No Recibido' — el estado sobre el que actúa Reenviar — ÚLTIMO, debajo de tres
+                          // estados terminales). Clave secundaria: más reciente primero.
+                          Sort(
+                              SortByColumns(
+                                  Switch(drpEstadoChq.Selected.Value,
+                                      "Pendientes de enviar", Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado),
+                                      "Enviados",             Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion'),
+                                      "No recibidos",         Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'),
+                                      colChequesChq
+                                  ),
+                                  "createdon", SortOrder.Descending
+                              ),
+                              Switch(CheckStatus,
+                                  'CheckStatus (CH-Tbl-Checks)'.Recontado,               1,
+                                  'CheckStatus (CH-Tbl-Checks)'.'No Recibido',           2,
+                                  'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',  3,
+                                  'CheckStatus (CH-Tbl-Checks)'.Recibido,                4,
+                                  'CheckStatus (CH-Tbl-Checks)'.Digitado,                5,
+                                  'CheckStatus (CH-Tbl-Checks)'.Rebotado,                6,
+                                  9),
+                              SortOrder.Ascending
+                          )
+                        OnSelect: |-
+                          =// OnSelect de la GALERÍA (receta 01 §7.3: la lógica de fila vive acá, no en el overlay).
+                          // Mismo toggle que el icono: clic en cualquier parte de la fila selecciona, con el
+                          // MISMO guard de Recontado. No hay doble disparo — el icono no llama a Select(Parent).
+                          If( ThisItem.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado,
+                              If( !IsBlank(LookUp(colSelChq, 'CH-Tbl-Checks' = ThisItem.'CH-Tbl-Checks')),
+                                  RemoveIf(colSelChq, 'CH-Tbl-Checks' = ThisItem.'CH-Tbl-Checks'),
+                                  Collect(colSelChq, ThisItem) ) )
+                        TemplatePadding: =0
+                        TemplateSize: =44
+                        Width: =cardChequesChq.Width - 32
+                        X: =16
+                        Y: =80
+                      Children:
+                        - btnFilaChq:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderThickness: =0
+                              Color: =ThemeInk
+                              Fill: =RGBA(0, 0, 0, 0)
+                              Font: =Font.'Segoe UI'
+                              Height: =44
+                              HoverColor: =ThemeInk
+                              HoverFill: =ThemeSurface2
+                              OnSelect: =Select(Parent)
+                              PressedFill: =ThemeAccentSoft
+                              Size: =10
+                              Text: =""
+                              Width: =galChequesChq.Width
+                        - icoCheckChq:
+                            Control: Classic/Icon@2.5.0
+                            Properties:
+                              AccessibleLabel: ="Seleccionar cheque " & ThisItem.CheckNumber
+                              Color: =If(!IsBlank(LookUp(colSelChq, 'CH-Tbl-Checks' = ThisItem.'CH-Tbl-Checks')), ThemeAccent, ThemeLineStrong)
+                              DisabledColor: =ThemeLine
+                              DisplayMode: =If(ThisItem.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado, DisplayMode.Edit, DisplayMode.Disabled)
+                              Height: =20
+                              Icon: =If(ThisItem.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado, Icon.CheckBadge, Icon.Blocked)
+                              OnSelect: |-
+                                =// icoCheckChq.OnSelect — el guard de selección deja de ser cosmético:
+                                // sólo Recontado entra a colSelChq (CheckGuard rechazaría cualquier otro).
+                                If( ThisItem.CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado,
+                                    If( !IsBlank(LookUp(colSelChq, 'CH-Tbl-Checks' = ThisItem.'CH-Tbl-Checks')),
+                                        RemoveIf(colSelChq, 'CH-Tbl-Checks' = ThisItem.'CH-Tbl-Checks'),
+                                        Collect(colSelChq, ThisItem) ) )
+                              Width: =20
+                              X: =7
+                              Y: =12
+                        - lblCelNumeroChq:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeAccent
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9
+                              Text: =ThisItem.CheckNumber
+                              Width: =galChequesChq.Width * 0.14
+                              X: =34
+                              Y: =12
+                        - lblCelClienteChq:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk
+                              Font: =Font.'Segoe UI'
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9.5
+                              Text: |-
+                                =IfError(
+                                    Coalesce(ThisItem.Bag.ReceptionID.RemitentClient.Name, ThisItem.Bag.ReceptionID.RemitentName, "—"),
+                                    Coalesce(ThisItem.Bag.ReceptionID.RemitentName, "—")
+                                )
+                              Visible: =scrCheques.Width >= 1100
+                              Width: =galChequesChq.Width * 0.24
+                              X: =34 + galChequesChq.Width * 0.14
+                              Y: =12
+                        - lblCelTulaChq:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Segoe UI'
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9.5
+                              Text: =Coalesce(ThisItem.Bag.BagID, "—")
+                              Width: =galChequesChq.Width * 0.10
+                              Wrap: =false
+                              X: =34 + galChequesChq.Width * 0.38
+                              Y: =12
+                        - lblCelMontoChq:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              Color: =ThemeInk
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9.5
+                              Text: |-
+                                =Switch(ThisItem.CheckCurrency,
+                                    'CH-Ch-Currency'.NIO, SimboloNIO,
+                                    'CH-Ch-Currency'.USD, SimboloUSD,
+                                    'CH-Ch-Currency'.EUR, SimboloEUR,
+                                    ""
+                                ) & " " & Text(ThisItem.CheckAmount, FmtMoney)
+                              Width: =galChequesChq.Width * 0.16 - 16
+                              X: =34 + galChequesChq.Width * 0.48
+                              Y: =12
+                        - pilCelEstadoChq:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeLine
+                              BorderThickness: =If(Self.Fill = ThemeSunk, 1, 0)
+                              Color: |-
+                                =Switch(ThisItem.CheckStatus,
+                                    'CheckStatus (CH-Tbl-Checks)'.Recontado,               ThemePos,
+                                    'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',  ThemeAccent,
+                                    'CheckStatus (CH-Tbl-Checks)'.'No Recibido',           ThemeNeg,
+                                    'CheckStatus (CH-Tbl-Checks)'.Recibido,                ThemeAccentInk,
+                                    'CheckStatus (CH-Tbl-Checks)'.Rebotado,                ThemeDanger,
+                                    ThemeInk3)
+                              DisplayMode: =DisplayMode.View
+                              Fill: |-
+                                =Switch(ThisItem.CheckStatus,
+                                    'CheckStatus (CH-Tbl-Checks)'.Recontado,               ThemePosSoft,
+                                    'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',  ThemeAccentSoft,
+                                    'CheckStatus (CH-Tbl-Checks)'.'No Recibido',           ThemeNegSoft,
+                                    'CheckStatus (CH-Tbl-Checks)'.Recibido,                ThemeAccent,
+                                    'CheckStatus (CH-Tbl-Checks)'.Rebotado,                ThemeDangerSoft,
+                                    ThemeSunk)
+                              Font: =Font.'Segoe UI'
+                              Height: =22
+                              HoverBorderColor: =Self.BorderColor
+                              HoverColor: =Self.Color
+                              HoverFill: =Self.Fill
+                              OnSelect: =Select(Parent)
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PressedBorderColor: =Self.BorderColor
+                              PressedFill: =Self.Fill
+                              Size: =9
+                              Text: |-
+                                =Switch(ThisItem.CheckStatus,
+                                    'CheckStatus (CH-Tbl-Checks)'.Recontado,               "Recontado",
+                                    'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',  "Enviado",
+                                    'CheckStatus (CH-Tbl-Checks)'.'No Recibido',           "No recibido",
+                                    'CheckStatus (CH-Tbl-Checks)'.Recibido,                "Recibido",
+                                    'CheckStatus (CH-Tbl-Checks)'.Digitado,                "Digitado",
+                                    'CheckStatus (CH-Tbl-Checks)'.Rebotado,                "Rebotado",
+                                    "Sin estado")
+                              Width: =Len(Self.Text) * 7 + 12
+                              X: =34 + galChequesChq.Width * 0.64
+                              Y: =11
+                        - lblCelSellosChq:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Segoe UI'
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9
+                              Text: |-
+                                =Switch(ThisItem.CheckStatus,
+                                    'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion',
+                                        If(IsBlank(ThisItem.'Enviado el'), "—", "Env. " & Text(ThisItem.'Enviado el', FmtFechaCorta)),
+                                    'CheckStatus (CH-Tbl-Checks)'.'No Recibido',
+                                        If(IsBlank(ThisItem.'No recibido el'), "—", "No rec. " & Text(ThisItem.'No recibido el', FmtFechaCorta)),
+                                    'CheckStatus (CH-Tbl-Checks)'.Recibido,
+                                        If(IsBlank(ThisItem.'Recibido el'), "—", "Rec. " & Text(ThisItem.'Recibido el', FmtFechaCorta)),
+                                    "—")
+                              Visible: =scrCheques.Width >= 1100
+                              Width: =galChequesChq.Width * 0.16 - 34
+                              X: =34 + galChequesChq.Width * 0.80
+                              Y: =12
+                        - shpSepChq:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =ThemeLine
+                              Height: =1
+                              OnSelect: =Select(Parent)
+                              Width: =galChequesChq.Width
+                              Y: =43
+                  - icoVacioChq:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        Color: =ThemeInk3
+                        Height: =32
+                        Icon: =Icon.Journal
+                        Visible: =CountRows(galChequesChq.AllItems) = 0 && !ctxCargandoChq
+                        Width: =32
+                        X: =cardChequesChq.Width / 2 - 16
+                        Y: =cardChequesChq.Height / 2 - 60
+                  - lblVacioTituloChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        Color: =ThemeInk2
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =12
+                        Text: |-
+                          =If(CountRows(colChequesChq) = 0,
+                              "No hay cheques de esta fecha ni pendientes de los últimos 30 días",
+                              "Ningún cheque en este estado")
+                        Visible: =CountRows(galChequesChq.AllItems) = 0 && !ctxCargandoChq
+                        Width: =cardChequesChq.Width - 32
+                        X: =16
+                        Y: =cardChequesChq.Height / 2 - 18
+                  - lblVacioTextoChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Center
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9.5
+                        Text: |-
+                          =If(CountRows(colChequesChq) = 0,
+                              "Probá otra fecha: los cheques Recontado y No recibido de los últimos 30 días se arrastran solos.",
+                              "Cambiá el filtro de Estado o elegí «Todos».")
+                        Visible: =CountRows(galChequesChq.AllItems) = 0 && !ctxCargandoChq
+                        Width: =cardChequesChq.Width - 32
+                        X: =16
+                        Y: =cardChequesChq.Height / 2 + 6
+      - cntConfirmChq:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =RGBA(0, 0, 0, 0.35)
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =ctxConfirmReenvChq
+            Width: =Parent.Width
+          Children:
+            - cardConfirmChq:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  Height: =176
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  Width: =460
+                  X: =(cntConfirmChq.Width - 460) / 2
+                  Y: =(cntConfirmChq.Height - 176) / 2
+                Children:
+                  - lblConfirmChq:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk
+                        Font: =Font.'Segoe UI'
+                        Height: =84
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.5
+                        Text: |-
+                          ="Se van a reenviar a digitación los "
+                          & CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido'))
+                          & " cheques No recibido de la ventana cargada (el día elegido más los pendientes de los últimos 30 días), estén o no visibles con el filtro actual."
+                        Width: =420
+                        X: =20
+                        Y: =18
+                  - btnConfirmNoChq:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =ThemeInk2
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                          =UpdateContext({ctxConfirmReenvChq: false})
+                        PressedBorderColor: =ThemeLine
+                        PressedColor: =ThemeInk2
+                        PressedFill: =ThemeSunk
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9.5
+                        Text: ="Cancelar"
+                        Width: =110
+                        X: =200
+                        Y: =118
+                  - btnConfirmSiChq:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =ThemeAccentInk
+                        Fill: =ThemeAccent
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverColor: =ThemeAccentInk
+                        HoverFill: =ColorFade(ThemeAccent, -10%)
+                        OnSelect: |-
+                          =UpdateContext({ctxConfirmReenvChq: false, ctxCargandoChq: true, ctxEnviandoChq: true});
+
+                          // Sólo 'No Recibido' → 'Enviado a digitacion' es reenvío legal (CheckGuard).
+                          // Se toma de la colección cargada, NO de la selección: los No Recibido salen
+                          // deshabilitados en la grilla y nunca entran a colSelChq.
+                          ClearCollect(colReenviarChq,
+                              Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido')
+                          );
+
+                          ClearCollect(colEnvioResChq,
+                              ForAll(colReenviarChq As C,
+                                  IfError(
+                                      Patch('CH-Tbl-Checks', C,
+                                          { CheckStatus: 'CheckStatus (CH-Tbl-Checks)'.'Enviado a digitacion' }
+                                      ),
+                                      { OkChq: false, MsgChq: FirstError.Message },
+                                      { OkChq: true,  MsgChq: "" }
+                                  )
+                              )
+                          );
+                          UpdateContext({
+                              ctxEnviadosChq:   CountRows(Filter(colEnvioResChq, OkChq)),
+                              ctxRechazadosChq: CountRows(Filter(colEnvioResChq, !OkChq)),
+                              ctxDescartadosChq: 0
+                          });
+
+                          Refresh('CH-Tbl-Checks');
+                          Select(btnActualizarChq);
+
+                          Notify(
+                              ctxEnviadosChq & " reenviado(s) a digitación"
+                              & If(ctxRechazadosChq > 0,
+                                   " · " & ctxRechazadosChq & " rechazado(s) por el servidor: "
+                                   & Coalesce(LookUp(colEnvioResChq, !OkChq, MsgChq), ""),
+                                   ""),
+                              If(ctxRechazadosChq > 0, NotificationType.Warning, NotificationType.Success)
+                          );
+                          UpdateContext({ctxCargandoChq: false, ctxEnviandoChq: false})
+                        PressedColor: =ThemeAccentInk
+                        PressedFill: =ColorFade(ThemeAccent, -20%)
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9.5
+                        Text: ="Sí, reenviar"
+                        Width: =130
+                        X: =320
+                        Y: =118
+      - cntCargandoChq:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =RGBA(0, 0, 0, 0.35)
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =ctxCargandoChq
+            Width: =Parent.Width
+          Children:
+            - lblCargandoChq:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  Color: =Color.White
+                  Font: =Font.'Segoe UI'
+                  Height: =24
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =12
+                  Text: =If(ctxEnviandoChq, "Enviando cheques...", "Actualizando...")
+                  Width: =Parent.Width
+                  Y: =Parent.Height / 2 - 12

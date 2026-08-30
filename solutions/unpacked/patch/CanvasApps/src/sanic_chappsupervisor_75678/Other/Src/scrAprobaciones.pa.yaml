@@ -1,0 +1,1817 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrAprobaciones:
+    Properties:
+      Fill: =ThemeBg
+      LoadingSpinnerColor: =ThemeAccent
+      OnVisible: |-
+        =UpdateContext(
+            {
+                ctxSegApr: "pendientes",
+                ctxConfirmApr: "",
+                ctxCargandoApr: false,
+                ctxResueltaApr: false,
+                ctxCargadoIdApr: GUID("00000000-0000-0000-0000-000000000000")
+            }
+        );
+        Reset(inpBuscarApr);
+        Reset(inpMotivoApr);
+        Reset(galBandejaApr);
+        Select(btnActualizarApr)
+    Children:
+      - cmpNavApr:
+          Control: CanvasComponent
+          ComponentName: cmpNav
+          Properties:
+            Height: =Parent.Height
+            Width: =214
+      - cntBodyApr:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =14
+            LayoutOverflowY: =LayoutOverflow.Scroll
+            PaddingBottom: =18
+            PaddingLeft: =26
+            PaddingRight: =26
+            PaddingTop: =22
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Width: =Parent.Width - cmpNavApr.Width
+            X: =cmpNavApr.Width
+          Children:
+            - cntTituloApr:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =52
+                  LayoutAlignItems: =LayoutAlignItems.Stretch
+                  LayoutDirection: =LayoutDirection.Vertical
+                  LayoutGap: =3
+                  LayoutMinHeight: =52
+                  LayoutMinWidth: =16
+                  RadiusBottomLeft: =0
+                  RadiusBottomRight: =0
+                  RadiusTopLeft: =0
+                  RadiusTopRight: =0
+                Children:
+                  - lblTituloApr:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =26
+                        LayoutMinHeight: =26
+                        LayoutMinWidth: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =18
+                        Text: ="Aprobaciones"
+                  - lblSubtituloApr:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        Height: =20
+                        LayoutMinHeight: =20
+                        LayoutMinWidth: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =10.5
+                        Text: ="Solicitudes que requieren tu firma. No podés aprobar lo que vos mismo solicitaste."
+            - cardFiltrosApr:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  FillPortions: =0
+                  Height: =74
+                  LayoutMinHeight: =74
+                  LayoutMinWidth: =16
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                Children:
+                  - segPendApr:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =If(ctxSegApr = "pendientes", ThemeAccentInk, ThemeInk2)
+                        Fill: =If(ctxSegApr = "pendientes", ThemeAccent, ThemeSurface2)
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =Self.Color
+                        HoverFill: =Self.Fill
+                        OnSelect: |-
+                          =Reset(inpMotivoApr);
+                          UpdateContext({ctxSegApr: "pendientes", ctxConfirmApr: ""});
+                          Reset(galBandejaApr);
+                          Select(btnRecargarDetalleApr)
+                        PressedBorderColor: =ThemeLine
+                        PressedFill: =Self.Fill
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =0
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =0
+                        Size: =9.5
+                        Text: ="Pendientes  " & CountRows(Filter('CH-Tbl-ApprovalRequests', ApprovalStatus = Blank()))
+                        Width: =152
+                        X: =16
+                        Y: =20
+                  - segHistApr:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =If(ctxSegApr = "historico", ThemeAccentInk, ThemeInk2)
+                        Fill: =If(ctxSegApr = "historico", ThemeAccent, ThemeSurface2)
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =Self.Color
+                        HoverFill: =Self.Fill
+                        OnSelect: |-
+                          =Reset(inpMotivoApr);
+                          UpdateContext({ctxSegApr: "historico", ctxConfirmApr: ""});
+                          Reset(galBandejaApr);
+                          Select(btnRecargarDetalleApr)
+                        PressedBorderColor: =ThemeLine
+                        PressedFill: =Self.Fill
+                        RadiusBottomLeft: =0
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =0
+                        RadiusTopRight: =8
+                        Size: =9.5
+                        Text: ="Histórico"
+                        Width: =110
+                        X: =168
+                        Y: =20
+                  - lblBuscarApr:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =14
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: ="BUSCAR"
+                        Width: =120
+                        X: =298
+                        Y: =10
+                  - inpBuscarApr:
+                      Control: Classic/TextInput@2.3.2
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Clear: =true
+                        Color: =ThemeInk
+                        Default: =""
+                        Fill: =ThemeSurface2
+                        FocusedBorderThickness: =2
+                        Font: =Font.'Segoe UI'
+                        Height: =34
+                        HintText: ="Tipo, número de solicitud o número de tula…"
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =ThemeInk
+                        HoverFill: =ThemeSurface2
+                        PaddingLeft: =30
+                        Size: =9.5
+                        Width: =cardFiltrosApr.Width - 640
+                        X: =298
+                        Y: =26
+                  - icoBuscarApr:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        Color: =ThemeInk3
+                        DisplayMode: =DisplayMode.View
+                        Height: =16
+                        Icon: =Icon.Search
+                        Width: =16
+                        X: =306
+                        Y: =35
+                  - cirSyncApr:
+                      Control: Circle@2.3.0
+                      Properties:
+                        Fill: =ThemeAccent
+                        Height: =8
+                        Width: =8
+                        X: =cardFiltrosApr.Width - 320
+                        Y: =40
+                  - lblSyncApr:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        Height: =16
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: =If(IsBlank(ctxUltimaActApr), "Bandeja al día", "Actualizado " & Text(ctxUltimaActApr, "HH:mm:ss"))
+                        Width: =160
+                        X: =cardFiltrosApr.Width - 304
+                        Y: =32
+                  - btnActualizarApr:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =ThemeAccentInk
+                        Fill: =ThemeAccent
+                        Font: =Font.'Segoe UI'
+                        Height: =36
+                        HoverColor: =ThemeAccentInk
+                        HoverFill: =ColorFade(ThemeAccent, -10%)
+                        OnSelect: |-
+                          =Refresh('CH-Tbl-ApprovalRequests');
+                          UpdateContext({ctxUltimaActApr: Now()});
+                          Reset(galBandejaApr);
+                          Select(btnRecargarDetalleApr)
+                        PressedColor: =ThemeAccentInk
+                        PressedFill: =ColorFade(ThemeAccent, -20%)
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9.5
+                        Text: ="↻  Actualizar"
+                        Width: =124
+                        X: =cardFiltrosApr.Width - 140
+                        Y: =28
+            - cntMasterDetalleApr:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  FillPortions: =0
+                  Height: =If(scrAprobaciones.Width >= 1212, cntBodyApr.Height - 194, 1240)
+                  LayoutAlignItems: =LayoutAlignItems.Stretch
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =16
+                  LayoutMinHeight: =If(scrAprobaciones.Width >= 1212, cntBodyApr.Height - 194, 1240)
+                  LayoutMinWidth: =16
+                  LayoutWrap: =true
+                  RadiusBottomLeft: =0
+                  RadiusBottomRight: =0
+                  RadiusTopLeft: =0
+                  RadiusTopRight: =0
+                Children:
+                  - cardBandejaApr:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        AlignInContainer: =AlignInContainer.SetByContainer
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Fill: =ThemeSurface
+                        FillPortions: =5
+                        Height: =If(scrAprobaciones.Width >= 1212, cntMasterDetalleApr.Height, 610)
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =380
+                        RadiusBottomLeft: =10
+                        RadiusBottomRight: =10
+                        RadiusTopLeft: =10
+                        RadiusTopRight: =10
+                      Children:
+                        - lblBandejaTituloApr:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =18
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =10.5
+                              Text: ="Bandeja de solicitudes"
+                              Width: =7 * Len(Self.Text) + 8
+                              X: =16
+                              Y: =12
+                        - pilBandejaCountApr:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeLine
+                              BorderThickness: =If(Self.Fill = ThemeSunk, 1, 0)
+                              Color: =ThemeInk3
+                              DisplayMode: =DisplayMode.View
+                              Fill: =ThemeSunk
+                              Font: =Font.'Segoe UI'
+                              Height: =22
+                              HoverBorderColor: =Self.BorderColor
+                              HoverColor: =Self.Color
+                              HoverFill: =Self.Fill
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PressedBorderColor: =Self.BorderColor
+                              PressedFill: =Self.Fill
+                              Size: =9
+                              Text: =CountRows(galBandejaApr.AllItems) & If(ctxSegApr = "pendientes", " pendientes", " resueltas")
+                              Width: =12 + 7 * Len(Self.Text)
+                              X: =lblBandejaTituloApr.X + lblBandejaTituloApr.Width + 10
+                              Y: =11
+                        - shpLineaHeadApr:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =ThemeLine
+                              Height: =1
+                              Width: =cardBandejaApr.Width
+                              Y: =44
+                        - galBandejaApr:
+                            Control: Gallery@2.15.0
+                            Variant: Vertical
+                            Properties:
+                              DelayItemLoading: =false
+                              Height: =cardBandejaApr.Height - 45
+                              Items: |-
+                                =If(
+                                    ctxSegApr = "pendientes",
+                                    SortByColumns(
+                                        Filter(
+                                            'CH-Tbl-ApprovalRequests',
+                                            ApprovalStatus = Blank()
+                                            && (
+                                                StartsWith(RequestType, inpBuscarApr.Text)
+                                                || StartsWith(Name, inpBuscarApr.Text)
+                                                || StartsWith(BagNumber, inpBuscarApr.Text)
+                                            )
+                                        ),
+                                        "createdon",
+                                        SortOrder.Descending
+                                    ),
+                                    SortByColumns(
+                                        Filter(
+                                            'CH-Tbl-ApprovalRequests',
+                                            ApprovalStatus <> Blank()
+                                            && (
+                                                StartsWith(RequestType, inpBuscarApr.Text)
+                                                || StartsWith(Name, inpBuscarApr.Text)
+                                                || StartsWith(BagNumber, inpBuscarApr.Text)
+                                            )
+                                        ),
+                                        "createdon",
+                                        SortOrder.Descending
+                                    )
+                                )
+                              LoadingSpinner: =LoadingSpinner.None
+                              OnSelect: |-
+                                =Reset(inpMotivoApr);
+                                UpdateContext({ctxConfirmApr: ""});
+                                Select(btnRecargarDetalleApr)
+                              TemplateFill: =If(ThisItem.'CH-Tbl-ApprovalRequest' = galBandejaApr.Selected.'CH-Tbl-ApprovalRequest', ThemeAccentSoft, ThemeSurface)
+                              TemplatePadding: =0
+                              TemplateSize: =58
+                              Width: =cardBandejaApr.Width
+                              Y: =45
+                            Children:
+                              - btnFilaApr:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderThickness: =0
+                                    Color: =ThemeInk
+                                    Fill: =RGBA(0, 0, 0, 0)
+                                    Font: =Font.'Segoe UI'
+                                    Height: =58
+                                    HoverColor: =ThemeInk
+                                    HoverFill: =ThemeSurface2
+                                    OnSelect: =Select(Parent)
+                                    PressedColor: =ThemeInk
+                                    PressedFill: =ThemeAccentSoft
+                                    Size: =10
+                                    Text: =""
+                                    Width: =galBandejaApr.Width
+                              - lblFilaTipoApr:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk
+                                    Font: =Font.'Segoe UI'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =18
+                                    OnSelect: =Select(Parent)
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Size: =10.5
+                                    Text: =ThisItem.RequestType
+                                    Width: |-
+                                      =galBandejaApr.Width - 28
+                                      - If(ctxSegApr = "historico", 92, 0)
+                                      - If(scrAprobaciones.Width >= 1100, 116, 0)
+                                    X: =14
+                                    Y: =9
+                              - lblFilaMetaApr:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Segoe UI'
+                                    Height: =18
+                                    OnSelect: =Select(Parent)
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Size: =8.5
+                                    Text: =ThisItem.Name & "  ·  " & ThisItem.'Created By'.'Full Name'
+                                    Width: |-
+                                      =galBandejaApr.Width - 28
+                                      - If(ctxSegApr = "historico", 92, 0)
+                                      - If(scrAprobaciones.Width >= 1100, 116, 0)
+                                    X: =14
+                                    Y: =29
+                              - pilFilaEstadoApr:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderColor: =ThemeLine
+                                    BorderThickness: =If(Self.Fill = ThemeSunk, 1, 0)
+                                    Color: =If(ThisItem.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Aprobado, ThemePos, ThemeDanger)
+                                    DisplayMode: =DisplayMode.View
+                                    Fill: =If(ThisItem.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Aprobado, ThemePosSoft, ThemeDangerSoft)
+                                    Font: =Font.'Segoe UI'
+                                    Height: =22
+                                    HoverBorderColor: =Self.BorderColor
+                                    HoverColor: =Self.Color
+                                    HoverFill: =Self.Fill
+                                    OnSelect: =Select(Parent)
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    PressedBorderColor: =Self.BorderColor
+                                    PressedFill: =Self.Fill
+                                    Size: =9
+                                    Text: =Text(ThisItem.ApprovalStatus)
+                                    Visible: =ctxSegApr = "historico" && !IsBlank(ThisItem.ApprovalStatus)
+                                    Width: =12 + 7 * Len(Self.Text)
+                                    X: =galBandejaApr.Width - If(scrAprobaciones.Width >= 1100, 130, 14) - Self.Width
+                                    Y: =18
+                              - lblFilaCuandoApr:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Segoe UI'
+                                    Height: =18
+                                    OnSelect: =Select(Parent)
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Size: =8.5
+                                    Text: |-
+                                      =With(
+                                          { d: DateValue(ThisItem.'Created On') },
+                                          If(
+                                              d = Today(), "hoy " & Text(ThisItem.'Created On', "HH:mm"),
+                                              d = DateAdd(Today(), -1, TimeUnit.Days), "ayer " & Text(ThisItem.'Created On', "HH:mm"),
+                                              Text(ThisItem.'Created On', FmtFechaCorta)
+                                          )
+                                      )
+                                    Visible: =scrAprobaciones.Width >= 1100
+                                    Width: =100
+                                    X: =galBandejaApr.Width - 116
+                                    Y: =20
+                              - shpSepFilaApr:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeLine
+                                    Height: =1
+                                    OnSelect: =Select(Parent)
+                                    Width: =galBandejaApr.Width
+                                    Y: =57
+                        - icoVacioBandejaApr:
+                            Control: Classic/Icon@2.5.0
+                            Properties:
+                              Color: =ThemeInk3
+                              Height: =32
+                              Icon: =Icon.CheckBadge
+                              Visible: =CountRows(galBandejaApr.AllItems) = 0 && !ctxCargandoApr
+                              Width: =32
+                              X: =cardBandejaApr.Width / 2 - 16
+                              Y: =cardBandejaApr.Height / 2 - 60
+                        - lblVacioBandejaTitApr:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =ThemeInk2
+                              Font: =Font.'Segoe UI'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =20
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =12
+                              Text: =If(ctxSegApr = "pendientes", "No hay solicitudes pendientes", "No hay solicitudes resueltas con ese criterio")
+                              Visible: =CountRows(galBandejaApr.AllItems) = 0 && !ctxCargandoApr
+                              Width: =cardBandejaApr.Width - 40
+                              X: =20
+                              Y: =cardBandejaApr.Height / 2 - 18
+                        - lblVacioBandejaTxtApr:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =ThemeInk3
+                              Font: =Font.'Segoe UI'
+                              Height: =36
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9.5
+                              Text: =If(ctxSegApr = "pendientes", "Todo lo que requería tu firma ya fue resuelto.", "Probá con otro texto de búsqueda o volvé a Pendientes.")
+                              Visible: =CountRows(galBandejaApr.AllItems) = 0 && !ctxCargandoApr
+                              Width: =cardBandejaApr.Width - 40
+                              X: =20
+                              Y: =cardBandejaApr.Height / 2 + 4
+                  - cardDetalleApr:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        AlignInContainer: =AlignInContainer.SetByContainer
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Fill: =ThemeSurface
+                        FillPortions: =4
+                        Height: =If(scrAprobaciones.Width >= 1212, cntMasterDetalleApr.Height, 610)
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =550
+                        RadiusBottomLeft: =10
+                        RadiusBottomRight: =10
+                        RadiusTopLeft: =10
+                        RadiusTopRight: =10
+                      Children:
+                        - cntDetStackApr:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              DropShadow: =DropShadow.None
+                              Height: =cardDetalleApr.Height
+                              LayoutAlignItems: =LayoutAlignItems.Stretch
+                              LayoutDirection: =LayoutDirection.Vertical
+                              LayoutGap: =12
+                              LayoutOverflowY: =LayoutOverflow.Scroll
+                              PaddingBottom: =14
+                              PaddingLeft: =16
+                              PaddingRight: =16
+                              PaddingTop: =14
+                              RadiusBottomLeft: =0
+                              RadiusBottomRight: =0
+                              RadiusTopLeft: =0
+                              RadiusTopRight: =0
+                              Visible: =!IsBlank(galBandejaApr.Selected)
+                              Width: =cardDetalleApr.Width
+                            Children:
+                              - cntDetCabeceraApr:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    FillPortions: =0
+                                    Height: =54
+                                    LayoutMinHeight: =54
+                                    LayoutMinWidth: =16
+                                    RadiusBottomLeft: =0
+                                    RadiusBottomRight: =0
+                                    RadiusTopLeft: =0
+                                    RadiusTopRight: =0
+                                  Children:
+                                    - lblDetTituloApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =24
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Text: |-
+                                            =galBandejaApr.Selected.RequestType
+                                            & If(
+                                                !IsBlank(ctxBagApr),
+                                                " — " & ctxBagApr.BagID,
+                                                IsBlank(galBandejaApr.Selected.Name),
+                                                "",
+                                                " — " & galBandejaApr.Selected.Name
+                                            )
+                                          Width: =cntDetCabeceraApr.Width - 46
+                                    - lblDetSubApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Segoe UI'
+                                          Height: =26
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =9
+                                          Text: |-
+                                            ="Solicitada por " & galBandejaApr.Selected.'Created By'.'Full Name'
+                                            & If(IsBlank(ctxSesionApr.CountingDesk.Name), "", " (" & ctxSesionApr.CountingDesk.Name & ")")
+                                            & If(IsBlank(ctxSesionApr.Name), "", "  ·  sesión " & ctxSesionApr.Name)
+                                            & "  ·  " & Text(galBandejaApr.Selected.'Created On', FmtFecha)
+                                            & If(IsBlank(galBandejaApr.Selected.ApprovalStatus), "", "  ·  " & Text(galBandejaApr.Selected.ApprovalStatus))
+                                            & If(IsBlank(galBandejaApr.Selected.SolvedBy), "", " por " & galBandejaApr.Selected.SolvedBy.'Full Name')
+                                            & If(IsBlank(galBandejaApr.Selected.ResolutionDatetime), "", " el " & Text(galBandejaApr.Selected.ResolutionDatetime, FmtFecha))
+                                          Width: =cntDetCabeceraApr.Width - 46
+                                          Y: =26
+                              - cntDetStaleApr:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    BorderColor: =ThemeWarn
+                                    BorderThickness: =1
+                                    DropShadow: =DropShadow.None
+                                    Fill: =ThemeWarnSoft
+                                    FillPortions: =0
+                                    Height: =36
+                                    LayoutMinHeight: =36
+                                    LayoutMinWidth: =16
+                                    RadiusBottomLeft: =8
+                                    RadiusBottomRight: =8
+                                    RadiusTopLeft: =8
+                                    RadiusTopRight: =8
+                                    Visible: =ctxCargadoIdApr <> galBandejaApr.Selected.'CH-Tbl-ApprovalRequest'
+                                  Children:
+                                    - lblDetStaleApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeWarn
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =18
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =9
+                                          Text: ="El detalle no corresponde a la solicitud seleccionada."
+                                          Width: =cntDetStaleApr.Width - 130
+                                          X: =12
+                                          Y: =9
+                                    - btnDetStaleApr:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderColor: =ThemeWarn
+                                          BorderThickness: =1
+                                          Color: =ThemeWarn
+                                          Fill: =RGBA(0, 0, 0, 0)
+                                          Font: =Font.'Segoe UI'
+                                          Height: =24
+                                          HoverBorderColor: =ThemeWarn
+                                          HoverColor: =ThemeWarn
+                                          HoverFill: =RGBA(0, 0, 0, 0)
+                                          OnSelect: =Select(btnRecargarDetalleApr)
+                                          PressedBorderColor: =ThemeWarn
+                                          PressedColor: =ThemeWarn
+                                          PressedFill: =RGBA(0, 0, 0, 0)
+                                          RadiusBottomLeft: =6
+                                          RadiusBottomRight: =6
+                                          RadiusTopLeft: =6
+                                          RadiusTopRight: =6
+                                          Size: =9
+                                          Text: ="↻  Cargar"
+                                          Width: =106
+                                          X: =cntDetStaleApr.Width - 118
+                                          Y: =6
+                              - htmlDetalleApr:
+                                  Control: HtmlViewer@2.1.0
+                                  Properties:
+                                    AutoHeight: =true
+                                    BorderColor: =App.Theme.Colors.Darker40
+                                    Color: =ThemeInk2
+                                    Fill: =RGBA(0, 0, 0, 0)
+                                    Font: =Font.'Segoe UI'
+                                    Height: =96
+                                    HtmlText: =galBandejaApr.Selected.RequestDetails
+                                    LayoutMinWidth: =16
+                                    Size: =9.5
+                                    Visible: =!IsBlank(galBandejaApr.Selected.RequestDetails)
+                              - cntKvApr:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    BorderColor: =ThemeLine
+                                    BorderThickness: =1
+                                    DropShadow: =DropShadow.None
+                                    Fill: =ThemeSurface2
+                                    FillPortions: =0
+                                    Height: |-
+                                      =10 + 22 * (
+                                          If(lblKvClienteApr.Visible, 1, 0)
+                                          + If(lblKvCuentaApr.Visible, 1, 0)
+                                          + If(lblKvTulaApr.Visible, 1, 0)
+                                      )
+                                    LayoutMinHeight: |-
+                                      =10 + 22 * (
+                                          If(lblKvClienteApr.Visible, 1, 0)
+                                          + If(lblKvCuentaApr.Visible, 1, 0)
+                                          + If(lblKvTulaApr.Visible, 1, 0)
+                                      )
+                                    LayoutMinWidth: =16
+                                    RadiusBottomLeft: =8
+                                    RadiusBottomRight: =8
+                                    RadiusTopLeft: =8
+                                    RadiusTopRight: =8
+                                    Visible: =lblKvClienteApr.Visible || lblKvCuentaApr.Visible || lblKvTulaApr.Visible
+                                  Children:
+                                    - lblKvClienteEtqApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Segoe UI'
+                                          Height: =18
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =9
+                                          Text: ="Cliente"
+                                          Visible: =lblKvClienteApr.Visible
+                                          Width: =100
+                                          X: =12
+                                          Y: =8
+                                    - lblKvClienteApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Color: =ThemeInk
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =18
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =9.5
+                                          Text: =Coalesce(ctxBagApr.ReceptionID.RemitentClient.Name, ctxBagApr.ReceptionID.RemitentName)
+                                          Visible: =!IsBlank(Self.Text)
+                                          Width: =cntKvApr.Width - 128
+                                          X: =116
+                                          Y: =8
+                                    - lblKvCuentaEtqApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Segoe UI'
+                                          Height: =18
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =9
+                                          Text: ="Cuenta"
+                                          Visible: =lblKvCuentaApr.Visible
+                                          Width: =100
+                                          X: =12
+                                          Y: =8 + If(lblKvClienteApr.Visible, 22, 0)
+                                    - lblKvCuentaApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Color: =ThemeInk
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =18
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =9.5
+                                          Text: |-
+                                            =If(
+                                                CountRows(colRecApr) = 0, "",
+                                                CountRows(Distinct(colRecApr, AccountNumber)) > 1,
+                                                    CountRows(Distinct(colRecApr, AccountNumber)) & " cuentas",
+                                                Text(First(colRecApr).AccountNumber, "0")
+                                            )
+                                          Visible: =!IsBlank(Self.Text)
+                                          Width: =cntKvApr.Width - 128
+                                          X: =116
+                                          Y: =8 + If(lblKvClienteApr.Visible, 22, 0)
+                                    - lblKvTulaEtqApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Segoe UI'
+                                          Height: =18
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =9
+                                          Text: ="Tula"
+                                          Visible: =lblKvTulaApr.Visible
+                                          Width: =100
+                                          X: =12
+                                          Y: =8 + If(lblKvClienteApr.Visible, 22, 0) + If(lblKvCuentaApr.Visible, 22, 0)
+                                    - lblKvTulaApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Color: =ThemeInk
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =18
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =9.5
+                                          Text: =ctxBagApr.BagID
+                                          Visible: =!IsBlank(Self.Text)
+                                          Width: =cntKvApr.Width - 128
+                                          X: =116
+                                          Y: =8 + If(lblKvClienteApr.Visible, 22, 0) + If(lblKvCuentaApr.Visible, 22, 0)
+                              - lblDetResumenApr:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Segoe UI'
+                                    Height: =46
+                                    LayoutMinHeight: =46
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Size: =9.5
+                                    Text: |-
+                                      =Switch(
+                                          galBandejaApr.Selected.RequestType,
+                                          "Remapear tula",
+                                              "Mover la tula a la planilla " & Text(ParseJSON(ctxResApr).ReceiptID)
+                                              & ". Al rechazar se restituye el estado previo (" & Text(ParseJSON(ctxResApr).BagPreviousState) & ").",
+                                          "Agregar tula",
+                                              "Alta de la tula " & Text(ParseJSON(ctxResApr).BagID)
+                                              & " en la planilla del lote. Al rechazar, la tula pendiente se ELIMINA.",
+                                          "Eliminar tula",
+                                              "Baja de la tula de su planilla. Al rechazar se restituye el estado previo ("
+                                              & Text(ParseJSON(ctxResApr).BagPreviousState) & ").",
+                                          "Modificar numero de planilla",
+                                              "Cambiar el número de planilla a " & Text(ParseJSON(ctxResApr).NewReceiptID)
+                                              & ". Se valida que no exista ese número en el mismo lote.",
+                                          "Editar tula",
+                                              "Cambiar el número de tula a " & Text(ParseJSON(ctxResApr).BagID)
+                                              & ". Se valida que no exista ese número en el mismo lote de recepción.",
+                                          "Crear sesion de recuento",
+                                              "Confirmar la sesión de recuento del cajero. Al rechazar, la sesión se ELIMINA.",
+                                          "Primera tula en planilla",
+                                              "Asignar la primera tula de la planilla al cajero y enlazarla con su bolsa declarada.",
+                                          "Tula sin declaracion",
+                                              "Asignar al cajero una tula que no tiene bolsa declarada y abrir su detalle de sesión.",
+                                          "Tula con diferencia",
+                                              "Cerrar el recuento con diferencias. Se generan los asientos del cuadro de abajo.",
+                                          "Tula recontada sin declaracion",
+                                              "Cerrar el recuento de una tula sin declaración: cada depósito recontado genera un asiento «Sin declaracion».",
+                                          "Solicitud sin resumen definido — revisá RequestResources antes de firmar."
+                                      )
+                              - cntDifApr:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    BorderColor: =ThemeLine
+                                    BorderThickness: =1
+                                    DropShadow: =DropShadow.None
+                                    Fill: =ThemeSurface
+                                    FillPortions: =0
+                                    Height: =26 + CountRows(colDifApr) * 30
+                                    LayoutMinHeight: =26 + CountRows(colDifApr) * 30
+                                    LayoutMinWidth: =16
+                                    RadiusBottomLeft: =8
+                                    RadiusBottomRight: =8
+                                    RadiusTopLeft: =8
+                                    RadiusTopRight: =8
+                                    Visible: =CountRows(colDifApr) > 0
+                                  Children:
+                                    - shpBandDifApr:
+                                        Control: Rectangle@2.3.0
+                                        Properties:
+                                          Fill: =ThemeSurface2
+                                          Height: =25
+                                          Width: =cntDifApr.Width
+                                    - lblColCompApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =16
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =8
+                                          Text: ="COMPONENTE"
+                                          Width: =galDifApr.Width * 0.22
+                                          X: =10
+                                          Y: =6
+                                    - lblColDecApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =16
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =8
+                                          Text: ="DECLARADO"
+                                          Width: =galDifApr.Width * 0.13 - 14
+                                          X: =10 + galDifApr.Width * 0.22
+                                          Y: =6
+                                    - lblColRecApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =16
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =8
+                                          Text: ="RECONTADO"
+                                          Width: =galDifApr.Width * 0.13
+                                          X: =10 + galDifApr.Width * 0.35
+                                          Y: =6
+                                    - lblColDifApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =16
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =8
+                                          Text: ="DIFERENCIA"
+                                          Width: =galDifApr.Width * 0.29 - 14
+                                          X: =10 + galDifApr.Width * 0.48
+                                          Y: =6
+                                    - lblColAsientoApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeInk3
+                                          Font: =Font.'Segoe UI'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =16
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =8
+                                          Text: ="ASIENTO"
+                                          Width: =galDifApr.Width * 0.23
+                                          X: =10 + galDifApr.Width * 0.77
+                                          Y: =6
+                                    - shpLineaDifApr:
+                                        Control: Rectangle@2.3.0
+                                        Properties:
+                                          Fill: =ThemeLine
+                                          Height: =1
+                                          Width: =cntDifApr.Width
+                                          Y: =25
+                                    - galDifApr:
+                                        Control: Gallery@2.15.0
+                                        Variant: Vertical
+                                        Properties:
+                                          DelayItemLoading: =false
+                                          Height: =CountRows(colDifApr) * 30
+                                          Items: =colDifApr
+                                          LoadingSpinner: =LoadingSpinner.None
+                                          ShowScrollbar: =false
+                                          TemplatePadding: =0
+                                          TemplateSize: =30
+                                          Width: =cntDifApr.Width - 20
+                                          X: =10
+                                          Y: =26
+                                        Children:
+                                          - lblCelCompApr:
+                                              Control: Label@2.5.1
+                                              Properties:
+                                                Color: =ThemeInk
+                                                Font: =Font.'Segoe UI'
+                                                Height: =18
+                                                OnSelect: =Select(Parent)
+                                                PaddingBottom: =0
+                                                PaddingLeft: =0
+                                                PaddingRight: =0
+                                                PaddingTop: =0
+                                                Size: =9.5
+                                                Text: =ThisItem.Comp
+                                                Width: =galDifApr.Width * 0.22
+                                                Y: =7
+                                          - lblCelDecApr:
+                                              Control: Label@2.5.1
+                                              Properties:
+                                                Align: =Align.Right
+                                                Color: =ThemeInk
+                                                Font: =Font.'Segoe UI'
+                                                Height: =18
+                                                OnSelect: =Select(Parent)
+                                                PaddingBottom: =0
+                                                PaddingLeft: =0
+                                                PaddingRight: =0
+                                                PaddingTop: =0
+                                                Size: =9.5
+                                                Text: =Text(Coalesce(ThisItem.Dec, 0), FmtMoney)
+                                                Width: =galDifApr.Width * 0.13 - 14
+                                                X: =galDifApr.Width * 0.22
+                                                Y: =7
+                                          - lblCelRecApr:
+                                              Control: Label@2.5.1
+                                              Properties:
+                                                Align: =Align.Right
+                                                Color: =ThemeInk
+                                                Font: =Font.'Segoe UI'
+                                                Height: =18
+                                                OnSelect: =Select(Parent)
+                                                PaddingBottom: =0
+                                                PaddingLeft: =0
+                                                PaddingRight: =0
+                                                PaddingTop: =0
+                                                Size: =9.5
+                                                Text: =Text(Coalesce(ThisItem.Rec, 0), FmtMoney)
+                                                Width: =galDifApr.Width * 0.13
+                                                X: =galDifApr.Width * 0.35
+                                                Y: =7
+                                          - lblCelDifApr:
+                                              Control: Label@2.5.1
+                                              Properties:
+                                                Align: =Align.Right
+                                                Color: |-
+                                                  =If(
+                                                      ThisItem.Sob > 0 && ThisItem.Fal > 0, ThemeWarn,
+                                                      ThisItem.Sob > 0, ThemePos,
+                                                      ThisItem.Fal > 0, ThemeNeg,
+                                                      ThemeInk3
+                                                  )
+                                                Font: =Font.'Segoe UI'
+                                                FontWeight: =FontWeight.Semibold
+                                                Height: =18
+                                                OnSelect: =Select(Parent)
+                                                PaddingBottom: =0
+                                                PaddingLeft: =0
+                                                PaddingRight: =0
+                                                PaddingTop: =0
+                                                Size: =9.5
+                                                Text: |-
+                                                  =If(
+                                                      ThisItem.Sob > 0 && ThisItem.Fal > 0,
+                                                          "+" & Text(ThisItem.Sob, FmtMoney) & " / −" & Text(ThisItem.Fal, FmtMoney),
+                                                      ThisItem.Sob > 0, "+" & Text(ThisItem.Sob, FmtMoney),
+                                                      ThisItem.Fal > 0, "−" & Text(ThisItem.Fal, FmtMoney),
+                                                      Text(0, FmtMoney)
+                                                  )
+                                                Width: =galDifApr.Width * 0.29 - 14
+                                                X: =galDifApr.Width * 0.48
+                                                Y: =7
+                                          - pilCelAsientoApr:
+                                              Control: Classic/Button@2.2.0
+                                              Properties:
+                                                BorderColor: =ThemeLine
+                                                BorderThickness: =If(Self.Fill = ThemeSunk, 1, 0)
+                                                Color: =If(ThisItem.Sob > 0 && ThisItem.Fal > 0, ThemeWarn, ThisItem.Sob > 0, ThemePos, ThisItem.Fal > 0, ThemeNeg, ThemeInk3)
+                                                DisplayMode: =DisplayMode.View
+                                                Fill: =If(ThisItem.Sob > 0 && ThisItem.Fal > 0, ThemeWarnSoft, ThisItem.Sob > 0, ThemePosSoft, ThisItem.Fal > 0, ThemeNegSoft, ThemeSunk)
+                                                Font: =Font.'Segoe UI'
+                                                Height: =22
+                                                HoverBorderColor: =Self.BorderColor
+                                                HoverColor: =Self.Color
+                                                HoverFill: =Self.Fill
+                                                OnSelect: =Select(Parent)
+                                                PaddingLeft: =0
+                                                PaddingRight: =0
+                                                PressedBorderColor: =Self.BorderColor
+                                                PressedFill: =Self.Fill
+                                                Size: =9
+                                                Text: =If(ThisItem.Sob > 0 && ThisItem.Fal > 0, "Sobr. + Falt.", ThisItem.Sob > 0, "Sobrante", ThisItem.Fal > 0, "Faltante", "Cuadra")
+                                                Width: =12 + 7 * Len(Self.Text)
+                                                X: =galDifApr.Width - 4 - Self.Width
+                                                Y: =4
+                                          - shpSepDifApr:
+                                              Control: Rectangle@2.3.0
+                                              Properties:
+                                                Fill: =ThemeLine
+                                                Height: =1
+                                                OnSelect: =Select(Parent)
+                                                Width: =galDifApr.Width
+                                                Y: =29
+                              - cntAvisoAsientosApr:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: ManualLayout
+                                  Properties:
+                                    BorderColor: =ThemeWarn
+                                    BorderThickness: =1
+                                    DropShadow: =DropShadow.None
+                                    Fill: =ThemeWarnSoft
+                                    FillPortions: =0
+                                    Height: =66
+                                    LayoutMinHeight: =66
+                                    LayoutMinWidth: =16
+                                    RadiusBottomLeft: =8
+                                    RadiusBottomRight: =8
+                                    RadiusTopLeft: =8
+                                    RadiusTopRight: =8
+                                    Visible: =CountRows(colDifApr) > 0
+                                  Children:
+                                    - icoAvisoApr:
+                                        Control: Classic/Icon@2.5.0
+                                        Properties:
+                                          Color: =ThemeWarn
+                                          Height: =18
+                                          Icon: =Icon.Warning
+                                          Width: =18
+                                          X: =12
+                                          Y: =20
+                                    - lblAvisoAsientosApr:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Color: =ThemeWarn
+                                          Font: =Font.'Segoe UI'
+                                          Height: =50
+                                          PaddingBottom: =0
+                                          PaddingLeft: =0
+                                          PaddingRight: =0
+                                          PaddingTop: =0
+                                          Size: =9
+                                          Text: |-
+                                            =With(
+                                                {
+                                                    s: Filter(colDifApr, Sob > 0),
+                                                    f: Filter(colDifApr, Fal > 0)
+                                                },
+                                                If(
+                                                    CountRows(s) + CountRows(f) = 0,
+                                                    "Sin diferencias por componente: solo se registran los asientos de depósito.",
+                                                    "Se generarán asientos separados — "
+                                                    & Concat(s, "un Sobrante de " & Text(Sob, FmtMoney) & " (" & Comp & ")", "; ")
+                                                    & If(CountRows(s) > 0 && CountRows(f) > 0, "; ", "")
+                                                    & Concat(f, "un Faltante de " & Text(Fal, FmtMoney) & " (" & Comp & ")", "; ")
+                                                    & ". No se compensan a un neto — cada discrepancia queda registrada."
+                                                )
+                                            )
+                                          Width: =cntAvisoAsientosApr.Width - 50
+                                          X: =38
+                                          Y: =8
+                              - cntAccionesApr:
+                                  Control: GroupContainer@1.5.0
+                                  Variant: AutoLayout
+                                  Properties:
+                                    DropShadow: =DropShadow.None
+                                    FillPortions: =0
+                                    Height: =40
+                                    LayoutAlignItems: =LayoutAlignItems.Center
+                                    LayoutDirection: =LayoutDirection.Horizontal
+                                    LayoutGap: =10
+                                    LayoutMinHeight: =40
+                                    LayoutMinWidth: =16
+                                    RadiusBottomLeft: =0
+                                    RadiusBottomRight: =0
+                                    RadiusTopLeft: =0
+                                    RadiusTopRight: =0
+                                    Visible: =ctxSegApr = "pendientes" && IsBlank(galBandejaApr.Selected.ApprovalStatus) && cntDetStaleApr.Visible = false
+                                  Children:
+                                    - btnAprobarApr:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderThickness: =0
+                                          Color: =ThemeAccentInk
+                                          DisabledColor: =ThemeInk3
+                                          DisabledFill: =ThemeSunk
+                                          DisplayMode: |
+                                            =/*If(
+                                                IsBlank(galBandejaApr.Selected)
+                                                || !IsBlank(galBandejaApr.Selected.ApprovalStatus)
+                                                || galBandejaApr.Selected.'Created By'.User = UsuarioActual.User
+                                                || ctxCargadoIdApr <> galBandejaApr.Selected.'CH-Tbl-ApprovalRequest'
+                                                || ctxCargandoApr,
+                                                DisplayMode.Disabled,
+                                                DisplayMode.Edit
+                                            )*/
+
+                                            DisplayMode.Edit
+                                          Fill: =ThemeAccent
+                                          FillPortions: =1
+                                          Font: =Font.'Segoe UI'
+                                          Height: =38
+                                          HoverColor: =ThemeAccentInk
+                                          HoverFill: =ColorFade(ThemeAccent, -10%)
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =200
+                                          OnSelect: |-
+                                            =Reset(inpMotivoApr);
+                                            UpdateContext({ctxConfirmApr: "aprobar"})
+                                          PressedColor: =ThemeAccentInk
+                                          PressedFill: =ColorFade(ThemeAccent, -20%)
+                                          RadiusBottomLeft: =8
+                                          RadiusBottomRight: =8
+                                          RadiusTopLeft: =8
+                                          RadiusTopRight: =8
+                                          Size: =9.5
+                                          Text: ="✓  Aprobar"
+                                    - btnRechazarApr:
+                                        Control: Classic/Button@2.2.0
+                                        Properties:
+                                          BorderColor: =ThemeLine
+                                          BorderThickness: =1
+                                          Color: =ThemeDanger
+                                          DisabledColor: =ThemeInk3
+                                          DisabledFill: =ThemeSunk
+                                          DisplayMode: |-
+                                            =If(
+                                                IsBlank(galBandejaApr.Selected)
+                                                || !IsBlank(galBandejaApr.Selected.ApprovalStatus)
+                                                || galBandejaApr.Selected.'Created By'.User = UsuarioActual.User
+                                                || ctxCargadoIdApr <> galBandejaApr.Selected.'CH-Tbl-ApprovalRequest'
+                                                || ctxCargandoApr,
+                                                DisplayMode.Disabled,
+                                                DisplayMode.Edit
+                                            )
+                                          Fill: =ThemeSurface2
+                                          FillPortions: =1
+                                          Font: =Font.'Segoe UI'
+                                          Height: =38
+                                          HoverBorderColor: =ThemeLine
+                                          HoverColor: =ThemeDanger
+                                          HoverFill: =ThemeDangerSoft
+                                          LayoutMinHeight: =16
+                                          LayoutMinWidth: =140
+                                          OnSelect: |-
+                                            =Reset(inpMotivoApr);
+                                            UpdateContext({ctxConfirmApr: "rechazar"})
+                                          PressedBorderColor: =ThemeLine
+                                          PressedColor: =ThemeDanger
+                                          PressedFill: =ThemeDangerSoft
+                                          RadiusBottomLeft: =8
+                                          RadiusBottomRight: =8
+                                          RadiusTopLeft: =8
+                                          RadiusTopRight: =8
+                                          Size: =9.5
+                                          Text: ="✕  Rechazar"
+                              - lblCuatroOjosApr:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: |-
+                                      =If(
+                                          !IsBlank(galBandejaApr.Selected.ApprovalStatus), ThemeInk3,
+                                          galBandejaApr.Selected.'Created By'.User = UsuarioActual.User, ThemeDanger,
+                                          ThemeInk3
+                                      )
+                                    Font: =Font.'Segoe UI'
+                                    Height: =34
+                                    LayoutMinHeight: =34
+                                    LayoutMinWidth: =16
+                                    PaddingBottom: =0
+                                    PaddingLeft: =0
+                                    PaddingRight: =0
+                                    PaddingTop: =0
+                                    Size: =8.5
+                                    Text: |-
+                                      =If(
+                                          !IsBlank(galBandejaApr.Selected.ApprovalStatus),
+                                          "Solicitud ya resuelta — solo lectura.",
+                                          galBandejaApr.Selected.'Created By'.User = UsuarioActual.User,
+                                          "Esta solicitud la creaste vos (" & UsuarioActual.'Full Name'
+                                          & "). No podés firmarla — pedile a otro supervisor que la resuelva.",
+                                          "Solicitante ≠ aprobador: la solicitó " & galBandejaApr.Selected.'Created By'.'Full Name'
+                                          & ", vos sos " & UsuarioActual.'Full Name'
+                                          & " — habilitado. La app revalida el estado antes de ejecutar (anti doble-aprobación)."
+                                      )
+                        - icoDetVacioApr:
+                            Control: Classic/Icon@2.5.0
+                            Properties:
+                              Color: =ThemeInk3
+                              Height: =32
+                              Icon: =Icon.DocumentWithContent
+                              Visible: =IsBlank(galBandejaApr.Selected)
+                              Width: =32
+                              X: =cardDetalleApr.Width / 2 - 16
+                              Y: =cardDetalleApr.Height / 2 - 46
+                        - lblDetVacioApr:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              Color: =ThemeInk3
+                              Font: =Font.'Segoe UI'
+                              Height: =36
+                              PaddingBottom: =0
+                              PaddingLeft: =0
+                              PaddingRight: =0
+                              PaddingTop: =0
+                              Size: =9.5
+                              Text: ="Elegí una solicitud de la bandeja para ver el detalle."
+                              Visible: =IsBlank(galBandejaApr.Selected)
+                              Width: =cardDetalleApr.Width - 48
+                              X: =24
+                              Y: =cardDetalleApr.Height / 2 - 4
+                        - btnRecargarDetalleApr:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderThickness: =0
+                              Color: =ThemeInk3
+                              Fill: =RGBA(0, 0, 0, 0)
+                              Font: =Font.'Segoe UI'
+                              Height: =28
+                              HoverColor: =ThemeInk3
+                              HoverFill: =ThemeSurface2
+                              OnSelect: |-
+                                =UpdateContext({ctxCargandoApr: true});
+
+                                // 1) JSON del contrato (guardado contra selección vacía o campo nulo)
+                                UpdateContext(
+                                    {
+                                        ctxResApr:
+                                            If(
+                                                IsBlank(galBandejaApr.Selected) || IsBlank(galBandejaApr.Selected.RequestResources),
+                                                "{}",
+                                                galBandejaApr.Selected.RequestResources
+                                            )
+                                    }
+                                );
+
+                                // 2) GUID de tula: "BagGUID" en 8 tipos, "GUID" en Remapear/Eliminar.
+                                //    NUNCA "BagID" — esa clave es el NÚMERO de tula (bug de la app vieja).
+                                UpdateContext(
+                                    {
+                                        ctxBagGuidApr:
+                                            Coalesce(
+                                                IfError(GUID(Text(ParseJSON(ctxResApr).BagGUID)), Blank()),
+                                                IfError(GUID(Text(ParseJSON(ctxResApr).GUID)), Blank())
+                                            )
+                                    }
+                                );
+
+                                // 3) Registros frescos (1 request cada uno, por clave primaria)
+                                UpdateContext(
+                                    {
+                                        ctxBagApr:
+                                            If(
+                                                IsBlank(ctxBagGuidApr),
+                                                Blank(),
+                                                LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxBagGuidApr)
+                                            )
+                                    }
+                                );
+                                UpdateContext(
+                                    {
+                                        ctxSesGuidApr:
+                                            Coalesce(
+                                                ctxBagApr.RecountingSession.'CH-Tbl-RecountingSession',
+                                                IfError(GUID(Text(ParseJSON(ctxResApr).RecountingSessionGUID)), Blank())
+                                            )
+                                    }
+                                );
+                                UpdateContext(
+                                    {
+                                        ctxSesionApr:
+                                            If(
+                                                IsBlank(ctxSesGuidApr),
+                                                Blank(),
+                                                LookUp('CH-Tbl-RecountingSessions', 'CH-Tbl-RecountingSession' = ctxSesGuidApr)
+                                            )
+                                    }
+                                );
+
+                                // 4) Depósitos RECONTADOS de la tula — comparación PK a PK (delegable)
+                                If(
+                                    IsBlank(ctxBagGuidApr),
+                                    Clear(colRecApr),
+                                    ClearCollect(
+                                        colRecApr,
+                                        Filter('CH-Tbl-DepositsRecountings', BagID.'CH-Tbl-Bags' = ctxBagGuidApr)
+                                    )
+                                );
+
+                                // 5) Depósitos DECLARADOS de la bolsa declarada — 1 salto, delegable.
+                                //    Trae también los declarados NO recontados (los que la vieja perdía).
+                                If(
+                                    IsBlank(ctxBagApr) || IsBlank(ctxBagApr.BagDeclarationID),
+                                    Clear(colDecApr),
+                                    ClearCollect(
+                                        colDecApr,
+                                        Filter(
+                                            'CH-Tbl-DeclaredDeposits',
+                                            DeclaredBag.'CH-Tbl-DeclaredBags' = ctxBagApr.BagDeclarationID.'CH-Tbl-DeclaredBags'
+                                        )
+                                    )
+                                );
+
+                                // 6.a) Pares declarado/recontado POR DEPÓSITO y POR COMPONENTE.
+                                //      MISMA unidad de cálculo que el motor de asientos de §11 9.a/9.b:
+                                //      lo que el supervisor firma es exactamente lo que se contabiliza.
+                                Clear(colParApr);
+                                ForAll(
+                                    colRecApr As R,
+                                    With(
+                                        {
+                                            D: LookUp(
+                                                colDecApr,
+                                                RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting' = R.'CH-Tbl-DepositsRecounting'
+                                            )
+                                        },
+                                        Collect(
+                                            colParApr,
+                                            {Cur: Text(R.Currency), Comp: "Efectivo",      Dec: Coalesce(D.CashAmount, 0),            Rec: Coalesce(R.CashAmount, 0)},
+                                            {Cur: Text(R.Currency), Comp: "Cheques BAC",   Dec: Coalesce(D.BACLocalCheckAmount, 0),   Rec: Coalesce(R.BACLocalCheckAmount, 0)},
+                                            {Cur: Text(R.Currency), Comp: "Otros cheques", Dec: Coalesce(D.OtherLocalCheckAmount, 0), Rec: Coalesce(R.OtherLocaCheckAmount, 0)}
+                                        )
+                                    )
+                                );
+                                // declarados que NADIE recontó → Faltante puro (espeja §11 9.b)
+                                ForAll(
+                                    Filter(colDecApr, IsBlank(RelatedRecountedDeposit)) As D2,
+                                    Collect(
+                                        colParApr,
+                                        {Cur: Text(D2.Currency), Comp: "Efectivo",      Dec: Coalesce(D2.CashAmount, 0),            Rec: 0},
+                                        {Cur: Text(D2.Currency), Comp: "Cheques BAC",   Dec: Coalesce(D2.BACLocalCheckAmount, 0),   Rec: 0},
+                                        {Cur: Text(D2.Currency), Comp: "Otros cheques", Dec: Coalesce(D2.OtherLocalCheckAmount, 0), Rec: 0}
+                                    )
+                                );
+
+                                // 6.b) Una fila por componente × moneda, con Sobrante y Faltante SIN compensar
+                                Clear(colDifApr);
+                                ForAll(
+                                    GroupBy(colParApr, Cur, Comp, Filas) As G,
+                                    With(
+                                        {
+                                            dec: Coalesce(Sum(G.Filas, Dec), 0),
+                                            rec: Coalesce(Sum(G.Filas, Rec), 0),
+                                            sob: Coalesce(Sum(G.Filas, Max(Rec - Dec, 0)), 0),
+                                            fal: Coalesce(Sum(G.Filas, Abs(Min(Rec - Dec, 0))), 0),
+                                            sim: Switch(G.Cur, "NIO", SimboloNIO, "USD", SimboloUSD, "EUR", SimboloEUR, G.Cur)
+                                        },
+                                        If(
+                                            dec <> 0 || rec <> 0,
+                                            Collect(colDifApr, {Comp: G.Comp & " " & sim, Dec: dec, Rec: rec, Sob: sob, Fal: fal})
+                                        )
+                                    )
+                                );
+
+                                Reset(galDifApr);
+                                UpdateContext(
+                                    {
+                                        ctxCargadoIdApr:
+                                            Coalesce(
+                                                galBandejaApr.Selected.'CH-Tbl-ApprovalRequest',
+                                                GUID("00000000-0000-0000-0000-000000000000")
+                                            ),
+                                        ctxCargandoApr: false
+                                    }
+                                )
+                              PressedColor: =ThemeInk3
+                              PressedFill: =ThemeSurface2
+                              RadiusBottomLeft: =6
+                              RadiusBottomRight: =6
+                              RadiusTopLeft: =6
+                              RadiusTopRight: =6
+                              Size: =11
+                              Text: ="↻"
+                              Tooltip: ="Recargar el detalle"
+                              Width: =30
+                              X: =cardDetalleApr.Width - 46
+                              Y: =14
+      - cntConfirmApr:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =RGBA(0, 0, 0, 0.35)
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =ctxConfirmApr <> ""
+            Width: =Parent.Width
+          Children:
+            - cardConfirmApr:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  Height: =260
+                  RadiusBottomLeft: =10
+                  RadiusBottomRight: =10
+                  RadiusTopLeft: =10
+                  RadiusTopRight: =10
+                  Width: =460
+                  X: =(cntConfirmApr.Width - 460) / 2
+                  Y: =(cntConfirmApr.Height - 260) / 2
+                Children:
+                  - lblConfirmTituloApr:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Text: =If(ctxConfirmApr = "aprobar", "Confirmar aprobación", "Confirmar rechazo")
+                        Width: =420
+                        X: =20
+                        Y: =18
+                  - lblConfirmTextoApr:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Segoe UI'
+                        Height: =52
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =9.5
+                        Text: |-
+                          =If(
+                              ctxConfirmApr = "aprobar",
+                              "Vas a aprobar «" & galBandejaApr.Selected.RequestType & "»"
+                              & If(IsBlank(ctxBagApr), "", " de la tula " & ctxBagApr.BagID)
+                              & If(
+                                  galBandejaApr.Selected.RequestType = "Tula con diferencia"
+                                  || galBandejaApr.Selected.RequestType = "Tula recontada sin declaracion",
+                                  ". " & lblAvisoAsientosApr.Text,
+                                  ". Esta solicitud no genera asientos contables."
+                              ),
+                              "Vas a rechazar «" & galBandejaApr.Selected.RequestType & "»"
+                              & If(IsBlank(ctxBagApr), "", " de la tula " & ctxBagApr.BagID)
+                              & ". La acción revierte lo que la solicitud haya dejado en curso."
+                          )
+                        Width: =420
+                        X: =20
+                        Y: =44
+                  - lblMotivoEtqApr:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk3
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =14
+                        PaddingBottom: =0
+                        PaddingLeft: =0
+                        PaddingRight: =0
+                        PaddingTop: =0
+                        Size: =8.5
+                        Text: ="MOTIVO DEL RECHAZO (OBLIGATORIO)"
+                        Visible: =ctxConfirmApr = "rechazar"
+                        Width: =420
+                        X: =20
+                        Y: =104
+                  - inpMotivoApr:
+                      Control: Classic/TextInput@2.3.2
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk
+                        Default: =""
+                        Fill: =ThemeSurface2
+                        FocusedBorderThickness: =2
+                        Font: =Font.'Segoe UI'
+                        Height: =56
+                        HintText: ="Por qué se rechaza — queda en StatusReason"
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =ThemeInk
+                        HoverFill: =ThemeSurface2
+                        Mode: =TextMode.MultiLine
+                        Size: =9.5
+                        Visible: =ctxConfirmApr = "rechazar"
+                        Width: =420
+                        X: =20
+                        Y: =124
+                  - btnCancelarConfirmApr:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        Fill: =RGBA(0, 0, 0, 0)
+                        Font: =Font.'Segoe UI'
+                        FontWeight: =FontWeight.Normal
+                        Height: =38
+                        HoverBorderColor: =ThemeLine
+                        HoverColor: =ThemeInk2
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                          =Reset(inpMotivoApr);
+                          UpdateContext({ctxConfirmApr: ""})
+                        PressedBorderColor: =ThemeLine
+                        PressedColor: =ThemeInk2
+                        PressedFill: =ThemeSurface2
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9.5
+                        Text: ="Cancelar"
+                        Width: =120
+                        X: =20
+                        Y: =200
+                  - btnConfirmarAprobarApr:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =ThemeAccentInk
+                        Fill: =ThemeAccent
+                        Font: =Font.'Segoe UI'
+                        Height: =38
+                        HoverColor: =ThemeAccentInk
+                        HoverFill: =ColorFade(ThemeAccent, -10%)
+                        OnSelect: |-
+                          =UpdateContext({ctxCargandoApr: true});
+
+                          // UNA sola llamada. La CAPI sanic_CHResolveApprovalRequest autoriza, aplica el
+                          // efecto y marca la solicitud EN LA MISMA TRANSACCION. Antes esto eran dos
+                          // escrituras sueltas desde aca: si la segunda fallaba, la solicitud quedaba
+                          // resuelta y el efecto sin ejecutar (una decision apuntando a la nada).
+                          //
+                          // Las reglas y los efectos NO se reimplementan aca a proposito: viven en el
+                          // servidor, bajo test. El veredicto negativo vuelve como DATO (Outcome =
+                          // "Blocked" + Message), nunca como fault, porque Power Fx descarta el mensaje
+                          // de los faults de plugin y mostraria un "Network error" generico.
+                          IfError(
+                              With(
+                                  {
+                                      _r: Environment.sanic_CHResolveApprovalRequest(
+                                          {
+                                              ApprovalRequestId: galBandejaApr.Selected.'CH-Tbl-ApprovalRequest',
+                                              Decision: "Approve",
+                                              Reason: Trim(inpMotivoApr.Text)
+                                          }
+                                      )
+                                  },
+                                  Notify(
+                                      _r.Message,
+                                      If(
+                                          _r.Outcome = "Blocked",
+                                          NotificationType.Error,
+                                          NotificationType.Success
+                                      )
+                                  )
+                              ),
+                              // Solo llega aca si la llamada NO pudo hacerse (privilegios, red). Los
+                              // rechazos de negocio ya viajaron como dato en la rama de arriba.
+                              Notify(
+                                  "No se pudo aprobar la solicitud: " & FirstError.Message,
+                                  NotificationType.Error
+                              )
+                          );
+
+                          // Cierre — SIEMPRE fuera de la rama de exito
+                          Reset(inpMotivoApr);
+                          UpdateContext({ctxCargandoApr: false, ctxConfirmApr: ""});
+                          Refresh('CH-Tbl-ApprovalRequests');
+                          Select(btnRecargarDetalleApr)
+                        PressedColor: =ThemeAccentInk
+                        PressedFill: =ColorFade(ThemeAccent, -20%)
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9.5
+                        Text: ="Sí, aprobar y contabilizar"
+                        Visible: =ctxConfirmApr = "aprobar"
+                        Width: =208
+                        X: =232
+                        Y: =200
+                  - btnConfirmarRechazarApr:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =ThemeAccentInk
+                        DisplayMode: =If(IsBlank(Trim(inpMotivoApr.Text)), DisplayMode.Disabled, DisplayMode.Edit)
+                        Fill: =ThemeDanger
+                        Font: =Font.'Segoe UI'
+                        Height: =38
+                        HoverColor: =ThemeAccentInk
+                        HoverFill: =ColorFade(ThemeDanger, -10%)
+                        OnSelect: |-
+                          =UpdateContext({ctxCargandoApr: true});
+
+                          // UNA sola llamada. La CAPI sanic_CHResolveApprovalRequest autoriza, aplica el
+                          // efecto y marca la solicitud EN LA MISMA TRANSACCION. Antes esto eran dos
+                          // escrituras sueltas desde aca: si la segunda fallaba, la solicitud quedaba
+                          // resuelta y el efecto sin ejecutar (una decision apuntando a la nada).
+                          //
+                          // Las reglas y los efectos NO se reimplementan aca a proposito: viven en el
+                          // servidor, bajo test. El veredicto negativo vuelve como DATO (Outcome =
+                          // "Blocked" + Message), nunca como fault, porque Power Fx descarta el mensaje
+                          // de los faults de plugin y mostraria un "Network error" generico.
+                          IfError(
+                              With(
+                                  {
+                                      _r: Environment.sanic_CHResolveApprovalRequest(
+                                          {
+                                              ApprovalRequestId: galBandejaApr.Selected.'CH-Tbl-ApprovalRequest',
+                                              Decision: "Reject",
+                                              Reason: Trim(inpMotivoApr.Text)
+                                          }
+                                      )
+                                  },
+                                  Notify(
+                                      _r.Message,
+                                      If(
+                                          _r.Outcome = "Blocked",
+                                          NotificationType.Error,
+                                          NotificationType.Success
+                                      )
+                                  )
+                              ),
+                              // Solo llega aca si la llamada NO pudo hacerse (privilegios, red). Los
+                              // rechazos de negocio ya viajaron como dato en la rama de arriba.
+                              Notify(
+                                  "No se pudo rechazar la solicitud: " & FirstError.Message,
+                                  NotificationType.Error
+                              )
+                          );
+
+                          // Cierre — SIEMPRE fuera de la rama de exito
+                          Reset(inpMotivoApr);
+                          UpdateContext({ctxCargandoApr: false, ctxConfirmApr: ""});
+                          Refresh('CH-Tbl-ApprovalRequests');
+                          Select(btnRecargarDetalleApr)
+                        PressedColor: =ThemeAccentInk
+                        PressedFill: =ColorFade(ThemeDanger, -20%)
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9.5
+                        Text: ="Sí, rechazar"
+                        Visible: =ctxConfirmApr = "rechazar"
+                        Width: =208
+                        X: =232
+                        Y: =200
+      - cntCargandoApr:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =RGBA(0, 0, 0, 0.35)
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =ctxCargandoApr
+            Width: =Parent.Width
+          Children:
+            - lblCargandoApr:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  Color: =Color.White
+                  Font: =Font.'Segoe UI'
+                  Height: =24
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =12
+                  Text: ="Procesando la solicitud..."
+                  Width: =cntCargandoApr.Width
+                  Y: =cntCargandoApr.Height / 2 - 12

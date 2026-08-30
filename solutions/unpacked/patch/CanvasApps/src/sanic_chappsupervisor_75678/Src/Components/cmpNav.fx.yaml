@@ -1,0 +1,255 @@
+cmpNav As CanvasComponent:
+    Fill: =RGBA(0, 0, 0, 0)
+    Height: =768
+    Width: =214
+    X: =0
+    Y: =0
+    ZIndex: =1
+
+    shpNavFondo As rectangle:
+        BorderColor: =App.Theme.Colors.Darker40
+        Fill: =ThemeSurface
+        Height: =cmpNav.Height
+        Width: =cmpNav.Width
+        ZIndex: =1
+
+    shpNavBorde As rectangle:
+        BorderColor: =App.Theme.Colors.Darker40
+        Fill: =ThemeLine
+        Height: =cmpNav.Height
+        Width: =1
+        X: =cmpNav.Width - 1
+        ZIndex: =2
+
+    cardMarcaNav As groupContainer.manualLayoutContainer:
+        BorderColor: =ThemeLine
+        Fill: =ThemeAccent
+        Height: =34
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =9
+        RadiusBottomRight: =9
+        RadiusTopLeft: =9
+        RadiusTopRight: =9
+        Width: =34
+        X: =12
+        Y: =14
+        ZIndex: =3
+
+        lblMarcaGlifoNav As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeAccentInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =34
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Text: ="₵"
+            Width: =34
+            ZIndex: =1
+
+    lblMarcaNav As label:
+        BorderColor: =App.Theme.Colors.Darker40
+        Color: =ThemeInk
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =16
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =10.5
+        Text: ="CashHub"
+        Width: =110
+        X: =54
+        Y: =16
+        ZIndex: =4
+
+    lblMarcaSubNav As label:
+        BorderColor: =App.Theme.Colors.Darker40
+        Color: =ThemeInk3
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        Font: =Font.'Segoe UI'
+        Height: =14
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.5
+        Text: ="Supervisor"
+        Width: =110
+        X: =54
+        Y: =32
+        ZIndex: =5
+
+    btnNavResumen As button:
+        Align: =Align.Left
+        BorderColor: =App.Theme.Colors.Primary
+        BorderThickness: =0
+        Color: =If(App.ActiveScreen = scrResumen, ThemeAccent, ThemeInk2)
+        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        DisabledFill: =RGBA(244, 244, 244, 1)
+        Fill: =If(App.ActiveScreen = scrResumen, ThemeAccentSoft, ThemeSurface)
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =36
+        HoverBorderColor: =App.Theme.Colors.Darker10
+        HoverFill: =ThemeSurface2
+        OnSelect: =Navigate(scrResumen)
+        PaddingLeft: =12
+        PressedBorderColor: =App.Theme.Colors.Darker40
+        PressedColor: =ThemeAccent
+        PressedFill: =ThemeAccentSoft
+        RadiusBottomLeft: =8
+        RadiusBottomRight: =8
+        RadiusTopLeft: =8
+        RadiusTopRight: =8
+        Size: =10
+        Text: ="◈  Resumen de operación"
+        Width: =194
+        X: =10
+        Y: =70
+        ZIndex: =6
+
+    btnNavAprob As button:
+        Align: =Align.Left
+        BorderColor: =App.Theme.Colors.Primary
+        BorderThickness: =0
+        Color: =If(App.ActiveScreen = scrAprobaciones, ThemeAccent, ThemeInk2)
+        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        DisabledFill: =RGBA(244, 244, 244, 1)
+        Fill: =If(App.ActiveScreen = scrAprobaciones, ThemeAccentSoft, ThemeSurface)
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =36
+        HoverBorderColor: =App.Theme.Colors.Darker10
+        HoverFill: =ThemeSurface2
+        OnSelect: =Navigate(scrAprobaciones)
+        PaddingLeft: =12
+        PressedBorderColor: =App.Theme.Colors.Darker40
+        PressedColor: =ThemeAccent
+        PressedFill: =ThemeAccentSoft
+        RadiusBottomLeft: =8
+        RadiusBottomRight: =8
+        RadiusTopLeft: =8
+        RadiusTopRight: =8
+        Size: =10
+        Text: ="⚖  Aprobaciones"
+        Width: =194
+        X: =10
+        Y: =112
+        ZIndex: =7
+
+    btnNavTulas As button:
+        Align: =Align.Left
+        BorderColor: =App.Theme.Colors.Primary
+        BorderThickness: =0
+        Color: =If(App.ActiveScreen = scrTulas, ThemeAccent, ThemeInk2)
+        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        DisabledFill: =RGBA(244, 244, 244, 1)
+        Fill: =If(App.ActiveScreen = scrTulas, ThemeAccentSoft, ThemeSurface)
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =36
+        HoverBorderColor: =App.Theme.Colors.Darker10
+        HoverFill: =ThemeSurface2
+        OnSelect: =Navigate(scrTulas)
+        PaddingLeft: =12
+        PressedBorderColor: =App.Theme.Colors.Darker40
+        PressedColor: =ThemeAccent
+        PressedFill: =ThemeAccentSoft
+        RadiusBottomLeft: =8
+        RadiusBottomRight: =8
+        RadiusTopLeft: =8
+        RadiusTopRight: =8
+        Size: =10
+        Text: ="▦  Localización de tulas"
+        Width: =194
+        X: =10
+        Y: =154
+        ZIndex: =8
+
+    btnNavChq As button:
+        Align: =Align.Left
+        BorderColor: =App.Theme.Colors.Primary
+        BorderThickness: =0
+        Color: =If(App.ActiveScreen = scrCheques, ThemeAccent, ThemeInk2)
+        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        DisabledFill: =RGBA(244, 244, 244, 1)
+        Fill: =If(App.ActiveScreen = scrCheques, ThemeAccentSoft, ThemeSurface)
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =36
+        HoverBorderColor: =App.Theme.Colors.Darker10
+        HoverFill: =ThemeSurface2
+        OnSelect: =Navigate(scrCheques)
+        PaddingLeft: =12
+        PressedBorderColor: =App.Theme.Colors.Darker40
+        PressedColor: =ThemeAccent
+        PressedFill: =ThemeAccentSoft
+        RadiusBottomLeft: =8
+        RadiusBottomRight: =8
+        RadiusTopLeft: =8
+        RadiusTopRight: =8
+        Size: =10
+        Text: ="✓  Cheques"
+        Width: =194
+        X: =10
+        Y: =196
+        ZIndex: =9
+
+    pilNavBadgeApr As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =If(Self.Fill = ThemeSunk, 1, 0)
+        Color: =ThemeNeg
+        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        DisabledFill: =RGBA(244, 244, 244, 1)
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeNegSoft
+        Font: =Font.'Segoe UI'
+        FontWeight: =FontWeight.Semibold
+        Height: =18
+        HoverBorderColor: =Self.BorderColor
+        HoverFill: =Self.Fill
+        PaddingLeft: =0
+        PaddingRight: =0
+        PressedBorderColor: =Self.BorderColor
+        PressedColor: =Self.Color
+        PressedFill: =Self.Fill
+        Size: =9
+        Text: =Text(CountRows(Filter('CH-Tbl-ApprovalRequests', ApprovalStatus = Blank())))
+        Visible: =Self.Text <> "0"
+        Width: =12 + 7 * Len(Self.Text)
+        X: =176
+        Y: =120
+        ZIndex: =10
+
+    lblQuienNav As label:
+        BorderColor: =App.Theme.Colors.Darker40
+        Color: =ThemeInk3
+        DisabledColor: =RGBA(166, 166, 166, 1)
+        Font: =Font.'Segoe UI'
+        Height: =32
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.5
+        Text: =UsuarioActual.'Full Name' & " · Supervisor"
+        Width: =190
+        X: =12
+        Y: =cmpNav.Height - 48
+        ZIndex: =11
+

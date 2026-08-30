@@ -1,0 +1,1226 @@
+scrResumen As screen:
+    Fill: =ThemeBg
+    LoadingSpinnerColor: =ThemeAccent
+    OnVisible: |-
+        =UpdateContext({ctxStaleRes: false});
+        If(
+            IsEmpty(colSesionesRes),
+            Select(btnActualizarRes)   // primera visita: carga sola (fix del "0 fantasma")
+        );
+        Reset(galSesionesRes)
+
+    cmpNavRes As cmpNav:
+        Height: =Parent.Height
+
+    cntBodyRes As groupContainer.verticalAutoLayoutContainer:
+        Height: =Parent.Height
+        LayoutAlignItems: =LayoutAlignItems.Stretch
+        LayoutDirection: =LayoutDirection.Vertical
+        LayoutGap: =14
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        LayoutMode: =LayoutMode.Auto
+        PaddingBottom: =22
+        PaddingLeft: =26
+        PaddingRight: =26
+        PaddingTop: =22
+        Width: =Parent.Width - cmpNavRes.Width
+        X: =cmpNavRes.Width
+        ZIndex: =2
+
+        cntTituloRes As groupContainer.verticalAutoLayoutContainer:
+            FillPortions: =0
+            Height: =52
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =3
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            LayoutMaxHeight: =0
+            LayoutMaxWidth: =0
+            LayoutMinHeight: =52
+            LayoutMinWidth: =16
+            LayoutMode: =LayoutMode.Auto
+            ZIndex: =1
+
+            lblTituloRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =28
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinHeight: =28
+                LayoutMinWidth: =16
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =18
+                Text: ="Resumen de operación"
+                Width: =480
+                ZIndex: =1
+
+            lblSubtituloRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                Height: =20
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinHeight: =20
+                LayoutMinWidth: =16
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.5
+                Text: ="Conciliación del recuento del día por sesión de cajero."
+                Width: =480
+                ZIndex: =2
+
+        cardFiltrosRes As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Light
+            Fill: =ThemeSurface
+            FillPortions: =0
+            Height: =74
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            LayoutMaxHeight: =0
+            LayoutMaxWidth: =0
+            LayoutMinHeight: =74
+            LayoutMinWidth: =16
+            RadiusBottomLeft: =10
+            RadiusBottomRight: =10
+            RadiusTopLeft: =10
+            RadiusTopRight: =10
+            ZIndex: =2
+
+            lblFecFiltroRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.5
+                Text: ="FECHA DE OPERACIÓN"
+                Width: =230
+                X: =16
+                Y: =10
+                ZIndex: =1
+
+            dtFechaRes As modernDatePicker:
+                Appearance: =Appearance.FilledDarker
+                DefaultDate: =Today()
+                Format: =DatePickerFormat.Short
+                Height: =34
+                OnChange: |-
+                    =UpdateContext({ctxStaleRes: true})
+                Placeholder: ="Select a date"
+                ValidationState: =ValidationState.None
+                Width: =230
+                X: =16
+                Y: =30
+                ZIndex: =2
+
+            lblCajFiltroRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.5
+                Text: ="CAJERO"
+                Width: =250
+                X: =266
+                Y: =10
+                ZIndex: =3
+
+            drpCajeroRes As dropdown:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                ChevronBackground: =ThemeSurface
+                ChevronDisabledBackground: =RGBA(166, 166, 166, 1)
+                ChevronDisabledFill: =RGBA(244, 244, 244, 1)
+                ChevronFill: =ThemeInk2
+                ChevronHoverBackground: =ThemeSurface2
+                ChevronHoverFill: =ThemeAccent
+                Color: =ThemeInk
+                Default: =LookUp(colCajerosRes, CajeroGuid = ctxCajeroSelRes).CajeroNombre
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =ThemeSurface
+                Font: =Font.'Segoe UI'
+                Height: =34
+                HoverColor: =ThemeInk
+                HoverFill: =ThemeSurface2
+                Items: =colCajerosRes
+                OnChange: |-
+                    =UpdateContext({ctxStaleRes: true})
+                PressedColor: =ThemeAccentInk
+                PressedFill: =ThemeAccent
+                SelectionColor: =ThemeAccentInk
+                SelectionFill: =ThemeAccent
+                Size: =10
+                Width: =250
+                X: =266
+                Y: =30
+                ZIndex: =4
+
+            cirSyncRes As circle:
+                BorderColor: =App.Theme.Colors.Darker40
+                Fill: =ThemeAccent
+                Height: =8
+                Visible: =scrResumen.Width >= 1180
+                Width: =8
+                X: =cardFiltrosRes.Width - 320
+                Y: =40
+                ZIndex: =5
+
+            lblSyncRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                Height: =20
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8.5
+                Text: |-
+                    =If(IsBlank(ctxUltimaActRes), "Sin actualizar", "Actualizado " & Text(ctxUltimaActRes, "HH:mm:ss"))
+                Visible: =scrResumen.Width >= 1180
+                Width: =160
+                X: =cardFiltrosRes.Width - 304
+                Y: =32
+                ZIndex: =6
+
+            btnActualizarRes As button:
+                BorderColor: =App.Theme.Colors.Primary
+                BorderThickness: =0
+                Color: =ThemeAccentInk
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =ThemeAccent
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =36
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =ThemeAccentInk
+                HoverFill: =ColorFade(ThemeAccent, -10%)
+                OnSelect: |-
+                    =UpdateContext({ctxCargandoRes: true, ctxStaleRes: false,
+                        ctxCajeroSelRes: drpCajeroRes.Selected.CajeroGuid});
+                    IfError(
+                        // 1) Sesiones confirmadas del día — SIN filtro de cajero (1 consulta delegable).
+                        //    El día completo se guarda aparte para que el combo NUNCA se auto-colapse.
+                        ClearCollect(colSesDiaRes,
+                            Filter('CH-Tbl-RecountingSessions',
+                                'Created On' >= Coalesce(dtFechaRes.SelectedDate, Today())
+                                && 'Created On' < DateAdd(Coalesce(dtFechaRes.SelectedDate, Today()), 1, TimeUnit.Days)
+                                && Confirmed = true
+                            )
+                        );
+                    
+                        // 2) Combo de cajeros: población COMPLETA del día, dedup con GroupBy (fix OS-06).
+                        //    NUNCA ForAll leyendo la colección que él mismo escribe: Power Fx no
+                        //    garantiza el orden de evaluación de ForAll → duplicados intermitentes.
+                        //    La fila "Todos" siembra la columna GUID con tipo (If(false,...) da Blank tipado).
+                        ClearCollect(colCajerosRes,
+                            {CajeroNombre: "Todos los cajeros confirmados",
+                             CajeroGuid: If(false, GUID("00000000-0000-0000-0000-000000000000"))});
+                        ForAll(
+                            GroupBy(
+                                AddColumns(colSesDiaRes,
+                                    CajGuid, Cashier.User,
+                                    CajNom, Cashier.'Full Name' &
+                                        If(IsBlank(CountingDesk.Name), "", " — " & CountingDesk.Name)),
+                                CajGuid, CajNom, RestoSesiones),
+                            Collect(colCajerosRes, {CajeroNombre: CajNom, CajeroGuid: CajGuid})
+                        );
+                    
+                        // 3) Filtro de cajero LOCAL contra la selección CAPTURADA ANTES de reconstruir
+                        //    el combo (un dropdown resetea Selected cuando cambia su Items) + textos de
+                        //    cajero/mesa MATERIALIZADOS: el template lee columnas planas, cero dot-walk
+                        //    por fila (fix OS-05 de verdad)
+                        ClearCollect(colSesionesRes,
+                            AddColumns(
+                                Filter(colSesDiaRes,
+                                    IsBlank(ctxCajeroSelRes) || Cashier.User = ctxCajeroSelRes),
+                                CajeroNombre, Cashier.'Full Name',
+                                MesaNombre, CountingDesk.Name
+                            )
+                        );
+                    
+                        // 4) Tulas recontadas por sesión — S consultas delegables (patrón Lookup.'PK' = PK)
+                        Clear(colBagsRes);
+                        ForAll(colSesionesRes As RS,
+                            Collect(colBagsRes,
+                                AddColumns(
+                                    Filter('CH-Tbl-Bags',
+                                        RecountingSession.'CH-Tbl-RecountingSession' = RS.'CH-Tbl-RecountingSession'
+                                        && BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada),
+                                    SesGUID, RS.'CH-Tbl-RecountingSession'
+                                )
+                            )
+                        );
+                    
+                        // 5) Detalles de sesión — S consultas (trae TODOS los estados; el KPI y el chip
+                        //    filtran 'Cerrado con diferencias' después, en local)
+                        Clear(colDetallesRes);
+                        ForAll(colSesionesRes As RS,
+                            Collect(colDetallesRes,
+                                AddColumns(
+                                    Filter('CH-Tbl-RecountingSessionDetails',
+                                        RecountingSessionId.'CH-Tbl-RecountingSession' = RS.'CH-Tbl-RecountingSession'),
+                                    SesDetGUID, RS.'CH-Tbl-RecountingSession'
+                                )
+                            )
+                        );
+                    
+                        // 6) Cheques: YA NO se materializan. Con el espejo RecountingSession (B-9)
+                        //    los dos consumidores cuentan DELEGADO contra el servidor
+                        //    (lblCelChequesRes por sesión, lblTotChequesRes por ventana de fecha):
+                        //    cero filas traídas al cliente y sin el techo de 2.000 del delegation limit.
+                        UpdateContext({ctxUltimaActRes: Now()}),
+                    
+                        // rama de error del IfError
+                        Notify("No se pudo actualizar el resumen: " & FirstError.Message, NotificationType.Error)
+                    );
+                    UpdateContext({ctxCargandoRes: false});
+                    Reset(galSesionesRes)
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =ThemeAccentInk
+                PressedFill: =ColorFade(ThemeAccent, -20%)
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =10
+                Text: ="↻  Actualizar"
+                Width: =124
+                X: =cardFiltrosRes.Width - 140
+                Y: =28
+                ZIndex: =7
+
+        cntStaleRes As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeWarn
+            BorderThickness: =1
+            Fill: =ThemeWarnSoft
+            FillPortions: =0
+            Height: =40
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            LayoutMaxHeight: =0
+            LayoutMaxWidth: =0
+            LayoutMinHeight: =40
+            LayoutMinWidth: =16
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Visible: =ctxStaleRes
+            ZIndex: =3
+
+            lblStaleRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeWarn
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =20
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: ="Cambiaste los filtros — los datos de abajo corresponden a la selección anterior."
+                Width: =560
+                X: =14
+                Y: =10
+                ZIndex: =1
+
+            btnStaleRes As button:
+                BorderColor: =ThemeWarn
+                BorderThickness: =1
+                Color: =ThemeWarn
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =RGBA(0, 0, 0, 0)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =26
+                HoverBorderColor: =ThemeWarn
+                HoverColor: =ThemeWarn
+                HoverFill: =RGBA(0, 0, 0, 0)
+                OnSelect: =Select(btnActualizarRes)
+                PressedBorderColor: =ThemeWarn
+                PressedColor: =ThemeWarn
+                PressedFill: =RGBA(0, 0, 0, 0)
+                RadiusBottomLeft: =6
+                RadiusBottomRight: =6
+                RadiusTopLeft: =6
+                RadiusTopRight: =6
+                Size: =9
+                Text: ="Actualizar ahora"
+                Width: =136
+                X: =cntStaleRes.Width - 150
+                Y: =7
+                ZIndex: =2
+
+        cntKpisRes As groupContainer.horizontalAutoLayoutContainer:
+            FillPortions: =0
+            Height: =If(scrResumen.Width < 1364, 204, 96)
+            LayoutGap: =12
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            LayoutMaxHeight: =0
+            LayoutMaxWidth: =0
+            LayoutMinHeight: =If(scrResumen.Width < 1364, 204, 96)
+            LayoutMinWidth: =16
+            LayoutMode: =LayoutMode.Auto
+            LayoutWrap: =true
+            ZIndex: =4
+
+            cmpKpiTulasRes As cmpKpi:
+                FillPortions: =1
+                KpiLabel: ="◈ TULAS RECONTADAS"
+                KpiPie: ="en " & CountRows(colSesionesRes) & " sesiones confirmadas"
+                KpiValor: =Text(CountRows(colBagsRes))
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinWidth: =196
+                OnKpiSelect: ="Text"
+
+            cmpKpiDifRes As cmpKpi:
+                ChildTabPriority: =true
+                ContentLanguage: =""
+                EnableChildFocus: =true
+                FillPortions: =1
+                KpiAccent: =ThemeNeg
+                KpiLabel: ="⚖ TULAS CON DIFERENCIA"
+                KpiPie: ="ver en Aprobaciones →"
+                KpiPieColor: =ThemeAccent
+                KpiValor: |-
+                    =Text(CountRows(Filter(colDetallesRes,
+                        RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias')))
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinWidth: =196
+                OnKpiSelect: =Navigate(scrAprobaciones)
+                Visible: =true
+
+            cmpKpiNioRes As cmpKpi:
+                ChildTabPriority: =true
+                ContentLanguage: =""
+                EnableChildFocus: =true
+                FillPortions: =1
+                KpiAccent: =ThemeAccentMoney
+                KpiCur: =SimboloNIO
+                KpiLabel: ="TOTAL EFECTIVO · C$"
+                KpiPie: ="córdoba nicaragüense"
+                KpiValor: =Text(Coalesce(Sum(colBagsRes, TotalNIO), 0), FmtMoney)
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinWidth: =196
+                OnKpiSelect: ="Text"
+                Visible: =true
+
+            cmpKpiUsdRes As cmpKpi:
+                ChildTabPriority: =true
+                ContentLanguage: =""
+                EnableChildFocus: =true
+                FillPortions: =1
+                KpiAccent: =ThemeAccentMoney
+                KpiCur: =SimboloUSD
+                KpiLabel: ="TOTAL EFECTIVO · US$"
+                KpiPie: ="dólar estadounidense"
+                KpiValor: =Text(Coalesce(Sum(colBagsRes, TotalUSD), 0), FmtMoney)
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinWidth: =196
+                OnKpiSelect: ="Text"
+                Visible: =true
+
+            cmpKpiEurRes As cmpKpi:
+                ChildTabPriority: =true
+                ContentLanguage: =""
+                EnableChildFocus: =true
+                FillPortions: =1
+                KpiAccent: =ThemeAccentMoney
+                KpiCur: =SimboloEUR
+                KpiLabel: ="TOTAL EFECTIVO · €"
+                KpiPie: ="euro"
+                KpiValor: =Text(Coalesce(Sum(colBagsRes, TotalEUR), 0), FmtMoney)
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinWidth: =196
+                OnKpiSelect: ="Text"
+                Visible: =scrResumen.Width >= 1100
+
+        cardSesionesRes As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Light
+            Fill: =ThemeSurface
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            LayoutMaxHeight: =0
+            LayoutMaxWidth: =0
+            LayoutMinHeight: =320
+            LayoutMinWidth: =16
+            RadiusBottomLeft: =10
+            RadiusBottomRight: =10
+            RadiusTopLeft: =10
+            RadiusTopRight: =10
+            ZIndex: =5
+
+            lblSesTituloRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =20
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10.5
+                Text: ="Sesiones de recuento"
+                Width: =170
+                X: =16
+                Y: =12
+                ZIndex: =1
+
+            pilSesCountRes As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =0
+                Color: =ThemeInk3
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                DisplayMode: =DisplayMode.View
+                Fill: =ThemeSunk
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =22
+                HoverBorderColor: =Self.BorderColor
+                HoverFill: =Self.Fill
+                PaddingLeft: =0
+                PaddingRight: =0
+                PressedBorderColor: =Self.BorderColor
+                PressedColor: =Self.Color
+                PressedFill: =Self.Fill
+                Size: =9
+                Text: =CountRows(colSesionesRes) & " sesiones"
+                Width: =12 + 7 * Len(Self.Text)
+                X: =190
+                Y: =10
+                ZIndex: =2
+
+            shpLineaPanelRes As rectangle:
+                BorderColor: =App.Theme.Colors.Darker40
+                Fill: =ThemeLine
+                Height: =1
+                Width: =cardSesionesRes.Width
+                Y: =40
+                ZIndex: =3
+
+            shpBandHeadRes As rectangle:
+                BorderColor: =App.Theme.Colors.Darker40
+                Fill: =ThemeSurface2
+                Height: =22
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =cardSesionesRes.Width - 32
+                X: =16
+                Y: =42
+                ZIndex: =4
+
+            lblColSesionRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8
+                Text: ="SESIÓN"
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.10
+                X: =16
+                Y: =44
+                ZIndex: =5
+
+            lblColCajeroRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8
+                Text: ="CAJERO"
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.16
+                X: =16 + galSesionesRes.Width * 0.10
+                Y: =44
+                ZIndex: =6
+
+            lblColMesaRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8
+                Text: ="MESA"
+                Visible: =CountRows(colSesionesRes) > 0 && scrResumen.Width >= 1100
+                Width: =galSesionesRes.Width * 0.08
+                X: =16 + galSesionesRes.Width * 0.26
+                Y: =44
+                ZIndex: =7
+
+            lblColTulasRes As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8
+                Text: ="TULAS"
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.07
+                X: =16 + galSesionesRes.Width * 0.34
+                Y: =44
+                ZIndex: =8
+
+            lblColChequesRes As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8
+                Text: ="CHEQUES"
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.08
+                X: =16 + galSesionesRes.Width * 0.41
+                Y: =44
+                ZIndex: =9
+
+            lblColNioRes As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8
+                Text: ="TOTAL C$"
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.13
+                X: =16 + galSesionesRes.Width * 0.49
+                Y: =44
+                ZIndex: =10
+
+            lblColUsdRes As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8
+                Text: ="TOTAL US$"
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.11
+                X: =16 + galSesionesRes.Width * 0.62
+                Y: =44
+                ZIndex: =11
+
+            lblColEurRes As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8
+                Text: ="TOTAL €"
+                Visible: =CountRows(colSesionesRes) > 0 && scrResumen.Width >= 1100
+                Width: =galSesionesRes.Width * 0.10
+                X: =16 + galSesionesRes.Width * 0.73
+                Y: =44
+                ZIndex: =12
+
+            lblColEstadoRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =18
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =8
+                Text: ="ESTADO"
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.13
+                X: =16 + galSesionesRes.Width * 0.85
+                Y: =44
+                ZIndex: =13
+
+            shpLineaHeadRes As rectangle:
+                BorderColor: =App.Theme.Colors.Darker40
+                Fill: =ThemeLine
+                Height: =1
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =cardSesionesRes.Width - 32
+                X: =16
+                Y: =64
+                ZIndex: =14
+
+            galSesionesRes As gallery.galleryVertical:
+                BorderColor: =App.Theme.Colors.Darker40
+                Height: =cardSesionesRes.Height - 130
+                Items: =SortByColumns(colSesionesRes, "sanic_name", SortOrder.Ascending)
+                Layout: =Layout.Vertical
+                OnSelect: |-
+                    =If( CountRows(Filter(colDetallesRes,
+                            SesDetGUID = ThisItem.'CH-Tbl-RecountingSession'
+                            && RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias')) > 0,
+                        Navigate(scrAprobaciones) )
+                TemplatePadding: =0
+                TemplateSize: =44
+                Width: =cardSesionesRes.Width - 32
+                X: =16
+                Y: =66
+                ZIndex: =15
+
+                btnFilaRes As button:
+                    BorderColor: =App.Theme.Colors.Primary
+                    BorderThickness: =0
+                    Color: =ThemeInk
+                    DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    Fill: =RGBA(0, 0, 0, 0)
+                    Font: =Font.'Segoe UI'
+                    FontWeight: =FontWeight.Semibold
+                    Height: =44
+                    HoverBorderColor: =App.Theme.Colors.Darker10
+                    HoverFill: =ThemeSurface2
+                    OnSelect: =Select(Parent)
+                    PressedBorderColor: =App.Theme.Colors.Darker40
+                    PressedColor: =Self.Color
+                    PressedFill: =ThemeAccentSoft
+                    Size: =10
+                    Text: =""
+                    Width: =Parent.Width
+                    ZIndex: =1
+
+                lblCelSesionRes As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeAccent
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Font: =Font.'Segoe UI'
+                    FontWeight: =FontWeight.Semibold
+                    Height: =20
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9
+                    Text: =ThisItem.Name
+                    Width: =Parent.Width * 0.10
+                    Y: =12
+                    ZIndex: =2
+
+                lblCelCajeroRes As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Font: =Font.'Segoe UI'
+                    Height: =20
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.5
+                    Text: =ThisItem.CajeroNombre
+                    Width: =Parent.Width * 0.16
+                    X: =Parent.Width * 0.10
+                    Y: =12
+                    ZIndex: =3
+
+                lblCelMesaRes As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Font: =Font.'Segoe UI'
+                    Height: =20
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.5
+                    Text: =ThisItem.MesaNombre
+                    Visible: =scrResumen.Width >= 1100
+                    Width: =Parent.Width * 0.08
+                    X: =Parent.Width * 0.26
+                    Y: =12
+                    ZIndex: =4
+
+                lblCelTulasRes As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Font: =Font.'Segoe UI'
+                    Height: =20
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.5
+                    Text: =Text(CountRows(Filter(colBagsRes, SesGUID = ThisItem.'CH-Tbl-RecountingSession')))
+                    Width: =Parent.Width * 0.07
+                    X: =Parent.Width * 0.34
+                    Y: =12
+                    ZIndex: =5
+
+                lblCelChequesRes As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Font: =Font.'Segoe UI'
+                    Height: =20
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.5
+                    Text: |-
+                        =Text(
+                            CountRows(
+                                Filter('CH-Tbl-Checks',
+                                    RecountingSession.'CH-Tbl-RecountingSession' = ThisItem.'CH-Tbl-RecountingSession')
+                            )
+                        )
+                    Width: =Parent.Width * 0.08
+                    X: =Parent.Width * 0.41
+                    Y: =12
+                    ZIndex: =6
+
+                lblCelNioRes As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Font: =Font.'Segoe UI'
+                    FontWeight: =FontWeight.Semibold
+                    Height: =20
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.5
+                    Text: =Text(Coalesce(Sum(Filter(colBagsRes, SesGUID = ThisItem.'CH-Tbl-RecountingSession'), TotalNIO), 0), FmtMoney)
+                    Width: =Parent.Width * 0.13
+                    X: =Parent.Width * 0.49
+                    Y: =12
+                    ZIndex: =7
+
+                lblCelUsdRes As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Font: =Font.'Segoe UI'
+                    FontWeight: =FontWeight.Semibold
+                    Height: =20
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.5
+                    Text: =Text(Coalesce(Sum(Filter(colBagsRes, SesGUID = ThisItem.'CH-Tbl-RecountingSession'), TotalUSD), 0), FmtMoney)
+                    Width: =Parent.Width * 0.11
+                    X: =Parent.Width * 0.62
+                    Y: =12
+                    ZIndex: =8
+
+                lblCelEurRes As label:
+                    Align: =Align.Right
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Font: =Font.'Segoe UI'
+                    FontWeight: =FontWeight.Semibold
+                    Height: =20
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.5
+                    Text: =Text(Coalesce(Sum(Filter(colBagsRes, SesGUID = ThisItem.'CH-Tbl-RecountingSession'), TotalEUR), 0), FmtMoney)
+                    Visible: =scrResumen.Width >= 1100
+                    Width: =Parent.Width * 0.10
+                    X: =Parent.Width * 0.73
+                    Y: =12
+                    ZIndex: =9
+
+                pilCelEstadoRes As button:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =If(Self.Fill = ThemeSunk, 1, 0)
+                    Color: |-
+                        =With({d: CountRows(Filter(colDetallesRes,
+                                SesDetGUID = ThisItem.'CH-Tbl-RecountingSession'
+                                && RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias'))},
+                            If(d > 0, ThemeNeg, ThemeInk3))
+                    DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    DisplayMode: =DisplayMode.View
+                    Fill: |-
+                        =With({d: CountRows(Filter(colDetallesRes,
+                                SesDetGUID = ThisItem.'CH-Tbl-RecountingSession'
+                                && RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias'))},
+                            If(d > 0, ThemeNegSoft, ThemeSunk))
+                    Font: =Font.'Segoe UI'
+                    FontWeight: =FontWeight.Semibold
+                    Height: =22
+                    HoverBorderColor: =Self.BorderColor
+                    HoverFill: =Self.Fill
+                    OnSelect: =Select(Parent)
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PressedBorderColor: =Self.BorderColor
+                    PressedColor: =Self.Color
+                    PressedFill: =Self.Fill
+                    Size: =9
+                    Text: |-
+                        =With({d: CountRows(Filter(colDetallesRes,
+                                SesDetGUID = ThisItem.'CH-Tbl-RecountingSession'
+                                && RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias'))},
+                            If(d > 0, "Diferencias ×" & d, "Cuadrado"))
+                    Width: =12 + 7 * Len(Self.Text)
+                    X: =Parent.Width * 0.85
+                    Y: =10
+                    ZIndex: =10
+
+                shpSepSesRes As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    OnSelect: =Select(Parent)
+                    Width: =Parent.Width
+                    Y: =43
+                    ZIndex: =11
+
+            shpBandTotRes As rectangle:
+                BorderColor: =App.Theme.Colors.Darker40
+                Fill: =ThemeSurface2
+                Height: =28
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =cardSesionesRes.Width - 32
+                X: =16
+                Y: =shpLineaTotRes.Y + 2
+                ZIndex: =16
+
+            lblTotEtiquetaRes As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =20
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: ="TOTAL OPERACIÓN"
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.32
+                X: =16
+                Y: =galSesionesRes.Y + galSesionesRes.Height + 8
+                ZIndex: =17
+
+            lblTotTulasRes As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Bold
+                Height: =20
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.5
+                Text: =Text(CountRows(colBagsRes))
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.07
+                X: =16 + galSesionesRes.Width * 0.34
+                Y: =galSesionesRes.Y + galSesionesRes.Height + 8
+                ZIndex: =18
+
+            lblTotChequesRes As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Bold
+                Height: =20
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.5
+                Text: |-
+                    =Text(
+                        CountRows(
+                            Filter('CH-Tbl-Checks',
+                                'Created On' >= Coalesce(dtFechaRes.SelectedDate, Today())
+                                && 'Created On' < DateAdd(Coalesce(dtFechaRes.SelectedDate, Today()), 1, TimeUnit.Days))
+                        )
+                    )
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.08
+                X: =16 + galSesionesRes.Width * 0.41
+                Y: =galSesionesRes.Y + galSesionesRes.Height + 8
+                ZIndex: =19
+
+            lblTotNioRes As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Bold
+                Height: =20
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.5
+                Text: =Text(Coalesce(Sum(colBagsRes, TotalNIO), 0), FmtMoney)
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.13
+                X: =16 + galSesionesRes.Width * 0.49
+                Y: =galSesionesRes.Y + galSesionesRes.Height + 8
+                ZIndex: =20
+
+            lblTotUsdRes As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Bold
+                Height: =20
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.5
+                Text: =Text(Coalesce(Sum(colBagsRes, TotalUSD), 0), FmtMoney)
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =galSesionesRes.Width * 0.11
+                X: =16 + galSesionesRes.Width * 0.62
+                Y: =galSesionesRes.Y + galSesionesRes.Height + 8
+                ZIndex: =21
+
+            lblTotEurRes As label:
+                Align: =Align.Right
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Bold
+                Height: =20
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.5
+                Text: =Text(Coalesce(Sum(colBagsRes, TotalEUR), 0), FmtMoney)
+                Visible: =CountRows(colSesionesRes) > 0 && scrResumen.Width >= 1100
+                Width: =galSesionesRes.Width * 0.10
+                X: =16 + galSesionesRes.Width * 0.73
+                Y: =galSesionesRes.Y + galSesionesRes.Height + 8
+                ZIndex: =22
+
+            shpLineaTotRes As rectangle:
+                BorderColor: =App.Theme.Colors.Darker40
+                Fill: =ThemeLineStrong
+                Height: =2
+                Visible: =CountRows(colSesionesRes) > 0
+                Width: =cardSesionesRes.Width - 32
+                X: =16
+                Y: =galSesionesRes.Y + galSesionesRes.Height + 4
+                ZIndex: =23
+
+            "icoVacioRes As icon.'3DPrinting'":
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(244, 244, 244, 1)
+                Height: =32
+                Icon: =Icon.People
+                Visible: =CountRows(colSesionesRes) = 0 && !ctxCargandoRes
+                Width: =32
+                X: =cardSesionesRes.Width / 2 - 16
+                Y: =cardSesionesRes.Height / 2 - 60
+                ZIndex: =24
+
+            lblVacioTituloRes As label:
+                Align: =Align.Center
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =24
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =12
+                Text: ="No hay sesiones confirmadas en esta fecha"
+                Visible: =CountRows(colSesionesRes) = 0 && !ctxCargandoRes
+                Width: =cardSesionesRes.Width
+                Y: =cardSesionesRes.Height / 2 - 18
+                ZIndex: =25
+
+            lblVacioTextoRes As label:
+                Align: =Align.Center
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                Height: =20
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.5
+                Text: ="Elegí otra fecha o esperá a que los cajeros confirmen su recuento."
+                Visible: =CountRows(colSesionesRes) = 0 && !ctxCargandoRes
+                Width: =cardSesionesRes.Width
+                Y: =cardSesionesRes.Height / 2 + 6
+                ZIndex: =26
+
+    cntCargandoRes As groupContainer.manualLayoutContainer:
+        Fill: =RGBA(0, 0, 0, 0.35)
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        Visible: =ctxCargandoRes
+        Width: =Parent.Width
+        ZIndex: =3
+
+        lblCargandoRes As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: |-
+                =ColorValue("#FFFFFF")
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =Font.'Segoe UI'
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =12
+            Text: ="Actualizando..."
+            Width: =cntCargandoRes.Width
+            Y: =cntCargandoRes.Height / 2 - 20
+            ZIndex: =1
+

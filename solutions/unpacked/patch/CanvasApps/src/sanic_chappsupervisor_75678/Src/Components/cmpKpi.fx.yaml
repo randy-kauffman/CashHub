@@ -1,0 +1,143 @@
+cmpKpi As CanvasComponent:
+    OnKpiSelect():
+        ThisProperty:
+            Default: ="Text"
+    Fill: =RGBA(0, 0, 0, 0)
+    Height: =92
+    KpiAccent: =ThemeAccent
+    KpiCur: =""
+    KpiLabel: ="INDICADOR"
+    KpiPie: =""
+    KpiPieColor: =ThemeInk3
+    KpiValor: ="0"
+    Width: =220
+    X: =0
+    Y: =0
+    ZIndex: =1
+
+    cntKpiCard As groupContainer.manualLayoutContainer:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        DropShadow: =DropShadow.Light
+        Fill: =ThemeSurface
+        Height: =cmpKpi.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =10
+        RadiusBottomRight: =10
+        RadiusTopLeft: =10
+        RadiusTopRight: =10
+        Width: =cmpKpi.Width
+        ZIndex: =1
+
+        btnKpiClick As button:
+            BorderColor: =App.Theme.Colors.Primary
+            BorderThickness: =0
+            Color: =App.Theme.Colors.PrimaryForeground
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            Fill: =RGBA(0, 0, 0, 0)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =cntKpiCard.Height
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =RGBA(0, 0, 0, 0)
+            OnSelect: =cmpKpi.OnKpiSelect()
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =RGBA(0, 0, 0, 0)
+            Size: =10
+            Text: =""
+            Width: =cntKpiCard.Width
+            ZIndex: =1
+
+        shpKpiBarra As rectangle:
+            BorderColor: =App.Theme.Colors.Darker40
+            Fill: =cmpKpi.KpiAccent
+            Height: =cntKpiCard.Height
+            OnSelect: =Select(btnKpiClick)
+            Width: =3
+            ZIndex: =2
+
+        lblKpiLabel As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =14
+            OnSelect: =Select(btnKpiClick)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.5
+            Text: =cmpKpi.KpiLabel
+            Width: =cntKpiCard.Width - 28
+            X: =14
+            Y: =12
+            ZIndex: =3
+
+        lblKpiCur As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Semibold
+            Height: =24
+            OnSelect: =Select(btnKpiClick)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11
+            Text: =cmpKpi.KpiCur
+            VerticalAlign: =VerticalAlign.Bottom
+            Width: =If(IsBlank(cmpKpi.KpiCur), 0, 9 * Len(cmpKpi.KpiCur) + 6)
+            Wrap: =false
+            X: =14
+            Y: =34
+            ZIndex: =4
+
+        lblKpiValor As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =ThemeInk
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =Font.'Segoe UI'
+            FontWeight: =FontWeight.Bold
+            Height: =30
+            OnSelect: =Select(btnKpiClick)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =If(Len(cmpKpi.KpiValor) > 12, 12.5, If(Len(cmpKpi.KpiValor) > 9, 16, 20))
+            Text: =cmpKpi.KpiValor
+            Width: =cntKpiCard.Width - Self.X - 12
+            Wrap: =false
+            X: =lblKpiCur.X + lblKpiCur.Width
+            Y: =28
+            ZIndex: =5
+
+        lblKpiPie As label:
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =cmpKpi.KpiPieColor
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =Font.'Segoe UI'
+            Height: =14
+            OnSelect: =Select(btnKpiClick)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.5
+            Text: =cmpKpi.KpiPie
+            Width: =cntKpiCard.Width - 28
+            X: =14
+            Y: =62
+            ZIndex: =6
+

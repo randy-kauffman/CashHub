@@ -5,7 +5,15 @@ scrTulas As screen:
         =UpdateContext({
             ctxSegTula: "esclusa",
             ctxSortTula: "creado",
-            ctxSortAscTula: false
+            ctxSortAscTula: false,
+            // El modal de devolucion arranca CERRADO en cada visita: sin este reset,
+            // volver aca desde otra pantalla te encuentra el dialogo abierto sobre una
+            // tula que ya no es la que estabas mirando.
+            ctxDlgDevTula: false,
+            ctxDevEnCursoTula: false,
+            // Defaults() y no Blank(): el label del titulo lee .BagID y sin el registro
+            // tipado la expresion no resuelve.
+            ctxTulaDevTula: Defaults('CH-Tbl-Bags')
         });
         If(
             IsEmpty(colTulasTula),
@@ -348,6 +356,7 @@ scrTulas As screen:
                                     'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - esclusa',  "esclusa",
                                     'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                            "boveda",
                                     'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                               "cajero",
+                                    'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                      "devuelta",
                                     'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', "pendrec",
                                     'BagStatus (CH-Tbl-Bags)'.Recontada,                                         "procesadas",
                                     "otros"
@@ -576,6 +585,45 @@ scrTulas As screen:
                 Width: =22 + 7 * Len(Self.Text)
                 ZIndex: =15
 
+            segDevueltaTula As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =If(ctxSegTula = "devuelta", ThemeAccentInk, ThemeInk2)
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =If(ctxSegTula = "devuelta", ThemeAccent, ThemeSurface2)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =34
+                HoverBorderColor: =ThemeLine
+                HoverFill: =If(ctxSegTula = "devuelta", ThemeAccent, ThemeSurface)
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinHeight: =34
+                LayoutMinWidth: =22 + 7 * Len(Self.Text)
+                OnSelect: |-
+                    =UpdateContext({ctxSegTula: "devuelta"});
+                    Reset(galTulasTula)
+                PressedBorderColor: =ThemeLine
+                PressedColor: =Self.Color
+                PressedFill: =Self.HoverFill
+                RadiusBottomLeft: =0
+                RadiusBottomRight: =0
+                RadiusTopLeft: =0
+                RadiusTopRight: =0
+                Size: =9.5
+                Text: |-
+                    ="Devueltas  " & Text(CountRows(Filter('CH-Tbl-Bags',
+                        'Created On' >= Coalesce(dtDesdeTula.SelectedDate, DateAdd(Today(), -30, TimeUnit.Days))
+                        && 'Created On' < DateAdd(Coalesce(dtHastaTula.SelectedDate, Today()), 1, TimeUnit.Days)
+                        && (IsBlank(ctxCreadorSelTula) || 'Created By'.User = ctxCreadorSelTula)
+                        && (StartsWith(BagID, inpBuscarTula.Text) || StartsWith(ReceiptIdMirror, inpBuscarTula.Text))
+                        && (BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion')
+                    )))
+                Width: =22 + 7 * Len(Self.Text)
+                ZIndex: =16
+
             segPendRecTula As button:
                 BorderColor: =ThemeLine
                 BorderThickness: =1
@@ -613,7 +661,7 @@ scrTulas As screen:
                         && (BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento')
                     )))
                 Width: =22 + 7 * Len(Self.Text)
-                ZIndex: =16
+                ZIndex: =17
 
             segProcesadasTula As button:
                 BorderColor: =ThemeLine
@@ -652,7 +700,7 @@ scrTulas As screen:
                         && (BagStatus = 'BagStatus (CH-Tbl-Bags)'.Recontada)
                     )))
                 Width: =22 + 7 * Len(Self.Text)
-                ZIndex: =17
+                ZIndex: =18
 
         cardTablaTula As groupContainer.manualLayoutContainer:
             BorderColor: =ThemeLine
@@ -1019,6 +1067,7 @@ scrTulas As screen:
                             'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeAccent,
                             'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                            ThemePos,
                             'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                               ThemeInk3,
+                            'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                      ThemeWarn,
                             'BagStatus (CH-Tbl-Bags)'.Recontada,                                         ThemeInk3,
                             ThemeInk3
                         )
@@ -1033,6 +1082,7 @@ scrTulas As screen:
                             'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeAccentSoft,
                             'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                            ThemePosSoft,
                             'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                               ThemeSunk,
+                            'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                      ThemeWarnSoft,
                             'BagStatus (CH-Tbl-Bags)'.Recontada,                                         ThemeSunk,
                             ThemeSunk
                         )
@@ -1055,6 +1105,7 @@ scrTulas As screen:
                             'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', "Pend. rev. — recuento",
                             'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                            "En bóveda",
                             'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                               "Asignada a cajero",
+                            'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                      "Devuelta",
                             'BagStatus (CH-Tbl-Bags)'.Recontada,                                         "Recontada",
                             "Estado " & Text(ThisItem.BagStatus)
                         )
@@ -1080,6 +1131,42 @@ scrTulas As screen:
                     X: =Parent.Width * 0.67
                     Y: =12
                     ZIndex: =6
+
+                btnDevolverTula As button:
+                    BorderColor: =ThemeWarn
+                    BorderThickness: =1
+                    Color: =ThemeWarn
+                    DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    Fill: =ThemeSurface
+                    Font: =Font.'Segoe UI'
+                    FontWeight: =FontWeight.Semibold
+                    Height: =26
+                    HoverBorderColor: =ThemeWarn
+                    HoverColor: =ThemeWarn
+                    HoverFill: =ThemeWarnSoft
+                    OnSelect: |-
+                        =UpdateContext({
+                            ctxTulaDevTula: ThisItem,
+                            ctxDlgDevTula: true,
+                            ctxDevEnCursoTula: false
+                        })
+                    PressedBorderColor: =ThemeWarn
+                    PressedColor: =ThemeWarn
+                    PressedFill: =ThemeWarnSoft
+                    RadiusBottomLeft: =6
+                    RadiusBottomRight: =6
+                    RadiusTopLeft: =6
+                    RadiusTopRight: =6
+                    Size: =8.5
+                    Text: ="Devolver"
+                    Tooltip: ="Saca la tula de la mesa y borra su recuento para que otro cajero la pueda tomar."
+                    Visible: =ThisItem.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero'
+                    Width: =78
+                    X: =Parent.Width - 86
+                    Y: =9
+                    ZIndex: =29
 
                 lblCelCreadoPorTula As label:
                     BorderColor: =App.Theme.Colors.Darker40
@@ -1194,6 +1281,183 @@ scrTulas As screen:
                 X: =16
                 Y: =cardTablaTula.Height / 2 - 18
                 ZIndex: =27
+
+    cntDlgDevTula As groupContainer.manualLayoutContainer:
+        Fill: =RGBA(0, 0, 0, 0.45)
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        Visible: =ctxDlgDevTula
+        Width: =Parent.Width
+        ZIndex: =4
+
+        cardDlgDevTula As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =306
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Width: =Min(560, Parent.Width - 80)
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =Max(24, (Parent.Height - Self.Height) / 2)
+            ZIndex: =1
+
+            lblDlgDevTitTula As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =28
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =13.5
+                Text: ="Devolver la tula " & ctxTulaDevTula.BagID
+                Width: =cardDlgDevTula.Width - 48
+                X: =24
+                Y: =22
+                ZIndex: =1
+
+            lblDlgDevSubTula As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                Height: =38
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: |-
+                    ="La tula sale de la mesa y queda libre para que otro cajero la tome. Esto NO se puede deshacer."
+                Width: =cardDlgDevTula.Width - 48
+                X: =24
+                Y: =54
+                ZIndex: =2
+
+            shpDlgDevAvisoTula As rectangle:
+                Fill: =ThemeWarnSoft
+                Height: =104
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Width: =cardDlgDevTula.Width - 48
+                X: =24
+                Y: =100
+                ZIndex: =3
+
+            lblDlgDevDetalleTula As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Font: =Font.'Segoe UI'
+                Height: =88
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9.5
+                Text: |-
+                    ="Se borra TODO el recuento de esta tula: sus depósitos, sus cheques y sus denominaciones. Se desvincula la declaración del cliente, que vuelve a quedar disponible. La tula queda en cero, como si nunca hubiera pasado por una mesa." & Char(10) &
+                    "Las aprobaciones que ya dio un supervisor NO se borran: quedan como constancia."
+                Width: =cardDlgDevTula.Width - 80
+                Wrap: =true
+                X: =40
+                Y: =108
+                ZIndex: =4
+
+            btnDlgDevCancelarTula As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =ThemeSurface
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =38
+                HoverBorderColor: =ThemeLineStrong
+                HoverColor: =ThemeInk
+                HoverFill: =ThemeSurface2
+                OnSelect: =UpdateContext({ctxDlgDevTula: false})
+                PressedBorderColor: =ThemeLineStrong
+                PressedColor: =ThemeInk
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =10
+                Text: ="Cancelar"
+                Width: =120
+                X: =cardDlgDevTula.Width - 24 - 120 - 12 - 176
+                Y: =cardDlgDevTula.Height - 60
+                ZIndex: =5
+
+            btnDlgDevConfirmarTula As button:
+                BorderColor: =ThemeWarn
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =ThemeLine
+                DisplayMode: =If(ctxDevEnCursoTula, DisplayMode.Disabled, DisplayMode.Edit)
+                Fill: =ThemeWarn
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =38
+                HoverColor: =ThemeSurface
+                HoverFill: =ThemeWarn
+                OnSelect: |-
+                    =// Doble clic o Enter repetido dispararian DOS barridos. El primero
+                    // deja la tula en "Devuelta" y el segundo choca contra el guard, pero
+                    // el cajero veria un error que no significa nada.
+                    UpdateContext({ctxDevEnCursoTula: true});
+                    IfError(
+                        UpdateContext({
+                            ctxRespDevTula: Environment.sanic_CHReturnBagForReassignment(
+                                { BagId: Text(ctxTulaDevTula.'CH-Tbl-Bags'), Reason: "Devuelta por el supervisor" }
+                            )
+                        }),
+                        Notify("No se pudo devolver la tula: " & FirstError.Message, NotificationType.Error);
+                        UpdateContext({ ctxRespDevTula: Blank() })
+                    );
+                    If(
+                        ctxRespDevTula.Outcome = "Returned",
+                        Notify(ctxRespDevTula.Message, NotificationType.Success);
+                        UpdateContext({ctxDlgDevTula: false});
+                        Select(btnActualizarTula),
+                        !IsBlank(ctxRespDevTula.Outcome),
+                        Notify(ctxRespDevTula.Message, NotificationType.Error)
+                    );
+                    UpdateContext({ctxDevEnCursoTula: false})
+                PressedColor: =ThemeSurface
+                PressedFill: =ThemeWarn
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =10
+                Text: =If(ctxDevEnCursoTula, "Devolviendo…", "Sí, devolver y borrar")
+                Width: =176
+                X: =cardDlgDevTula.Width - 24 - 176
+                Y: =cardDlgDevTula.Height - 60
+                ZIndex: =6
 
     cntCargandoTula As groupContainer.manualLayoutContainer:
         Fill: =RGBA(0, 0, 0, 0.35)
