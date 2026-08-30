@@ -154,9 +154,21 @@ namespace CashHub.Plugins
             // existe la devolucion: una tula devuelta y retomada por OTRO cajero
             // vuelve a estar "Asignada a cajero", y el control de estado la
             // aprobaba mientras el primer cajero seguia con la pantalla abierta.
-            var cashier = ReadSessionCashier(system, tracing, currentBag.SessionId);
+            var sesion = ReadSessionFacts(system, tracing, currentBag.SessionId);
+
+            // ¿SIGUE VIVA? Antes que "¿es mia?": si la sesion se cerro, no importa de
+            // quien era. Y aca no hay exencion de service principal —una sesion cerrada
+            // esta cerrada para todos—.
+            var viva = RecountingGuard.IsWriteSessionOpen(sesion.Resolved, sesion.ForciblyClosed);
+            tracing.Trace("GuardRecounting: sesion {0} viva={1}.", Fmt(currentBag.SessionId), viva.IsAllowed);
+            if (!viva.IsAllowed)
+            {
+                return viva;
+            }
+
+            var cashier = sesion.CashierId;
             var owner = RecountingGuard.IsWriteOwner(
-                currentBag.SessionId != null, cashier, context.InitiatingUserId);
+                sesion.Resolved, cashier, context.InitiatingUserId);
 
             tracing.Trace("GuardRecounting: dueño — sesion {0} cajero {1} actor {2} => {3}.",
                 Fmt(currentBag.SessionId), Fmt(cashier), context.InitiatingUserId, owner.IsAllowed);
@@ -166,7 +178,7 @@ namespace CashHub.Plugins
                 // La lectura de "¿es service principal?" se paga UNICAMENTE aca. En el
                 // camino normal —el cajero escribiendo SU tula— no cuesta nada.
                 owner = RecountingGuard.IsWriteOwner(
-                    currentBag.SessionId != null, cashier, context.InitiatingUserId,
+                    sesion.Resolved, cashier, context.InitiatingUserId,
                     IsApplicationUser(system, tracing, context.InitiatingUserId));
 
                 if (!owner.IsAllowed)
@@ -634,27 +646,48 @@ namespace CashHub.Plugins
             }
         }
 
-        /// <summary>Cajero de la sesion. null si no hay sesion o no se pudo leer (fail-closed).</summary>
-        private static Guid? ReadSessionCashier(
+        /// <summary>
+        /// Lo que hay que saber de la sesion de la tula: de QUIEN es y si SIGUE VIVA.
+        /// Las dos salen de la MISMA lectura, asi que el control de sesion cerrada no
+        /// cuesta un viaje extra.
+        /// </summary>
+        private struct SessionFacts
+        {
+            public bool Resolved { get; set; }
+            public Guid? CashierId { get; set; }
+            public bool ForciblyClosed { get; set; }
+        }
+
+        /// <summary>Fail-closed: si no se puede leer, Resolved queda en false.</summary>
+        private static SessionFacts ReadSessionFacts(
             IOrganizationService system, ITracingService tracing, Guid? sessionId)
         {
             if (sessionId == null || sessionId.Value == Guid.Empty)
             {
-                return null;
+                return new SessionFacts { Resolved = false };
             }
 
             try
             {
                 var session = system.Retrieve(
                     Schema.RecountingSession.LogicalName, sessionId.Value,
-                    new ColumnSet(Schema.RecountingSession.Cashier));
-                return session.GetAttributeValue<EntityReference>(
-                    Schema.RecountingSession.Cashier)?.Id;
+                    new ColumnSet(
+                        Schema.RecountingSession.Cashier,
+                        Schema.RecountingSession.SessionForciblyClosed));
+
+                return new SessionFacts
+                {
+                    Resolved = true,
+                    CashierId = session.GetAttributeValue<EntityReference>(
+                        Schema.RecountingSession.Cashier)?.Id,
+                    ForciblyClosed = session.GetAttributeValue<bool>(
+                        Schema.RecountingSession.SessionForciblyClosed),
+                };
             }
             catch (Exception ex)
             {
                 tracing.Trace("GuardRecounting: no se pudo leer la sesion {0}: {1}", sessionId, ex.Message);
-                return null;
+                return new SessionFacts { Resolved = false };
             }
         }
 

@@ -6700,25 +6700,48 @@ scrConteo As screen:
             //   de fresca —es la misma copia local que ya teniamos— y el vigilante no
             //   detecta nunca la devolucion.
             Refresh('CH-Tbl-Bags');
+            Refresh('CH-Tbl-RecountingSessions');
             With(
-                { Fresca: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags') },
+                {
+                    Fresca: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags'),
+                    SesionFresca: LookUp(
+                        'CH-Tbl-RecountingSessions',
+                        'CH-Tbl-RecountingSession' = gvarSesion.'CH-Tbl-RecountingSession'
+                    )
+                },
                 If(
+                    // (a) LA SESION MURIO. Va primero: si el supervisor la cerro, ya no
+                    //     importa de quien era la tula. El servidor ya rechaza todo, pero
+                    //     sin este aviso el cajero se enteraba recien al guardar.
+                    SesionFresca.SessionForciblyClosed,
+                        Notify(
+                            "Su sesión de recuento fue cerrada por un supervisor. Lo que no se " &
+                            "haya guardado se pierde. Abra una sesión nueva para seguir trabajando.",
+                            NotificationType.Error,
+                            6000
+                        );
+                        Set(gvarTula, Blank());
+                        Set(gvarSesionDetalle, Blank());
+                        Set(gvarSesion, Blank());
+                        Navigate(scrSesion),
+            
+                    // (b) la tula dejo de ser suya (devuelta, o la tomo otro)
                     !IsBlank(Fresca.'CH-Tbl-Bags') &&
                     (
                         IsBlank(Fresca.RecountingSession.'CH-Tbl-RecountingSession') ||
                         Fresca.RecountingSession.'CH-Tbl-RecountingSession'
                             <> gvarSesion.'CH-Tbl-RecountingSession'
                     ),
-                    Notify(
-                        "La tula " & Trim(gvarTula.BagID) & " fue devuelta para reasignación y ya no " &
-                        "está en su sesión. Lo que no se haya guardado se pierde: el servidor ya no " &
-                        "acepta escrituras sobre ella.",
-                        NotificationType.Error,
-                        6000
-                    );
-                    Set(gvarTula, Blank());
-                    Set(gvarSesionDetalle, Blank());
-                    Navigate(scrTulas)
+                        Notify(
+                            "La tula " & Trim(gvarTula.BagID) & " fue devuelta para reasignación y ya no " &
+                            "está en su sesión. Lo que no se haya guardado se pierde: el servidor ya no " &
+                            "acepta escrituras sobre ella.",
+                            NotificationType.Error,
+                            6000
+                        );
+                        Set(gvarTula, Blank());
+                        Set(gvarSesionDetalle, Blank());
+                        Navigate(scrTulas)
                 )
             )
         Repeat: =true

@@ -7,6 +7,27 @@ scrTulas As screen:
         //   el estado local ni se dispara UNA sola consulta. Navigate() NO corta la
         //   formula (01 §7.10), asi que sin el else las dos consultas de
         //   btnCargarSesionTul se disparaban igual, filtrando por una PK vacia.
+        // La sesion pudo MORIR mientras el cajero estaba en otra pantalla: el
+        // supervisor la cierra y gvarSesion sigue en memoria como si nada. Se relee
+        // con Refresh —LookUp solo sirve del cache— y si esta cerrada se limpia,
+        // para que la guarda de abajo la trate como "no hay sesion".
+        Refresh('CH-Tbl-RecountingSessions');
+        If(
+            !IsBlank(gvarSesion.'CH-Tbl-RecountingSession') &&
+            LookUp(
+                'CH-Tbl-RecountingSessions',
+                'CH-Tbl-RecountingSession' = gvarSesion.'CH-Tbl-RecountingSession'
+            ).SessionForciblyClosed,
+            Notify(
+                "Su sesión de recuento fue cerrada por un supervisor. Abra una sesión nueva para seguir trabajando.",
+                NotificationType.Error,
+                6000
+            );
+            Set(gvarSesion, Blank());
+            Set(gvarTula, Blank());
+            Set(gvarSesionDetalle, Blank())
+        );
+        
         If(
             IsBlank(gvarSesion.'CH-Tbl-RecountingSession'),
         

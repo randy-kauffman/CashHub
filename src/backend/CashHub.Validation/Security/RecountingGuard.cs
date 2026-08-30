@@ -566,6 +566,54 @@ namespace CashHub.Validation.Security
         }
 
         /// <summary>
+        /// Una sesion CERRADA no acepta mas trabajo. Es el tercer control de la escritura
+        /// del recuento, y responde una pregunta que los otros dos no hacen:
+        ///
+        ///   <see cref="IsWriteAllowed"/>  ¿la tula esta sobre una mesa?
+        ///   <see cref="IsWriteOwner"/>    ¿sobre CUAL mesa? ¿es la mia?
+        ///   esta                          ¿esa sesion sigue viva?
+        ///
+        /// POR QUE HACE FALTA. Se cerraba una sesion a la fuerza y no pasaba
+        /// absolutamente nada: el cajero seguia en la pantalla, seguia guardando
+        /// depositos, y hasta podia ABRIR UNA TULA NUEVA contra la sesion muerta.
+        /// <c>sanic_sessionforciblyclosed</c> no lo miraba nadie —solo lo escribia el
+        /// propio cierre—, asi que cerrar era un gesto sin efecto. Y cerrar sin efecto
+        /// es peor que no poder cerrar: el supervisor cree que saco al cajero y no lo
+        /// saco.
+        ///
+        /// ACA NO HAY EXENCION PARA EL SERVICE PRINCIPAL, a diferencia de
+        /// <see cref="IsWriteOwner"/>. El SP se exime de "sos el cajero" porque no es un
+        /// cajero; pero "esta sesion ya termino" no depende de quien escriba. Una sesion
+        /// cerrada esta cerrada para todos.
+        ///
+        /// Cuando exista el cierre automatico de jornada, su bandera se suma a esta
+        /// misma pregunta: el llamador resuelve "cerrada por lo que sea" y esta regla no
+        /// cambia.
+        /// </summary>
+        /// <param name="sessionResolved">true si se pudo leer la sesion de la tula.</param>
+        /// <param name="forciblyClosed">sanic_sessionforciblyclosed de esa sesion.</param>
+        public static RecountingGuardResult IsWriteSessionOpen(
+            bool sessionResolved, bool forciblyClosed)
+        {
+            if (!sessionResolved)
+            {
+                return RecountingGuardResult.Block(
+                    "No se pudo determinar la sesion de recuento de la tula: sin saber si " +
+                    "sigue abierta no se autoriza la escritura.");
+            }
+
+            if (forciblyClosed)
+            {
+                return RecountingGuardResult.Block(
+                    "La sesion de recuento fue cerrada por un supervisor y ya no acepta " +
+                    "trabajo. Abra una sesion nueva desde la pantalla de sesion; las tulas " +
+                    "que tenia en la mesa quedaron libres para reasignar.");
+            }
+
+            return RecountingGuardResult.Allow();
+        }
+
+        /// <summary>
         /// La tula tiene DUEÑO, no solo estado. Complementa a
         /// <see cref="IsWriteAllowed"/>: esa responde "¿esta sobre una mesa?", esta
         /// responde "¿sobre CUAL?". Se piden LAS DOS.

@@ -837,6 +837,54 @@ namespace CashHub.Validation.Tests
             Assert.False(IsWriteOwner(true, cajero, Guid.Empty).IsAllowed);
         }
 
+        // =====================================================================
+        // 4-sexies. Una sesion CERRADA no acepta trabajo
+        //
+        //   Se cerraba la sesion a la fuerza y no pasaba absolutamente nada: el
+        //   cajero seguia en la pantalla, seguia guardando, y hasta podia ABRIR
+        //   UNA TULA NUEVA contra la sesion muerta. sanic_sessionforciblyclosed
+        //   no lo miraba NADIE — solo lo escribia el propio cierre.
+        //
+        //   Cerrar sin efecto es peor que no poder cerrar: el supervisor cree
+        //   que saco al cajero y no lo saco.
+        //
+        //   Va aparte del control de dueño a proposito: "¿es mia?" y "¿sigue
+        //   viva?" son dos preguntas distintas, y las dos tienen que dar que si.
+        // =====================================================================
+
+        [Fact]
+        public void SesionViva_Abierta_Escribe()
+        {
+            var result = IsWriteSessionOpen(true, false);
+            Assert.True(result.IsAllowed);
+            Assert.Null(result.Reason);
+        }
+
+        [Fact]
+        public void SesionViva_CerradaALaFuerza_SeBloquea()
+        {
+            var result = IsWriteSessionOpen(true, true);
+            Assert.False(result.IsAllowed);
+            Assert.Contains("cerrada", result.Reason, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void SesionViva_NoResoluble_SeBloquea()
+        {
+            // Fail-closed, igual que el resto del guard.
+            Assert.False(IsWriteSessionOpen(false, false).IsAllowed);
+        }
+
+        [Fact]
+        public void SesionViva_NoLaEximeNiElServicePrincipal()
+        {
+            // A diferencia del control de dueño, aca NO hay exencion: una sesion
+            // cerrada esta cerrada para todos. El SP se exime de "sos el cajero"
+            // porque no es un cajero, pero "la sesion ya termino" no depende de
+            // quien escriba.
+            Assert.False(IsWriteSessionOpen(true, true).IsAllowed);
+        }
+
         [Fact]
         public void Duenio_ServicePrincipal_Exento()
         {

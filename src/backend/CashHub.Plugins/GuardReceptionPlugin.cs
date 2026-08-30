@@ -269,6 +269,34 @@ namespace CashHub.Plugins
                 }
             }
 
+            // ---- NO SE PUEDE COLGAR UNA TULA DE UNA SESION MUERTA ----
+            //   El otro agujero de "cerrar sin efecto": el cajero seguia abriendo tulas
+            //   NUEVAS contra su sesion cerrada. El guard de recuento protege depositos,
+            //   cheques y denominaciones, pero la ASIGNACION es un Update de la tula y
+            //   pasaba por aca sin que nadie preguntara si la sesion seguia viva.
+            //
+            //   Solo se paga la lectura cuando el request SETEA el lookup de sesion, que
+            //   es el unico momento en que la pregunta tiene sentido: abrir o reasignar.
+            //   Un Update de estado sin tocar la sesion no cuesta nada.
+            if (update.Contains(Schema.Bag.RecountingSessionLookup))
+            {
+                var target = update.GetAttributeValue<EntityReference>(
+                    Schema.Bag.RecountingSessionLookup);
+
+                if (target != null)
+                {
+                    var closed = IsSessionForciblyClosed(serviceFactory, tracing, target.Id);
+                    var alive = RecountingGuard.IsWriteSessionOpen(closed.HasValue, closed ?? false);
+                    tracing.Trace("GuardReception: colgar la tula de la sesion {0} => {1}.",
+                        target.Id, alive.IsAllowed);
+
+                    if (!alive.IsAllowed)
+                    {
+                        return ReceptionGuardResult.Block(alive.Reason);
+                    }
+                }
+            }
+
             var editsIdentity = update.Contains(Schema.Bag.BagId)
                                 || update.Contains(Schema.Bag.Name)
                                 || update.Contains(Schema.Bag.ReceptionLookup);
@@ -788,6 +816,29 @@ namespace CashHub.Plugins
 
                 public const string Value = "sanic_value";
                 public const string IsActive = "sanic_isactive";
+            }
+        }
+
+        /// <summary>
+        /// true/false si se pudo leer la sesion; null si NO se pudo (fail-closed: el
+        /// llamador lo trata como "no resoluble" y bloquea).
+        /// </summary>
+        private static bool? IsSessionForciblyClosed(
+            IOrganizationServiceFactory serviceFactory, ITracingService tracing, Guid sessionId)
+        {
+            try
+            {
+                var system = serviceFactory.CreateOrganizationService(null);
+                var session = system.Retrieve(
+                    Schema.RecountingSession.LogicalName, sessionId,
+                    new ColumnSet(Schema.RecountingSession.SessionForciblyClosed));
+                return session.GetAttributeValue<bool>(
+                    Schema.RecountingSession.SessionForciblyClosed);
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("GuardReception: no se pudo leer la sesion {0}: {1}", sessionId, ex.Message);
+                return null;
             }
         }
     }
