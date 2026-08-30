@@ -115,6 +115,26 @@ for nombre, depth in NECESARIOS:
 if faltan:
     req('POST', f"/roles({ROL})/Microsoft.Dynamics.CRM.AddPrivilegesRole", {'Privileges': faltan})
 
+# 🧨 AddPrivilegesRole actualiza el ROL pero NO recalcula los privilegios efectivos
+#    de los usuarios que YA lo tenian asignado. Se comprobo: el rol quedaba con el
+#    privilegio y RetrieveUserPrivileges seguia sin listarlo, seis consultas a lo
+#    largo de dos minutos. Quitar y volver a poner el rol fuerza el recalculo.
+#    Sin esto el script "termina bien" y el usuario sigue sin poder trabajar.
+usuarios = req('GET', f"/roles({ROL})/systemuserroles_association"
+                      "?$select=fullname,systemuserid").get('value', [])
+print(f"\nrefrescando privilegios de {len(usuarios)} usuario(s) con el rol:")
+for u in usuarios:
+    uid = u['systemuserid']
+    req('DELETE', f"/systemusers({uid})/systemuserroles_association/$ref?$id={API}/roles({ROL})")
+    req('POST', f"/systemusers({uid})/systemuserroles_association/$ref",
+        {'@odata.id': f"{API}/roles({ROL})"})
+    efectivos = {x['PrivilegeName'] for x in
+                 req('GET', f"/systemusers({uid})/Microsoft.Dynamics.CRM.RetrieveUserPrivileges()")
+                 .get('RolePrivileges', [])}
+    faltantes = [n for n, _ in NECESARIOS if n not in efectivos]
+    estado = 'OK' if not faltantes else f"AUN FALTAN {faltantes}"
+    print(f"  {u.get('fullname')}: {estado}")
+
 final = {x['name'] for x in
          req('GET', f"/roles({ROL})/roleprivileges_association?$select=name").get('value', [])}
 print("\nEstado final sobre las tablas declaradas:")
