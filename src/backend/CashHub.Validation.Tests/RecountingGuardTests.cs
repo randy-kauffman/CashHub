@@ -677,6 +677,112 @@ namespace CashHub.Validation.Tests
         }
 
         [Fact]
+        public void TulaVarada_SoloPuedeSalirHaciaElSupervisor()
+        {
+            // Es la restriccion de la que DEPENDE el cierre de jornada. Al corte, la
+            // tula que quedo sobre la mesa no puede volver sola a boveda: la unica
+            // salida no terminal de "Asignada a cajero" es el supervisor, que despues
+            // la reasigna. Plata contada a medias la recibe una persona, no un job.
+            Assert.False(ReceptionGuard.EvaluateBagStatusTransition(
+                ReceptionGuard.BagAsignadaACajero, ReceptionGuard.BagAlmacenadaEnBoveda).IsAllowed);
+            Assert.True(ReceptionGuard.EvaluateBagStatusTransition(
+                ReceptionGuard.BagAsignadaACajero, ReceptionGuard.BagPendienteSupervisorRecuento).IsAllowed);
+        }
+
+        // =====================================================================
+        // 4-bis. Cierre de jornada: una sesion es de UN dia
+        //
+        //   gvarSesion se resuelve UNA vez, en scrSesion.OnVisible, y ninguna
+        //   pantalla vuelve a mirarlo: scrTulas solo pregunta si esta en blanco.
+        //   Una pestana abierta cruzando la medianoche sigue imputando el trabajo
+        //   de hoy a la sesion de ayer. La consulta ya filtra por Today(), asi que
+        //   toda la app YA asume "una sesion = un dia"; el unico lugar donde esa
+        //   regla no se aplica es la variable del navegador. Aca se aplica del lado
+        //   del servidor, que es el unico que no depende del reloj del cajero.
+        //
+        //   El corte es la MEDIANOCHE DE CALENDARIO en hora local (decision de
+        //   negocio), para que coincida con el Today() de las consultas.
+        // =====================================================================
+
+        [Fact]
+        public void Jornada_SesionDeHoyAbierta_Permite()
+        {
+            var ahora = new DateTime(2026, 8, 30, 14, 30, 0);
+            var result = IsSessionWithinBusinessDay(true, new DateTime(2026, 8, 30, 7, 46, 0), false, ahora);
+            Assert.True(result.IsAllowed);
+            Assert.Null(result.Reason);
+        }
+
+        [Fact]
+        public void Jornada_SesionDeAyer_SeBloquea()
+        {
+            // El caso real: el cajero dejo la app abierta y volvio al dia siguiente.
+            var ahora = new DateTime(2026, 8, 30, 8, 0, 0);
+            var result = IsSessionWithinBusinessDay(true, new DateTime(2026, 8, 29, 16, 0, 0), false, ahora);
+            Assert.False(result.IsAllowed);
+            Assert.Contains("29/08/2026", result.Reason);
+        }
+
+        [Fact]
+        public void Jornada_UnSegundoDespuesDeMedianoche_SeBloquea()
+        {
+            // El borde exacto. 23:59:59 y 00:00:01 son dias distintos: no hay
+            // tolerancia, porque cualquier gracia habria que justificarla y auditarla.
+            var result = IsSessionWithinBusinessDay(
+                true,
+                new DateTime(2026, 8, 29, 23, 59, 59),
+                false,
+                new DateTime(2026, 8, 30, 0, 0, 1));
+            Assert.False(result.IsAllowed);
+        }
+
+        [Fact]
+        public void Jornada_ElUltimoSegundoDelDiaPropio_Permite()
+        {
+            var result = IsSessionWithinBusinessDay(
+                true,
+                new DateTime(2026, 8, 30, 0, 0, 0),
+                false,
+                new DateTime(2026, 8, 30, 23, 59, 59));
+            Assert.True(result.IsAllowed);
+        }
+
+        [Fact]
+        public void Jornada_CerradaPorJornada_SeBloqueaAunqueSeaDeHoy()
+        {
+            // La bandera manda sobre la fecha: si el job ya la cerro, cerrada esta.
+            // Es columna PROPIA, no SessionForciblyClosed — esa es la decision del
+            // supervisor y lleva autor y motivo; esta es automatica y no tiene autor.
+            var ahora = new DateTime(2026, 8, 30, 10, 0, 0);
+            var result = IsSessionWithinBusinessDay(true, new DateTime(2026, 8, 30, 7, 0, 0), true, ahora);
+            Assert.False(result.IsAllowed);
+            Assert.Contains("cerrada", result.Reason, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void Jornada_SesionNoResoluble_SeBloquea()
+        {
+            // Fail-closed, igual que IsWriteAllowed sin tula: si no se sabe de que dia
+            // es la sesion, no se autoriza. Nunca al reves.
+            var ahora = new DateTime(2026, 8, 30, 10, 0, 0);
+            Assert.False(IsSessionWithinBusinessDay(false, null, false, ahora).IsAllowed);
+            Assert.False(IsSessionWithinBusinessDay(true, null, false, ahora).IsAllowed);
+        }
+
+        [Fact]
+        public void Jornada_SesionConFechaFutura_SeBloquea()
+        {
+            // Reloj corrido o dato sembrado a mano: tampoco pasa. La regla es
+            // "el MISMO dia", no "hasta hoy".
+            var result = IsSessionWithinBusinessDay(
+                true,
+                new DateTime(2026, 8, 31, 9, 0, 0),
+                false,
+                new DateTime(2026, 8, 30, 10, 0, 0));
+            Assert.False(result.IsAllowed);
+        }
+
+        [Fact]
         public void Recontada_SigueSiendoTerminal()
         {
             // Si alguna vez deja de serlo, la idempotencia de los asientos pasa de ser

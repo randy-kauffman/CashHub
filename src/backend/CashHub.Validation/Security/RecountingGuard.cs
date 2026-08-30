@@ -465,6 +465,76 @@ namespace CashHub.Validation.Security
                 "denominaciones.");
         }
 
+        /// <summary>
+        /// Una sesion de recuento vale por UN dia, y esto lo comprueba del lado del
+        /// servidor. Es la contraparte de un agujero que el canvas no puede tapar solo.
+        ///
+        /// EL AGUJERO. <c>gvarSesion</c> se resuelve UNA sola vez, en
+        /// <c>scrSesion.OnVisible</c>, con una consulta que ya filtra por
+        /// <c>'Created On' &gt;= Today()</c>. Pero ninguna pantalla vuelve a mirarlo:
+        /// <c>scrTulas.OnVisible</c> solo pregunta si <c>gvarSesion</c> esta en blanco,
+        /// no de que dia es. Un cajero que deja la pestana abierta y vuelve al dia
+        /// siguiente sigue imputando el trabajo de hoy a la sesion de ayer, y el resumen
+        /// del supervisor —que cuenta cheques POR SESION— queda mal fechado.
+        ///
+        /// Reabrir la app no tiene el problema: los globales se limpian y scrSesion no
+        /// encuentra sesion de hoy. El unico expuesto es el navegador que nunca se cerro.
+        ///
+        /// POR QUE VA EN EL SERVIDOR. Toda la app ya asume "una sesion = un dia": lo
+        /// asume la resolucion de sesion, el catalogo de mesas y el resumen. El unico
+        /// lugar donde la regla no se aplicaba era una variable en la maquina del cajero
+        /// —y una regla que vive en el cliente no es una regla, es una sugerencia—.
+        ///
+        /// EL CORTE ES LA MEDIANOCHE DE CALENDARIO, en hora local, por decision de
+        /// negocio: asi coincide con el <c>Today()</c> que ya usan esas consultas. Sin
+        /// tolerancia de minutos: cualquier gracia habria que justificarla y auditarla.
+        ///
+        /// LA BANDERA ES PROPIA, NO <c>sanic_sessionforciblyclosed</c>. Esa es la
+        /// decision de un supervisor y lleva autor y motivo colgando; esta es automatica
+        /// y no tiene autor. Mezclarlas haria imposible auditar quien cerro que.
+        /// </summary>
+        /// <param name="sessionResolved">true si se pudo llegar a la sesion de la tula.</param>
+        /// <param name="sessionCreatedOnLocal">
+        /// createdon de la sesion YA CONVERTIDO a hora local. La conversion vive en el
+        /// plugin: este tipo es la decision pura y no conoce zonas horarias.
+        /// </param>
+        /// <param name="endOfDayClosed">La columna de cierre de jornada de la sesion.</param>
+        /// <param name="nowLocal">Ahora, en la misma hora local.</param>
+        public static RecountingGuardResult IsSessionWithinBusinessDay(
+            bool sessionResolved,
+            DateTime? sessionCreatedOnLocal,
+            bool endOfDayClosed,
+            DateTime nowLocal)
+        {
+            // Fail-closed en los dos bordes, igual que IsWriteAllowed sin tula: sin
+            // saber de que dia es la sesion no se autoriza nada.
+            if (!sessionResolved || sessionCreatedOnLocal == null)
+            {
+                return RecountingGuardResult.Block(
+                    "No se pudo resolver la sesion de recuento de la tula: sin saber de que " +
+                    "jornada es la sesion no se puede autorizar la escritura.");
+            }
+
+            if (endOfDayClosed)
+            {
+                return RecountingGuardResult.Block(
+                    "Su sesion de recuento fue cerrada por el cierre de jornada. " +
+                    "Abra una sesion nueva desde la pantalla de sesion para seguir trabajando.");
+            }
+
+            if (sessionCreatedOnLocal.Value.Date != nowLocal.Date)
+            {
+                return RecountingGuardResult.Block(
+                    "Su sesion de recuento es del " +
+                    sessionCreatedOnLocal.Value.ToString("dd/MM/yyyy") +
+                    " y hoy es " + nowLocal.ToString("dd/MM/yyyy") +
+                    ". Una sesion vale por un solo dia: abra una sesion nueva desde la " +
+                    "pantalla de sesion para seguir trabajando.");
+            }
+
+            return RecountingGuardResult.Allow();
+        }
+
         // =================================================================
         // 5. Bajas acotadas (D02-4 / B02-3)
         // =================================================================
