@@ -1631,7 +1631,7 @@ scrTulas As screen:
                 ZIndex: =3
 
             galPickTulasTul As gallery.galleryVertical:
-                Height: =Min(CountRows(colTulasCandidatasTul), 3) * 74
+                Height: =Min(CountRows(colTulasCandidatasTul), 3) * 92
                 Items: =colTulasCandidatasTul
                 Layout: =Layout.Vertical
                 OnSelect: |-
@@ -1642,7 +1642,7 @@ scrTulas As screen:
                         UpdateContext({ ctxPickTulaTul: ThisItem })
                     )
                 TemplatePadding: =0
-                TemplateSize: =74
+                TemplateSize: =92
                 Width: =516
                 X: =22
                 Y: =lblDlgTxtTulaTul.Y + lblDlgTxtTulaTul.Height + 13
@@ -1664,7 +1664,7 @@ scrTulas As screen:
                             ThemeSurface
                         )
                     FontWeight: =FontWeight.Semibold
-                    Height: =63
+                    Height: =81
                     HoverFill: |-
                         =If(
                             ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeSurface2,
@@ -1704,8 +1704,10 @@ scrTulas As screen:
                     PaddingRight: =0
                     PaddingTop: =0
                     Size: =9.75
-                    Text: =ThisItem.BagID & " · Planilla " & ThisItem.ReceiptIdMirror
-                    Width: =340
+                    Text: |-
+                        =ThisItem.BagID & " · Planilla " &
+                        Coalesce(ThisItem.ReceiptIdMirror, "(sin planilla)")
+                    Width: =360
                     Wrap: =false
                     X: =14
                     Y: =9
@@ -1721,9 +1723,10 @@ scrTulas As screen:
                     PaddingTop: =0
                     Size: =8.25
                     Text: |-
-                        =ThisItem.ReceptionID.RemitentName & "  ·  Recibida " &
-                        Text(ThisItem.'Created On', FmtFechaCorta) & "  ·  Lote " & ThisItem.ReceptionBatchId.Name
-                    Width: =340
+                        =Coalesce(ThisItem.ReceptionID.RemitentClient.Name, "(sin cliente)") &
+                        "  ·  " &
+                        Coalesce(ThisItem.ReceptionID.RemitentName, "(sin sucursal)")
+                    Width: =360
                     Wrap: =false
                     X: =14
                     Y: =27
@@ -1746,12 +1749,29 @@ scrTulas As screen:
                             "No seleccionable en este estado."
                         )
                     Visible: =ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'
-                    Width: =340
+                    Width: =360
+                    Wrap: =false
+                    X: =14
+                    Y: =61
+                    ZIndex: =4
+
+                lblPickTulaMeta2Tul As label:
+                    Color: =ThemeInk3
+                    Height: =16
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =8.25
+                    Text: |-
+                        ="Recibida " & Text(ThisItem.'Created On', FmtFecha) &
+                        "  ·  Lote " & Coalesce(ThisItem.ReceptionBatchId.Name, "(sin lote)")
+                    Width: =360
                     Wrap: =false
                     X: =14
                     Y: =43
                     ZIndex: =4
-
                 pilPickTulaTul As button:
                     BorderColor: =ThemeLine
                     BorderThickness: =If(Self.Fill = ThemeLineSoft, 1, 0)
