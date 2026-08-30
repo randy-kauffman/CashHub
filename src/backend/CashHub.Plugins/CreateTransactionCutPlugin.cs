@@ -74,36 +74,20 @@ namespace CashHub.Plugins
                 tracing.Trace("CreateTransactionCut: lote {0} creado en estado Generado (cajero={1}, generadopor={2}).",
                     batchId, cajeroId, context.InitiatingUserId);
 
-                // 1b. La PROPIEDAD del lote es del cajero: la visibilidad futura por
-                //     profundidad User (cajeros ven solo lo suyo) filtra por owner.
-                //     La reasignacion corre como sistema — el operador no tiene (ni
-                //     necesita) privilegio Assign sobre lotes.
-                try
-                {
-                    service.Update(new Entity(Schema.TransactionBatch.LogicalName, batchId)
-                    {
-                        ["ownerid"] = new EntityReference(Schema.SystemUser.LogicalName, cajeroId)
-                    });
-                }
-                catch (Exception ex)
-                {
-                    // Dataverse exige que el NUEVO DUEÑO tenga Read sobre la tabla, y si
-                    // no lo tiene devuelve un volcado de privilegios que no le dice nada
-                    // a quien esta usando la app: "Principal user (Id=..., type=8,
-                    // roleCount=2, privilegeCount=133 ...) is missing prvRead...".
-                    //
-                    // El caso real es simple y se arregla en un lugar: el cajero al que
-                    // se le esta cortando no tiene el rol de cajero, o el rol perdio
-                    // prvReadsanic_TransactionBatches. Se dice ASI.
-                    tracing.Trace("CreateTransactionCut: fallo asignar la propiedad al cajero {0}: {1}",
-                        cajeroId, ex.Message);
-                    throw new InvalidPluginExecutionException(
-                        "El lote es del cajero, y para ser su dueño el cajero necesita lectura " +
-                        "sobre CH-Tbl-TransactionBatches. El cajero de este corte no la tiene: " +
-                        "revise que tenga el rol de cajero (CH-SR-Cashier) y que ese rol conserve " +
-                        "el privilegio de lectura sobre lotes. No se genero el corte.", ex);
-                }
-                tracing.Trace("CreateTransactionCut: lote {0} asignado en propiedad al cajero {1}.", batchId, cajeroId);
+                // 1b. EL LOTE ES DEL DIGITADOR, y queda del Create de arriba: no se
+                //     reasigna. Antes se le pasaba la propiedad al CAJERO "para una
+                //     visibilidad futura por owner", y esa pantalla nunca existio:
+                //     CH-Tbl-TransactionBatches lo lee UNICAMENTE la app de Digitizacion,
+                //     que ademas filtra por la columna Cajero, no por el dueño. La app
+                //     del cajero no lo toca.
+                //
+                //     Lo que si costaba era real: Dataverse exige que el nuevo dueño
+                //     tenga Read sobre la tabla, asi que el corte moria con un volcado de
+                //     privilegios para cualquier cajero sin ese rol. Se pagaba un acople
+                //     a cambio de nada.
+                //
+                //     La trazabilidad no se pierde: Cajero dice de quien son las
+                //     transacciones y GeneradoPor quien las corto.
 
                 // 2. Elegibles segun el dominio (TransactionRouting.IsEligibleForCut),
                 //    delegado al servidor: Batch, DEL CAJERO (createdby), sin lote,

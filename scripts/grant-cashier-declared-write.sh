@@ -92,13 +92,6 @@ NECESARIOS = [
     ('prvDeletesanic_CHTblCountedMoneyDetails','Basic'),
     # libera la mesa / revierte la sesion si la solicitud no entro (scrSesion 864, 1053)
     ('prvDeletesanic_CHTblRecountingSession',  'Basic'),
-    # 🧨 LO NECESITA PARA SER DUEÑO, no para leer una pantalla. CreateTransactionCut
-    #    le asigna al cajero la PROPIEDAD de su lote —"los cajeros ven solo lo suyo",
-    #    filtrado por owner— y Dataverse exige que el nuevo dueño tenga Read sobre la
-    #    tabla. Sin esto el corte MUERE con un volcado de privilegios ilegible:
-    #    "Principal user (Id=..., roleCount=2 ...) is missing prvReadsanic_...".
-    #    Basic alcanza: el cajero ve SU lote, no los ajenos.
-    ('prvReadsanic_TransactionBatches',        'Basic'),
 ]
 # NO se pide prvWritesanic_CHTblApprovalRequest: los tres Patch contra esa tabla
 # son sobre Defaults(), o sea CREATE, que el rol ya tiene. Write ahi le dejaria
