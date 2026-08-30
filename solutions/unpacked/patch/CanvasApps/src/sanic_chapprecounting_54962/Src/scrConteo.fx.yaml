@@ -6691,6 +6691,10 @@ scrConteo As screen:
             //   sesion en blanco y si otro cajero la tomo, la sesion es la de el. Una
             //   tula que el propio cajero acaba de cerrar conserva su sesion, asi que
             //   cerrar bien NO dispara este aviso.
+            //   Refresh ANTES del LookUp: sin invalidar el cache, "Fresca" no tiene nada
+            //   de fresca —es la misma copia local que ya teniamos— y el vigilante no
+            //   detecta nunca la devolucion.
+            Refresh('CH-Tbl-Bags');
             With(
                 { Fresca: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags') },
                 If(

@@ -1387,6 +1387,14 @@ scrTulas As screen:
         HoverFill: =Color.Transparent
         OnSelect: |-
             =// Retomar NO patchea nada: la tula ya es del cajero (o ya esta Recontada).
+            //
+            // EL Refresh NO ES DECORATIVO. LookUp contra un datasource sirve del CACHE
+            // del cliente, y la tula ya esta ahi desde que se cargo colTulasSesionTul.
+            // Sin invalidar primero, esta "relectura" devuelve la version VIEJA —con su
+            // sesion vieja— y el control de abajo pasa siempre: comprobabamos contra la
+            // misma foto que queriamos descartar. Es la forma D-5 que tmrPollCon de 04
+            // ya usaba para exactamente esto.
+            Refresh('CH-Tbl-Bags');
             IfError(
                 Set(gvarTula, LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = ctxTulaElegidaTul.'CH-Tbl-Bags')),
                 Notify("No se pudo releer la tula: " & FirstError.Message, NotificationType.Error);
