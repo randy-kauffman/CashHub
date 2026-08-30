@@ -242,7 +242,7 @@ namespace CashHub.Plugins
                     return RestituirTula(system, res, fallbackABoveda: true);
 
                 case ApprovalEffect.CerrarRecuentoConAsientos:
-                    return CerrarRecuentoConAsientos(system, tracing, res, sinDeclaracion);
+                    return CerrarRecuentoConAsientos(system, tracing, res, sinDeclaracion, actor);
 
                 case ApprovalEffect.DevolverTulaAlCajero:
                     return DevolverTulaAlCajero(system, res);
@@ -525,7 +525,7 @@ namespace CashHub.Plugins
         /// </summary>
         private static string CerrarRecuentoConAsientos(
             IOrganizationService system, ITracingService tracing,
-            RequestResources res, bool sinDeclaracion)
+            RequestResources res, bool sinDeclaracion, Guid actor)
         {
             var bagRef = RequireRecord(
                 system, Schema.Bag.LogicalName, res.Guid("BagGUID"), "la tula",
@@ -578,9 +578,13 @@ namespace CashHub.Plugins
                 }
             }
 
+            // El cajero sale de la SESION de la tula; el supervisor, de quien esta
+            // resolviendo la solicitud AHORA. Son dos personas distintas y el asiento
+            // tiene que poder nombrarlas a las dos.
+            var cajeroDeLaTula = ReadBagCashier(system, tracing, bagId);
             foreach (var entry in entries)
             {
-                system.Create(ToTransaction(entry));
+                system.Create(ToTransaction(entry, cajeroDeLaTula, actor));
             }
 
             MarcarChequesRecontados(system, tracing, bagId);
@@ -681,7 +685,13 @@ namespace CashHub.Plugins
             return rows;
         }
 
-        private static Entity ToTransaction(LedgerEntry entry)
+        /// <summary>
+        /// Un asiento nacido de una APROBACION lleva las dos firmas: quien conto la
+        /// plata y quien autorizo el asiento. Un sobrante, un faltante o una tula
+        /// recontada sin declaracion existen porque un supervisor los firmo, y esa
+        /// firma es parte del asiento, no de una bitacora aparte.
+        /// </summary>
+        private static Entity ToTransaction(LedgerEntry entry, Guid? cajero, Guid supervisor)
         {
             var tx = new Entity(Schema.Transaction.LogicalName)
             {
@@ -695,6 +705,18 @@ namespace CashHub.Plugins
                 [Schema.Transaction.TransactionType] = new OptionSetValue((int)entry.Type),
                 [Schema.Transaction.ProcessingType] = new OptionSetValue((int)entry.Processing),
             };
+
+            if (cajero != null)
+            {
+                tx[Schema.Transaction.Cajero] =
+                    new EntityReference(Schema.SystemUser.LogicalName, cajero.Value);
+            }
+
+            if (supervisor != Guid.Empty)
+            {
+                tx[Schema.Transaction.SupervisorAutoriza] =
+                    new EntityReference(Schema.SystemUser.LogicalName, supervisor);
+            }
 
             if (entry.AccountNumber.HasValue)
             {
@@ -943,6 +965,32 @@ namespace CashHub.Plugins
 
             public Guid Guid(string key) =>
                 System.Guid.TryParse(Text(key), out var g) ? g : System.Guid.Empty;
+        }
+
+        /// <summary>Cajero dueño de la sesion de la tula. null si no se puede resolver.</summary>
+        private static Guid? ReadBagCashier(
+            IOrganizationService system, ITracingService tracing, Guid bagId)
+        {
+            try
+            {
+                var bag = system.Retrieve(Schema.Bag.LogicalName, bagId,
+                    new ColumnSet(Schema.Bag.RecountingSessionLookup));
+                var session = bag.GetAttributeValue<EntityReference>(Schema.Bag.RecountingSessionLookup);
+                if (session == null)
+                {
+                    return null;
+                }
+
+                var ses = system.Retrieve(Schema.RecountingSession.LogicalName, session.Id,
+                    new ColumnSet(Schema.RecountingSession.Cashier));
+                return ses.GetAttributeValue<EntityReference>(Schema.RecountingSession.Cashier)?.Id;
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("ResolveApproval: no se pudo resolver el cajero de la tula {0}: {1}",
+                    bagId, ex.Message);
+                return null;
+            }
         }
     }
 }

@@ -209,6 +209,12 @@ namespace CashHub.Plugins
 
             var plans = RecountingGuard.BuildTransactions(deposits, alreadyPosted);
 
+            // EL CAJERO SALE DE LA SESION DE LA TULA, no de context.InitiatingUserId.
+            // Parece lo mismo —el cajero es quien cierra— pero no lo es: el mismo cierre
+            // lo puede disparar el supervisor al resolver una revision, y ahi el actor es
+            // el supervisor. La sesion sabe de quien era la tula; el ejecutor, no.
+            var cajero = ReadBagCashier(system, tracing, bagId);
+
             tracing.Trace("BagRecountClosure: tula {0} — {1} depositos, {2} ya asentados, {3} asientos nuevos.",
                 bagId, deposits.Count, alreadyPosted.Count, plans.Count);
 
@@ -224,6 +230,12 @@ namespace CashHub.Plugins
                     [Schema.Transaction.RelatedDepositRecounting] =
                         new EntityReference(Schema.DepositRecounting.LogicalName, plan.DepositId),
                 };
+
+                if (cajero != null)
+                {
+                    transaction[Schema.Transaction.Cajero] =
+                        new EntityReference(Schema.SystemUser.LogicalName, cajero.Value);
+                }
 
                 if (plan.Currency.HasValue)
                 {
@@ -416,5 +428,35 @@ namespace CashHub.Plugins
         }
 
         private static string Fmt(int? value) => value.HasValue ? value.Value.ToString() : "null";
+
+        /// <summary>
+        /// Cajero dueño de la sesion de la tula. null si no se puede resolver — el
+        /// asiento se crea igual: perder la atribucion es malo, no crear la
+        /// contabilidad es peor.
+        /// </summary>
+        private static Guid? ReadBagCashier(
+            IOrganizationService system, ITracingService tracing, Guid bagId)
+        {
+            try
+            {
+                var bag = system.Retrieve(Schema.Bag.LogicalName, bagId,
+                    new ColumnSet(Schema.Bag.RecountingSessionLookup));
+                var session = bag.GetAttributeValue<EntityReference>(Schema.Bag.RecountingSessionLookup);
+                if (session == null)
+                {
+                    return null;
+                }
+
+                var ses = system.Retrieve(Schema.RecountingSession.LogicalName, session.Id,
+                    new ColumnSet(Schema.RecountingSession.Cashier));
+                return ses.GetAttributeValue<EntityReference>(Schema.RecountingSession.Cashier)?.Id;
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("BagRecountClosure: no se pudo resolver el cajero de la tula {0}: {1}",
+                    bagId, ex.Message);
+                return null;
+            }
+        }
     }
 }

@@ -22,6 +22,11 @@ namespace CashHub.Plugins
     /// el rail por su campo (pendientesCorte / pendientesManual / lotesPorAplicar &gt; 0)
     /// y muestra ese conteo; los totales son los del CORTE (los KPIs de scrCorte).
     ///
+    /// AGRUPA POR sanic_cajero, NO POR createdby. Parecia lo mismo y no lo es: el
+    /// asiento lo escribe un plugin del servidor, asi que createdby era SYSTEM o el
+    /// service principal. El tablero mostraba identidades de escritura y el trabajo de
+    /// todos los cajeros se apilaba bajo SYSTEM — un cajero real no aparecia nunca.
+    ///
     /// Nota de escala: el aggregate topa en el AggregateQueryRecordLimit (50000 filas
     /// escaneadas). El working set son las transacciones PENDIENTES (sin lote, sin
     /// status) — se cortan a diario, no se acumulan como el historico Aplicado —, asi
@@ -71,7 +76,7 @@ namespace CashHub.Plugins
   <entity name='{Schema.Transaction.LogicalName}'>
     <attribute name='{Schema.Transaction.Id}' alias='cnt' aggregate='count' />
     <attribute name='{Schema.Transaction.CashAmount}' alias='total' aggregate='sum' />
-    <attribute name='{Schema.Transaction.CreatedBy}' alias='cajero' groupby='true' />
+    <attribute name='{Schema.Transaction.Cajero}' alias='cajero' groupby='true' />
     <attribute name='{Schema.Transaction.ProcessingType}' alias='ptype' groupby='true' />
     <attribute name='{Schema.Transaction.Currency}' alias='currency' groupby='true' />
     <filter type='and'>

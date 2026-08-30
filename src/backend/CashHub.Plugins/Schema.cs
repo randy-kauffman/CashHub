@@ -603,6 +603,27 @@ namespace CashHub.Plugins
             public const string Id = "sanic_chtbltransactionsid";
             public const string TransactionBatch = "sanic_transactionbatch";
             public const string RelatedDepositRecounting = "sanic_relateddepositrecounting";
+
+            /// <summary>
+            /// Cajero que reconto la plata de este asiento. SE ESTAMPA AL CREARLO.
+            ///
+            /// No se deduce de createdby —esa es la identidad que ESCRIBE la fila, y la
+            /// escribe un plugin del servidor: todos los asientos del recuento quedaban
+            /// atribuidos a SYSTEM o al service principal—. Tampoco se deduce de la
+            /// cadena deposito -> sesion -> cajero: el 42% de los asientos pendientes no
+            /// tiene deposito asociado y la cadena se corta.
+            ///
+            /// Quien conto la plata es un HECHO del asiento, no algo que se reconstruye.
+            /// </summary>
+            public const string Cajero = "sanic_cajero";
+
+            /// <summary>
+            /// Supervisor que autorizo el asiento. Solo se llena cuando nace de una
+            /// aprobacion —sobrante, faltante, tula recontada sin declaracion—: si el
+            /// asiento existe porque alguien lo firmo, esa firma es parte del asiento.
+            /// En un cierre normal queda vacio, y eso tambien es informacion.
+            /// </summary>
+            public const string SupervisorAutoriza = "sanic_supervisorautoriza";
             public const string AccountNumber = "sanic_accountnumber";
             public const string TransactionStatus = "sanic_transactionstatus";
             public const string ProcessingType = "sanic_transactionprocessingtype";
