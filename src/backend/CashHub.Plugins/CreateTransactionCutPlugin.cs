@@ -98,7 +98,11 @@ namespace CashHub.Plugins
                 query.Criteria.AddCondition(
                     Schema.Transaction.ProcessingType, ConditionOperator.Equal, TransactionRouting.ProcessingBatch);
                 query.Criteria.AddCondition(Schema.Transaction.CreatedOn, ConditionOperator.LessEqual, cutTime);
-                query.Criteria.AddCondition(Schema.Transaction.CreatedBy, ConditionOperator.Equal, cajeroId);
+                // POR EL CAJERO, NO POR CREATEDBY. El asiento lo escribe un plugin del
+                // servidor, asi que createdby era SYSTEM o el service principal: el corte
+                // de un cajero real barria CERO transacciones y generaba un lote VACIO,
+                // sin que nadie se enterara —la app avisaba "Corte generado" igual—.
+                query.Criteria.AddCondition(Schema.Transaction.Cajero, ConditionOperator.Equal, cajeroId);
 
                 // 3. Asignacion paginada de a 500. Cada pagina procesada sale del filtro
                 //    (el lookup deja de ser Null), asi que siempre se relee la pagina 1:

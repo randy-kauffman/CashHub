@@ -58,7 +58,7 @@ namespace CashHub.Plugins
       <condition attribute='{Schema.Transaction.TransactionBatch}' operator='null' />
       <condition attribute='{Schema.Transaction.TransactionStatus}' operator='null' />
       <condition attribute='{Schema.Transaction.ProcessingType}' operator='eq' value='{TransactionRouting.ProcessingBatch}' />
-      <condition attribute='{Schema.Transaction.CreatedBy}' operator='eq' value='{cajeroId}' />
+      <condition attribute='{Schema.Transaction.Cajero}' operator='eq' value='{cajeroId}' />
       <condition attribute='{Schema.Transaction.CreatedOn}' operator='on-or-before' value='{cutTime}' />
     </filter>
   </entity>

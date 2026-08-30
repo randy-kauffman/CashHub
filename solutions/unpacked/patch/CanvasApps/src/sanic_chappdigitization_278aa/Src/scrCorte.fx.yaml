@@ -510,12 +510,37 @@ scrCorte As screen:
         OnCancelar: |-
             =UpdateContext({ctxDlgCorteCor: false})
         OnOk: |-
-            =UpdateContext({ctxCorriendoCor: true});
-            'CH-Flow-CreateCut'.Run(gvarCajeroCor.cajero);
-            UpdateContext({ctxCorriendoCor: false, ctxDlgCorteCor: false});
-            Set(gvarCajeroCor, Blank());
-            Select(btnActualizarCor);
-            Notify("Corte generado. El lote quedó en estado Generado.", NotificationType.Success)
+            =// SE LLAMA A LA CUSTOM API DIRECTO, no al flujo. CH-Flow-CreateCut era un
+            // pasamanos: una sola accion, PerformUnboundAction sobre esta misma API, y
+            // responder. Ese salto de mas por APIM es el que devolvia
+            // "BadGateway / The server did not receive a response from an upstream
+            // server" y dejaba al usuario sin saber si el corte se hizo o no.
+            //
+            // Y ADEMAS AVISABA "Corte generado" PASARA LO QUE PASARA: el Notify estaba
+            // despues del Run, sin mirar el resultado. Se veia el exito en verde y el
+            // 502 en rojo, al mismo tiempo. Ahora el aviso sale del lote de verdad.
+            UpdateContext({ctxCorriendoCor: true});
+            IfError(
+                UpdateContext({
+                    ctxRespCorteCor: Environment.sanic_CHCreateTransactionCut(
+                        { CajeroId: gvarCajeroCor.cajero }
+                    )
+                }),
+                Notify("No se pudo generar el corte: " & FirstError.Message, NotificationType.Error);
+                UpdateContext({ ctxRespCorteCor: Blank() })
+            );
+            UpdateContext({ctxCorriendoCor: false});
+            If(
+                !IsBlank(ctxRespCorteCor.BatchName),
+                UpdateContext({ctxDlgCorteCor: false});
+                Set(gvarCajeroCor, Blank());
+                Select(btnActualizarCor);
+                Notify(
+                    "Lote " & ctxRespCorteCor.BatchName & " generado con " &
+                    ctxRespCorteCor.AssignedCount & " transacciones.",
+                    NotificationType.Success
+                )
+            )
         Texto: |-
             =$"Se creará un lote en estado Generado con las {ctxCortePreviewCor.EligibleCount} transacciones de efectivo pendientes del cajero (" &
             SimboloNIO & " " & Text(ctxCortePreviewCor.TotalNIO, FmtMoney) & " · " &
