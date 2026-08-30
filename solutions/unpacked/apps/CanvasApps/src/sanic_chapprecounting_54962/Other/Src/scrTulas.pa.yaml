@@ -666,30 +666,33 @@ Screens:
 
                   // ===== 2. DOS consultas delegables, una por universo, en paralelo =====
                   Concurrent(
-                      ClearCollect(
-                          colTulasCandidatasTul,
-                          SortByColumns(
-                              Filter(
-                                  'CH-Tbl-Bags',
-                                  BagID = ctxScanTul &&
-                                  (
-                                      BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda' ||
-                                      BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'  ||
-                                      BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero'
+                                  ClearCollect(
+                                      colTulasCandidatasTul,
+                                      SortByColumns(
+                                          Filter(
+                                              'CH-Tbl-Bags' As T,
+                                              T.BagID = ctxScanTul &&
+                                              (
+                                                  T.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda' ||
+                                                  T.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'  ||
+                                                  T.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero'
+                                              )
+                                          ),
+                                          "createdon",
+                                          SortOrder.Descending
+                                      )
+                                  ),
+                                  ClearCollect(
+                                      colDeclaradasCandidatasTul,
+                                      SortByColumns(
+                                          Filter(
+                                              'CH-Tbl-DeclaredBags' As D,
+                                              D.BagNumber = ctxScanTul && IsBlank(D.BagID)
+                                          ),
+                                          "createdon",
+                                          SortOrder.Descending
+                                      )
                                   )
-                              ),
-                              "createdon",
-                              SortOrder.Descending
-                          )
-                      ),
-                      ClearCollect(
-                          colDeclaradasCandidatasTul,
-                          SortByColumns(
-                              Filter('CH-Tbl-DeclaredBags', BagNumber = ctxScanTul && IsBlank(BagID)),
-                              "createdon",
-                              SortOrder.Descending
-                          )
-                      )
                   );
 
                   // ===== 3. La decision, en un solo If encadenado =====

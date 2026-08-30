@@ -8,11 +8,12 @@ scrSesion As screen:
         //   aca desde scrTulas te encuentra el modal de cancelacion abierto.
         // ============================================================================
         UpdateContext({
-            ctxEsperandoSes:   false,
-            ctxRechazadaSes:   false,
-            ctxDlgCancelarSes: false,
-            ctxAbandonoOkSes:  true
-        });
+                    ctxEsperandoSes:   false,
+                    ctxRechazadaSes:   false,
+                    ctxDlgCancelarSes: false,
+                    ctxAbandonoOkSes:  true,
+                    ctxMesasListasSes: false
+                });
         
         // ============================================================================
         // GUARDA DURA DE IDENTIDAD (01 §3.2, ledger L-16).
@@ -61,6 +62,10 @@ scrSesion As screen:
                     )
                 )
             );
+            // El catalogo ya esta en memoria. Sin esta bandera, el label de abajo
+                    // pinta "no hay mesas disponibles" mientras las tres consultas del
+                    // bloque todavia viajan: dice "no hay" cuando la verdad es "no se".
+                    UpdateContext({ ctxMesasListasSes: true });
         
             // ========================================================================
             // BLOQUE 2 — LA SESION DE HOY DEL CAJERO.  Q1 (§2), delegable.
@@ -430,7 +435,7 @@ scrSesion As screen:
         ZIndex: =14
 
     lblNotaMesaSes As label:
-        Color: =If(IsEmpty(colMesasSes), ThemeWarn, ThemeInk3)
+        Color: =If(ctxMesasListasSes && IsEmpty(colMesasSes), ThemeWarn, ThemeInk3)
         Height: =30
         PaddingBottom: =0
         PaddingLeft: =0
@@ -438,12 +443,13 @@ scrSesion As screen:
         PaddingTop: =0
         Size: =8.25
         Text: |-
-            =// La nota del mockup, con estado vacio (D02-15)
-            If(
-                IsEmpty(colMesasSes),
-                "No hay mesas disponibles: todas las mesas habilitadas ya tienen una sesión de hoy. Avise al supervisor.",
-                "Solo se muestran las mesas sin sesión activa hoy."
-            )
+            =If(
+                            !ctxMesasListasSes,
+                            "Cargando mesas…",
+                            IsEmpty(colMesasSes),
+                            "No hay mesas disponibles: todas las mesas habilitadas ya tienen una sesión de hoy. Avise al supervisor.",
+                            "Solo se muestran las mesas sin sesión activa hoy."
+                        )
         VerticalAlign: =VerticalAlign.Top
         Visible: =!ctxEsperandoSes && !ctxRechazadaSes
         Width: =370
@@ -1030,20 +1036,28 @@ scrSesion As screen:
                 );
             
                 // ---- 2. La sesion despues: libera la mesa (Q7) --------------------------
-                If(
-                    ctxAbandonoOkSes,
-                    If(
-                        ctxAbandonoOkSes,
-                        IfError(
-                            Remove('CH-Tbl-RecountingSessions', gvarSesion),
-                            If(true,
+            If(
+                                    // Si el supervisor RECHAZO, la CAPI ya elimino la sesion:
+                                    // el efecto de "Crear sesion de recuento" al rechazar es
+                                    // borrarla. La mesa ya esta libre y no hay nada que dar de
+                                    // baja. Sin esta guarda el Remove revienta con
+                                    // "Entity ... Does Not Exist" y deja al cajero trabado.
+                IsBlank(
+                    LookUp(
+                        'CH-Tbl-RecountingSessions',
+                        'CH-Tbl-RecountingSession' = gvarSesion.'CH-Tbl-RecountingSession'
+                        )
+                    ),
+                    true,
+                    IfError(
+                        Remove('CH-Tbl-RecountingSessions', gvarSesion),
+                        If(true,
                                 Notify("No se pudo liberar la mesa: " & FirstError.Message, NotificationType.Error);
                                 UpdateContext({ ctxAbandonoOkSes: false });
                                 Blank()
-                            )
                         )
-                    );
-                );
+                    )
+            );
             
                 // ---- 3. Solo con las DOS bajas hechas se vuelve al estado inicial -------
                 //    El catalogo se recompone en MEMORIA (cero red): se quita la sesion
@@ -1141,7 +1155,7 @@ scrSesion As screen:
                     Set(gvarSesionDetalle, Blank());
                     Set(gvarDeclaredBag, Blank());
                     Set(gvarSolicitud, Blank());
-                    Navigate(scrTulas),
+                    //Navigate(scrTulas),
             
                 // ================= RECHAZADO: BLOQUEA, no libera =================
                 gvarSolicitud.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Rechazado,
@@ -1251,7 +1265,7 @@ scrSesion As screen:
             Set(gvarSesionDetalle, Blank());
             Set(gvarSolicitud, Blank());
             Set(gvarDepositoSinGuardar, false);
-            Navigate(scrTulas)
+            //Navigate(scrTulas)
         PressedBorderColor: =App.Theme.Colors.Darker40
         PressedColor: =Self.Color
         PressedFill: =App.Theme.Colors.Darker40

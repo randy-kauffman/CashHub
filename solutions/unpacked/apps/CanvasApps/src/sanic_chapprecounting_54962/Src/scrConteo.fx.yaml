@@ -760,7 +760,7 @@ scrConteo As screen:
         DisplayMode: =DisplayMode.View
         Fill: =ThemeSurface
         FontWeight: =FontWeight.Semibold
-        Height: =562
+        Height: =Max(Parent.Height - Self.Y - 16, 480)
         HoverFill: =ThemeSurface
         PaddingBottom: =0
         PaddingLeft: =0
@@ -2036,7 +2036,7 @@ scrConteo As screen:
         DisplayMode: =DisplayMode.View
         Fill: =ThemeSurface
         FontWeight: =FontWeight.Semibold
-        Height: =562
+        Height: =Max(Parent.Height - Self.Y - 16, 480)
         HoverFill: =ThemeSurface
         PaddingBottom: =0
         PaddingLeft: =0
@@ -2195,20 +2195,25 @@ scrConteo As screen:
         Visible: =ctxHayDepositoCon
         Width: =50
         Wrap: =false
-        X: =inpCuentaCon.X - 8 - Self.Width
+        X: =ddMonedaCon.X + ddMonedaCon.Width + 24
         Y: =233
         ZIndex: =53
 
     inpCuentaCon As text:
-        Align: =Align.Right
+        Align: =Align.Left
         BorderColor: =ThemeLine
         Color: =ThemeInk
-        Default: =If(IsBlank(ctxDepositoCon.AccountNumber), "", Text(ctxDepositoCon.AccountNumber))
-        DisplayMode: =If(gvarIdentidadOk && !ctxSoloLecturaCon, DisplayMode.Edit, DisplayMode.Disabled)
+        Default: |-
+            =If(
+                !IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                Text(ctxDepDecCursoCon.AccountNumber),
+                If(IsBlank(ctxDepositoCon.AccountNumber), "", Text(ctxDepositoCon.AccountNumber))
+            )
+        DisplayMode: =DisplayMode.View
         Fill: =ThemeSurface
         Format: =TextFormat.Number
         Height: =32
-        HintText: ="N° de cuenta"
+        HintText: ="Sin declaración"
         OnChange: =Set(gvarDepositoSinGuardar, true)
         RadiusBottomLeft: =7
         RadiusBottomRight: =7
@@ -2217,7 +2222,7 @@ scrConteo As screen:
         Size: =9
         Visible: =ctxHayDepositoCon
         Width: =160
-        X: =shpCardCurCon.X + shpCardCurCon.Width - 16 - Self.Width
+        X: =lblLabCuentaCon.X + lblLabCuentaCon.Width + 9
         Y: =233
         ZIndex: =54
 
@@ -2289,7 +2294,7 @@ scrConteo As screen:
         Simbolo: =fxSimbolo(ctxMonedaCon)
         Titulo: ="Depósito " & If(IsBlank(Trim(inpCuentaCon.Text)), "sin cuenta", Trim(inpCuentaCon.Text))
         Visible: =ctxHayDepositoCon
-        Width: =580
+        Width: =shpCardCurCon.Width - 32
         X: =shpCardCurCon.X + 16
         Y: =278
         ZIndex: =57
@@ -2309,7 +2314,7 @@ scrConteo As screen:
         Items: =["Billetes", "Monedas", "Cheques"]
         Visible: =ctxHayDepositoCon
         Width: =360
-        X: =746
+        X: =shpCardCurCon.X + 10
         Y: =shpLineaMatDepCon.Y + 1
         ZIndex: =59
 
@@ -2366,7 +2371,7 @@ scrConteo As screen:
         Height: =26
         HoverFill: =ThemeAccentSoft
         OnSelect: |-
-            =Select(btnVolcarGrillaCon);          // Bloque V — VOLCADO (§6.2), PRIMERA instrucción
+            =/* Select(btnVolcarGrillaCon);          // Bloque V — VOLCADO (§6.2), PRIMERA instrucción
             
             If(
                 IsBlank(gvarSesionDetalle.'CH-Tbl-RecountingSessionDetail') ||
@@ -2436,7 +2441,7 @@ scrConteo As screen:
                     Reset(galBilletesCon);
                     Notify("Reconteo de la máquina completado.", NotificationType.Success)
                 )
-            )
+            )*/
         PaddingBottom: =0
         PaddingLeft: =28
         PaddingRight: =0
@@ -2448,7 +2453,7 @@ scrConteo As screen:
         RadiusTopRight: =7
         Size: =8.25
         Text: ="Leer contadora"
-        Visible: =ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Billetes"
+        Visible: =false //ctxHayDepositoCon && tabDetalleCon.Selected.Value = "Billetes"
         Width: =122
         X: =shpCardCurCon.X + shpCardCurCon.Width - 16 - Self.Width
         Y: =lblHintDetalleCon.Y + 7
@@ -3232,7 +3237,7 @@ scrConteo As screen:
                 "Cheques",  IsEmpty(colChecksCon),
                 false
             )
-        Width: =580
+        Width: =shpCardCurCon.Width - 32
         X: =shpCardCurCon.X + 16
         Y: =galBilletesCon.Y + 40
         ZIndex: =84
@@ -3251,7 +3256,7 @@ scrConteo As screen:
             "Los " & Text(CountRows(colDepRecontadosCon)) & " depósitos de la tula ya fueron guardados." & Char(10) &
             "Presione «Nuevo» para capturar otro, o «Terminar tula» para cerrarla."
         Visible: =!ctxHayDepositoCon
-        Width: =580
+        Width: =shpCardCurCon.Width - 32
         X: =shpCardCurCon.X + 16
         Y: =330
         ZIndex: =85
@@ -3692,15 +3697,9 @@ scrConteo As screen:
             // ---- Validacion LOCAL, con guardas que HABLAN ----
             //   LAS CUATRO RAMAS DE ERROR BAJAN ctxSalirTrasGuardarCon: este OnSelect lo
             //   dispara tambien "Guardar y salir" (§13.1) con la bandera en true.
+            //   Ya NO se valida el numero de cuenta: el cajero no lo escribe. Sale de
+            //   la declaracion enlazada, o va vacio si no hay declaracion.
             If(
-                IsBlank(Trim(inpCuentaCon.Text)) || Value(inpCuentaCon.Text) <= 0,
-                    UpdateContext({ ctxSalirTrasGuardarCon: false });
-                    Notify("Escriba el número de cuenta del depósito.", NotificationType.Error),
-            
-                Value(inpCuentaCon.Text) > 999999999,
-                    UpdateContext({ ctxSalirTrasGuardarCon: false });
-                    Notify("El número de cuenta no puede tener más de 9 dígitos.", NotificationType.Error),
-            
                 CountRows(
                     Filter(
                         colChecksCon,
@@ -5965,7 +5964,14 @@ scrConteo As screen:
                                               "USD", 'CH-Ch-Currency'.USD,
                                               "EUR", 'CH-Ch-Currency'.EUR
                                           ),
-                                AccountNumber:        Value(inpCuentaCon.Text),
+                                // La cuenta NO se toma del campo: sale de la declarada
+                                // enlazada, igual que TransactionNumber mas abajo. Sin
+                                // declaracion se guarda vacia — es el dato real.
+                                AccountNumber:        If(
+                                                          IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                                                          Blank(),
+                                                          ctxDepDecCursoCon.AccountNumber
+                                                      ),
                                 CashAmount:           Sum(colDetalleConteoCon, Denominacion * (Auto + Manual)),
                                 BACLocalCheckAmount:  Sum(Filter(colChecksCon, Seleccionado && Tipo = "BAC Local"),   Monto),
                                 OtherLocaCheckAmount: Sum(Filter(colChecksCon, Seleccionado && Tipo = "Otros Local"), Monto),
@@ -5977,7 +5983,7 @@ scrConteo As screen:
                             }
                         )
                 }),
-                Collect(colFallidasCon, { Clave: Trim(inpCuentaCon.Text), Detalle: "depósito", Mensaje: FirstError.Message });
+                Collect(colFallidasCon, { Clave: Coalesce(Trim(inpCuentaCon.Text), "sin cuenta"), Detalle: "depósito", Mensaje: FirstError.Message });
                 Blank()
             );
             

@@ -2,7 +2,8 @@ scrSplash As screen:
     ContentLanguage: =""
     Fill: =ThemeBg
     LoadingSpinnerColor: =App.Theme.Colors.Primary
-    OnVisible: =
+    OnVisible: |-
+        =UpdateContext({ ctxIntentosSpl: 0 })
 
     lblCargandoSpl As label:
         Align: =Align.Center
@@ -38,14 +39,35 @@ scrSplash As screen:
         DisabledBorderColor: =RGBA(244, 244, 244, 1)
         DisabledColor: =RGBA(166, 166, 166, 1)
         DisabledFill: =RGBA(244, 244, 244, 1)
-        Duration: =350
+        Duration: =300
         Fill: =App.Theme.Colors.Primary
         Font: =App.Theme.Font
         Height: =4
         HoverBorderColor: =App.Theme.Colors.Darker10
         HoverColor: =App.Theme.Colors.PrimaryForeground
         HoverFill: =App.Theme.Colors.Darker10
-        OnTimerEnd: =Navigate(scrSesion)
+        OnTimerEnd: |-
+            =// La identidad sale de un LookUp a Users en App.OnStart: es RED. Con un
+                        // Navigate a los 350 ms fijos se llegaba a scrSesion con gvarIdentidadOk
+                        // todavia en false, y como TODO el bloque de carga del OnVisible vive
+                        // dentro de ese If, el catalogo de mesas no se cargaba nunca en esa
+                        // visita — habia que refrescar la ventana entera. Se espera la CONDICION,
+                        // no un tiempo.
+                        UpdateContext({ ctxIntentosSpl: ctxIntentosSpl + 1 });
+                        If(
+                            !gvarIdentidadOk,
+                            // Reintento propio: si el LookUp de OnStart fallo o todavia no
+                            // termino, aca se vuelve a resolver. Es idempotente.
+                            Set(gvarUser, LookUp(Users, 'Primary Email' = User().Email));
+                            Set(gvarIdentidadOk, !IsBlank(gvarUser) && !IsBlank(gvarUser.User))
+                        );
+                        If(
+                            // La valvula de escape es a proposito: a los ~6 segundos se entra
+                            // igual y scrSesion muestra su panel de identidad bloqueada. Trabado
+                            // en "Cargando…" para siempre seria peor que un mensaje honesto.
+                            gvarIdentidadOk || ctxIntentosSpl >= 60,
+                            Navigate(scrSesion)
+                        )
         PressedBorderColor: =App.Theme.Colors.Darker40
         PressedColor: =Self.Color
         PressedFill: =App.Theme.Colors.Darker40

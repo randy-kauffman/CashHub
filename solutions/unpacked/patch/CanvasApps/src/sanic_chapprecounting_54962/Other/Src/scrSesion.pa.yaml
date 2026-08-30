@@ -1,0 +1,1496 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrSesion:
+    Properties:
+      Fill: =ThemeBg
+      LoadingSpinnerColor: =ThemeAccent
+      OnVisible: |-
+        =// ============================================================================
+        // BLOQUE 0 — ESTADO DE UI. Corre SIEMPRE, tambien con la identidad rota.
+        //   El estado de los dialogos PERSISTE entre visitas: sin este reset, volver
+        //   aca desde scrTulas te encuentra el modal de cancelacion abierto.
+        // ============================================================================
+        UpdateContext({
+                    ctxEsperandoSes:   false,
+                    ctxRechazadaSes:   false,
+                    ctxDlgCancelarSes: false,
+                    ctxAbandonoOkSes:  true,
+                    ctxMesasListasSes: false
+                });
+
+        // ============================================================================
+        // GUARDA DURA DE IDENTIDAD (01 §3.2, ledger L-16).
+        //   Con gvarIdentidadOk = false, cntBloqueoSes (§11) tapa la pantalla y NINGUNA
+        //   consulta de abajo tiene sentido: gvarUser esta en blanco y
+        //   Cashier.User = Blank() devolveria basura. Ese era el bypass S-1 de la v1.
+        //   No hay Navigate ni salida: la app se BLOQUEA, no degrada.
+        // ============================================================================
+        If(
+            gvarIdentidadOk,
+
+            // ========================================================================
+            // BLOQUE 1 — CATALOGO DE MESAS DISPONIBLES.  Q3 + Q4 (§2), delegables.
+            //   Se carga SIEMPRE, en los tres estados: "Cancelar solicitud" y "Elegir
+            //   otra mesa" (§9) devuelven la tarjeta al estado inicial SIN volver a la
+            //   red y necesitan el catalogo ya en memoria (regla D-10).
+            //
+            //   La resta "mesas habilitadas MENOS mesas con sesion de hoy" es LOCAL:
+            //   en el servidor exigiria un `in` con subconsulta, que JAMAS delega (D-6).
+            // ========================================================================
+            ClearCollect(
+                colSesionesHoySes,
+                Filter(
+                    'CH-Tbl-RecountingSessions',
+                    'Created On' >= Today() &&
+                    'Created On' <  DateAdd(Today(), 1, TimeUnit.Days) &&
+                    SessionForciblyClosed = false
+                )
+            );
+            ClearCollect(
+                colMesasDVSes,
+                Sort(
+                    Filter('CH-Tbl-CountingDesks', Enable = true),
+                    Name
+                )
+            );
+            ClearCollect(
+                colMesasSes,
+                Filter(
+                    colMesasDVSes As M,
+                    IsBlank(
+                        LookUp(
+                            colSesionesHoySes,
+                            CountingDesk.'CH-Tbl-CountingDesk' = M.'CH-Tbl-CountingDesk'
+                        )
+                    )
+                )
+            );
+            // El catalogo ya esta en memoria. Sin esta bandera, el label de abajo
+                    // pinta "no hay mesas disponibles" mientras las tres consultas del
+                    // bloque todavia viajan: dice "no hay" cuando la verdad es "no se".
+                    UpdateContext({ ctxMesasListasSes: true });
+
+            // ========================================================================
+            // BLOQUE 2 — LA SESION DE HOY DEL CAJERO.  Q1 (§2), delegable.
+            //   Sort + First, nunca LookUp a secas (regla D-9): si por un fallo previo
+            //   hay mas de una sesion del dia, la que manda es la ULTIMA.
+            // ========================================================================
+            Set(
+                gvarSesion,
+                First(
+                    Sort(
+                        Filter(
+                            'CH-Tbl-RecountingSessions',
+                            Cashier.User = gvarUser.User &&
+                            'Created On' >= Today() &&
+                            'Created On' <  DateAdd(Today(), 1, TimeUnit.Days) &&
+                            SessionForciblyClosed = false
+                        ),
+                        'Created On',
+                        SortOrder.Descending
+                    )
+                )
+            );
+
+            // ========================================================================
+            // BLOQUE 3 — LA SOLICITUD DE ESA SESION.  Q2 (§2), delegable.
+            //   El If va POR FUERA del Set: sin sesion no hay nada que recuperar y la
+            //   consulta ni se dispara. La existencia se pregunta SIEMPRE por la PK.
+            // ========================================================================
+            If(
+                IsBlank(gvarSesion.'CH-Tbl-RecountingSession'),
+                Set(gvarSolicitud, Blank()),
+                Set(
+                    gvarSolicitud,
+                    First(
+                        Sort(
+                            Filter(
+                                'CH-Tbl-ApprovalRequests',
+                                'Created By'.User = gvarUser.User &&
+                                RequestType = "Crear sesion de recuento" &&
+                                'Created On' >= Today() &&
+                                'Created On' <  DateAdd(Today(), 1, TimeUnit.Days)
+                            ),
+                            'Created On',
+                            SortOrder.Descending
+                        )
+                    )
+                )
+            );
+
+            // ========================================================================
+            // BLOQUE 4 — MAQUINA DE ESTADOS. Cuatro ramas, y ninguna mas.
+            //   El RECHAZO es un estado de PRIMERA CLASE (mata S-4). La v1 preguntaba
+            //   `ApprovalStatus = Blank()` y fallaba ABIERTO: un rechazo liberaba al
+            //   cajero exactamente igual que una aprobacion.
+            // ========================================================================
+            If(
+                // ---- 1. AVALADA POR EL SERVIDOR: se entra sin ver esta pantalla ------
+                //    `Confirmed` lo escribe el PLUGIN (01 §2.4). La app nunca lo toca.
+                !IsBlank(gvarSesion.'CH-Tbl-RecountingSession') &&
+                (
+                    gvarSesion.Confirmed = true ||
+                    gvarSolicitud.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Aprobado
+                ),
+                    // ---- contrato de salida, copia literal de 01 §4.5 ----
+                    Select(btnEntrarTulasSes),
+
+                // ---- 2. RECHAZADA: BLOQUEA, no libera -------------------------------
+                !IsBlank(gvarSesion.'CH-Tbl-RecountingSession') &&
+                gvarSolicitud.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Rechazado,
+                    Set(gvarMesa, gvarSesion.CountingDesk);
+                    UpdateContext({ ctxEsperandoSes: false, ctxRechazadaSes: true }),
+
+                // ---- 3. PENDIENTE: el cajero cerro la app mientras esperaba ----------
+                //    El timer arranca solo: su Start es ctxEsperandoSes (§10).
+                !IsBlank(gvarSesion.'CH-Tbl-RecountingSession') &&
+                !IsBlank(gvarSolicitud.'CH-Tbl-ApprovalRequest'),
+                    Set(gvarMesa, gvarSesion.CountingDesk);
+                    UpdateContext({ ctxEsperandoSes: true, ctxRechazadaSes: false }),
+
+                // ---- 4. INICIAL -----------------------------------------------------
+                //    Incluye el caso raro "sesion de hoy SIN solicitud" (el Patch de la
+                //    solicitud fallo Y la compensacion de §8 tambien). Se degrada al
+                //    estado inicial CON AVISO: la app no borra sola una sesion que no
+                //    sabe quien creo. Divergencia D02-18.
+                If(
+                    !IsBlank(gvarSesion.'CH-Tbl-RecountingSession'),
+                    Notify(
+                        "Tiene una sesión de hoy sin solicitud de aprobación: esa mesa puede aparecer ocupada. Elija otra mesa y avise al supervisor.",
+                        NotificationType.Warning
+                    )
+                );
+                Set(gvarSesion,    Blank());
+                Set(gvarMesa,      Blank());
+                Set(gvarSolicitud, Blank());
+                UpdateContext({ ctxEsperandoSes: false, ctxRechazadaSes: false })
+            )
+        );
+
+        // ============================================================================
+        // BLOQUE 5 — RESET DE CONTROLES. SIEMPRE, y al final.
+        //   El desplegable clasico recuerda su seleccion entre visitas: sin el Reset,
+        //   volver aca tras cerrar una sesion deja marcada una mesa que ya no esta en
+        //   colMesasSes.
+        // ============================================================================
+        Reset(ddMesaSes)
+    Children:
+      - shpHeaderSes:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            Fill: =ThemeSurface
+            Height: =60
+            Width: =Parent.Width
+      - shpHeaderLineaSes:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            Fill: =ThemeLine
+            Height: =1
+            Width: =Parent.Width
+            Y: =shpHeaderSes.Height
+      - btnTileHdrSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeSurface
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =34
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeAccent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeAccent
+            RadiusBottomLeft: =9
+            RadiusBottomRight: =9
+            RadiusTopLeft: =9
+            RadiusTopRight: =9
+            Size: =10.5
+            Text: ="C$"
+            Width: =34
+            X: =20
+            Y: =13
+      - lblTituloSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =10.5
+            Text: ="Reconteo"
+            Width: =180
+            Wrap: =false
+            X: =btnTileHdrSes.X + btnTileHdrSes.Width + 14
+            Y: =13
+      - lblSubtituloSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="Apertura de sesión"
+            Width: =180
+            Wrap: =false
+            X: =lblTituloSes.X
+            Y: =lblTituloSes.Y + lblTituloSes.Height
+      - btnChipUserSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =34
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =17
+            RadiusBottomRight: =17
+            RadiusTopLeft: =17
+            RadiusTopRight: =17
+            Size: =9
+            Text: =""
+            Width: =5 + btnAvatarSes.Width + 8 + lblUsuarioSes.Width + 12
+            X: =Parent.Width - 20 - Self.Width
+            Y: =13
+      - btnAvatarSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeAccent
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccentSoft
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeAccentSoft
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeAccentSoft
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =7.88
+            Text: =UsuarioIniciales
+            Width: =26
+            X: =btnChipUserSes.X + 5
+            Y: =17
+      - lblUsuarioSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =btnChipUserSes.Height
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.63
+            Text: =UsuarioNombre
+            Width: =5.8 * Len(Self.Text) + 6
+            Wrap: =false
+            X: =btnAvatarSes.X + btnAvatarSes.Width + 8
+            Y: =btnChipUserSes.Y
+      - btnCardSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: |-
+              =// Los tres altos del mapa de la pantalla (02). Cada uno es una SUMA verificable.
+              If(
+                  ctxRechazadaSes, 444,
+                  ctxEsperandoSes, 413,
+                  379
+              )
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =9
+            Text: =""
+            Width: =430
+            X: =(Parent.Width - Self.Width) / 2
+            Y: |-
+              =// btnCardSes.Y — centrada en la banda que queda BAJO el header.
+              //   No hay circularidad: Height no depende de Y.
+              shpHeaderLineaSes.Y + shpHeaderLineaSes.Height +
+              (Parent.Height - shpHeaderLineaSes.Y - shpHeaderLineaSes.Height - Self.Height) / 2
+      - btnTileCardSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeSurface
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeAccent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =52
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeAccent
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeAccent
+            RadiusBottomLeft: =14
+            RadiusBottomRight: =14
+            RadiusTopLeft: =14
+            RadiusTopRight: =14
+            Size: =16.5
+            Text: ="C$"
+            Width: =52
+            X: =btnCardSes.X + (btnCardSes.Width - Self.Width) / 2
+            Y: =btnCardSes.Y + 28
+      - lblMarcaSes:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =23
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =12.75
+            Text: ="CashHub · Reconteo"
+            Width: =370
+            Wrap: =false
+            X: =btnCardSes.X + 30
+            Y: =btnTileCardSes.Y + btnTileCardSes.Height + 9
+      - lblMarcaSubSes:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =17
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: |-
+              =If(
+                  ctxRechazadaSes, "Solicitud resuelta",
+                  ctxEsperandoSes, "Solicitud enviada",
+                  "Abra una sesión de conteo para comenzar"
+              )
+            Width: =370
+            Wrap: =false
+            X: =btnCardSes.X + 30
+            Y: =lblMarcaSes.Y + lblMarcaSes.Height + 9
+      - lblLabMesaSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="Mesa de conteo"
+            Visible: =!ctxEsperandoSes && !ctxRechazadaSes
+            Width: =370
+            Wrap: =false
+            X: =btnCardSes.X + 30
+            Y: =lblMarcaSubSes.Y + lblMarcaSubSes.Height + 17
+      - ddMesaSes:
+          Control: Classic/DropDown@2.3.1
+          Properties:
+            AccessibleLabel: ="Mesa de conteo"
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            ChevronBackground: =RGBA(35, 31, 32, 1)
+            ChevronDisabledBackground: =RGBA(215, 210, 204, 1)
+            ChevronDisabledFill: =RGBA(235, 233, 229, 1)
+            ChevronFill: =RGBA(255, 255, 255, 1)
+            ChevronHoverBackground: =ColorFade(Self.ChevronBackground, 20%)
+            ChevronHoverFill: =Self.ChevronFill
+            Color: =ThemeInk
+            DisabledBorderColor: =RGBA(186, 186, 186, 1)
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            DisabledFill: =RGBA(242, 242, 242, 1)
+            DisplayMode: |-
+              =// Sin mesas no hay nada que elegir. gvarIdentidadOk va como PRIMER termino.
+              If(gvarIdentidadOk && !IsEmpty(colMesasSes), DisplayMode.Edit, DisplayMode.Disabled)
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            Height: =38
+            HoverColor: =Self.Color
+            HoverFill: =RGBA(186, 186, 186, 1)
+            Items: =colMesasSes
+            Items.Value: =sanic_name
+            PressedColor: =Self.Color
+            PressedFill: =ColorFade(Self.SelectionFill, -30%)
+            SelectionColor: =RGBA(255, 255, 255, 1)
+            SelectionFill: =RGBA(0, 176, 240, 1)
+            Size: =9.75
+            Visible: =!ctxEsperandoSes && !ctxRechazadaSes
+            Width: =370
+            X: =btnCardSes.X + 30
+            Y: =lblLabMesaSes.Y + lblLabMesaSes.Height + 5
+      - lblNotaMesaSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =If(ctxMesasListasSes && IsEmpty(colMesasSes), ThemeWarn, ThemeInk3)
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =30
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: |-
+              =If(
+                              !ctxMesasListasSes,
+                              "Cargando mesas…",
+                              IsEmpty(colMesasSes),
+                              "No hay mesas disponibles: todas las mesas habilitadas ya tienen una sesión de hoy. Avise al supervisor.",
+                              "Solo se muestran las mesas sin sesión activa hoy."
+                          )
+            VerticalAlign: =VerticalAlign.Top
+            Visible: =!ctxEsperandoSes && !ctxRechazadaSes
+            Width: =370
+            X: =btnCardSes.X + 30
+            Y: =ddMesaSes.Y + ddMesaSes.Height + 6
+      - btnEsperaSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =62
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Size: =9
+            Text: =""
+            Visible: =ctxEsperandoSes
+            Width: =370
+            X: =btnCardSes.X + 30
+            Y: =lblLabMesaSes.Y
+      - spnEsperaSes:
+          Control: Spinner@1.4.6
+          Properties:
+            Height: =34
+            Visible: =ctxEsperandoSes
+            Width: =34
+            X: =btnEsperaSes.X + 16
+            Y: =btnEsperaSes.Y + 14
+      - lblEsperaTitSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9.75
+            Text: ="Esperando aprobación del supervisor"
+            Visible: =ctxEsperandoSes
+            Width: =btnEsperaSes.Width - (Self.X - btnEsperaSes.X) - 16
+            Wrap: =false
+            X: =spnEsperaSes.X + spnEsperaSes.Width + 14
+            Y: =btnEsperaSes.Y + 14
+      - lblEsperaSubSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =16
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.63
+            Text: ="Se consulta el estado cada 15 segundos."
+            Visible: =ctxEsperandoSes
+            Width: =lblEsperaTitSes.Width
+            Wrap: =false
+            X: =lblEsperaTitSes.X
+            Y: =lblEsperaTitSes.Y + lblEsperaTitSes.Height
+      - lblKvMesaEtqSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =17
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="Mesa solicitada"
+            Visible: =ctxEsperandoSes
+            Width: =120
+            Wrap: =false
+            X: =btnCardSes.X + 30
+            Y: =btnEsperaSes.Y + btnEsperaSes.Height + 15
+      - lblKvMesaSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =17
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =gvarMesa.Name
+            Visible: =ctxEsperandoSes
+            Width: =250
+            Wrap: =false
+            X: =btnCardSes.X + 150
+            Y: =lblKvMesaEtqSes.Y
+      - lblKvFechaEtqSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =17
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="Solicitada"
+            Visible: =ctxEsperandoSes
+            Width: =120
+            Wrap: =false
+            X: =lblKvMesaEtqSes.X
+            Y: =lblKvMesaEtqSes.Y + 21
+      - lblKvFechaSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =17
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =Text(gvarSolicitud.'Created On', FmtFecha)
+            Visible: =ctxEsperandoSes
+            Width: =250
+            Wrap: =false
+            X: =lblKvMesaSes.X
+            Y: =lblKvFechaEtqSes.Y
+      - lblKvCajeroEtqSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =17
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="Cajero"
+            Visible: =ctxEsperandoSes
+            Width: =120
+            Wrap: =false
+            X: =lblKvMesaEtqSes.X
+            Y: =lblKvFechaEtqSes.Y + 21
+      - lblKvCajeroSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =17
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: =gvarUser.'Full Name'
+            Visible: =ctxEsperandoSes
+            Width: =250
+            Wrap: =false
+            X: =lblKvMesaSes.X
+            Y: =lblKvCajeroEtqSes.Y
+      - btnAvisoRechazoSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeDangerSoft
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =58
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeDangerSoft
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeDangerSoft
+            RadiusBottomLeft: =9
+            RadiusBottomRight: =9
+            RadiusTopLeft: =9
+            RadiusTopRight: =9
+            Size: =9
+            Text: =""
+            Visible: =ctxRechazadaSes
+            Width: =370
+            X: =btnCardSes.X + 30
+            Y: =lblLabMesaSes.Y
+      - icoAvisoRechazoSes:
+          Control: Classic/Icon@2.5.0
+          Properties:
+            AccessibleLabel: ="Solicitud rechazada"
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeDanger
+            DisabledBorderColor: =RGBA(56, 56, 56, 1)
+            DisabledColor: =RGBA(119, 119, 119, 1)
+            Height: =16
+            Icon: =Icon.Blocked
+            Visible: =btnAvisoRechazoSes.Visible
+            Width: =16
+            X: =btnAvisoRechazoSes.X + 13
+            Y: =btnAvisoRechazoSes.Y + 12
+      - lblAvisoRechazoTitSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeDanger
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: ="Solicitud rechazada por el supervisor"
+            Visible: =btnAvisoRechazoSes.Visible
+            Width: =btnAvisoRechazoSes.Width - 50
+            Wrap: =false
+            X: =btnAvisoRechazoSes.X + 38
+            Y: =btnAvisoRechazoSes.Y + 10
+      - lblAvisoRechazoSubSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeDanger
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =18
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: |-
+              =// mesa · fecha de resolucion · quien resolvio (01 §5.8)
+              gvarMesa.Name &
+              "   ·   " & Text(gvarSolicitud.ResolutionDatetime, FmtFecha) &
+              If(
+                  IsBlank(gvarSolicitud.SolvedBy.'Full Name'),
+                  "",
+                  "   ·   " & gvarSolicitud.SolvedBy.'Full Name'
+              )
+            Visible: =btnAvisoRechazoSes.Visible
+            Width: =lblAvisoRechazoTitSes.Width
+            Wrap: =false
+            X: =lblAvisoRechazoTitSes.X
+            Y: =lblAvisoRechazoTitSes.Y + lblAvisoRechazoTitSes.Height
+      - lblLabMotivoSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: ="Motivo indicado por el supervisor"
+            Visible: =ctxRechazadaSes
+            Width: =370
+            Wrap: =false
+            X: =btnCardSes.X + 30
+            Y: =btnAvisoRechazoSes.Y + btnAvisoRechazoSes.Height + 15
+      - btnCajaMotivoSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =66
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =9
+            Text: =""
+            Visible: =ctxRechazadaSes
+            Width: =370
+            X: =btnCardSes.X + 30
+            Y: =lblLabMotivoSes.Y + lblLabMotivoSes.Height + 5
+      - lblMotivoSes:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =If(IsBlank(Trim(gvarSolicitud.StatusReason)), ThemeInk3, ThemeInk2)
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =btnCajaMotivoSes.Height - 14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =9
+            Text: |-
+              =// El motivo REAL que escribio el supervisor (01 §2.4: StatusReason)
+              Coalesce(
+                  Trim(gvarSolicitud.StatusReason),
+                  "El supervisor no indicó un motivo. Consúltelo antes de volver a solicitar la mesa."
+              )
+            VerticalAlign: =VerticalAlign.Top
+            Visible: =ctxRechazadaSes
+            Width: =btnCajaMotivoSes.Width - 20
+            X: =btnCajaMotivoSes.X + 10
+            Y: =btnCajaMotivoSes.Y + 7
+      - btnSolicitarSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeSurface
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: |-
+              =// gvarIdentidadOk va como PRIMER termino, sin excepcion (01 §3.2 / §6.3).
+              // La segunda condicion se escribe contra el control que la accion REALMENTE usa.
+              If(
+                  gvarIdentidadOk && !IsBlank(ddMesaSes.Selected.'CH-Tbl-CountingDesk'),
+                  DisplayMode.Edit,
+                  DisplayMode.Disabled
+              )
+            Fill: =ThemeAccent
+            Font: =Font.'Open Sans'
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeAccentDark
+            OnSelect: |-
+              =// ============================================================================
+              // GUARDA PARLANTE. El DisplayMode ya cubre el caso, pero si alguna vez se
+              // aflojara, esta guarda HABLA en vez de fallar en silencio.
+              // ============================================================================
+              If(
+                  IsBlank(ddMesaSes.Selected.'CH-Tbl-CountingDesk'),
+                  Notify("Elija una mesa de conteo antes de solicitar.", NotificationType.Warning),
+
+                  // ========================================================================
+                  // 1. LA SESION.  Q5, receta 7.5 forma A.
+                  //    `Confirmed` NO se escribe: lo decide el plugin comparando
+                  //    CountingDesk.Cajero contra el InitiatingUserId del contexto de
+                  //    ejecucion (00 §2.2 punto 1). Ahi muere S-1.
+                  // ========================================================================
+                  IfError(
+                      Set(
+                          gvarSesion,
+                          Patch(
+                              'CH-Tbl-RecountingSessions',
+                              Defaults('CH-Tbl-RecountingSessions'),
+                              {
+                                  Cashier:      gvarUser,
+                                  CountingDesk: ddMesaSes.Selected
+                              }
+                          )
+                      ),
+                      Notify("No se pudo crear la sesión: " & FirstError.Message, NotificationType.Error);
+                      Set(gvarSesion, Blank())
+                  );
+
+                  If(
+                      !IsBlank(gvarSesion.'CH-Tbl-RecountingSession'),
+
+                      // ====================================================================
+                      // 2. LA SOLICITUD.  Q6, contrato de claves de 01 §5.7.
+                      //    - RequestType: string EXACTO de 01 §5.6.
+                      //    - RequestDetails: fxHtmlMesa de 01 §3.1. CERO escapes manuales
+                      //      aca: el HtmlEscape() vive DENTRO de las fx... (receta 7.6).
+                      //    - RequestResources: SIEMPRE con JSON().
+                      //    - ApprovalStatus: NO se setea. En blanco = Pendiente (01 §5.5).
+                      //    - BagNumber: NO se escribe. Esta solicitud no tiene tula (D02-17).
+                      // ====================================================================
+                      Set(gvarMesa, ddMesaSes.Selected);
+                      IfError(
+                          Set(
+                              gvarSolicitud,
+                              Patch(
+                                  'CH-Tbl-ApprovalRequests',
+                                  Defaults('CH-Tbl-ApprovalRequests'),
+                                  {
+                                      RequestType:    "Crear sesion de recuento",
+                                      RequestDetails: fxHtmlMesa(
+                                                          gvarUser.'Full Name',
+                                                          gvarMesa.Name,
+                                                          Text(Today(), FmtFechaCorta),
+                                                          Text(Now(),   FmtHora)
+                                                      ),
+                                      RequestResources: JSON({
+                                          RecountingSessionGUID: Text(gvarSesion.'CH-Tbl-RecountingSession')
+                                      })
+                                  }
+                              )
+                          ),
+                          Notify("No se pudo crear la solicitud: " & FirstError.Message, NotificationType.Error);
+                          Set(gvarSolicitud, Blank())
+                      );
+
+                      If(
+                          IsBlank(gvarSolicitud.'CH-Tbl-ApprovalRequest'),
+
+                          // ================================================================
+                          // 3. COMPENSACION.  Q7.
+                          //    Una sesion sin solicitud bloquea la mesa TODO el dia y nadie
+                          //    puede aprobarla: no hay solicitud que aprobar. Se revierte.
+                          //    Divergencia D02-7.
+                          // ================================================================
+                          IfError(
+                              Remove('CH-Tbl-RecountingSessions', gvarSesion),
+                              Notify(
+                                  "La sesión quedó creada sin solicitud y no se pudo revertir. Avise al supervisor antes de reintentar.",
+                                  NotificationType.Error
+                              )
+                          );
+                          Set(gvarSesion, Blank());
+                          Set(gvarMesa,   Blank()),
+
+                          // ================================================================
+                          // 4. CAMINO FELIZ: a esperar. El timer arranca SOLO (§10).
+                          // ================================================================
+                          UpdateContext({ ctxEsperandoSes: true, ctxRechazadaSes: false })
+                      )
+                  )
+              )
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeAccentDark
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =9.75
+            Text: ="Solicitar mesa"
+            Visible: =!ctxEsperandoSes && !ctxRechazadaSes
+            Width: =370
+            X: =btnCardSes.X + 30
+            Y: =lblPieSes.Y - 15 - Self.Height
+      - btnCancelarSolicitudSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk2
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =If(gvarIdentidadOk, DisplayMode.Edit, DisplayMode.Disabled)
+            Fill: =Color.Transparent
+            Font: =Font.'Open Sans'
+            Height: =32
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            OnSelect: |-
+              =UpdateContext({ ctxDlgCancelarSes: true })
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =9
+            Text: ="Cancelar solicitud"
+            Visible: =ctxEsperandoSes
+            Width: =370
+            X: =btnCardSes.X + 30
+            Y: =lblPieSes.Y - 15 - Self.Height
+      - btnElegirOtraSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeSurface
+            DisabledBorderColor: =Color.Transparent
+            DisabledColor: =ThemeInk3
+            DisabledFill: =ThemeLineSoft
+            DisplayMode: =If(gvarIdentidadOk, DisplayMode.Edit, DisplayMode.Disabled)
+            Fill: =ThemeAccent
+            Font: =Font.'Open Sans'
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeAccentDark
+            OnSelect: =Select(btnAbandonarSes)
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeAccentDark
+            RadiusBottomLeft: =8
+            RadiusBottomRight: =8
+            RadiusTopLeft: =8
+            RadiusTopRight: =8
+            Size: =9.75
+            Text: ="Elegir otra mesa"
+            Visible: =ctxRechazadaSes
+            Width: =370
+            X: =btnCardSes.X + 30
+            Y: =lblPieSes.Y - 15 - Self.Height
+      - lblPieSes:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =34
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.25
+            Text: |-
+              =If(
+                  ctxRechazadaSes, "El rechazo bloquea el ingreso: sin aprobación no se abre sesión.",
+                  ctxEsperandoSes, "No cierre la aplicación: al aprobarse, la sesión se abre sola.",
+                  "La solicitud queda pendiente hasta que el supervisor la apruebe. Si la mesa ya es suya, la aprobación es automática del lado del servidor."
+              )
+            Width: =370
+            X: =btnCardSes.X + 30
+            Y: =btnCardSes.Y + btnCardSes.Height - 26 - Self.Height
+      - btnAbandonarSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            Fill: =Color.Transparent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =1
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =Color.Transparent
+            OnSelect: |-
+              =UpdateContext({ ctxAbandonoOkSes: true });
+
+              // ============================================================================
+              // 1. RE-LECTURA POR PK (Q9). Entre que el cajero abrio el dialogo y confirmo,
+              //    el supervisor pudo resolver. Cancelar una solicitud YA RESUELTA seria
+              //    borrar la evidencia de una decision del supervisor.
+              // ============================================================================
+              If(
+                  !IsBlank(gvarSolicitud.'CH-Tbl-ApprovalRequest'),
+                  Set(
+                      gvarSolicitud,
+                      LookUp(
+                          'CH-Tbl-ApprovalRequests',
+                          'CH-Tbl-ApprovalRequest' = gvarSolicitud.'CH-Tbl-ApprovalRequest'
+                      )
+                  )
+              );
+
+              If(
+                  // ========================================================================
+                  // CARRERA (solo posible desde A2): ya la resolvieron. NO se borra NADA.
+                  //   El timer sigue armado —su Start es ctxEsperandoSes (§10)— y en el
+                  //   proximo tick pinta el estado real. Como mucho, 15 segundos.
+                  // ========================================================================
+                  ctxEsperandoSes && !IsBlank(gvarSolicitud.'CH-Tbl-ApprovalRequest') && !IsBlank(gvarSolicitud.ApprovalStatus),
+                      Notify(
+                          "El supervisor ya resolvió la solicitud: la pantalla se actualiza sola en unos segundos.",
+                          NotificationType.Information
+                      ),
+
+                  // ========================================================================
+                  // ABANDONO REAL
+                  // ========================================================================
+                  // ---- 1. La solicitud primero: sale de la cola del supervisor (Q8) -------
+                  //    GATE DOBLE — PK **y** estado:
+                  //      · PK: la existencia se pregunta por 'CH-Tbl-ApprovalRequest', nunca
+                  //        con IsBlank(<registro>), que sobre un registro tipado vacio puede
+                  //        devolver false.
+                  //      · Estado: SOLO se borra una solicitud sin resolver. Desde A3 la
+                  //        solicitud esta RECHAZADA: es la evidencia de una decision del
+                  //        supervisor y se conserva como registro (D02-5). Esa rama se SALTEA,
+                  //        ctxAbandonoOkSes queda en true y los pasos 2 y 3 siguen.
+                  If(
+                      !IsBlank(gvarSolicitud.'CH-Tbl-ApprovalRequest') &&
+                      IsBlank(gvarSolicitud.ApprovalStatus),
+                      IfError(
+                          Remove('CH-Tbl-ApprovalRequests', gvarSolicitud),
+                          If(true,
+                              Notify("No se pudo cancelar la solicitud: " & FirstError.Message, NotificationType.Error);
+                              UpdateContext({ ctxAbandonoOkSes: false });
+                              Blank()
+                          )
+                      );
+                  );
+
+                  // ---- 2. La sesion despues: libera la mesa (Q7) --------------------------
+              If(
+                                      // Si el supervisor RECHAZO, la CAPI ya elimino la sesion:
+                                      // el efecto de "Crear sesion de recuento" al rechazar es
+                                      // borrarla. La mesa ya esta libre y no hay nada que dar de
+                                      // baja. Sin esta guarda el Remove revienta con
+                                      // "Entity ... Does Not Exist" y deja al cajero trabado.
+                  IsBlank(
+                      LookUp(
+                          'CH-Tbl-RecountingSessions',
+                          'CH-Tbl-RecountingSession' = gvarSesion.'CH-Tbl-RecountingSession'
+                          )
+                      ),
+                      true,
+                      IfError(
+                          Remove('CH-Tbl-RecountingSessions', gvarSesion),
+                          If(true,
+                                  Notify("No se pudo liberar la mesa: " & FirstError.Message, NotificationType.Error);
+                                  UpdateContext({ ctxAbandonoOkSes: false });
+                                  Blank()
+                          )
+                      )
+              );
+
+                  // ---- 3. Solo con las DOS bajas hechas se vuelve al estado inicial -------
+                  //    El catalogo se recompone en MEMORIA (cero red): se quita la sesion
+                  //    liberada de colSesionesHoySes y se recalcula colMesasSes desde el
+                  //    snapshot colMesasDVSes que el OnVisible ya dejo cargado.
+                  If(
+                      ctxAbandonoOkSes,
+                      Remove(
+                          colSesionesHoySes,
+                          LookUp(
+                              colSesionesHoySes,
+                              'CH-Tbl-RecountingSession' = gvarSesion.'CH-Tbl-RecountingSession'
+                          )
+                      );
+                      ClearCollect(
+                          colMesasSes,
+                          Filter(
+                              colMesasDVSes As M,
+                              IsBlank(
+                                  LookUp(
+                                      colSesionesHoySes,
+                                      CountingDesk.'CH-Tbl-CountingDesk' = M.'CH-Tbl-CountingDesk'
+                                  )
+                              )
+                          )
+                      );
+                      Set(gvarSolicitud, Blank());
+                      Set(gvarSesion,    Blank());
+                      Set(gvarMesa,      Blank());
+                      // El aviso se emite ANTES de bajar las banderas: desde A3 la solicitud
+                      // rechazada NO se borro, y decir "solicitud cancelada" seria mentir.
+                      Notify(
+                          If(
+                              ctxRechazadaSes,
+                              "Mesa liberada. La solicitud rechazada queda registrada. Elija otra mesa.",
+                              "Solicitud cancelada. Elija otra mesa."
+                          ),
+                          NotificationType.Information
+                      );
+                      UpdateContext({ ctxEsperandoSes: false, ctxRechazadaSes: false });
+                      Reset(ddMesaSes)
+                  )
+              )
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =Color.Transparent
+            Size: =9
+            TabIndex: =-1
+            Text: =""
+            Width: =1
+            Y: =767
+      - tmrPollSes:
+          Control: Timer@2.1.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            Duration: =15000
+            Fill: =RGBA(35, 31, 32, 1)
+            Font: =Font.'Open Sans'
+            Height: =1
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ColorFade(Self.Fill, 20%)
+            OnTimerEnd: |-
+              =// Q9: UNA consulta, delegable, por PK. Cero Refresh aca arriba.
+              Set(
+                  gvarSolicitud,
+                  LookUp(
+                      'CH-Tbl-ApprovalRequests',
+                      'CH-Tbl-ApprovalRequest' = gvarSolicitud.'CH-Tbl-ApprovalRequest'
+                  )
+              );
+
+              If(
+                  // ================= LA SOLICITUD DESAPARECIO =================
+                  //   Alguien la borro (otro dispositivo, el supervisor, una limpieza).
+                  //   Esperar a algo que no existe es el fallo abierto que estamos matando:
+                  //   se vuelve al estado inicial y se AVISA.
+                  IsBlank(gvarSolicitud.'CH-Tbl-ApprovalRequest'),
+                      UpdateContext({ ctxEsperandoSes: false, ctxRechazadaSes: false });
+                      Set(gvarSolicitud, Blank());
+                      Set(gvarSesion,    Blank());
+                      Set(gvarMesa,      Blank());
+                      Notify("La solicitud ya no existe. Elija una mesa de nuevo.", NotificationType.Warning),
+
+                  // ================= APROBADO =================
+                  gvarSolicitud.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Aprobado,
+                      UpdateContext({ ctxEsperandoSes: false, ctxRechazadaSes: false });
+                      // Q10 — el plugin ACABA de escribir Confirmed: se re-lee por PK.
+                      Set(
+                          gvarSesion,
+                          LookUp(
+                              'CH-Tbl-RecountingSessions',
+                              'CH-Tbl-RecountingSession' = gvarSesion.'CH-Tbl-RecountingSession'
+                          )
+                      );
+                      // ---- contrato de salida, copia literal de 01 §4.5 ----
+                      Set(gvarMesa, gvarSesion.CountingDesk);
+                      Set(gvarTula, Blank());
+                      Set(gvarSesionDetalle, Blank());
+                      Set(gvarDeclaredBag, Blank());
+                      Set(gvarSolicitud, Blank());
+                      //Navigate(scrTulas),
+
+                  // ================= RECHAZADO: BLOQUEA, no libera =================
+                  gvarSolicitud.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Rechazado,
+                      UpdateContext({ ctxEsperandoSes: false, ctxRechazadaSes: true }),
+
+                  // ================= SIGUE PENDIENTE: NO se hace NADA =================
+                  false
+              )
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =Self.Color
+            Repeat: =true
+            Start: |-
+              =// Es una CONDICION, jamas `true` (contrato 01 §5.8).
+              //   Cuando la solicitud se resuelve, la rama que la resuelve baja
+              //   ctxEsperandoSes y el timer se apaga SOLO.
+              //   La existencia se pregunta POR LA PK: sobre un registro tipado vacio
+              //   IsBlank(<registro>) puede devolver false.
+              ctxEsperandoSes && !IsBlank(gvarSolicitud.'CH-Tbl-ApprovalRequest')
+            Visible: =false
+            Width: =1
+      - cmpDlgCancelarSes:
+          Control: CanvasComponent
+          ComponentName: cmpDialogo
+          Properties:
+            AnchoCard: =400
+            Contorno: =false
+            Fill: =ThemeOverlay
+            Height: =768
+            Icono: =""
+            MostrarCerrar: =true
+            OnCancelar: |-
+              =UpdateContext({ ctxDlgCancelarSes: false })
+            OnConfirmar: |-
+              =UpdateContext({ ctxDlgCancelarSes: false });
+              Select(btnAbandonarSes)
+            Peligro: =true
+            Subtitulo: |-
+              ="Se retira la solicitud de la cola del supervisor y se libera la mesa " &
+              gvarMesa.Name & "." & Char(10) & Char(10) &
+              "Vuelve a la selección de mesa. La solicitud no se puede reactivar: hay que pedirla de nuevo."
+            TextoCancelar: ="Seguir esperando"
+            TextoConfirmar: ="Cancelar la solicitud"
+            Titulo: ="Cancelar la solicitud de mesa"
+            Tono: ="info"
+            Visible: =ctxDlgCancelarSes
+            Width: =1366
+      - cntBloqueoSes:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            DropShadow: =DropShadow.None
+            Fill: =ThemeBg
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =!gvarIdentidadOk
+            Width: =Parent.Width
+          Children:
+            - btnBloqTragaSes:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderThickness: =0
+                  Color: =ThemeInk
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =Parent.Height
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =Color.Transparent
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Color.Transparent
+                  Size: =9
+                  TabIndex: =-1
+                  Text: =""
+                  Width: =Parent.Width
+            - icoBloqueoSes:
+                Control: Classic/Icon@2.5.0
+                Properties:
+                  AccessibleLabel: ="Acceso bloqueado"
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeDanger
+                  DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                  DisabledColor: =RGBA(119, 119, 119, 1)
+                  Height: =56
+                  Icon: =Icon.Blocked
+                  Width: =56
+                  X: =(Parent.Width - Self.Width) / 2
+                  Y: =(Parent.Height - Self.Height) / 2 - 60
+            - lblBloqueoSes:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Center
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk2
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =80
+                  PaddingBottom: =0
+                  PaddingLeft: =0
+                  PaddingRight: =0
+                  PaddingTop: =0
+                  Size: =9
+                  Text: |-
+                    ="No se pudo identificar su usuario en Dataverse. Cierre la aplicación y avise a soporte: sin identidad no se puede abrir una sesión de conteo."
+                  VerticalAlign: =VerticalAlign.Top
+                  Width: =520
+                  X: =(Parent.Width - Self.Width) / 2
+                  Y: =icoBloqueoSes.Y + icoBloqueoSes.Height + 18
+      - btnEntrarTulasSes:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderThickness: =0
+            Color: =Color.Transparent
+            Fill: =Color.Transparent
+            Height: =1
+            OnSelect: |-
+              =Set(gvarMesa, gvarSesion.CountingDesk);
+              Set(gvarTula, Blank());
+              Set(gvarDeclaredBag, Blank());
+              Set(gvarSesionDetalle, Blank());
+              Set(gvarSolicitud, Blank());
+              Set(gvarDepositoSinGuardar, false);
+              //Navigate(scrTulas)
+            TabIndex: =-1
+            Text: =
+            Visible: =false
+            Width: =1
+            X: =2
+            Y: =767

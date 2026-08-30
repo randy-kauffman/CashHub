@@ -1,0 +1,72 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrSplash:
+    Properties:
+      Fill: =ThemeBg
+      OnVisible: |-
+        =UpdateContext({ ctxIntentosSpl: 0 })
+    Children:
+      - lblCargandoSpl:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeInk3
+            Font: =Font.'Open Sans'
+            Height: =20
+            Size: =9.5
+            Text: ="Cargando…"
+            Width: =160
+            X: =App.Width/2 - 80
+            Y: =App.Height/2 - 8
+      - lblMarcaSpl:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Center
+            Color: =ThemeSurface
+            Fill: =ThemeAccent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Size: =18
+            Text: ="C$"
+            Width: =40
+            X: =App.Width/2 - 20
+            Y: =App.Height/2 - 60
+      - tmrSplash:
+          Control: Timer@2.1.0
+          Properties:
+            AutoStart: =true
+            Duration: =300
+            Height: =4
+            OnTimerEnd: |-
+              =// La identidad sale de un LookUp a Users en App.OnStart: es RED. Con un
+                          // Navigate a los 350 ms fijos se llegaba a scrSesion con gvarIdentidadOk
+                          // todavia en false, y como TODO el bloque de carga del OnVisible vive
+                          // dentro de ese If, el catalogo de mesas no se cargaba nunca en esa
+                          // visita — habia que refrescar la ventana entera. Se espera la CONDICION,
+                          // no un tiempo.
+                          UpdateContext({ ctxIntentosSpl: ctxIntentosSpl + 1 });
+                          If(
+                              !gvarIdentidadOk,
+                              // Reintento propio: si el LookUp de OnStart fallo o todavia no
+                              // termino, aca se vuelve a resolver. Es idempotente.
+                              Set(gvarUser, LookUp(Users, 'Primary Email' = User().Email));
+                              Set(gvarIdentidadOk, !IsBlank(gvarUser) && !IsBlank(gvarUser.User))
+                          );
+                          If(
+                              // La valvula de escape es a proposito: a los ~6 segundos se entra
+                              // igual y scrSesion muestra su panel de identidad bloqueada. Trabado
+                              // en "Cargando…" para siempre seria peor que un mensaje honesto.
+                              gvarIdentidadOk || ctxIntentosSpl >= 60,
+                              Navigate(scrSesion)
+                          )
+            Visible: =false
+            Width: =40
+            X: =App.Width/2 - 20
+            Y: =App.Height/2 + 20

@@ -1,0 +1,464 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+App:
+  Properties:
+    BackEnabled: =false
+    ConfirmExit: =gvarDepositoSinGuardar
+    ConfirmExitMessage: ="Tenés un depósito en curso sin guardar. Si salís ahora se pierde el conteo."
+    Formulas: |-
+      =// ===================== PALETA (RGBA exactos del mockup :root) =====================
+      // Idéntica a CH-App-Reception v2: es el mismo sistema de diseño.
+      ThemeAccent      = RGBA(200, 16, 46, 1);      // #C8102E
+      ThemeAccentDark  = RGBA(164, 13, 38, 1);      // #A40D26 — hover de boton primario
+      ThemeAccentSoft  = RGBA(251, 235, 237, 1);    // #FBEBED
+      ThemeBg          = RGBA(246, 245, 244, 1);    // #F6F5F4
+      ThemeSurface     = RGBA(255, 255, 255, 1);    // #FFFFFF
+      ThemeSurface2    = RGBA(250, 248, 247, 1);    // #FAF8F7
+      ThemeInk         = RGBA(32, 28, 29, 1);       // #201C1D
+      ThemeInk2        = RGBA(102, 89, 92, 1);      // #66595C
+      ThemeInk3        = RGBA(148, 138, 140, 1);    // #948A8C
+      ThemeLine        = RGBA(226, 220, 221, 1);    // #E2DCDD
+      ThemeLineSoft    = RGBA(237, 232, 233, 1);    // #EDE8E9
+      ThemeOk          = RGBA(14, 122, 60, 1);      // #0E7A3C
+      ThemeOkSoft      = RGBA(226, 242, 232, 1);    // #E2F2E8
+      ThemeInfo        = RGBA(35, 85, 125, 1);      // #23557D
+      ThemeInfoSoft    = RGBA(228, 238, 246, 1);    // #E4EEF6
+      ThemeWarn        = RGBA(154, 91, 0, 1);       // #9A5B00
+      ThemeWarnSoft    = RGBA(251, 240, 220, 1);    // #FBF0DC
+      ThemeWarnSoft2   = RGBA(246, 227, 192, 1);    // #F6E3C0 — chip "Manual" sobre fila ambar
+      ThemeDanger      = RGBA(179, 38, 30, 1);      // #B3261E
+      ThemeDangerSoft  = RGBA(252, 234, 232, 1);    // #FCEAE8
+      ThemeDangerLine  = RGBA(231, 185, 181, 1);    // #E7B9B5 — borde de boton chico peligroso
+      ThemeOverlay     = RGBA(40, 30, 32, 0.45);    // rgba(40,30,32,.45) — velo de los modales
+
+      // ===================== FORMATOS =====================
+      // El '0' fuerza el entero. "#,###" imprime cadena VACIA para el 0 y el monto sale ".00".
+      // El plan y el mockup escriben "#,###.00": divergencia L-2, declarada.
+      FmtMoney       = "#,##0.00";
+      FmtFecha       = "dd/mm/yyyy HH:mm";   // HH = 24 h. hh seria 12 h SIN AM/PM
+      FmtFechaCorta  = "dd/mm/yyyy";
+      FmtHora        = "HH:mm";
+      SimboloNIO = "C$ ";  SimboloUSD = "U$ ";  SimboloEUR = "€ ";
+
+      // ===================== IDENTIDAD =====================
+      UsuarioNombre = User().FullName;
+      UsuarioIniciales =
+          Left(User().FullName, 1) &
+          If(
+              CountRows(Split(User().FullName, " ")) > 1,
+              Left(Last(Split(User().FullName, " ")).Value, 1),
+              ""
+          );
+      // Si IntelliSense nombra la columna de Split() distinto de 'Value' (algunas versiones la
+      // llaman 'Result'), EL SUYO MANDA.
+
+      // ===================== FORMATO DE MONEDA Y DIFERENCIAS =====================
+      // El codigo de moneda llega como TEXTO ("NIO"/"USD"/"EUR"): es la etiqueta exacta del
+      // option set global CH-Ch-Currency, y se obtiene con Text(<registro>.Currency).
+      fxSimbolo(codigo: Text): Text =
+          Switch(codigo, "NIO", SimboloNIO, "USD", SimboloUSD, "EUR", SimboloEUR, "");
+
+      // Signo ANTES del simbolo, como el mockup:  −C$ 17,500.00
+      fxMonto(v: Number, simbolo: Text): Text =
+          If(v < 0, "-", "") & simbolo & Text(Abs(v), FmtMoney);
+
+      // Diferencia: el signo + tambien se muestra.
+      fxMontoDif(v: Number, simbolo: Text): Text =
+          If(v > 0, "+", If(v < 0, "-", "")) & simbolo & Text(Abs(v), FmtMoney);
+
+      fxCantDif(n: Number): Text = If(n > 0, "+", "") & Text(n);
+
+      fxColorDif(v: Number): Color = If(v = 0, ThemeOk, ThemeDanger);
+
+      // ===================== ESCAPE HTML — OBLIGATORIO EN TODO DATO VARIABLE =====================
+      // El & SIEMPRE primero: si escapas < antes que &, el & de &lt; se vuelve &amp;lt;.
+      // Se escapan los CINCO: & < > " '  — esta app usa comillas SIMPLES en los atributos
+      // HTML, asi que el apostrofo tambien puede romper el markup. Mata S-3.
+      HtmlEscape(t: Text): Text =
+          Substitute(
+              Substitute(
+                  Substitute(
+                      Substitute(
+                          Substitute(t, "&", "&amp;"),
+                          "<", "&lt;"
+                      ),
+                      ">", "&gt;"
+                  ),
+                  """", "&quot;"
+              ),
+              "'", "&#39;"
+          );
+
+      // ===================== HTML DE APPROVAL v2 — ESTILO =====================
+      // Literal SIN interpolacion: el $"..." exige duplicar TODA llave de CSS ({{ }}).
+      // Sin border-radius ni sombras: tiene que sobrevivir al render de Outlook/Approvals.
+      HtmlApEstilo =
+      "<style>
+      body{margin:0;padding:0;background:#E9E5E4}
+      .mail{width:640px;background:#FFFFFF;border:1px solid #D9D3D4;font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#201C1D}
+      .mailH{padding:17px 22px 15px;border-bottom:3px solid #C8102E}
+      .mailH .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.9px;color:#C8102E;background:#FBEBED;padding:4px 10px;text-transform:uppercase}
+      .mailH h3{font-size:16px;margin:9px 0 0}
+      .mailH small{color:#948A8C;font-size:11.5px;display:block;margin-top:3px}
+      .ms{padding:15px 22px 3px}
+      .ms h4{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#C8102E;font-weight:700;padding-bottom:6px;border-bottom:1px solid #E2DCDD;margin:0}
+      .ms p.note{font-size:12px;color:#66595C;line-height:1.55;margin:0}
+      table.mt{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:9px}
+      table.mt th{background:#FAF8F7;text-align:left;font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:#66595C;padding:6px 9px;border:1px solid #E2DCDD;font-weight:700}
+      table.mt th.r{text-align:right}
+      table.mt td{padding:6px 9px;border:1px solid #EDE8E9;vertical-align:top}
+      table.mt tr.zeb td{background:#FAF8F7}
+      table.mt tr.sub td{background:#F2EEED;font-weight:700}
+      table.mt td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+      table.mt td.cur{font-weight:700}
+      table.mt td.bad{color:#B3261E}
+      table.mt td.ok{color:#0E7A3C}
+      table.kvt{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:9px}
+      table.kvt td{padding:5px 9px;border-bottom:1px solid #EDE8E9}
+      table.kvt td.k{color:#66595C;width:34%;background:#FAF8F7;border-right:1px solid #EDE8E9}
+      .mailFoot{padding:12px 22px 15px;font-size:10.5px;color:#948A8C;line-height:1.6;border-top:1px solid #E2DCDD}
+      </style>";
+
+      // ===================== HTML DE APPROVAL v2 — ENCABEZADOS DE TABLA =====================
+      // Atributos HTML con comillas SIMPLES en TODA la plantilla: en Power Fx una comilla doble
+      // dentro de un literal hay que duplicarla ("") y el template se vuelve ilegible.
+      // Por eso HtmlEscape() tambien escapa el apostrofo (L-5).
+      HtmlApThGlobal =
+      "<tr><th>Moneda</th><th>Concepto</th><th class='r'>Cheques</th><th class='r'>Monto cheques</th><th class='r'>Efectivo</th></tr>";
+
+      HtmlApThTrx =
+      "<tr><th>Cuenta</th><th>Moneda</th><th class='r'>Dif. cheques</th><th class='r'>Dif. efectivo</th><th class='r'>Dif. total</th></tr>";
+
+      HtmlApThDeposito =
+      "<tr><th>Cuenta</th><th>Moneda</th><th class='r'>Cheques</th><th class='r'>Efectivo</th><th class='r'>Total</th></tr>";
+
+      HtmlApThChequeDec =
+      "<tr><th>N&deg; de cheque</th><th>Tipo</th><th>Moneda</th><th class='r'>Monto</th><th>Dep&oacute;sito declarado</th></tr>";
+
+      HtmlApThChequeMan =
+      "<tr><th>N&deg; de cheque</th><th>Tipo</th><th>Moneda</th><th class='r'>Monto</th><th>Dep&oacute;sito recontado</th></tr>";
+
+      // ===================== HTML DE APPROVAL v2 — PIEZAS =====================
+      // UN SOLO </body></html>, en fxHtmlDoc y en ningun otro lado. La v1 lo emitia dos veces.
+      fxHtmlDoc(cuerpo: Text): Text =
+          "<html lang='es'><head><meta charset='UTF-8'><title>CashHub - Reconteo</title>" &
+          HtmlApEstilo &
+          "</head><body><div class='mail'>" & cuerpo & "</div></body></html>";
+
+      fxHtmlHead(etiqueta: Text, titulo: Text, subtitulo: Text): Text =
+          "<div class='mailH'><span class='tag'>" & HtmlEscape(etiqueta) & "</span>" &
+          "<h3>" & HtmlEscape(titulo) & "</h3>" &
+          "<small>" & HtmlEscape(subtitulo) & "</small></div>";
+
+      // SECCION CONDICIONAL: si no hay contenido, NO se emite nada. Esto es lo que implementa
+      // "cada seccion se emite solo si tiene filas" sin un If por seccion en la pantalla.
+      fxHtmlSeccion(titulo: Text, contenido: Text): Text =
+          If(
+              IsBlank(contenido),
+              "",
+              "<div class='ms'><h4>" & HtmlEscape(titulo) & "</h4>" & contenido & "</div>"
+          );
+
+      fxHtmlTabla(encabezado: Text, filas: Text): Text =
+          If(IsBlank(filas), "", "<table class='mt'>" & encabezado & filas & "</table>");
+
+      fxHtmlKvt(filas: Text): Text = "<table class='kvt'>" & filas & "</table>";
+
+      fxHtmlKv(k: Text, v: Text): Text =
+          "<tr><td class='k'>" & HtmlEscape(k) & "</td><td>" & HtmlEscape(v) & "</td></tr>";
+
+      // El pie acepta una NOTA opcional (segundo renglon). El mockup la usa en la solicitud de
+      // mesa; los otros dos documentos pasan "" y el pie sale de un solo renglon.
+      fxHtmlPie(usuario: Text, nota: Text): Text =
+          "<div class='mailFoot'>Solicitud generada por <b>CH-App-Recounting</b> &middot; " &
+          HtmlEscape(usuario) & " &middot; " & Text(Now(), FmtFecha) &
+          If(IsBlank(nota), "", "<br>" & HtmlEscape(nota)) & "</div>";
+
+      // Clase de celda numerica segun la diferencia (verde 0 / rojo distinto de 0).
+      fxClaseDif(v: Number): Text = If(v = 0, "n ok", "n bad");
+
+      // ===================== HTML DE APPROVAL v2 — CONSTRUCTORES DE FILA =====================
+      // SECCION 1 — tres <tr> por moneda, con rowspan=3 en la celda de moneda.
+      // Las diferencias NO son parametros: se calculan aca. Una sola verdad.
+      fxHtmlFilaGlobal(
+          moneda: Text, simbolo: Text,
+          chqRec: Number, mtoRec: Number, efeRec: Number,
+          chqDec: Number, mtoDec: Number, efeDec: Number
+      ): Text =
+          With(
+              { dChq: chqRec - chqDec, dMto: mtoRec - mtoDec, dEfe: efeRec - efeDec },
+              "<tr><td rowspan='3' class='cur'>" & HtmlEscape(moneda) & "</td>" &
+                  "<td>Recontado</td>" &
+                  "<td class='n'>" & Text(chqRec) & "</td>" &
+                  "<td class='n'>" & fxMonto(mtoRec, simbolo) & "</td>" &
+                  "<td class='n'>" & fxMonto(efeRec, simbolo) & "</td></tr>" &
+              "<tr class='zeb'><td>Declarado</td>" &
+                  "<td class='n'>" & Text(chqDec) & "</td>" &
+                  "<td class='n'>" & fxMonto(mtoDec, simbolo) & "</td>" &
+                  "<td class='n'>" & fxMonto(efeDec, simbolo) & "</td></tr>" &
+              "<tr class='sub'><td>Diferencia</td>" &
+                  "<td class='" & fxClaseDif(dChq) & "'>" & fxCantDif(dChq) & "</td>" &
+                  "<td class='" & fxClaseDif(dMto) & "'>" & fxMontoDif(dMto, simbolo) & "</td>" &
+                  "<td class='" & fxClaseDif(dEfe) & "'>" & fxMontoDif(dEfe, simbolo) & "</td></tr>"
+          );
+
+      // SECCION 2 — diferencias por transaccion. La dif. total se calcula aca.
+      fxHtmlFilaTrx(
+          cuenta: Text, moneda: Text, simbolo: Text,
+          difChq: Number, difEfe: Number, zebra: Boolean
+      ): Text =
+          "<tr" & If(zebra, " class='zeb'", "") & ">" &
+              "<td>" & HtmlEscape(cuenta) & "</td>" &
+              "<td>" & HtmlEscape(moneda) & "</td>" &
+              "<td class='" & fxClaseDif(difChq) & "'>" & fxMontoDif(difChq, simbolo) & "</td>" &
+              "<td class='" & fxClaseDif(difEfe) & "'>" & fxMontoDif(difEfe, simbolo) & "</td>" &
+              "<td class='" & fxClaseDif(difChq + difEfe) & "'>" & fxMontoDif(difChq + difEfe, simbolo) & "</td>" &
+          "</tr>";
+
+      // SECCIONES 3 y 6 — depositos sin enlazar (recontados y declarados). El total se calcula aca.
+      fxHtmlFilaDeposito(
+          cuenta: Text, moneda: Text, simbolo: Text,
+          cheques: Number, efectivo: Number, zebra: Boolean
+      ): Text =
+          "<tr" & If(zebra, " class='zeb'", "") & ">" &
+              "<td>" & HtmlEscape(cuenta) & "</td>" &
+              "<td>" & HtmlEscape(moneda) & "</td>" &
+              "<td class='n'>" & fxMonto(cheques, simbolo) & "</td>" &
+              "<td class='n'>" & fxMonto(efectivo, simbolo) & "</td>" &
+              "<td class='n'>" & fxMonto(cheques + efectivo, simbolo) & "</td>" &
+          "</tr>";
+
+      // SECCIONES 4 y 5 — cheques (declarados sin enlazar / agregados manualmente).
+      fxHtmlFilaCheque(
+          numero: Text, tipo: Text, moneda: Text, simbolo: Text,
+          monto: Number, deposito: Text, zebra: Boolean
+      ): Text =
+          "<tr" & If(zebra, " class='zeb'", "") & ">" &
+              "<td>" & HtmlEscape(numero) & "</td>" &
+              "<td>" & HtmlEscape(tipo) & "</td>" &
+              "<td>" & HtmlEscape(moneda) & "</td>" &
+              "<td class='n'>" & fxMonto(monto, simbolo) & "</td>" &
+              "<td>" & HtmlEscape(deposito) & "</td>" &
+          "</tr>";
+
+      // SECCION 4 — fila de subtotal (solo esa seccion la lleva).
+      fxHtmlFilaTotalCheques(simbolo: Text, total: Number, cantidad: Number): Text =
+          "<tr class='sub'><td colspan='3'>Total sin enlazar</td>" &
+              "<td class='n'>" & fxMonto(total, simbolo) & "</td>" &
+              "<td>" & Text(cantidad) & " cheques</td></tr>";
+
+      // ===================== HTML DE APPROVAL v2 — LOS TRES DOCUMENTOS =====================
+      // A) Revision de reconteo: "Tula con diferencia" y "Tula recontada sin declaracion".
+      //    sec1..sec6 son las FILAS ya concatenadas por la pantalla (receta 7.6, paso 3).
+      //    La seccion 1 nunca viene vacia (siempre son 3 monedas); las 2..6 sí.
+      fxHtmlRevision(
+          etiqueta: Text, tula: Text, planilla: Text, cliente: Text,
+          cajero: Text, mesa: Text, fechaSesion: Text,
+          sec1: Text, sec2: Text, sec3: Text, sec4: Text, sec5: Text, sec6: Text
+      ): Text =
+          fxHtmlDoc(
+              fxHtmlHead(etiqueta, "Tula " & tula & " — Planilla " & planilla, cliente) &
+              fxHtmlSeccion(
+                  "Datos de la solicitud",
+                  fxHtmlKvt(
+                      fxHtmlKv("Cajero", cajero) &
+                      fxHtmlKv("Mesa de conteo", mesa) &
+                      fxHtmlKv("Sesión", fechaSesion) &
+                      fxHtmlKv("Fecha de la solicitud", Text(Now(), FmtFecha)) &
+                      fxHtmlKv("Planilla", planilla) &
+                      fxHtmlKv("Cliente", cliente)
+                  )
+              ) &
+              fxHtmlSeccion("1 · Recontado vs. declarado (global)", fxHtmlTabla(HtmlApThGlobal, sec1)) &
+              fxHtmlSeccion("2 · Diferencias por transacción",      fxHtmlTabla(HtmlApThTrx, sec2)) &
+              fxHtmlSeccion("3 · Depósitos recontados sin enlazar", fxHtmlTabla(HtmlApThDeposito, sec3)) &
+              fxHtmlSeccion("4 · Cheques declarados sin enlazar",   fxHtmlTabla(HtmlApThChequeDec, sec4)) &
+              fxHtmlSeccion("5 · Cheques agregados manualmente",    fxHtmlTabla(HtmlApThChequeMan, sec5)) &
+              fxHtmlSeccion("6 · Depósitos declarados sin enlazar", fxHtmlTabla(HtmlApThDeposito, sec6)) &
+              fxHtmlPie(cajero, "")
+          );
+
+      // B) Solicitud de mesa: "Crear sesion de recuento".
+      fxHtmlMesa(cajero: Text, mesa: Text, fechaSesion: Text, hora: Text): Text =
+          fxHtmlDoc(
+              fxHtmlHead("Solicitud de mesa", "Apertura de sesión de reconteo", mesa) &
+              "<div class='ms'><p class='note'>El cajero <b>" & HtmlEscape(cajero) &
+                  "</b> solicita abrir una sesión de conteo en la <b>" & HtmlEscape(mesa) &
+                  "</b> para el <b>" & HtmlEscape(fechaSesion) &
+                  "</b>. Al aprobar, la mesa queda asignada a este cajero por el resto del día.</p>" &
+              fxHtmlKvt(
+                  fxHtmlKv("Cajero", cajero) &
+                  fxHtmlKv("Mesa solicitada", mesa) &
+                  fxHtmlKv("Fecha de la sesión", fechaSesion) &
+                  fxHtmlKv("Hora de la solicitud", hora)
+              ) &
+              "</div>" &
+              fxHtmlPie(
+                  cajero,
+                  "Si la mesa ya pertenece al cajero, el servidor aprueba automáticamente y este correo no se emite."
+              )
+          );
+
+      // C) Tula sin declaracion: "Tula sin declaracion".
+      fxHtmlSinDeclaracion(
+          tula: Text, planilla: Text, cliente: Text,
+          cajero: Text, mesa: Text, fechaHora: Text
+      ): Text =
+          fxHtmlDoc(
+              fxHtmlHead("Tula sin declaración", "Tula " & tula & " — Planilla " & planilla, cliente) &
+              "<div class='ms'><p class='note'>La tula <b>" & HtmlEscape(tula) &
+                  "</b> no tiene declaración registrada del cliente. El cajero solicita " &
+                  "autorización para recontarla <b>sin comparación contra lo declarado</b>: " &
+                  "todas las diferencias globales quedarán sin base de contraste.</p>" &
+              fxHtmlKvt(
+                  fxHtmlKv("Tula", tula) &
+                  fxHtmlKv("Planilla", planilla) &
+                  fxHtmlKv("Cliente", cliente) &
+                  fxHtmlKv("Cajero", cajero) &
+                  fxHtmlKv("Mesa", mesa) &
+                  fxHtmlKv("Fecha", fechaHora)
+              ) &
+              "</div>" &
+              fxHtmlPie(cajero, "")
+          );
+    OnError: |-
+      =/*Trace(
+          $"[Recounting] {FirstError.Message} | Kind: {FirstError.Kind} | Origen: {FirstError.Source} | Obs: {FirstError.Observed}",
+          TraceSeverity.Error
+      );
+      Notify(
+          If(
+              FirstError.Kind = ErrorKind.Validation || FirstError.Kind = ErrorKind.Conflict || FirstError.Kind = ErrorKind.Sync,
+              FirstError.Message,   // mensaje de negocio del guard server-side, TAL CUAL
+              "Ocurrió un error inesperado. El detalle quedó registrado para soporte." &  $"[Recounting] {FirstError.Message} | Kind: {FirstError.Kind} | Origen: {FirstError.Source} | Obs: {FirstError.Observed}"
+          ),
+          NotificationType.Error
+      )*/
+    OnStart: |-
+      =// ===== 1. IDENTIDAD — lo PRIMERO, y es bloqueante =====
+      Set(gvarUser, LookUp(Users, 'Primary Email' = User().Email));
+      Set(gvarIdentidadOk, !IsBlank(gvarUser) && !IsBlank(gvarUser.User));
+
+      // ===== 2. Semilla de ESQUEMA de las colecciones (Collect + Clear) =====
+      // Sin esto, las colecciones no existen en tiempo de diseno y toda referencia a sus
+      // columnas queda en rojo. Defaults(ds) da un registro TIPADO sin ninguna consulta.
+      //
+      // 🧨 REGLA: se siembran las 23 colecciones del inventario de §4.2, TODAS, sin
+      //    excepcion. No hay colecciones "que se llenan solas antes de leerse": la que se
+      //    lee en el Items de una galeria, en un Visible o en un IsEmpty() de una pantalla
+      //    a la que se puede entrar sin haber pasado por su poblador, queda en rojo en
+      //    diseno y en blanco en runtime. Si agregas una coleccion a §4.2, se siembra aca
+      //    EN EL MISMO COMMIT.
+
+      Collect(
+          colDetalleConteoCon,
+          {
+              Denominacion: 0,
+              Tipo: "",                                  // "Billete" | "Moneda"
+              Auto: 0,
+              Manual: 0,
+              GUID: Defaults('CH-Tbl-CountedMoneyDetails').'CH-Tbl-CountedMoneyDetails'
+          }
+      );
+      Clear(colDetalleConteoCon);
+
+      Collect(
+          colChecksCon,
+          {
+              LocalId: "",
+              GUID: Defaults('CH-Tbl-Checks').'CH-Tbl-Checks',
+              DeclaradoGUID: Defaults('CH-Tbl-DeclaredChecks').'CH-Tbl-DeclaredChecks',
+              Numero: "",
+              Tipo: "",                                  // "BAC Local" | "Otros Local"
+              Moneda: "",                                // "NIO" | "USD" | "EUR"
+              Monto: 0,
+              Seleccionado: false,
+              EsManual: false
+          }
+      );
+      Clear(colChecksCon);
+
+      Collect(colAutoContadoraCon, { Denominacion: 0, Cantidad: 0 });
+      Clear(colAutoContadoraCon);
+
+      Collect(colHallazgosCon, { Orden: 0, Texto: "" });
+      Clear(colHallazgosCon);
+
+      Collect(colTulasSesionTul, Defaults('CH-Tbl-Bags'));
+      Clear(colTulasSesionTul);
+
+      Collect(colTulasCandidatasTul, Defaults('CH-Tbl-Bags'));
+      Clear(colTulasCandidatasTul);
+
+      Collect(colDeclaradasCandidatasTul, Defaults('CH-Tbl-DeclaredBags'));
+      Clear(colDeclaradasCandidatasTul);
+
+      Collect(colDepositosSesionTul, Defaults('CH-Tbl-DepositsRecountings'));
+      Clear(colDepositosSesionTul);
+
+      Collect(colDepDeclaradosCon, Defaults('CH-Tbl-DeclaredDeposits'));
+      Clear(colDepDeclaradosCon);
+
+      Collect(colDepRecontadosCon, Defaults('CH-Tbl-DepositsRecountings'));
+      Clear(colDepRecontadosCon);
+
+      Collect(colChequesDeclaradosCon, Defaults('CH-Tbl-DeclaredChecks'));
+      Clear(colChequesDeclaradosCon);
+
+      Collect(colChecksTulaCon, Defaults('CH-Tbl-Checks'));
+      Clear(colChecksTulaCon);
+
+      // 🧨 colDetalleDVCon y colChecksDVCon son SNAPSHOTS de lo PERSISTIDO: llevan registros
+      //    de Dataverse, NO el esquema de colDetalleConteoCon / colChecksCon. Sembrarlas con
+      //    FirstN(colDetalleConteoCon, 0) las deja mal tipadas y el paso de bajas no compila.
+      Collect(colDetalleDVCon, Defaults('CH-Tbl-CountedMoneyDetails'));
+      Clear(colDetalleDVCon);
+
+      Collect(colChecksDVCon, Defaults('CH-Tbl-Checks'));
+      Clear(colChecksDVCon);
+
+      Collect(colDenominacionesCon, Defaults('CH-Tbl-MoneyDenominations'));
+      Clear(colDenominacionesCon);
+
+      Collect(colMesasSes, Defaults('CH-Tbl-CountingDesks'));
+      Clear(colMesasSes);
+
+      Collect(colFallidasCon, { Clave: "", Detalle: "", Mensaje: "" });
+      Clear(colFallidasCon);
+
+      // ----- las CINCO de hallazgos (§4.2). Todas llevan `Indice` (zebra del HTML) -----
+      Collect(colDifTrxCon, { Indice: 0, Cuenta: "", Moneda: "", DifCheques: 0, DifEfectivo: 0 });
+      Clear(colDifTrxCon);
+
+      Collect(colDepRecSinEnlazarCon, { Indice: 0, Cuenta: "", Moneda: "", Cheques: 0, Efectivo: 0 });
+      Clear(colDepRecSinEnlazarCon);
+
+      Collect(colDepDecSinEnlazarCon, { Indice: 0, Cuenta: "", Moneda: "", Cheques: 0, Efectivo: 0 });
+      Clear(colDepDecSinEnlazarCon);
+
+      Collect(colChqDecSinEnlazarCon, { Indice: 0, Numero: "", Tipo: "", Moneda: "", Monto: 0, Deposito: "" });
+      Clear(colChqDecSinEnlazarCon);
+
+      Collect(colChqManualCon, { Indice: 0, Numero: "", Tipo: "", Moneda: "", Monto: 0, Deposito: "" });
+      Clear(colChqManualCon);
+
+      // ----- auxiliar del write-back de GUIDs de cheques (§4.3, `04` §9.2 paso 3) -----
+      Collect(colKeysCon, { L: "", G: Defaults('CH-Tbl-Checks').'CH-Tbl-Checks' });
+      Clear(colKeysCon);
+
+      // ===== 3. Estado global inicial =====
+      Set(gvarSesion, Blank());
+      Set(gvarMesa, Blank());
+      Set(gvarSolicitud, Blank());
+      Set(gvarTula, Blank());
+      Set(gvarSesionDetalle, Blank());
+      Set(gvarDeclaredBag, Blank());
+      Set(gvarDepositoSinGuardar, false)
+    StartScreen: =scrSplash
+    Theme: =PowerAppsTheme

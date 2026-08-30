@@ -1,0 +1,247 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpKpiSesion:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      Cheques:
+        PropertyKind: Input
+        DisplayName: Cheques
+        Description: A custom property
+        DataType: Number
+        Default: =0
+      Efectivo:
+        PropertyKind: Input
+        DisplayName: Efectivo
+        Description: A custom property
+        DataType: Number
+        Default: =0
+      Moneda:
+        PropertyKind: Input
+        DisplayName: Moneda
+        Description: A custom property
+        DataType: Text
+        Default: ="NIO"
+      MonedaNombre:
+        PropertyKind: Input
+        DisplayName: MonedaNombre
+        Description: A custom property
+        DataType: Text
+        Default: ="Córdobas"
+      Simbolo:
+        PropertyKind: Input
+        DisplayName: Simbolo
+        Description: A custom property
+        DataType: Text
+        Default: ="C$ "
+      Total:
+        PropertyKind: Output
+        DisplayName: Total
+        Description: A custom property
+        DataType: Number
+    Properties:
+      Height: =100
+      Total: =cmpKpiSesion.Efectivo + cmpKpiSesion.Cheques
+      Width: =226
+    Children:
+      - btnSupKpi:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            DisplayMode: =DisplayMode.View
+            Fill: =ThemeSurface2
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =Parent.Height
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =ThemeSurface2
+            RadiusBottomLeft: =11
+            RadiusBottomRight: =11
+            RadiusTopLeft: =11
+            RadiusTopRight: =11
+            Size: =9
+            Text: =""
+            Width: =Parent.Width
+      - lblNombreKpi:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: =Upper(cmpKpiSesion.MonedaNombre)
+            Width: =110
+            Wrap: =false
+            X: =12
+            Y: =9
+      - lblCodigoKpi:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =14
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: =Upper(cmpKpiSesion.Moneda)
+            Width: =60
+            Wrap: =false
+            X: =Parent.Width - 12 - Self.Width
+            Y: =9
+      - lblEfeLabKpi:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.63
+            Text: ="Efectivo"
+            Width: =80
+            Wrap: =false
+            X: =12
+            Y: =28
+      - lblEfeValKpi:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.63
+            Text: =fxMonto(cmpKpiSesion.Efectivo, cmpKpiSesion.Simbolo)
+            Width: =132
+            Wrap: =false
+            X: =Parent.Width - 12 - Self.Width
+            Y: =lblEfeLabKpi.Y
+      - lblChqLabKpi:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.63
+            Text: ="Cheques"
+            Width: =80
+            Wrap: =false
+            X: =12
+            Y: =lblEfeLabKpi.Y + lblEfeLabKpi.Height
+      - lblChqValKpi:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =15
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =8.63
+            Text: =fxMonto(cmpKpiSesion.Cheques, cmpKpiSesion.Simbolo)
+            Width: =132
+            Wrap: =false
+            X: =lblEfeValKpi.X
+            Y: =lblChqLabKpi.Y
+      - shpLineaKpi:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =RGBA(0, 0, 255, 1)
+            Fill: =ThemeLine
+            Height: =1
+            Width: =Parent.Width - 24
+            X: =12
+            Y: =lblChqLabKpi.Y + lblChqLabKpi.Height + 8
+      - lblTotLabKpi:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =25
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =7.88
+            Text: ="TOTAL"
+            Width: =70
+            Wrap: =false
+            X: =12
+            Y: =shpLineaKpi.Y + 6
+      - lblTotValKpi:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =11.25
+            Text: =fxMonto(cmpKpiSesion.Total, cmpKpiSesion.Simbolo)
+            Width: =Parent.Width - 94
+            Wrap: =false
+            X: =82
+            Y: =shpLineaKpi.Y + 5
