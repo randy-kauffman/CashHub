@@ -1241,7 +1241,17 @@ scrTulas As screen:
                     SetFocus(inpScanTul),
             
                 // ---- se la llevo otro (o cambio de estado) ----
-                ctxTulaFrescaTul.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                //   OJO con la excepcion: cuando la tula va SIN DECLARACION, la
+                //   aprobacion del supervisor YA la deja "Asignada a cajero" con esta
+                //   misma sesion. El poll ve el visto bueno, manda a abrirla, y esta
+                //   guarda la encontraba fuera de boveda y acusaba a otro cajero de
+                //   habersela llevado. Se la habia llevado ella misma.
+                ctxTulaFrescaTul.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda' &&
+                !(
+                    ctxTulaFrescaTul.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero' &&
+                    ctxTulaFrescaTul.RecountingSession.'CH-Tbl-RecountingSession' =
+                        gvarSesion.'CH-Tbl-RecountingSession'
+                ),
                     Notify(
                         "La tula " & ctxTulaFrescaTul.BagID & " dejó de estar almacenada en bóveda: otro cajero pudo tomarla. No se abrió nada.",
                         NotificationType.Error
@@ -1257,13 +1267,23 @@ scrTulas As screen:
                     IfError(
                         Set(
                             gvarTula,
-                            Patch(
-                                'CH-Tbl-Bags',
+                            If(
+                                // La aprobacion ya la dejo asignada a esta sesion: se
+                                // toma tal cual. Re-escribir el MISMO estado obliga al
+                                // guard del servidor a evaluar una transicion que no
+                                // existe, y no hay nada que ganar con eso.
+                                ctxTulaFrescaTul.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero' &&
+                    ctxTulaFrescaTul.RecountingSession.'CH-Tbl-RecountingSession' =
+                        gvarSesion.'CH-Tbl-RecountingSession',
                                 ctxTulaFrescaTul,
-                                {
-                                    BagStatus:         'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',
-                                    RecountingSession: gvarSesion
-                                }
+                                Patch(
+                                    'CH-Tbl-Bags',
+                                    ctxTulaFrescaTul,
+                                    {
+                                        BagStatus:         'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',
+                                        RecountingSession: gvarSesion
+                                    }
+                                )
                             )
                         ),
                         Notify("No se pudo abrir la tula: " & FirstError.Message, NotificationType.Error);
