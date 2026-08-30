@@ -510,9 +510,8 @@ scrCorte As screen:
         OnCancelar: |-
             =UpdateContext({ctxDlgCorteCor: false})
         OnOk: |-
-            =// SE LLAMA A LA CUSTOM API DIRECTO, no al flujo. CH-Flow-CreateCut era un
-            // pasamanos: una sola accion, PerformUnboundAction sobre esta misma API, y
-            // responder. Ese salto de mas por APIM es el que devolvia
+            =// SE LLAMA A LA CUSTOM API DIRECTO, no al flujo intermedio, que era un
+            // pasamanos: una sola accion, PerformUnboundAction sobre esta misma API, y responder. Ese salto de mas por APIM es el que devolvia
             // "BadGateway / The server did not receive a response from an upstream
             // server" y dejaba al usuario sin saber si el corte se hizo o no.
             //
@@ -542,9 +541,15 @@ scrCorte As screen:
                 )
             )
         Texto: |-
-            =$"Se creará un lote en estado Generado con las {ctxCortePreviewCor.EligibleCount} transacciones de efectivo pendientes del cajero (" &
+            =// LAS TRES MONEDAS. Faltaba el euro: el dialogo pedia confirmar un corte
+            // mostrando cordobas y dolares, y el euro entraba igual sin que nadie lo
+            // viera. No es un detalle de formato — en el corte de User 10 eran
+            // € 17.544,42 que se cortaban a ciegas. Los KPI de arriba ya mostraban las
+            // tres; el que mentia por omision era justo el paso donde se firma.
+            $"Se creará un lote en estado Generado con las {ctxCortePreviewCor.EligibleCount} transacciones de efectivo pendientes del cajero (" &
             SimboloNIO & " " & Text(ctxCortePreviewCor.TotalNIO, FmtMoney) & " · " &
-            SimboloUSD & " " & Text(ctxCortePreviewCor.TotalUSD, FmtMoney) &
+            SimboloUSD & " " & Text(ctxCortePreviewCor.TotalUSD, FmtMoney) & " · " &
+            SimboloEUR & " " & Text(ctxCortePreviewCor.TotalEUR, FmtMoney) &
             "). El lote queda a su nombre. El conteo lo confirma el servidor en el momento del corte: las transacciones creadas después entran en el próximo corte."
         TextoOk: ="Sí, generar corte"
         Titulo: =$"¿Generar el corte de {gvarCajeroCor.cajeroNombre}?"
