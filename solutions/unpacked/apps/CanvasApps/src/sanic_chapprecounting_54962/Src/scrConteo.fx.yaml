@@ -2614,12 +2614,23 @@ scrConteo As screen:
                     Clear(colLecturasTmpCon);
             
                     // ----- 3. Volcar Auto a la grilla del depósito EN CURSO -----
+                    //   SOLO sobre los BILLETES. La denominacion NO identifica una fila
+                    //   por si sola: en USD conviven el billete de 1 y la moneda de 1.
+                    //   CH-Tbl-XMLReadingDetails no tiene columna de tipo —la contadora
+                    //   cuenta billetes— asi que sin este filtro una lectura de US$1
+                    //   acreditaba la MISMA cantidad en las dos filas y duplicaba el Auto.
                     ForAll(
                         colDetalleConteoCon As M,
                         Patch(
                             colDetalleConteoCon,
                             M,
-                            { Auto: Coalesce(LookUp(colAutoContadoraCon, Denominacion = M.Denominacion).Cantidad, 0) }
+                            {
+                                Auto: If(
+                                    M.Tipo = "Billete",
+                                    Coalesce(LookUp(colAutoContadoraCon, Denominacion = M.Denominacion).Cantidad, 0),
+                                    0
+                                )
+                            }
                         )
                     );
                     Set(gvarDepositoSinGuardar, true);
@@ -6024,17 +6035,38 @@ scrConteo As screen:
             );
             
             // ---- 3. Grilla de denominaciones de la moneda, con Auto en 0 ----
+            //   LA CLAVE ES DENOMINACION + TIPO, NUNCA LA DENOMINACION SOLA.
+            //   En USD conviven "USD 1 Billete" y "USD 1 Moneda": las dos valen 1. Con
+            //   LookUp(Denomination = D.Value) la fila de la moneda se traia la cantidad
+            //   Y EL GUID de la fila del billete. Consecuencias reales, las dos vistas:
+            //     - el total del deposito EN CURSO sumaba el mismo peso dos veces
+            //       (el global, que lee de Dataverse, salia bien: de ahi el descuadre);
+            //     - al guardar, las dos filas escribian sobre el MISMO registro, asi que
+            //       poner la moneda en 0 no la bajaba nunca —el billete la revivia—.
+            //   El volcado (btnVolcarGrillaCon) y el guardado ya cruzaban por las dos
+            //   columnas; el unico que no lo hacia era esta lectura.
             ClearCollect(
                 colDetalleConteoCon,
                 ForAll(
                     Filter(colDenominacionesCon, Text(Currency) = ctxMonedaCon) As D,
-                    {
-                        Denominacion: D.Value,
-                        Tipo:         If(D.Type = 'Type (CH-Tbl-MoneyDenominations)'.Billete, "Billete", "Moneda"),
-                        Auto:         0,
-                        Manual:       Coalesce(LookUp(colDetalleDVCon, Denomination = D.Value).Quantity, 0),
-                        GUID:         LookUp(colDetalleDVCon, Denomination = D.Value).'CH-Tbl-CountedMoneyDetails'
-                    }
+                    With(
+                        { Tip: If(D.Type = 'Type (CH-Tbl-MoneyDenominations)'.Billete, "Billete", "Moneda") },
+                        With(
+                            {
+                                FilaDV: LookUp(
+                                    colDetalleDVCon,
+                                    Denomination = D.Value && DenominationType = Tip
+                                )
+                            },
+                            {
+                                Denominacion: D.Value,
+                                Tipo:         Tip,
+                                Auto:         0,
+                                Manual:       Coalesce(FilaDV.Quantity, 0),
+                                GUID:         FilaDV.'CH-Tbl-CountedMoneyDetails'
+                            }
+                        )
+                    )
                 )
             );
             
