@@ -231,7 +231,9 @@ scrTulas As screen:
         PaddingRight: =0
         PaddingTop: =0
         Size: =9
-        Text: =gvarMesa.Name
+        Text: |-
+            =gvarMesa.Name &
+            If(IsBlank(gvarSesion.Name), "", "   ·   " & gvarSesion.Name)
         Width: =226
         Wrap: =false
         X: =12
@@ -401,6 +403,33 @@ scrTulas As screen:
         Y: =lblFootFechaTul.Y + lblFootFechaTul.Height
         ZIndex: =18
 
+    lblFootChequesTul As label:
+        Color: =ThemeInk3
+        Height: =17
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: |-
+            =With(
+                {
+                    n: CountRows(
+                           Filter(
+                               'CH-Tbl-Checks',
+                               RecountingSession.'CH-Tbl-RecountingSession'
+                                   = gvarSesion.'CH-Tbl-RecountingSession'
+                           )
+                       )
+                },
+                Text(n) & If(n = 1, " cheque recontado", " cheques recontados")
+            )
+        Width: =218
+        Wrap: =false
+        X: =16
+        Y: =lblFootContadorTul.Y + lblFootContadorTul.Height
+        ZIndex: =18
+
     lblFootNotaTul As label:
         Color: =ThemeInk3
         Height: =17
@@ -413,7 +442,7 @@ scrTulas As screen:
         Width: =218
         Wrap: =false
         X: =16
-        Y: =lblFootContadorTul.Y + lblFootContadorTul.Height
+        Y: =lblFootChequesTul.Y + lblFootChequesTul.Height
         ZIndex: =19
 
     btnScanSupTul As button:
