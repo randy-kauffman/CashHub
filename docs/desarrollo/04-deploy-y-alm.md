@@ -136,7 +136,49 @@ pac auth create \
 8. [ ] Verificar los 6 Security Roles (`CH-SR-*`/`CH-Role`) y asignarlos a los usuarios reales — atención a los 3 roles sin privilegios sobre tablas custom (`CH-Role`, `AnalyticsRead`, `OpsAdmin`), documentados en [05-hallazgos-y-backlog.md](05-hallazgos-y-backlog.md).
 9. [ ] Smoke test: enviar un correo de prueba al buzón configurado y seguir el flujo hasta Email Validation Console.
 
-## 8. Ver también
+## 8. Code components (PCF)
+
+El primero del proyecto es `CashHub.FileDownloader` (`src/pcf/FileDownloader`), que
+baja el CSV del lote sin depender de la cookie del entorno.
+
+**TRAMPA — hay DOS publishers con el prefijo `sanic`:**
+
+| `uniquename` | Nombre | Prefijo |
+|---|---|---|
+| `sanic` | Sanic Corp | `sanic` |
+| `Sistemas_Abiertos_Nicaragua` | **Sistemas Abiertos Nicaragua** | `sanic` |
+
+El que usan **todas** las soluciones CashHub es **Sistemas Abiertos Nicaragua**. Como
+el prefijo NO desambigua, `pac pcf push --publisher-prefix sanic` **no** alcanza: deja
+el componente en la solución **`Default`**, bajo *"Default Publisher for org…"*. En un
+entorno compartido con Sigil, Workflow Engine, Cobranza Móvil y Smelter, eso es dejar
+una pieza nuestra suelta en la bolsa de todos.
+
+Secuencia correcta:
+
+```bash
+cd src/pcf/FileDownloader && npm install && npm run build
+pac pcf push --publisher-prefix sanic          # queda en Default: es el paso incompleto
+cd - && ./scripts/add-file-downloader-to-core.sh   # lo reubica en CashHubCore
+```
+
+El script valida que `CashHubCore` pertenezca a `Sistemas_Abiertos_Nicaragua` y **aborta**
+si no: prefiere frenarse a dejar la pieza mal ubicada en silencio. Mismo mecanismo que el
+resto del backend (`AddSolutionComponent`, nunca import de solución).
+
+El componente **sigue apareciendo también en la solución `Default`** y eso es normal: la
+Default es el catch-all de todo lo no administrado del org, no un segundo dueño. Lo que
+importa es que además esté en `CashHubCore`.
+
+**Insertarlo en una app es manual.** El msapp lleva el bundle embebido, y lo trae Studio
+al insertar el componente (Insertar → Obtener más componentes → Código). Escribir eso a
+mano en el YAML empaqueta una app rota. Después de insertarlo y publicar, hay que
+**descargar la app del entorno** antes de seguir editando YAML, o se pisa el cambio.
+
+**Actualizar el componente** exige subir `version` en `ControlManifest.Input.xml` y
+volver a publicar: canvas cachea los componentes por versión.
+
+## 9. Ver también
 
 - [02-estructura-y-build.md](02-estructura-y-build.md) — comandos `pac solution`/`canvas` unpack/pack usados en este ciclo.
 - [05-hallazgos-y-backlog.md](05-hallazgos-y-backlog.md) — hallazgos de seguridad y operación que condicionan qué tan seguro es desplegar tal cual está el paquete hoy.
