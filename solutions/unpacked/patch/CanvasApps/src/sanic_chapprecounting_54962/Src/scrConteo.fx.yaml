@@ -3064,9 +3064,11 @@ scrConteo As screen:
             Color: =ThemeInk
             Default: =ThisItem.Numero
             DisplayMode: =If(gvarIdentidadOk && !ctxSoloLecturaCon, DisplayMode.Edit, DisplayMode.Disabled)
+            Format: =TextFormat.Number
             Fill: =ThemeSurface
             Height: =26
             HintText: ="N° cheque"
+            MaxLength: =30
             OnChange: =Set(gvarDepositoSinGuardar, true)
             RadiusBottomLeft: =7
             RadiusBottomRight: =7
@@ -3724,6 +3726,24 @@ scrConteo As screen:
                     UpdateContext({ ctxSalirTrasGuardarCon: false });
                     Notify(
                         "Hay cheques manuales incompletos: cada uno necesita número, tipo y un monto mayor que cero.",
+                        NotificationType.Error
+                    ),
+            
+                //   El Format del control ataja el TECLEO, no un pegado. El numero de
+                //   cheque va a sanic_checknumber, que tope 30 y es el que viaja al
+                //   core: si entra basura, entra ahi.
+                CountRows(
+                    Filter(
+                        galChequesCon.AllItems As C,
+                        C.EsManual && (
+                            !IsMatch(Trim(C.inpNumChequeCon.Text), "^[0-9]+$") ||
+                            Len(Trim(C.inpNumChequeCon.Text)) > 30
+                        )
+                    )
+                ) > 0,
+                    UpdateContext({ ctxSalirTrasGuardarCon: false });
+                    Notify(
+                        "El número de cheque solo admite dígitos y hasta 30 caracteres.",
                         NotificationType.Error
                     ),
             
