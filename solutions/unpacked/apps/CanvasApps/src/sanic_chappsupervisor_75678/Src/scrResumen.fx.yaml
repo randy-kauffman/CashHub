@@ -10,6 +10,7 @@ scrResumen As screen:
             ctxCierreEnCursoRes: false,
             ctxSesCierreRes: Defaults('CH-Tbl-RecountingSessions')
         });
+        Clear(colPrevSolRes);
         If(
             IsEmpty(colSesionesRes),
             Select(btnActualizarRes)   // primera visita: carga sola (fix del "0 fantasma")
@@ -1004,6 +1005,31 @@ scrResumen As screen:
                                 BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento'
                             )
                         );
+                        // EL SEGUNDO FRENO, que el pre-vuelo no miraba: las solicitudes
+                        // sin resolver de esta sesion. No se pueden buscar por las tulas
+                        // de la sesion —una "Tula sin declaracion" pendiente es de una
+                        // tula que TODAVIA esta en boveda, sin sesion asignada: se la
+                        // asignaria recien al aprobarla—. Y contains() sobre
+                        // RequestResources no delega.
+                        //
+                        // La ventana del DIA si delega y acota de verdad: 1209
+                        // solicitudes pendientes en total, 3 del dia. El vinculo con la
+                        // sesion se resuelve despues, en local, sobre ese puñado.
+                        ClearCollect(
+                            colPrevSolRes,
+                            Filter(
+                                Filter(
+                                    'CH-Tbl-ApprovalRequests',
+                                    IsBlank(ApprovalStatus) &&
+                                    'Created On' >= Coalesce(dtFechaRes.SelectedDate, Today()) &&
+                                    'Created On' <  DateAdd(
+                                        Coalesce(dtFechaRes.SelectedDate, Today()), 1, TimeUnit.Days)
+                                ),
+                                !IsBlank(
+                                    Find(Text(ThisItem.'CH-Tbl-RecountingSession'), RequestResources)
+                                )
+                            )
+                        );
                         UpdateContext({ ctxDlgCierreRes: true })
                     PressedBorderColor: =ThemeDanger
                     PressedColor: =ThemeDanger
@@ -1329,7 +1355,13 @@ scrResumen As screen:
                             colPrevueloRes,
                             !FrenaRes && AccionRes <> "Se libera y se borra su recuento"
                         )
-                    ) & " quedan como están"
+                    ) & " quedan como están" &
+                    If(
+                        CountRows(colPrevSolRes) = 0,
+                        "",
+                        "  ·  " & CountRows(colPrevSolRes) &
+                        If(CountRows(colPrevSolRes) = 1, " solicitud sin resolver", " solicitudes sin resolver")
+                    )
                 Width: =cardDlgCierreRes.Width - 48
                 Wrap: =true
                 X: =24
@@ -1339,7 +1371,7 @@ scrResumen As screen:
             lblDlgCieFrenoRes As label:
                 Color: =ThemeDanger
                 FontWeight: =FontWeight.Semibold
-                Height: =40
+                Height: =46
                 PaddingBottom: =0
                 PaddingLeft: =12
                 PaddingRight: =12
@@ -1347,16 +1379,25 @@ scrResumen As screen:
                 Size: =9.5
                 Text: |-
                     =With(
-                        { n: CountRows(Filter(colPrevueloRes, FrenaRes)) },
+                        {
+                            t: CountRows(Filter(colPrevueloRes, FrenaRes)),
+                            s: CountRows(colPrevSolRes)
+                        },
                         If(
-                            n = 0,
+                            t + s = 0,
                             "",
-                            "No se va a poder cerrar: " & n &
-                            If(n = 1, " tula está esperando su revisión.", " tulas están esperando su revisión.") &
-                            " Resolvelas primero."
+                            "No se va a poder cerrar. Resolvé primero: " &
+                            If(t > 0, t & If(t = 1, " tula esperando revisión", " tulas esperando revisión"), "") &
+                            If(t > 0 && s > 0, "  y  ", "") &
+                            If(
+                                s > 0,
+                                s & If(s = 1, " solicitud sin resolver (", " solicitudes sin resolver (") &
+                                Concat(colPrevSolRes As S, S.BagNumber, ", ") & ")",
+                                ""
+                            )
                         )
                     )
-                Visible: =CountRows(Filter(colPrevueloRes, FrenaRes)) > 0
+                Visible: =CountRows(Filter(colPrevueloRes, FrenaRes)) + CountRows(colPrevSolRes) > 0
                 Width: =cardDlgCierreRes.Width - 48
                 Wrap: =true
                 X: =24
@@ -1371,7 +1412,7 @@ scrResumen As screen:
                 TemplateSize: =34
                 Width: =cardDlgCierreRes.Width - 48
                 X: =24
-                Y: =If(CountRows(Filter(colPrevueloRes, FrenaRes)) > 0, 140, 96)
+                Y: =If(CountRows(Filter(colPrevueloRes, FrenaRes)) + CountRows(colPrevSolRes) > 0, 146, 96)
                 ZIndex: =4
 
                 lblPvTulaRes As label:
@@ -1450,7 +1491,9 @@ scrResumen As screen:
                 DisabledFill: =ThemeLine
                 DisplayMode: |-
                     =If(
-                        ctxCierreEnCursoRes || CountRows(Filter(colPrevueloRes, FrenaRes)) > 0,
+                        ctxCierreEnCursoRes ||
+                        CountRows(Filter(colPrevueloRes, FrenaRes)) > 0 ||
+                        CountRows(colPrevSolRes) > 0,
                         DisplayMode.Disabled,
                         DisplayMode.Edit
                     )
