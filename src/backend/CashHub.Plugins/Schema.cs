@@ -400,6 +400,28 @@ namespace CashHub.Plugins
             public const string OutcomeBlocked = "Blocked";
         }
 
+        /// <summary>
+        /// <c>sanic_CHForceCloseRecountingSession</c>: el supervisor cierra a la fuerza
+        /// una sesion de recuento y libera las tulas que el cajero tenia en la mano.
+        ///
+        /// Va como Custom API por lo mismo que la devolucion: cierra la sesion Y vacia
+        /// N tulas. Media operacion dejaria la sesion cerrada con tulas enllavadas
+        /// colgando de ella, que es peor que no haber hecho nada.
+        /// </summary>
+        internal static class ForceCloseSessionApi
+        {
+            public const string MessageName = "sanic_CHForceCloseRecountingSession";
+
+            public const string InSessionId = "SessionId";
+            public const string InReason = "Reason";
+
+            public const string OutOutcome = "Outcome";
+            public const string OutMessage = "Message";
+
+            public const string OutcomeClosed = "Closed";
+            public const string OutcomeBlocked = "Blocked";
+        }
+
         internal static class CanResolveApprovalApi
         {
             public const string MessageName = "sanic_CHCanResolveApproval";
@@ -720,6 +742,17 @@ namespace CashHub.Plugins
             public const string ConfirmedBy = "sanic_confirmedby";
 
             public const string SessionForciblyClosed = "sanic_sessionforciblyclosed";
+
+            /// <summary>Quien cerro la sesion a la fuerza (lookup a systemuser).</summary>
+            public const string ForcedClosureBy = "sanic_forcedclosureby";
+
+            /// <summary>
+            /// Motivo del cierre forzado.
+            /// 🧨 EL LOGICAL NAME TIENE UNA ERRATA EN EL ENTORNO: dice "flosure", no
+            ///    "closure". Verificado contra la metadata. NO lo "corrijas" aca: el
+            ///    codigo dejaria de encontrar la columna.
+            /// </summary>
+            public const string ReasonForForcedClosure = "sanic_reasonforforcedflosure";
 
             /// <summary>PreImage del paso Delete del guard, con sanic_cashier + sanic_confirmed.</summary>
             public const string PreImageName = "PreImage";

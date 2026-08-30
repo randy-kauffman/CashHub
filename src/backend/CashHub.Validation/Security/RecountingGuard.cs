@@ -466,6 +466,106 @@ namespace CashHub.Validation.Security
         }
 
         /// <summary>
+        /// Autoriza el CIERRE FORZADO de una sesion de recuento: el supervisor la
+        /// termina a la fuerza —el cajero se fue, se enfermo, se equivoco de mesa— y
+        /// las tulas que tenia en la mano quedan libres.
+        ///
+        /// LOS FRENOS, y por que son estos dos:
+        ///
+        ///   SOLICITUDES PENDIENTES. Una solicitud que se apruebe DESPUES del cierre
+        ///   asignaria una tula a una sesion muerta, y ahi no hay reversion que valga
+        ///   porque el cajero ya no esta. Es el freno que evita crear basura, no el
+        ///   que evita perder datos.
+        ///
+        ///   TULAS ESPERANDO REVISION. Tienen una diferencia que alguien tiene que
+        ///   mirar. Liberarlas sin resolverla tira el trabajo de contarlas y deja la
+        ///   diferencia sin explicacion.
+        ///
+        /// Es la opcion conservadora a proposito: menos piezas moviles, y el
+        /// supervisor esta ahi mismo para resolver lo que traba. El motivo NOMBRA las
+        /// tulas, no dice "hay algo pendiente": destrabar de a una y volver a chocar
+        /// es una experiencia horrible.
+        ///
+        /// TENER TULAS ABIERTAS NO FRENA NADA: son justamente las que hay que liberar.
+        /// </summary>
+        /// <param name="sessionResolved">true si se pudo leer la sesion.</param>
+        /// <param name="alreadyForciblyClosed">sanic_sessionforciblyclosed actual.</param>
+        /// <param name="pendingApprovalCount">Solicitudes de la sesion sin resolver.</param>
+        /// <param name="bagsPendingReview">Numeros de tula esperando revision del supervisor.</param>
+        public static RecountingGuardResult EvaluateForceClose(
+            bool sessionResolved,
+            bool alreadyForciblyClosed,
+            int pendingApprovalCount,
+            IEnumerable<string>? bagsPendingReview)
+        {
+            if (!sessionResolved)
+            {
+                return RecountingGuardResult.Block(
+                    "No se pudo leer la sesion de recuento indicada.");
+            }
+
+            if (alreadyForciblyClosed)
+            {
+                return RecountingGuardResult.Block(
+                    "La sesion ya fue cerrada a la fuerza. Cerrarla otra vez no liberaria " +
+                    "nada y pisaria el autor y el motivo del cierre original.");
+            }
+
+            var esperando = new List<string>();
+            if (bagsPendingReview != null)
+            {
+                foreach (var numero in bagsPendingReview)
+                {
+                    if (!string.IsNullOrWhiteSpace(numero))
+                    {
+                        esperando.Add(numero.Trim());
+                    }
+                }
+            }
+
+            if (pendingApprovalCount <= 0 && esperando.Count == 0)
+            {
+                return RecountingGuardResult.Allow();
+            }
+
+            // Los dos frenos se reportan JUNTOS: un solo viaje, una sola lista.
+            var partes = new List<string>();
+            if (pendingApprovalCount > 0)
+            {
+                partes.Add(pendingApprovalCount == 1
+                    ? "1 solicitud pendiente de resolver"
+                    : pendingApprovalCount + " solicitudes pendientes de resolver");
+            }
+
+            if (esperando.Count > 0)
+            {
+                partes.Add((esperando.Count == 1 ? "1 tula esperando revision" : esperando.Count +
+                    " tulas esperando revision") + " (" + string.Join(", ", esperando) + ")");
+            }
+
+            return RecountingGuardResult.Block(
+                "No se puede cerrar la sesion a la fuerza todavia: hay " +
+                string.Join(" y ", partes) + ". Resuelva eso primero y volve a intentar. " +
+                "Si se cerrara ahora, una aprobacion posterior asignaria una tula a una " +
+                "sesion que ya no existe.");
+        }
+
+        /// <summary>
+        /// true si el cierre forzado tiene que LIBERAR esta tula.
+        ///
+        /// "No terminal" no es "cualquier cosa que no sea Recontada": la unica tula que
+        /// el cierre toca es la que esta SOBRE UNA MESA, que es tambien el unico estado
+        /// desde el que la devolucion es legal
+        /// (<see cref="EvaluateBagReturn"/>). Una Recontada ya tiene sus asientos
+        /// contables y no se revierte por aca; una que espera revision ni siquiera deja
+        /// llegar hasta este punto.
+        /// </summary>
+        public static bool ShouldReleaseOnForceClose(int? bagStatus)
+        {
+            return bagStatus == ReceptionGuard.BagAsignadaACajero;
+        }
+
+        /// <summary>
         /// La tula tiene DUEÑO, no solo estado. Complementa a
         /// <see cref="IsWriteAllowed"/>: esa responde "¿esta sobre una mesa?", esta
         /// responde "¿sobre CUAL?". Se piden LAS DOS.

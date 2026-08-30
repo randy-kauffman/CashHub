@@ -866,6 +866,102 @@ namespace CashHub.Validation.Tests
             Assert.False(IsWriteAllowed(false, true, ReceptionGuard.BagRecontada).IsAllowed);
         }
 
+        // =====================================================================
+        // 4-quinquies. Cierre FORZADO de sesion, con frenos (P2)
+        //
+        //   El supervisor cierra a la fuerza una sesion ya aprobada —el cajero se
+        //   fue, se enfermo, se equivoco de mesa— y las tulas que tenia en la mano
+        //   quedan libres. Es la version deliberada del cierre; el automatico de
+        //   jornada es otra cosa y lleva su propia columna.
+        //
+        //   LOS FRENOS. Se bloquea si hay una solicitud PENDIENTE de la sesion o
+        //   una tula esperando revision. Es la opcion (a): menos piezas moviles, y
+        //   el supervisor esta ahi mismo para resolverlas. Permitirlo y confiar en
+        //   que la reversion aguante seria elegir el camino dificil sin necesidad.
+        //
+        //   Y no es solo prolijidad: una solicitud aprobada DESPUES del cierre
+        //   asignaria una tula a una sesion muerta, y ahi no hay reversion que
+        //   valga porque el cajero ya no esta.
+        // =====================================================================
+
+        [Fact]
+        public void CierreForzado_SesionLimpia_SePermite()
+        {
+            var result = EvaluateForceClose(true, false, 0, new string[0]);
+            Assert.True(result.IsAllowed);
+            Assert.Null(result.Reason);
+        }
+
+        [Fact]
+        public void CierreForzado_ConTulasEnLaMesa_SePermite()
+        {
+            // Tener tulas abiertas es el CASO NORMAL: son justamente las que hay que
+            // liberar. Lo que frena no es tenerlas, es que esten esperando una firma.
+            Assert.True(EvaluateForceClose(true, false, 0, new string[0]).IsAllowed);
+        }
+
+        [Fact]
+        public void CierreForzado_ConSolicitudPendiente_SeBloquea()
+        {
+            var result = EvaluateForceClose(true, false, 2, new string[0]);
+            Assert.False(result.IsAllowed);
+            Assert.Contains("2", result.Reason);
+            Assert.Contains("pendiente", result.Reason, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void CierreForzado_ConTulaEsperandoRevision_SeBloqueaYLaNombra()
+        {
+            // El supervisor tiene que saber CUAL destrabar, no que "hay algo".
+            var result = EvaluateForceClose(true, false, 0, new[] { "ST000110", "ST000059" });
+            Assert.False(result.IsAllowed);
+            Assert.Contains("ST000110", result.Reason);
+            Assert.Contains("ST000059", result.Reason);
+        }
+
+        [Fact]
+        public void CierreForzado_SesionYaCerrada_SeBloquea()
+        {
+            // Idempotencia explicita: cerrar dos veces no vuelve a liberar nada, y
+            // pisaria el autor y el motivo del cierre original.
+            var result = EvaluateForceClose(true, true, 0, new string[0]);
+            Assert.False(result.IsAllowed);
+            Assert.Contains("ya", result.Reason, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void CierreForzado_SesionNoResoluble_SeBloquea()
+        {
+            Assert.False(EvaluateForceClose(false, false, 0, new string[0]).IsAllowed);
+        }
+
+        [Fact]
+        public void CierreForzado_LosDosFrenos_LosReportaJuntos()
+        {
+            // Un solo viaje: si hay de las dos cosas, se dicen las dos. Ir
+            // destrabando de a una y volver a chocar es una experiencia horrible.
+            var result = EvaluateForceClose(true, false, 1, new[] { "ST000110" });
+            Assert.False(result.IsAllowed);
+            Assert.Contains("ST000110", result.Reason);
+            Assert.Contains("pendiente", result.Reason, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Theory]
+        [InlineData(ReceptionGuard.BagAsignadaACajero, true)]
+        [InlineData(ReceptionGuard.BagRecontada, false)]
+        [InlineData(ReceptionGuard.BagDevueltaParaReasignacion, false)]
+        [InlineData(ReceptionGuard.BagAlmacenadaEnBoveda, false)]
+        [InlineData(ReceptionGuard.BagRecibidaEnEsclusa, false)]
+        [InlineData(null, false)]
+        public void CierreForzado_SoloLibera_LoQueEstaEnLaMesa(int? bagStatus, bool esperado)
+        {
+            // "No terminal" no es "cualquier cosa que no sea Recontada": la unica
+            // tula que el cierre forzado toca es la que esta SOBRE UNA MESA, que es
+            // el unico estado desde el que la devolucion es legal. Una Recontada ya
+            // tiene sus asientos y no se revierte por aca.
+            Assert.Equal(esperado, ShouldReleaseOnForceClose(bagStatus));
+        }
+
         [Fact]
         public void Devolucion_TulaNoResoluble_SeBloquea()
         {

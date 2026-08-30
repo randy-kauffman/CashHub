@@ -25,12 +25,9 @@ namespace CashHub.Plugins
     /// La autorizacion va primero a proposito: borrar antes dejaria que una llamada
     /// invalida destruyera el recuento y recien despues chocara contra el bloqueo.
     ///
-    /// EL ORDEN DE BORRADO NO ES ARBITRARIO. Se desvincula ANTES de borrar en las tres
-    /// puntas declaradas (DeclaredChecks.MatchedCheck, DeclaredDeposits.
-    /// RelatedRecountedDeposit, DeclaredBags.BagID): si se borrara primero el cheque
-    /// fisico, el lookup del declarado quedaria apuntando a un registro muerto o la
-    /// plataforma rechazaria el Delete. Y las denominaciones van antes que sus
-    /// depositos, por la misma razon.
+    /// EL BARRIDO VIVE EN <see cref="BagRecountWipe"/>, compartido con el cierre
+    /// forzado de sesion: son dos formas de lo mismo y no puede haber dos verdades
+    /// sobre que significa "vaciar una tula".
     ///
     /// LO QUE NO SE TOCA, y es deliberado:
     ///   - las SOLICITUDES DE APROBACION de la tula. Son la evidencia de que un
@@ -99,7 +96,7 @@ namespace CashHub.Plugins
             // ---- 3. El efecto. De aca en adelante, todo o nada. ----
             try
             {
-                var borrados = Wipe(system, tracing, bagId);
+                var borrados = BagRecountWipe.Run(system, tracing, bagId);
 
                 // La tula, al final: su Update dispara los espejos de conciliacion, y
                 // conviene que los vean con los hijos YA borrados.
@@ -113,13 +110,8 @@ namespace CashHub.Plugins
                     [Schema.Bag.TotalEur] = 0m,
                 });
 
-                var resumen =
-                    "Tula " + numero + " devuelta para reasignacion. Se borraron " +
-                    borrados.Denominations + " denominaciones, " +
-                    borrados.Checks + " cheques, " +
-                    borrados.Deposits + " depositos y " +
-                    borrados.SessionDetails + " detalles de sesion; se desvincularon " +
-                    borrados.DeclaredUnlinked + " registros declarados.";
+                var resumen = "Tula " + numero + " devuelta para reasignacion. " +
+                              borrados.Describe();
 
                 tracing.Trace("ReturnBag: OK. {0}", resumen);
                 Respond(context, Schema.ReturnBagApi.OutcomeReturned, resumen);
@@ -134,128 +126,6 @@ namespace CashHub.Plugins
                     "No se pudo devolver la tula " + numero + ": " + ex.Message +
                     ". No se borro nada.", ex);
             }
-        }
-
-        private sealed class WipeCounts
-        {
-            public int Denominations;
-            public int Checks;
-            public int Deposits;
-            public int SessionDetails;
-            public int DeclaredUnlinked;
-        }
-
-        /// <summary>
-        /// Barre el recuento de la tula. El orden importa: primero se desvinculan las
-        /// puntas declaradas que apuntan a lo que vamos a borrar, despues se borra de
-        /// hijo a padre.
-        /// </summary>
-        private static WipeCounts Wipe(IOrganizationService system, ITracingService tracing, Guid bagId)
-        {
-            var counts = new WipeCounts();
-
-            var deposits = Ids(system, Schema.DepositRecounting.LogicalName,
-                Schema.DepositRecounting.Id, Schema.DepositRecounting.BagLookup, bagId);
-            var checks = Ids(system, Schema.Check.LogicalName,
-                Schema.Check.Id, Schema.Check.BagLookup, bagId);
-            tracing.Trace("ReturnBag: {0} depositos y {1} cheques cuelgan de la tula.",
-                deposits.Count, checks.Count);
-
-            // -- 3.1 Desvincular el DECLARADO de cada cheque, antes de borrar el cheque.
-            foreach (var checkId in checks)
-            {
-                foreach (var declared in Ids(system, Schema.DeclaredCheck.LogicalName,
-                             Schema.DeclaredCheck.Id, Schema.DeclaredCheck.MatchedCheck, checkId))
-                {
-                    system.Update(new Entity(Schema.DeclaredCheck.LogicalName, declared)
-                    {
-                        [Schema.DeclaredCheck.MatchedCheck] = null,
-                    });
-                    counts.DeclaredUnlinked++;
-                }
-            }
-
-            // -- 3.2 Desvincular el DECLARADO de cada deposito, antes de borrar el deposito.
-            foreach (var depositId in deposits)
-            {
-                foreach (var declared in Ids(system, Schema.DeclaredDeposit.LogicalName,
-                             Schema.DeclaredDeposit.Id,
-                             Schema.DeclaredDeposit.RelatedRecountedDeposit, depositId))
-                {
-                    system.Update(new Entity(Schema.DeclaredDeposit.LogicalName, declared)
-                    {
-                        [Schema.DeclaredDeposit.RelatedRecountedDeposit] = null,
-                    });
-                    counts.DeclaredUnlinked++;
-                }
-            }
-
-            // -- 3.3 Desvincular la BOLSA declarada. Es el enlace que hace que el
-            //    escaneo la considere "ya tomada": sin esto, la declaracion queda
-            //    pegada a una tula que ya no la esta recontando y NADIE mas la puede
-            //    usar. Es el mismo hueco que el escaneo mira con IsBlank(BagID).
-            foreach (var declaredBag in Ids(system, Schema.DeclaredBag.LogicalName,
-                         Schema.DeclaredBag.Id, Schema.DeclaredBag.BagLookup, bagId))
-            {
-                system.Update(new Entity(Schema.DeclaredBag.LogicalName, declaredBag)
-                {
-                    [Schema.DeclaredBag.BagLookup] = null,
-                });
-                counts.DeclaredUnlinked++;
-            }
-
-            // -- 3.4 Denominaciones, antes que sus depositos.
-            foreach (var depositId in deposits)
-            {
-                foreach (var detail in Ids(system, Schema.CountedMoneyDetail.LogicalName,
-                             Schema.CountedMoneyDetail.Id,
-                             Schema.CountedMoneyDetail.DepositLookup, depositId))
-                {
-                    system.Delete(Schema.CountedMoneyDetail.LogicalName, detail);
-                    counts.Denominations++;
-                }
-            }
-
-            // -- 3.5 Cheques fisicos.
-            foreach (var checkId in checks)
-            {
-                system.Delete(Schema.Check.LogicalName, checkId);
-                counts.Checks++;
-            }
-
-            // -- 3.6 Depositos.
-            foreach (var depositId in deposits)
-            {
-                system.Delete(Schema.DepositRecounting.LogicalName, depositId);
-                counts.Deposits++;
-            }
-
-            // -- 3.7 El detalle de sesion: es lo que ata la tula a la sesion del cajero.
-            foreach (var detail in Ids(system, Schema.RecountingSessionDetail.LogicalName,
-                         Schema.RecountingSessionDetail.Id,
-                         Schema.RecountingSessionDetail.BagLookup, bagId))
-            {
-                system.Delete(Schema.RecountingSessionDetail.LogicalName, detail);
-                counts.SessionDetails++;
-            }
-
-            return counts;
-        }
-
-        /// <summary>PKs de las filas de <paramref name="entity"/> cuyo lookup apunta a <paramref name="value"/>.</summary>
-        private static List<Guid> Ids(
-            IOrganizationService system, string entity, string idField, string lookupField, Guid value)
-        {
-            var query = new QueryExpression(entity) { ColumnSet = new ColumnSet(false) };
-            query.Criteria.AddCondition(lookupField, ConditionOperator.Equal, value);
-
-            var ids = new List<Guid>();
-            foreach (var row in system.RetrieveMultiple(query).Entities)
-            {
-                ids.Add(row.Id);
-            }
-
-            return ids;
         }
 
         private static Guid ReadGuid(IPluginExecutionContext context, string name)
