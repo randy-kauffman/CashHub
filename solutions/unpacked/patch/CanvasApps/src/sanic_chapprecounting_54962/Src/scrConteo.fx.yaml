@@ -2228,6 +2228,26 @@ scrConteo As screen:
         Y: =233
         ZIndex: =54
 
+    lblAvisoMonedaCon As label:
+        Color: =ThemeWarn
+        Height: =32
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =8.25
+        Text: |-
+            ="El declarado seleccionado es en " & Text(ctxDepDecSelCon.Currency) &
+            " y este deposito es en " & ctxMonedaCon & ": no se comparan ni se enlazan."
+        Visible: |-
+            =ctxHayDepositoCon &&
+            !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
+            Text(ctxDepDecSelCon.Currency) <> ctxMonedaCon
+        Width: =shpCardCurCon.X + shpCardCurCon.Width - 16 - Self.X
+        Wrap: =true
+        X: =inpCuentaCon.X + inpCuentaCon.Width + 20
+        Y: =233
+        ZIndex: =55
     shpLineaCurRowCon As rectangle:
         BorderStyle: =BorderStyle.None
         Fill: =ThemeLineSoft
@@ -2265,31 +2285,56 @@ scrConteo As screen:
     cmpMatDepositoCon As cmpMatrizMoneda:
         Card: =false
         ChequesDec: |-
-            =If(
-                IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
-                0,
-                CountRows(
-                    Filter(
-                        colChequesDeclaradosCon,
-                        DeclaredDepositID.'CH-Tbl-DeclaredDeposits' = ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'
+            =With(
+                { D: If(
+                    !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
+                    Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
+                    ctxDepDecSelCon,
+                    ctxDepDecCursoCon
+                ) },
+                If(
+                    IsBlank(D.'CH-Tbl-DeclaredDeposits'),
+                    0,
+                    CountRows(
+                        Filter(
+                            colChequesDeclaradosCon,
+                            DeclaredDepositID.'CH-Tbl-DeclaredDeposits' = D.'CH-Tbl-DeclaredDeposits'
+                        )
                     )
                 )
             )
         ChequesRec: =CountRows(Filter(galChequesCon.AllItems As C, If(C.EsManual, true, C.chkChequeCon.Value)))
-        EfectivoDec: =If(IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'), 0, ctxDepDecCursoCon.CashAmount)
+        EfectivoDec: |-
+            =With(
+                { D: If(
+                    !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
+                    Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
+                    ctxDepDecSelCon,
+                    ctxDepDecCursoCon
+                ) },
+                If(IsBlank(D.'CH-Tbl-DeclaredDeposits'), 0, D.CashAmount)
+            )
         EfectivoRec: =Sum(galBilletesCon.AllItems As B, B.Denominacion * (B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) + Sum(galMonedasCon.AllItems As M, M.Denominacion * Coalesce(Value(M.inpCantidadMonCon.Text), 0))
         Moneda: =ctxMonedaCon
         MonedaNombre: =""
         MontoChequesDec: |-
-            =If(
-                IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
-                0,
-                Sum(
-                    Filter(
-                        colChequesDeclaradosCon,
-                        DeclaredDepositID.'CH-Tbl-DeclaredDeposits' = ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'
-                    ),
-                    CheckAmount
+            =With(
+                { D: If(
+                    !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
+                    Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
+                    ctxDepDecSelCon,
+                    ctxDepDecCursoCon
+                ) },
+                If(
+                    IsBlank(D.'CH-Tbl-DeclaredDeposits'),
+                    0,
+                    Sum(
+                        Filter(
+                            colChequesDeclaradosCon,
+                            DeclaredDepositID.'CH-Tbl-DeclaredDeposits' = D.'CH-Tbl-DeclaredDeposits'
+                        ),
+                        CheckAmount
+                    )
                 )
             )
         MontoChequesRec: =Sum(galChequesCon.AllItems As C, If(If(C.EsManual, true, C.chkChequeCon.Value), If(C.EsManual, Coalesce(Value(C.inpMontoChequeCon.Text), 0), C.Monto), 0))

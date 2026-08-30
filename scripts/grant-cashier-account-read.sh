@@ -74,6 +74,11 @@ ROL_CAJERO = 'f9bee50d-6a75-f011-b4cb-7c1e5248985f'   # CH-SR-Cashier (por ID: e
 CAMPOS = [
     ('sanic_chtbldeclareddeposits',   'sanic_accountnumber'),
     ('sanic_chtbldepositsrecounting', 'sanic_accountnumber'),
+    # El numero del cheque declarado era SOLO-ADMIN: ni el supervisor lo veia. El
+    # cajero tiene que marcar CUALES cheques declarados entran en el deposito, y
+    # sin numero solo los distingue por el monto — con dos del mismo monto, no los
+    # distingue. Se abre para cajero y supervisor (ver el bloque de mas abajo).
+    ('sanic_chtbldeclaredchecks',     'sanic_checknumber'),
 ]
 
 perfil = find('fieldsecurityprofiles', f"name eq '{PERFIL}'", 'name')
@@ -120,6 +125,28 @@ for u in cajeros:
     req('POST', f"/fieldsecurityprofiles({pid})/systemuserprofiles_association/$ref",
         {'@odata.id': f"{API}/systemusers({u['systemuserid']})"})
     print(f"  asignado:    {u.get('fullname')}")
+
+# El supervisor tiene su propio perfil; se le agrega ahi el numero de cheque para
+# no mezclar audiencias en un mismo perfil.
+SUP = 'CashHub | FLS | Supervisor Cuentas'
+sup = find('fieldsecurityprofiles', f"name eq '{SUP}'", 'name')
+if not sup:
+    print(f"\nNo existe el perfil {SUP}; el supervisor queda sin numero de cheque.")
+else:
+    sid = sup[0]['fieldsecurityprofileid']
+    ya = find('fieldpermissions',
+              f"_fieldsecurityprofileid_value eq {sid} and entityname eq 'sanic_chtbldeclaredchecks' "
+              "and attributelogicalname eq 'sanic_checknumber'", 'attributelogicalname')
+    if ya:
+        print(f"\n{SUP}: ya tenia el numero de cheque")
+    else:
+        req('POST', '/fieldpermissions', {
+            'entityname': 'sanic_chtbldeclaredchecks',
+            'attributelogicalname': 'sanic_checknumber',
+            'canread': 4, 'canupdate': 0, 'cancreate': 0,
+            'fieldsecurityprofileid@odata.bind': f"/fieldsecurityprofiles({sid})",
+        })
+        print(f"\n{SUP}: lectura del numero de cheque otorgada")
 
 print("\nOJO: hoy se asigna usuario por usuario porque no existe un equipo de "
       "cajeros. Cuando exista, colgar el perfil del equipo y re-correr esto.")
