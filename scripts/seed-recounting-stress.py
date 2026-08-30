@@ -830,6 +830,32 @@ def monto(lo=500, hi=250_000):
     return round(random.uniform(lo, hi), 2)
 
 
+def cheques_declarados(n_chk):
+    """Sortea los cheques PRIMERO y deriva de ahi el resumen del deposito.
+
+    🧨 ANTES ESTO ERAN DOS TIRADAS INDEPENDIENTES: el deposito se creaba con
+       bac=monto(0,60_000) / otros=monto(0,40_000) y despues cada cheque sacaba su
+       propio random.uniform(1, 90_000). No cuadraban NUNCA — 96% de los depositos
+       declarados con cheques quedaron con el resumen peleado con sus propias filas.
+
+       Eso VIOLA VR-12 ("por deposito, el monto declarado en cheques (BAC + Otros)
+       coincide con la suma de sus cheques") y VR-28 (el desglose por tipo). Una
+       declaracion asi se rechaza en la ingesta y no llega nunca a Dataverse; el
+       seed la metia por la puerta de atras, escribiendo directo a la tabla.
+
+       El sintoma en la app: al terminar la tula, el hallazgo H3 lee las columnas
+       resumen y la matriz del encabezado suma las filas de cheque, asi que la
+       misma pantalla mostraba diferencia 0 arriba y +C$ 200.725,44 abajo.
+
+    Devuelve (cheques, bac, otros) con cheques = [(monto, tipo), ...].
+    """
+    tipos = [CHK_BAC if j % 2 == 0 else CHK_OTROS for j in range(n_chk)]
+    montos = [round(random.uniform(1, 90_000), 2) for _ in range(n_chk)]
+    bac = round(sum(m for m, t in zip(montos, tipos) if t == CHK_BAC), 2)
+    otros = round(sum(m for m, t in zip(montos, tipos) if t == CHK_OTROS), 2)
+    return list(zip(montos, tipos)), bac, otros
+
+
 def cuenta():
     return random.randint(100_000_000, 999_999_999)      # int, 1..999999999 (L-4)
 
@@ -998,33 +1024,34 @@ def _f1_retomar_huerfanas(a, dbags, t_ini):
             seq['ddep'] += 1
             cur = moneda_pesada()
             n_chk = random.choices((0, 1, 2, 3, 5, 8), weights=(38, 25, 16, 11, 7, 3))[0]
+            chks, bac, otros = cheques_declarados(n_chk)
             reqs.append(('POST', f'/{ES_DDEP}', {
                 'sanic_name': nombre,
                 'sanic_DeclaredBag@odata.bind': f'/{ES_DBAG}({db[PK[ES_DBAG]]})',
                 'sanic_accountnumber': cuenta(),
                 'sanic_currency': cur,
                 'sanic_cashamount': monto(),
-                'sanic_baclocalcheckamount': monto(0, 60_000) if n_chk else 0,
-                'sanic_otherlocalcheckamount': monto(0, 40_000) if n_chk else 0,
+                'sanic_baclocalcheckamount': bac,
+                'sanic_otherlocalcheckamount': otros,
                 'sanic_transactionno': random.randint(1, 500),
                 'sanic_depositreference': f'{MARK}{random.randint(0, 99_999_999):08d}',
             }))
-            meta.append((cur, n_chk))
+            meta.append((cur, chks))
     res, _ = run_batches(reqs, 'completando depositos declarados huerfanos', a.chunk, a.workers)
     reqs = []
-    for (cur, n_chk), (st, did, err) in zip(meta, res):
+    for (cur, chks), (st, did, err) in zip(meta, res):
         if err or not did:
             continue
-        for j in range(n_chk):
+        for importe, tipo in chks:
             nombre = f'{TAG_DCHK}{seq["dchk"]:06d}'
             seq['dchk'] += 1
             reqs.append(('POST', f'/{ES_DCHK}', {
                 'sanic_name': nombre,
                 'sanic_DeclaredDepositID@odata.bind': f'/{ES_DDEP}({did})',
                 'sanic_checknumber': f'{random.randint(0, 99_999_999):08d}',
-                'sanic_checkamount': round(random.uniform(1, 90_000), 2),
+                'sanic_checkamount': importe,
                 'sanic_checkcurrency': cur,
-                'sanic_checktype': CHK_BAC if j % 2 == 0 else CHK_OTROS,
+                'sanic_checktype': tipo,
             }))
     res2, _ = run_batches(reqs, 'completando cheques declarados', a.chunk, a.workers)
     print(f'  TOTAL {time.perf_counter() - t_ini:.1f}s')
@@ -1123,8 +1150,9 @@ def seed_declarations(a, inv, usrs):
             n_chk = (a.fat_declared_chk if db['gorda']
                      else random.choices((0, 1, 2, 3, 5, 8), weights=(38, 25, 16, 11, 7, 3))[0])
             cash = monto()
-            bac = monto(0, 60_000) if n_chk else 0
-            otros = monto(0, 40_000) if n_chk else 0
+            # bac/otros SALEN de los cheques, no de un random aparte (ver
+            # cheques_declarados: si no, se viola VR-12 y VR-28).
+            chks, bac, otros = cheques_declarados(n_chk)
             reqs.append(('POST', f'/{ES_DDEP}', {
                 'sanic_name': nombre,
                 'sanic_DeclaredBag@odata.bind': f'/{ES_DBAG}({db["id"]})',
@@ -1138,15 +1166,15 @@ def seed_declarations(a, inv, usrs):
                 'sanic_depositreference': f'{MARK}{random.randint(0, 99_999_999):08d}',
                 # sanic_Total es CAMPO FORMULA: no se escribe.
             }))
-            meta.append((db, cur, n_chk, bac, otros))
+            meta.append((db, cur, n_chk, bac, otros, chks))
     res, tiempos['declareddeposits'] = run_batches(reqs, 'creando DeclaredDeposits',
                                                    a.chunk, a.workers)
     ddeps = []
-    for (db, cur, n_chk, bac, otros), (st, did, err) in zip(meta, res):
+    for (db, cur, n_chk, bac, otros, chks), (st, did, err) in zip(meta, res):
         if err or not did:
             continue
         ddeps.append({'id': did, 'dbag': db, 'cur': cur, 'n_chk': n_chk,
-                      'bac': bac, 'otros': otros})
+                      'bac': bac, 'otros': otros, 'chks': chks})
     print(f'  DeclaredDeposits creados: {len(ddeps)}/{len(meta)}')
 
     # -------- 4) DeclaredChecks ----------------------------------------------
@@ -1155,15 +1183,16 @@ def seed_declarations(a, inv, usrs):
     print('\n== 4) DECLARED CHECKS ==')
     reqs = []
     for dd in ddeps:
-        for j in range(dd['n_chk']):
+        # Los importes ya venian sorteados: son EXACTAMENTE los que sumaron el
+        # bac/otros del deposito. Volver a sortear aca es lo que rompia VR-12.
+        for importe, tipo in dd['chks']:
             nombre = f'{TAG_DCHK}{seq["dchk"]:06d}'
             seq['dchk'] += 1
-            tipo = CHK_BAC if j % 2 == 0 else CHK_OTROS
             reqs.append(('POST', f'/{ES_DCHK}', {
                 'sanic_name': nombre,
                 'sanic_DeclaredDepositID@odata.bind': f'/{ES_DDEP}({dd["id"]})',
                 'sanic_checknumber': f'{random.randint(0, 99_999_999):08d}',
-                'sanic_checkamount': round(random.uniform(1, 90_000), 2),   # min 1
+                'sanic_checkamount': importe,
                 'sanic_checkcurrency': dd['cur'],
                 'sanic_checktype': tipo,
                 # MatchedCheck se enlaza en F3, no aca.
