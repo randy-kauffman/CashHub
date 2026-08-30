@@ -2,7 +2,14 @@ scrResumen As screen:
     Fill: =ThemeBg
     LoadingSpinnerColor: =ThemeAccent
     OnVisible: |-
-        =UpdateContext({ctxStaleRes: false});
+        =UpdateContext({
+            ctxStaleRes: false,
+            // El modal arranca CERRADO en cada visita: sin este reset, volver aca
+            // te encuentra el pre-vuelo abierto sobre una sesion que ya no mirabas.
+            ctxDlgCierreRes: false,
+            ctxCierreEnCursoRes: false,
+            ctxSesCierreRes: Defaults('CH-Tbl-RecountingSessions')
+        });
         If(
             IsEmpty(colSesionesRes),
             Select(btnActualizarRes)   // primera visita: carga sola (fix del "0 fantasma")
@@ -952,6 +959,68 @@ scrResumen As screen:
                     Y: =12
                     ZIndex: =9
 
+                btnCerrarSesRes As button:
+                    BorderColor: =ThemeDangerLine
+                    BorderThickness: =1
+                    Color: =ThemeDanger
+                    DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    Fill: =ThemeSurface
+                    Font: =Font.'Segoe UI'
+                    FontWeight: =FontWeight.Semibold
+                    Height: =26
+                    HoverBorderColor: =ThemeDanger
+                    HoverColor: =ThemeDanger
+                    HoverFill: =ThemeDangerSoft
+                    OnSelect: |-
+                        =UpdateContext({
+                            ctxSesCierreRes: ThisItem,
+                            ctxCierreEnCursoRes: false
+                        });
+                        // EL PRE-VUELO. Una consulta delegable por PK contra la sesion,
+                        // y el veredicto por tula se calcula en local. El supervisor
+                        // tiene que ver QUE va a pasar antes de apretar, no despues.
+                        ClearCollect(
+                            colPrevueloRes,
+                            AddColumns(
+                                Filter(
+                                    'CH-Tbl-Bags',
+                                    RecountingSession.'CH-Tbl-RecountingSession'
+                                        = ThisItem.'CH-Tbl-RecountingSession'
+                                ),
+                                AccionRes,
+                                Switch(
+                                    BagStatus,
+                                    'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',
+                                        "Se libera y se borra su recuento",
+                                    'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento',
+                                        "FRENA el cierre: espera su revisión",
+                                    'BagStatus (CH-Tbl-Bags)'.Recontada,
+                                        "Queda como está (ya recontada)",
+                                    "Queda como está"
+                                ),
+                                FrenaRes,
+                                BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento'
+                            )
+                        );
+                        UpdateContext({ ctxDlgCierreRes: true })
+                    PressedBorderColor: =ThemeDanger
+                    PressedColor: =ThemeDanger
+                    PressedFill: =ThemeDangerSoft
+                    RadiusBottomLeft: =6
+                    RadiusBottomRight: =6
+                    RadiusTopLeft: =6
+                    RadiusTopRight: =6
+                    Size: =8.5
+                    Text: ="Cerrar"
+                    Tooltip: ="Cierra la sesión a la fuerza y libera las tulas que el cajero tenga en la mesa."
+                    Visible: =!ThisItem.SessionForciblyClosed
+                    Width: =66
+                    X: =Parent.Width - 74
+                    Y: =9
+                    ZIndex: =12
+
                 pilCelEstadoRes As button:
                     BorderColor: =ThemeLine
                     BorderThickness: =If(Self.Fill = ThemeSunk, 1, 0)
@@ -986,7 +1055,7 @@ scrResumen As screen:
                                 SesDetGUID = ThisItem.'CH-Tbl-RecountingSession'
                                 && RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias'))},
                             If(d > 0, "Diferencias ×" & d, "Cuadrado"))
-                    Width: =12 + 7 * Len(Self.Text)
+                    Width: =Min(12 + 7 * Len(Self.Text), Parent.Width * 0.15 - 84)
                     X: =Parent.Width * 0.85
                     Y: =10
                     ZIndex: =10
@@ -1195,6 +1264,231 @@ scrResumen As screen:
                 Width: =cardSesionesRes.Width
                 Y: =cardSesionesRes.Height / 2 + 6
                 ZIndex: =26
+
+    cntDlgCierreRes As groupContainer.manualLayoutContainer:
+        Fill: =RGBA(0, 0, 0, 0.45)
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        Visible: =ctxDlgCierreRes
+        Width: =Parent.Width
+        ZIndex: =4
+
+        cardDlgCierreRes As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =Min(560, Parent.Height - 60)
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Width: =Min(680, Parent.Width - 80)
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =1
+
+            lblDlgCieTitRes As label:
+                Color: =ThemeInk
+                FontWeight: =FontWeight.Semibold
+                Height: =28
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =13.5
+                Text: ="Cerrar a la fuerza la sesión " & ctxSesCierreRes.Name
+                Width: =cardDlgCierreRes.Width - 48
+                X: =24
+                Y: =20
+                ZIndex: =1
+
+            lblDlgCieSubRes As label:
+                Color: =ThemeInk2
+                Height: =34
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =10
+                Text: |-
+                    ="Cajero " & ctxSesCierreRes.CajeroNombre & "  ·  mesa " & ctxSesCierreRes.MesaNombre &
+                    "  ·  " & CountRows(colPrevueloRes) & " tulas ligadas a esta sesión."
+                Width: =cardDlgCierreRes.Width - 48
+                X: =24
+                Y: =50
+                ZIndex: =2
+
+            lblDlgCieFrenoRes As label:
+                Color: =ThemeDanger
+                FontWeight: =FontWeight.Semibold
+                Height: =40
+                PaddingBottom: =0
+                PaddingLeft: =12
+                PaddingRight: =12
+                PaddingTop: =0
+                Size: =9.5
+                Text: |-
+                    =With(
+                        { n: CountRows(Filter(colPrevueloRes, FrenaRes)) },
+                        If(
+                            n = 0,
+                            "",
+                            "No se va a poder cerrar: " & n &
+                            If(n = 1, " tula está esperando su revisión.", " tulas están esperando su revisión.") &
+                            " Resolvelas primero."
+                        )
+                    )
+                Visible: =CountRows(Filter(colPrevueloRes, FrenaRes)) > 0
+                Width: =cardDlgCierreRes.Width - 48
+                Wrap: =true
+                X: =24
+                Y: =86
+                ZIndex: =3
+
+            galPrevueloRes As gallery.galleryVertical:
+                Height: =cardDlgCierreRes.Height - 210
+                Items: =colPrevueloRes
+                Layout: =Layout.Vertical
+                TemplatePadding: =0
+                TemplateSize: =34
+                Width: =cardDlgCierreRes.Width - 48
+                X: =24
+                Y: =130
+                ZIndex: =4
+
+                lblPvTulaRes As label:
+                    Color: =ThemeInk
+                    FontWeight: =FontWeight.Semibold
+                    Height: =30
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.5
+                    Text: =ThisItem.BagID
+                    Width: =Parent.Width * 0.28
+                    Y: =2
+                    ZIndex: =1
+
+                lblPvAccionRes As label:
+                    Color: =If(ThisItem.FrenaRes, ThemeDanger, ThemeInk2)
+                    Height: =30
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.5
+                    Text: =ThisItem.AccionRes
+                    Width: =Parent.Width * 0.7
+                    X: =Parent.Width * 0.29
+                    Y: =2
+                    ZIndex: =2
+
+            lblDlgCieNotaRes As label:
+                Color: =ThemeInk3
+                Height: =32
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Size: =9
+                Text: |-
+                    ="Las tulas liberadas pierden depósitos, cheques y denominaciones, y su declaración vuelve a quedar disponible. Las ya recontadas no se tocan."
+                Width: =cardDlgCierreRes.Width - 48
+                Wrap: =true
+                X: =24
+                Y: =cardDlgCierreRes.Height - 108
+                ZIndex: =5
+
+            btnDlgCieCancelarRes As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                Fill: =ThemeSurface
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =38
+                HoverBorderColor: =ThemeLineStrong
+                HoverColor: =ThemeInk
+                HoverFill: =ThemeSurface2
+                OnSelect: =UpdateContext({ctxDlgCierreRes: false})
+                PressedBorderColor: =ThemeLineStrong
+                PressedColor: =ThemeInk
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =10
+                Text: ="Cancelar"
+                Width: =120
+                X: =cardDlgCierreRes.Width - 24 - 120 - 12 - 190
+                Y: =cardDlgCierreRes.Height - 58
+                ZIndex: =6
+
+            btnDlgCieConfirmarRes As button:
+                BorderThickness: =0
+                Color: =ThemeSurface
+                DisabledFill: =ThemeLine
+                DisplayMode: |-
+                    =If(
+                        ctxCierreEnCursoRes || CountRows(Filter(colPrevueloRes, FrenaRes)) > 0,
+                        DisplayMode.Disabled,
+                        DisplayMode.Edit
+                    )
+                Fill: =ThemeDanger
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =38
+                HoverColor: =ThemeSurface
+                HoverFill: =ThemeDanger
+                OnSelect: |-
+                    =// El boton ya esta deshabilitado si hay frenos: esto es el segundo
+                    // cinturon. El que manda igual es el guard del servidor —cerrar la
+                    // sesion es un Update que se puede hacer por Web API—, asi que la
+                    // app no decide, solo evita el viaje.
+                    UpdateContext({ctxCierreEnCursoRes: true});
+                    IfError(
+                        UpdateContext({
+                            ctxRespCierreRes: Environment.sanic_CHForceCloseRecountingSession(
+                                {
+                                    SessionId: Text(ctxSesCierreRes.'CH-Tbl-RecountingSession'),
+                                    Reason: "Cierre forzado desde el resumen de operación"
+                                }
+                            )
+                        }),
+                        Notify("No se pudo cerrar la sesión: " & FirstError.Message, NotificationType.Error);
+                        UpdateContext({ ctxRespCierreRes: Blank() })
+                    );
+                    If(
+                        ctxRespCierreRes.Outcome = "Closed",
+                        Notify(ctxRespCierreRes.Message, NotificationType.Success);
+                        UpdateContext({ctxDlgCierreRes: false});
+                        Select(btnActualizarRes),
+                        !IsBlank(ctxRespCierreRes.Outcome),
+                        Notify(ctxRespCierreRes.Message, NotificationType.Error)
+                    );
+                    UpdateContext({ctxCierreEnCursoRes: false})
+                PressedColor: =ThemeSurface
+                PressedFill: =ThemeDanger
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =10
+                Text: =If(ctxCierreEnCursoRes, "Cerrando…", "Cerrar y liberar las tulas")
+                Width: =190
+                X: =cardDlgCierreRes.Width - 24 - 190
+                Y: =cardDlgCierreRes.Height - 58
+                ZIndex: =7
 
     cntCargandoRes As groupContainer.manualLayoutContainer:
         Fill: =RGBA(0, 0, 0, 0.35)

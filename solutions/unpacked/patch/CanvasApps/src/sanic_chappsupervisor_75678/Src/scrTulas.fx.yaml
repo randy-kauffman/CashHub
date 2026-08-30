@@ -1139,6 +1139,25 @@ scrTulas As screen:
                     Y: =12
                     ZIndex: =6
 
+                lblCelCreadoPorTula As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk2
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Font: =Font.'Segoe UI'
+                    Height: =20
+                    OnSelect: =Select(Parent)
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =9.5
+                    Text: =Coalesce(ThisItem.CreadoPorTula, "—")
+                    Visible: =scrTulas.Width >= 1100
+                    Width: =Max(0, (Parent.Width - 92) - Parent.Width * 0.83)
+                    X: =Parent.Width * 0.83
+                    Y: =12
+                    ZIndex: =28
+
                 btnDevolverTula As button:
                     BorderColor: =ThemeWarn
                     BorderThickness: =1
@@ -1174,25 +1193,6 @@ scrTulas As screen:
                     X: =Parent.Width - 86
                     Y: =9
                     ZIndex: =29
-
-                lblCelCreadoPorTula As label:
-                    BorderColor: =App.Theme.Colors.Darker40
-                    Color: =ThemeInk2
-                    DisabledColor: =RGBA(166, 166, 166, 1)
-                    Font: =Font.'Segoe UI'
-                    Height: =20
-                    OnSelect: =Select(Parent)
-                    PaddingBottom: =0
-                    PaddingLeft: =0
-                    PaddingRight: =0
-                    PaddingTop: =0
-                    Size: =9.5
-                    Text: =Coalesce(ThisItem.CreadoPorTula, "—")
-                    Visible: =scrTulas.Width >= 1100
-                    Width: =Max(0, (Parent.Width - 92) - Parent.Width * 0.83)
-                    X: =Parent.Width * 0.83
-                    Y: =12
-                    ZIndex: =28
 
                 shpSepTula As rectangle:
                     BorderColor: =App.Theme.Colors.Darker40
@@ -1289,6 +1289,34 @@ scrTulas As screen:
                 Y: =cardTablaTula.Height / 2 - 18
                 ZIndex: =27
 
+    cntCargandoTula As groupContainer.manualLayoutContainer:
+        Fill: =RGBA(0, 0, 0, 0.35)
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        Visible: =ctxCargandoTula
+        Width: =Parent.Width
+        ZIndex: =3
+
+        lblCargandoTula As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: =Color.White
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =Font.'Segoe UI'
+            Height: =24
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =12
+            Text: ="Cargando tulas..."
+            Width: =cntCargandoTula.Width
+            Y: =cntCargandoTula.Height / 2 - 12
+            ZIndex: =1
+
     cntDlgDevTula As groupContainer.manualLayoutContainer:
         Fill: =RGBA(0, 0, 0, 0.45)
         Height: =Parent.Height
@@ -1348,8 +1376,7 @@ scrTulas As screen:
                 PaddingRight: =0
                 PaddingTop: =0
                 Size: =10
-                Text: |-
-                    ="La tula sale de la mesa y queda libre para que otro cajero la tome. Esto NO se puede deshacer."
+                Text: ="La tula sale de la mesa y queda libre para que otro cajero la tome. Esto NO se puede deshacer."
                 Width: =cardDlgDevTula.Width - 48
                 X: =24
                 Y: =54
@@ -1382,7 +1409,6 @@ scrTulas As screen:
                     ="Se borra TODO el recuento de esta tula: sus depósitos, sus cheques y sus denominaciones. Se desvincula la declaración del cliente, que vuelve a quedar disponible. La tula queda en cero, como si nunca hubiera pasado por una mesa." & Char(10) &
                     "Las aprobaciones que ya dio un supervisor NO se borran: quedan como constancia."
                 Width: =cardDlgDevTula.Width - 80
-                Wrap: =true
                 X: =40
                 Y: =108
                 ZIndex: =4
@@ -1401,7 +1427,8 @@ scrTulas As screen:
                 HoverBorderColor: =ThemeLineStrong
                 HoverColor: =ThemeInk
                 HoverFill: =ThemeSurface2
-                OnSelect: =UpdateContext({ctxDlgDevTula: false})
+                OnSelect: |-
+                    =UpdateContext({ctxDlgDevTula: false})
                 PressedBorderColor: =ThemeLineStrong
                 PressedColor: =ThemeInk
                 PressedFill: =ThemeSurface2
@@ -1465,32 +1492,4 @@ scrTulas As screen:
                 X: =cardDlgDevTula.Width - 24 - 176
                 Y: =cardDlgDevTula.Height - 60
                 ZIndex: =6
-
-    cntCargandoTula As groupContainer.manualLayoutContainer:
-        Fill: =RGBA(0, 0, 0, 0.35)
-        Height: =Parent.Height
-        LayoutGridColumnMinWidth: =0
-        LayoutGridColumns: =6
-        LayoutGridRowMinHeight: =0
-        LayoutGridRows: =6
-        Visible: =ctxCargandoTula
-        Width: =Parent.Width
-        ZIndex: =3
-
-        lblCargandoTula As label:
-            Align: =Align.Center
-            BorderColor: =App.Theme.Colors.Darker40
-            Color: =Color.White
-            DisabledColor: =RGBA(166, 166, 166, 1)
-            Font: =Font.'Segoe UI'
-            Height: =24
-            PaddingBottom: =0
-            PaddingLeft: =0
-            PaddingRight: =0
-            PaddingTop: =0
-            Size: =12
-            Text: ="Cargando tulas..."
-            Width: =cntCargandoTula.Width
-            Y: =cntCargandoTula.Height / 2 - 12
-            ZIndex: =1
 
