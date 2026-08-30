@@ -1,0 +1,204 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpDialogo:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      AnchoCard:
+        PropertyKind: Input
+        DisplayName: AnchoCard
+        Description: A custom property
+        DataType: Number
+        Default: =400
+      Mostrar:
+        PropertyKind: Input
+        DisplayName: Mostrar
+        Description: A custom property
+        DataType: Boolean
+        Default: =true
+      OkHabilitado:
+        PropertyKind: Input
+        DisplayName: OkHabilitado
+        Description: A custom property
+        DataType: Boolean
+        Default: =true
+      OnCancelar:
+        PropertyKind: Event
+        DisplayName: OnCancelar
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      OnOk:
+        PropertyKind: Event
+        DisplayName: OnOk
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      Texto:
+        PropertyKind: Input
+        DisplayName: Texto
+        Description: A custom property
+        DataType: Text
+        Default: ="Text"
+      TextoCancelar:
+        PropertyKind: Input
+        DisplayName: TextoCancelar
+        Description: A custom property
+        DataType: Text
+        Default: ="Cancelar"
+      TextoOk:
+        PropertyKind: Input
+        DisplayName: TextoOk
+        Description: A custom property
+        DataType: Text
+        Default: ="Confirmar"
+      Titulo:
+        PropertyKind: Input
+        DisplayName: Titulo
+        Description: A custom property
+        DataType: Text
+        Default: ="Text"
+      Tono:
+        PropertyKind: Input
+        DisplayName: Tono
+        Description: A custom property
+        DataType: Text
+        Default: ="info"
+    Children:
+      - cntFondoDlg:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            BorderStyle: =BorderStyle.None
+            Fill: =ThemeOverlay
+            Height: =cmpDialogo.Height
+            Visible: =cmpDialogo.Mostrar
+            Width: =cmpDialogo.Width
+          Children:
+            - btnBloqueoDlg:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderStyle: =BorderStyle.None
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  Height: =Parent.Height
+                  HoverFill: =Color.Transparent
+                  PressedFill: =Color.Transparent
+                  TabIndex: =-1
+                  Text: =""
+                  Width: =Parent.Width
+            - cntCardDlg:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderStyle: =BorderStyle.None
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.Regular
+                  Fill: =ThemeSurface
+                  Height: =Max(lblTxtDlg.Y + lblTxtDlg.Height + 66,160)
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Width: =cmpDialogo.AnchoCard
+                  X: =(Parent.Width - cmpDialogo.AnchoCard)/2
+                  Y: =(Parent.Height - Self.Height)/2
+                Children:
+                  - icoTonoDlg:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        Color: |-
+                          =Switch(cmpDialogo.Tono,
+                            "danger", ThemeDanger,
+                            "warn", ThemeWarn,
+                            "ok", ThemeOk,
+                            ThemeInfo)
+                        Height: =34
+                        Icon: |-
+                          =Switch(cmpDialogo.Tono,
+                            "danger", Icon.Warning,
+                            "warn", Icon.Warning,
+                            "ok", Icon.CheckBadge,
+                            Icon.Information)
+                        Width: =34
+                        X: =22
+                        Y: =20
+                  - lblTitDlg:
+                      Control: Label@2.5.1
+                      Properties:
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =24
+                        Size: =10.88
+                        Text: =cmpDialogo.Titulo
+                        Width: =Parent.Width - icoTonoDlg.Width - 76
+                        X: =icoTonoDlg.X + icoTonoDlg.Width + 12
+                        Y: =22
+                  - lblTxtDlg:
+                      Control: Label@2.5.1
+                      Properties:
+                        AutoHeight: =true
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        Size: =9
+                        Text: =cmpDialogo.Texto
+                        Width: =lblTitDlg.Width
+                        X: =lblTitDlg.X
+                        Y: =lblTitDlg.Y + lblTitDlg.Height + 4
+                  - icoXDlg:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        Color: =ThemeInk3
+                        Height: =18
+                        HoverColor: =ThemeInk
+                        Icon: =Icon.Cancel
+                        OnSelect: =cmpDialogo.OnCancelar()
+                        Width: =18
+                        X: =Parent.Width - 30
+                        Y: =22
+                  - btnCancelDlg:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =0
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        Fill: =Color.Transparent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverFill: =ThemeSurface2
+                        OnSelect: =cmpDialogo.OnCancelar()
+                        RadiusBottomLeft: =8
+                        RadiusBottomRight: =8
+                        RadiusTopLeft: =8
+                        RadiusTopRight: =8
+                        Size: =9
+                        Text: =cmpDialogo.TextoCancelar
+                        Width: =110
+                        X: =btnOkDlg.X - 8 - Self.Width
+                        Y: =Parent.Height - Self.Height - 10
+                  - btnOkDlg:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderThickness: =0
+                        Color: =ThemeSurface
+                        DisplayMode: =If(cmpDialogo.OkHabilitado, DisplayMode.Edit, DisplayMode.Disabled)
+                        Fill: =If(cmpDialogo.Tono="danger", ThemeDanger, ThemeAccent)
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        OnSelect: =cmpDialogo.OnOk()
+                        Size: =9
+                        Text: =cmpDialogo.TextoOk
+                        Width: =130
+                        X: =Parent.Width - 22 - Self.Width
+                        Y: =Parent.Height - Self.Height - 10

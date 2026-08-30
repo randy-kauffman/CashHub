@@ -1,0 +1,211 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpRailCajeros:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      CajeroSel:
+        PropertyKind: Output
+        DisplayName: CajeroSel
+        Description: A custom property
+        DataType: Record
+      Datos:
+        PropertyKind: Input
+        DisplayName: Datos
+        Description: A custom property
+        DataType: Table
+        Default: |-
+          =Table({cajeroNombre: "SampleText", pendientesCorte: "", mesa: "", badge: 0, cajero: GUID(), totalEur: 0.00, totalNio: 0.00, totalUsd: 0.00})
+      OnSeleccion:
+        PropertyKind: Event
+        DisplayName: OnSeleccion
+        Description: A custom property
+        ReturnType: None
+        Default: =
+      Titulo:
+        PropertyKind: Input
+        DisplayName: Titulo
+        Description: A custom property
+        DataType: Text
+        Default: ="Text"
+    Properties:
+      CajeroSel: =galCajerosRail.Selected
+    Children:
+      - shpFondoRail:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =ThemeSurface
+            Height: =Parent.Height
+            Width: =Parent.Width
+      - shpBordeRail:
+          Control: Rectangle@2.3.0
+          Properties:
+            Fill: =ThemeLine
+            Height: =Parent.Height
+            Width: =1
+            X: =Parent.Width-1
+      - lblTituloRail:
+          Control: Label@2.5.1
+          Properties:
+            Color: =ThemeInk3
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =16
+            Size: =7.88
+            Text: =Upper(cmpRailCajeros.Titulo)
+            Width: =Parent.Width-26
+            X: =13
+            Y: =11
+      - cntOrdenRail:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Fill: =Color.Transparent
+            Height: =26
+            Width: =Parent.Width-26
+            X: =13
+            Y: =lblTituloRail.Y + lblTituloRail.Height + 8
+          Children:
+            - btnOrdCantRail:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Color: =If(Coalesce(ctxOrdenRail,"cant")="cant", ThemeAccent, ThemeInk2)
+                  Fill: =If(Coalesce(ctxOrdenRail,"cant")="cant", ThemeAccentSoft, ThemeSurface)
+                  Font: =Font.'Open Sans'
+                  Height: =26
+                  OnSelect: =Set(ctxOrdenRail,"cant")
+                  RadiusBottomLeft: =7
+                  RadiusBottomRight: =7
+                  RadiusTopLeft: =7
+                  RadiusTopRight: =7
+                  Size: =8.25
+                  Text: ="Más pendientes"
+                  Width: =(Parent.Width-6)/2
+            - btnOrdAZRail:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Color: =If(Coalesce(ctxOrdenRail,"cant")="az", ThemeAccent, ThemeInk2)
+                  Fill: =If(Coalesce(ctxOrdenRail,"cant")="az", ThemeAccentSoft, ThemeSurface)
+                  Font: =Font.'Open Sans'
+                  Height: =26
+                  OnSelect: =Set(ctxOrdenRail,"az")
+                  RadiusBottomLeft: =7
+                  RadiusBottomRight: =7
+                  RadiusTopLeft: =7
+                  RadiusTopRight: =7
+                  Size: =8.25
+                  Text: ="A–Z"
+                  Width: =btnOrdCantRail.Width
+                  X: =btnOrdCantRail.X + btnOrdCantRail.Width + 6
+      - galCajerosRail:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            Height: =Parent.Height - Self.Y
+            Items: |-
+              =Sort(
+                  cmpRailCajeros.Datos,
+                  If(
+                      Coalesce(
+                          ctxOrdenRail,
+                          "cant"
+                      ) = "cant",
+                      badge,
+                      cajeroNombre
+                  ),
+                  If(
+                      Coalesce(
+                          ctxOrdenRail,
+                          "cant"
+                      ) = "cant",
+                      SortOrder.Descending,
+                      SortOrder.Ascending
+                  )
+              )
+            OnSelect: =cmpRailCajeros.OnSeleccion()
+            TemplatePadding: =0
+            TemplateSize: =52
+            Width: =Parent.Width
+            Y: =cntOrdenRail.Y + cntOrdenRail.Height + 8
+          Children:
+            - shpSelRail:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =If(ThisItem.IsSelected, ThemeAccentSoft, Color.Transparent)
+                  Height: =Parent.TemplateHeight
+                  Width: =Parent.TemplateWidth
+            - shpSelBarraRail:
+                Control: Rectangle@2.3.0
+                Properties:
+                  Fill: =ThemeAccent
+                  Height: =Parent.TemplateHeight
+                  Visible: =ThisItem.IsSelected
+                  Width: =3
+            - btnFilaRail:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Fill: =Color.Transparent
+                  FocusedBorderThickness: =0
+                  Font: =Font.'Open Sans'
+                  Height: =Parent.TemplateHeight
+                  HoverFill: =ThemeSurface2
+                  OnSelect: |-
+                    =Select(Parent);
+                    cmpRailCajeros.OnSeleccion()
+                  PressedFill: =ThemeAccentSoft
+                  Text: =""
+                  Width: =Parent.TemplateWidth
+            - lblNombreRail:
+                Control: Label@2.5.1
+                Properties:
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =18
+                  OnSelect: =Select(Parent)
+                  Size: =9
+                  Text: =ThisItem.cajeroNombre
+                  Width: =Parent.TemplateWidth - 70
+                  X: =13
+                  Y: =9
+            - lblMesaRail:
+                Control: Label@2.5.1
+                Properties:
+                  Color: =ThemeInk3
+                  Font: =Font.'Open Sans'
+                  Height: =14
+                  OnSelect: =Select(Parent)
+                  Size: =9
+                  Text: =ThisItem.mesa
+                  Width: =Parent.TemplateWidth - 70
+                  X: =13
+                  Y: =28
+            - pilBadgeRail:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =ThemeAccent
+                  DisplayMode: =DisplayMode.View
+                  Fill: =ThemeAccentSoft
+                  Font: =Font.'Open Sans'
+                  Height: =22
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Size: =9
+                  Text: =Text(ThisItem.badge)
+                  Width: =40
+                  X: =Parent.TemplateWidth - 52
+                  Y: =15

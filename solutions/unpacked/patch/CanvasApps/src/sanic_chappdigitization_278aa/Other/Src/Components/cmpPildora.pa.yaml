@@ -1,0 +1,55 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+ComponentDefinitions:
+  cmpPildora:
+    DefinitionType: CanvasComponent
+    AccessAppScope: true
+    CustomProperties:
+      Texto:
+        PropertyKind: Input
+        DisplayName: Texto
+        Description: A custom property
+        DataType: Text
+        Default: ="Text"
+      Tono:
+        PropertyKind: Input
+        DisplayName: Tono
+        Description: A custom property
+        DataType: Text
+        Default: ="Text"
+    Children:
+      - btnPilPil:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLineSoft
+            BorderThickness: =If(cmpPildora.Tono="neutro",1,0)
+            Color: |-
+              =Switch(cmpPildora.Tono,
+                "ok", ThemeOk,
+                "warn", ThemeWarn,
+                "danger", ThemeDanger,
+                "info", ThemeInfo,
+                ThemeInk3)
+            DisplayMode: =DisplayMode.View
+            Fill: |-
+              =Switch(cmpPildora.Tono,
+                "ok", ThemeOkSoft,
+                "warn", ThemeWarnSoft,
+                "danger", ThemeDangerSoft,
+                "info", ThemeInfoSoft,
+                ThemeLineSoft)
+            Font: =Font.'Open Sans'
+            Height: =Parent.Height
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Size: =7.88
+            Text: =cmpPildora.Texto
+            Width: =Parent.Width
