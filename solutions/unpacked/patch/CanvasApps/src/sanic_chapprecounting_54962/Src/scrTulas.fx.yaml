@@ -1594,6 +1594,61 @@ scrTulas As screen:
         Y: =767
         ZIndex: =47
 
+    tmrVigilaSesionTul As timer:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Duration: =20000
+        Fill: =Color.Transparent
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnTimerEnd: |-
+            =// VIGILA QUE LA SESION SIGA VIVA, desde la lista de tulas.
+            //   El vigilante que ya existia (tmrVigilaTulaCon) vive en la pantalla de
+            //   CONTEO y arranca solo con una tula abierta. Un cajero parado en esta
+            //   lista —sin tula, sin solicitud pendiente— no tenia NADA que lo
+            //   controlara: el supervisor le cerraba la sesion y el no se enteraba
+            //   hasta que intentara algo. La comprobacion de OnVisible tampoco
+            //   alcanza: corre al ENTRAR, y aca el cajero se queda.
+            //
+            //   Refresh antes del LookUp: sin invalidar el cache se relee la copia
+            //   local y la sesion parece viva para siempre.
+            Refresh('CH-Tbl-RecountingSessions');
+            If(
+                LookUp(
+                    'CH-Tbl-RecountingSessions',
+                    'CH-Tbl-RecountingSession' = gvarSesion.'CH-Tbl-RecountingSession'
+                ).SessionForciblyClosed,
+                Notify(
+                    "Su sesión de recuento fue cerrada por un supervisor. Abra una sesión " &
+                    "nueva para seguir trabajando; las tulas que tenía en la mesa quedaron " &
+                    "libres para reasignar.",
+                    NotificationType.Error,
+                    6000
+                );
+                Set(gvarSesion, Blank());
+                Set(gvarTula, Blank());
+                Set(gvarSesionDetalle, Blank());
+                Navigate(scrSesion)
+            )
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =Color.Transparent
+        Repeat: =true
+        Start: |-
+            =// Corre SIEMPRE que haya sesion, tambien mientras el cajero espera una
+            // aprobacion: que la sesion muera justo en esa espera es de los peores
+            // momentos para no enterarse.
+            !IsBlank(gvarSesion.'CH-Tbl-RecountingSession')
+        TabIndex: =-1
+        Text: =""
+        Visible: =false
+        Width: =1
+        X: =14
+        Y: =767
+        ZIndex: =55
+
     tmrPollTul As timer:
         BorderThickness: =0
         Color: =ThemeInk
