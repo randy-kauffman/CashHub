@@ -3959,6 +3959,7 @@ scrConteo As screen:
 
     cmpDlgMonedaCon As cmpDialogo:
         AnchoCard: =330
+        Height: =Parent.Height
         Icono: ="sync"
         MostrarCerrar: =false
         OnCancelar: |-
@@ -3973,11 +3974,13 @@ scrConteo As screen:
             "Los cheques ya marcados se desmarcan."
         TextoConfirmar: ="Cambiar moneda"
         Titulo: ="Cambiar la moneda del depósito"
+        Width: =Parent.Width
         Visible: =ctxDlgMonedaCon
         ZIndex: =105
 
     cmpDlgEliminarCon As cmpDialogo:
         AnchoCard: =330
+        Height: =Parent.Height
         Icono: ="trash"
         MostrarCerrar: =false
         OnCancelar: |-
@@ -3994,11 +3997,13 @@ scrConteo As screen:
         TextoConfirmar: ="Eliminar"
         Titulo: ="Eliminar el depósito " & Text(ctxDepSelCon.AccountNumber)
         Tono: ="danger"
+        Width: =Parent.Width
         Visible: =ctxDlgEliminarCon
         ZIndex: =106
 
     cmpDlgDescartarCon As cmpDialogo:
         AnchoCard: =330
+        Height: =Parent.Height
         Contorno: =true
         Icono: ="sync"
         MostrarCerrar: =false
@@ -4033,6 +4038,7 @@ scrConteo As screen:
         TextoConfirmar: ="Descartar"
         Titulo: ="Descartar los cambios del depósito"
         Tono: ="warn"
+        Width: =Parent.Width
         Visible: =ctxDlgDescartarCon
         ZIndex: =107
 
@@ -6143,6 +6149,43 @@ scrConteo As screen:
         HoverFill: =Color.Transparent
         OnSelect: |-
             =// ====== BLOQUE M — REHACER GRILLAS POR MONEDA — btnRehacerMonedaCon.OnSelect ======
+            
+            // Cambiar de moneda ROMPE el enlace. Un declarado en cordobas no puede
+            // respaldar un recuento en dolares: la relacion era entre depositos de la
+            // MISMA moneda. Y como la cuenta y el numero de transaccion tambien venian
+            // heredados de ese declarado, se van con el — lo heredado no sobrevive a la
+            // herencia. Se suelta ANTES de rehacer las grillas.
+            If(
+                !IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                IfError(
+                    Patch('CH-Tbl-DeclaredDeposits', ctxDepDecCursoCon, { RelatedRecountedDeposit: Blank() }),
+                    Notify("No se pudo soltar la declaración: " & FirstError.Message, NotificationType.Error)
+                );
+                If(
+                    !IsBlank(ctxDepositoCon.'CH-Tbl-DepositsRecounting'),
+                    IfError(
+                        UpdateContext({
+                            ctxDepositoCon:
+                                Patch('CH-Tbl-DepositsRecountings', ctxDepositoCon,
+                                      { RelatedDeclaredDeposit: Blank(),
+                                        AccountNumber: Blank(),
+                                        TransactionNumber: Blank() })
+                        }),
+                        Notify("No se pudo soltar el enlace: " & FirstError.Message, NotificationType.Error)
+                    )
+                );
+                Notify(
+                    "El depósito se desenlazó de la cuenta declarada: la moneda ya no coincide.",
+                    NotificationType.Warning
+                )
+            );
+            
+            // Sin enlace y sin seleccion: nada declarado que heredar en la moneda nueva.
+            UpdateContext({
+                ctxDepDecCursoCon: Defaults('CH-Tbl-DeclaredDeposits'),
+                ctxDepDecSelCon:   Defaults('CH-Tbl-DeclaredDeposits')
+            });
+            
             UpdateContext({ ctxMonedaCon: Left(ddMonedaCon.Selected.Value, 3) });
             
             Clear(colAutoContadoraCon);          // D-4 (01 §4.4, punto 3)
@@ -6161,27 +6204,9 @@ scrConteo As screen:
                 )
             );
             
-            // Los cheques marcados se DESMARCAN y la lista se rehace con la moneda nueva.
-            Clear(colChecksCon);
-            ForAll(
-                Filter(colChequesDeclaradosCon, Text(CheckCurrency) = ctxMonedaCon) As DC,
-                With(
-                    { Rec: LookUp(colChecksTulaCon, RelatedDeclaredCheck.'CH-Tbl-DeclaredChecks' = DC.'CH-Tbl-DeclaredChecks') },
-                    If(
-                        IsBlank(Rec.'CH-Tbl-Checks') ||
-                        Rec.RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting' = ctxDepositoCon.'CH-Tbl-DepositsRecounting',
-                        Collect(
-                            colChecksCon,
-                            {
-                                LocalId: Text(DC.'CH-Tbl-DeclaredChecks'), GUID: Rec.'CH-Tbl-Checks',
-                                DeclaradoGUID: DC.'CH-Tbl-DeclaredChecks', Numero: DC.CheckNumber,
-                                Tipo: Text(DC.CheckType), Moneda: Text(DC.CheckCurrency),
-                                Monto: DC.CheckAmount, Seleccionado: false, EsManual: false
-                            }
-                        )
-                    )
-                )
-            );
+            // La lista de cheques se rehace por el bloque unico: sin declarado efectivo
+            // en la moneda nueva no hay cheques declarados que ofrecer.
+            Select(btnCargarChequesCon);
             
             Set(gvarDepositoSinGuardar, true);
             Reset(galBilletesCon); Reset(galMonedasCon); Reset(galChequesCon)
