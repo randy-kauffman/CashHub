@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <!--
+    CashHub.FileDownloader — baja un archivo generado en el servidor SIN navegar.
+
+    POR QUE EXISTE. La descarga del CSV del lote era Download() sobre
+    .../sanic_csvcore/$value, que es una NAVEGACION del navegador. Power Fx no puede
+    ponerle un header Authorization, asi que lo unico que la autenticaba era la cookie
+    del org — y los usuarios de negocio no la tienen: viven en apps.powerapps.com.
+    Resultado: HTTP 401 y una pestaña en blanco. Peor todavia, muda: al no ser una
+    operacion de la app, el fallo quedaba fuera del alcance de cualquier IfError.
+
+    Este componente arma el archivo en el navegador con un Blob. No navega a ningun
+    lado, no manda credenciales y no depende del estado de la sesion. Funciona en
+    incognito, en un perfil recien instalado y dentro de tres meses.
+
+    NO tiene propiedades bound: no se ata a ninguna columna. Recibe el contenido por
+    input y baja cuando cambia Trigger.
+  -->
+  <control namespace="CashHub" constructor="FileDownloader" version="0.0.1"
+           display-name-key="CashHub File Downloader"
+           description-key="Baja un archivo de texto generado en el servidor, sin navegar ni depender de la cookie del entorno."
+           control-type="standard">
+
+    <!-- Todo pasa dentro del navegador: ni un dominio externo. -->
+    <external-service-usage enabled="false">
+    </external-service-usage>
+
+    <!-- Contenido del archivo, como texto. Multiple (no SingleLine) porque un CSV
+         de lote ronda los 50 KB con el tope de 500 transacciones por corte. -->
+    <property name="Content" display-name-key="Content"
+              description-key="Contenido del archivo, tal cual quedo archivado."
+              of-type="Multiple" usage="input" required="false" />
+
+    <property name="FileName" display-name-key="FileName"
+              description-key="Nombre con el que se guarda (ej. TB-1050.csv)."
+              of-type="SingleLine.Text" usage="input" required="false" />
+
+    <property name="MimeType" display-name-key="MimeType"
+              description-key="Tipo MIME. Vacio = text/csv;charset=utf-8."
+              of-type="SingleLine.Text" usage="input" required="false" />
+
+    <!-- EL DISPARADOR. Un componente de canvas no expone metodos invocables, asi que
+         la descarga se dispara por CAMBIO de valor: la app pone un token distinto
+         (un timestamp) y el componente baja una sola vez por token. Repetir el mismo
+         token no vuelve a bajar: sin esto, cualquier re-render bajaria el archivo de
+         nuevo y el usuario terminaria con seis copias. -->
+    <property name="Trigger" display-name-key="Trigger"
+              description-key="Token de disparo: al cambiar a un valor nuevo y no vacio, baja el archivo."
+              of-type="SingleLine.Text" usage="input" required="false" />
+
+    <!-- Bytes que el servidor dice haber mandado. Se comparan con los que realmente
+         se arman en el navegador: si no coinciden, el archivo llego cortado y hay que
+         AVISAR, no bajar un CSV incompleto a un core bancario. -->
+    <property name="ExpectedBytes" display-name-key="ExpectedBytes"
+              description-key="Tamaño en bytes informado por el servidor. 0 = no verificar."
+              of-type="Whole.None" usage="input" required="false" />
+
+    <!-- Que paso con la ultima descarga, para que la app pueda avisarlo.
+         'ok' | 'sin-contenido' | 'tamaño-no-coincide:...' | 'error:...' -->
+    <property name="Status" display-name-key="Status"
+              description-key="Resultado de la ultima descarga."
+              of-type="SingleLine.Text" usage="output" />
+
+    <property name="BytesDownloaded" display-name-key="BytesDownloaded"
+              description-key="Bytes realmente escritos en la ultima descarga."
+              of-type="Whole.None" usage="output" />
+
+    <resources>
+      <code path="index.ts" order="1"/>
+    </resources>
+  </control>
+</manifest>

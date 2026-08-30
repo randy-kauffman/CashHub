@@ -955,6 +955,16 @@ namespace CashHub.Plugins
             public const string GeneradoPor = "sanic_generadopor";
 
             /// <summary>
+            /// Columna de tipo Archivo (File) con el CSV que va al core, subido por
+            /// CH-Flow-DownloadData. Es columna File y NO una nota a proposito:
+            /// annotations/documentbody/$value devuelve el base64 CRUDO como text/plain
+            /// (archivo inservible), mientras que la columna File devuelve los bytes
+            /// decodificados. Ademas es el artefacto de auditoria: queda archivado
+            /// exactamente lo que se mando al core.
+            /// </summary>
+            public const string CsvCore = "sanic_csvcore";
+
+            /// <summary>
             /// Sellos server-side de las transiciones del lote (quien y cuando),
             /// estampados por BatchTransitionStampPlugin en Pre-operation. La estampa
             /// IngresadoPor es ademas el insumo de la regla de segregacion de funciones
@@ -1039,6 +1049,36 @@ namespace CashHub.Plugins
         }
 
         /// <summary>Custom API de corte de transacciones a lote (CH-App-Digitization).</summary>
+        /// <summary>
+        /// Custom API que devuelve el CSV del lote como texto, para que la app lo baje
+        /// SIN navegar a Dataverse.
+        ///
+        /// POR QUE EXISTE. La descarga vieja era Download() sobre .../sanic_csvcore/$value:
+        /// una navegacion del navegador, en la que Power Fx NO puede poner un header
+        /// Authorization. Lo unico que la autenticaba era la cookie del org, que los
+        /// usuarios de negocio no tienen: viven en apps.powerapps.com. Resultado: HTTP 401
+        /// y una pestaña en blanco. Y MUDA — el Download() esta fuera del alcance de
+        /// cualquier IfError, asi que la app no podia ni enterarse de que fallo.
+        ///
+        /// Este API viaja por el conector, que SI va autenticado, y el archivo lo arma el
+        /// navegador con un Blob. Sin cookie, sin navegacion, sin estado de browser.
+        ///
+        /// NO genera el CSV: lo LEE de la columna File que ya subio CH-Flow-DownloadData.
+        /// Generarlo de nuevo aca duplicaria la logica y abriria la puerta a que lo que se
+        /// archiva y lo que se baja dejen de ser el mismo archivo.
+        /// </summary>
+        internal static class BatchCsvApi
+        {
+            public const string MessageName = "sanic_CHGetBatchCsv";
+
+            /// <summary>Id del lote cuyo CSV se devuelve (REQUERIDO).</summary>
+            public const string InBatchId = "BatchId";
+
+            public const string OutCsv = "Csv";
+            public const string OutFileName = "FileName";
+            public const string OutSizeBytes = "SizeBytes";
+        }
+
         internal static class CutApi
         {
             public const string MessageName = "sanic_CHCreateTransactionCut";
