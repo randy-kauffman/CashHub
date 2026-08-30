@@ -818,6 +818,32 @@ scrResumen As screen:
                     Y: =12
                     ZIndex: =2
 
+                lblCelSesEstadoRes As label:
+                    Color: =If(ThisItem.SessionForciblyClosed, ThemeDanger, ThemeOk)
+                    Height: =13
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =7.5
+                    Text: =If(ThisItem.SessionForciblyClosed, "Cerrada a la fuerza", "Abierta")
+                    Tooltip: |-
+                        =If(
+                            ThisItem.SessionForciblyClosed,
+                            "Cerrada por " & ThisItem.ForcedClosureBy.'Full Name' &
+                            If(
+                                IsBlank(ThisItem.ReasonForForcedFlosure),
+                                " (sin motivo registrado)",
+                                ". Motivo: " & ThisItem.ReasonForForcedFlosure
+                            ),
+                            "La sesión sigue abierta. Hoy NO existe un cierre automático de jornada: " &
+                            "una sesión solo se cierra si un supervisor la cierra a la fuerza."
+                        )
+                    Width: =Parent.Width * 0.10
+                    Wrap: =false
+                    Y: =29
+                    ZIndex: =11
+
                 lblCelCajeroRes As label:
                     BorderColor: =App.Theme.Colors.Darker40
                     Color: =ThemeInk
@@ -970,6 +996,12 @@ scrResumen As screen:
                     Fill: =ThemeSurface
                     Font: =Font.'Segoe UI'
                     FontWeight: =FontWeight.Semibold
+                    DisplayMode: |-
+                        =If(
+                            ThisItem.SessionForciblyClosed,
+                            DisplayMode.Disabled,
+                            DisplayMode.Edit
+                        )
                     Height: =26
                     HoverBorderColor: =ThemeDanger
                     HoverColor: =ThemeDanger
@@ -1040,8 +1072,12 @@ scrResumen As screen:
                     RadiusTopRight: =6
                     Size: =8.5
                     Text: ="Cerrar"
-                    Tooltip: ="Cierra la sesión a la fuerza y libera las tulas que el cajero tenga en la mesa."
-                    Visible: =!ThisItem.SessionForciblyClosed
+                    Tooltip: |-
+                        =If(
+                            ThisItem.SessionForciblyClosed,
+                            "Esta sesión ya fue cerrada por " & ThisItem.ForcedClosureBy.'Full Name' & ".",
+                            "Cierra la sesión a la fuerza y libera las tulas que el cajero tenga en la mesa."
+                        )
                     Width: =66
                     X: =Parent.Width - 74
                     Y: =9
