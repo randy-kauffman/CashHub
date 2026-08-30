@@ -457,6 +457,22 @@ namespace CashHub.Plugins
             /// Fila ausente/inactiva/no numerica => el parser usa su default.
             /// </summary>
             public const string MaxUncompressedMbKey = "Validation.MaxUncompressedMB";
+
+            /// <summary>
+            /// Tope de transacciones que un corte asigna DE UNA VEZ
+            /// (Digitization.MaxTransactionsPerCut).
+            ///
+            /// Existe porque un corte grande revienta el limite de la base:
+            /// "Too many concurrent requests ... The request limit for the database is
+            /// 400 and has been reached". Con 2.851 pendientes el corte moria entero y
+            /// no cortaba NADA: un corte parcial que funciona vale mas que uno completo
+            /// que nunca termina.
+            ///
+            /// Vive en la tabla de parametros y no en el codigo para poder moverlo sin
+            /// redeploy cuando cambie la capacidad del entorno.
+            /// Fila ausente/inactiva/no numerica => el plugin usa su piso (500).
+            /// </summary>
+            public const string MaxTransactionsPerCutKey = "Digitization.MaxTransactionsPerCut";
         }
 
         /// <summary>Permiso de cambio de datos de cliente: mapea tabla objetivo -> grupo AAD por tipo.</summary>

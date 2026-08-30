@@ -546,11 +546,17 @@ scrCorte As screen:
             // viera. No es un detalle de formato — en el corte de User 10 eran
             // € 17.544,42 que se cortaban a ciegas. Los KPI de arriba ya mostraban las
             // tres; el que mentia por omision era justo el paso donde se firma.
-            $"Se creará un lote en estado Generado con las {ctxCortePreviewCor.EligibleCount} transacciones de efectivo pendientes del cajero (" &
+            //
+            // Y NO PROMETE EL TOTAL. El servidor corta hasta un tope
+            // (Digitization.MaxTransactionsPerCut, 500) porque un corte de miles
+            // revienta el limite de requests de la base y termina no cortando NADA.
+            // Si el pendiente es mayor que el tope, el dialogo lo dice ANTES de
+            // firmar: el numero de arriba es lo que hay, no lo que se va a llevar.
+            $"Hay {ctxCortePreviewCor.EligibleCount} transacciones de efectivo pendientes del cajero (" &
             SimboloNIO & " " & Text(ctxCortePreviewCor.TotalNIO, FmtMoney) & " · " &
             SimboloUSD & " " & Text(ctxCortePreviewCor.TotalUSD, FmtMoney) & " · " &
             SimboloEUR & " " & Text(ctxCortePreviewCor.TotalEUR, FmtMoney) &
-            "). El lote queda a su nombre. El conteo lo confirma el servidor en el momento del corte: las transacciones creadas después entran en el próximo corte."
+            "). Se creará un lote en estado Generado, a su nombre, con las que el servidor alcance a tomar en este corte: hay un tope por corte, así que si quedan pendientes hay que repetir el corte hasta vaciarlas. El conteo final lo confirma el servidor: las transacciones creadas después entran en el próximo corte."
         TextoOk: ="Sí, generar corte"
         Titulo: =$"¿Generar el corte de {gvarCajeroCor.cajeroNombre}?"
         Tono: ="warn"

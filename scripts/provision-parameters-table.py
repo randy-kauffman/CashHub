@@ -254,6 +254,20 @@ SEED = [
         "sanic_description": "Tope en MB del tamaño descomprimido del adjunto. Baja el limite "
                              "sin redeploy; el techo de 100 MB es fijo en codigo.",
     },
+    {
+        # Tope de transacciones que un corte asigna DE UNA VEZ. Sin el, un corte
+        # grande revienta el limite de la base ("The request limit for the database
+        # is 400 and has been reached") y no corta NADA: con 2851 pendientes el corte
+        # moria entero. Con tope, ese cajero hace seis cortes y los seis entran.
+        # Ausente/inactivo/no numerico => el plugin usa su piso de 500.
+        # Category=General(159460005), Datatype=Number(159460001).
+        "sanic_name": "Digitization.MaxTransactionsPerCut",
+        "sanic_value": "500",
+        "sanic_category": 159460005, "sanic_datatype": 159460001, "sanic_isactive": True,
+        "sanic_description": "Maximo de transacciones que asigna un corte. Subirlo acerca el "
+                             "corte al limite de requests de la base; bajarlo obliga a mas "
+                             "cortes, mas chicos. Si falta, el plugin usa 500.",
+    },
 ]
 
 def seed():

@@ -10,8 +10,13 @@
 # Reemplaza el UpdateIf client-side de CH-App-Digitization (cap 2000, no atomico,
 # sin excluir Aplicadas). El corte corre server-side y POR CAJERO: crea el lote en
 # Generado explicito estampado con sanic_cajero/sanic_generadopor, asigna las
-# transacciones elegibles del cajero (createdby) en lotes de 500 y no deja lotes
-# vacios (regla W6).
+# transacciones elegibles del cajero (sanic_cajero, NO createdby: el asiento lo
+# escribe un plugin del servidor) y no deja lotes vacios (regla W6).
+#
+# El corte asigna como MUCHO Digitization.MaxTransactionsPerCut transacciones
+# (tabla de parametros, 500 por defecto). Sin ese tope un corte grande revienta el
+# limite de 400 requests de la base y NO corta nada; con tope, un cajero con 2.851
+# pendientes hace seis cortes y los seis entran.
 #
 # Requiere pp_secrets.env y el assembly compilado en Release.
 # Uso: ./scripts/register-transaction-cut.sh

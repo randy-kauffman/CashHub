@@ -24,6 +24,9 @@ namespace CashHub.Plugins
     /// </summary>
     public sealed class CreateTransactionCutPlugin : IPlugin
     {
+        /// <summary>Piso si el parametro no se puede leer. Ver <see cref="ReadMaxPerCut"/>.</summary>
+        private const int DefaultMaxPerCut = 500;
+
         private const int PageSize = 500;
 
         public void Execute(IServiceProvider serviceProvider)
@@ -116,9 +119,22 @@ namespace CashHub.Plugins
                 //    pipeline del Custom API faultea los child requests EN SILENCIO (la
                 //    asignacion no persistia); el Update directo participa de la
                 //    transaccion y ante un fallo revierte el corte completo, lote incluido.
+                // EL TOPE. Sin el, un corte grande muere entero:
+                //   "Too many concurrent requests ... The request limit for the database
+                //    is 400 and has been reached"
+                // y no corta NADA. Con tope, el cajero de 2.851 pendientes hace seis
+                // cortes y los seis entran. Un corte parcial que funciona vale mas que
+                // uno completo que nunca termina.
+                var maxPerCut = ReadMaxPerCut(service, tracing);
+                tracing.Trace("CreateTransactionCut: tope de {0} transacciones por corte.", maxPerCut);
+
                 var assigned = 0;
-                while (true)
+                while (assigned < maxPerCut)
                 {
+                    // La ultima pagina se pide del tamaño que FALTA, no del fijo: traer
+                    // 500 para asignar 3 le cuesta a la base y no sirve de nada.
+                    query.PageInfo.Count = Math.Min(PageSize, maxPerCut - assigned);
+
                     var page = service.RetrieveMultiple(query);
                     if (page.Entities.Count == 0)
                     {
@@ -185,6 +201,47 @@ namespace CashHub.Plugins
                 throw new InvalidPluginExecutionException(
                     $"No se pudo ejecutar el corte de transacciones: {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        /// Tope de transacciones por corte, de la tabla de parametros.
+        ///
+        /// FALLBACK EXPLICITO: si el parametro no esta, esta inactivo, o no es un entero
+        /// positivo, se usa <see cref="DefaultMaxPerCut"/>. Un corte sin tope es un corte
+        /// que puede morir entero, asi que ante la duda se LIMITA — nunca se asume
+        /// "sin limite".
+        /// </summary>
+        private static int ReadMaxPerCut(IOrganizationService service, ITracingService tracing)
+        {
+            try
+            {
+                var q = new QueryExpression(Schema.Parameter.LogicalName)
+                {
+                    ColumnSet = new ColumnSet(Schema.Parameter.Value),
+                    TopCount = 1,
+                };
+                q.Criteria.AddCondition(
+                    Schema.Parameter.Key, ConditionOperator.Equal, Schema.Parameter.MaxTransactionsPerCutKey);
+                q.Criteria.AddCondition(Schema.Parameter.IsActive, ConditionOperator.Equal, true);
+
+                var rows = service.RetrieveMultiple(q).Entities;
+                if (rows.Count > 0 &&
+                    int.TryParse(rows[0].GetAttributeValue<string>(Schema.Parameter.Value), out var value) &&
+                    value > 0)
+                {
+                    return value;
+                }
+
+                tracing.Trace("CreateTransactionCut: parametro {0} ausente o invalido; se usa el piso {1}.",
+                    Schema.Parameter.MaxTransactionsPerCutKey, DefaultMaxPerCut);
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("CreateTransactionCut: no se pudo leer {0} ({1}); se usa el piso {2}.",
+                    Schema.Parameter.MaxTransactionsPerCutKey, ex.Message, DefaultMaxPerCut);
+            }
+
+            return DefaultMaxPerCut;
         }
     }
 }

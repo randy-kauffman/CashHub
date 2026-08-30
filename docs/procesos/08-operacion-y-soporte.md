@@ -211,6 +211,19 @@ práctica: no se edita a mano, el próximo barrido la pisa igual.
 | `sanic_description` | texto | Para qué sirve — documentación in-place |
 | `sanic_isactive` | bit | Apaga el parámetro sin borrarlo |
 
+Claves que el código lee hoy, además del grupo AAD aprobador:
+
+| Clave | Quién la lee | Si falta / no es válida |
+|---|---|---|
+| `Security.ApproverGroup.Supervisor` | `GuardReceptionPlugin` (cuatro-ojos) | El guard no puede resolver el grupo aprobador |
+| `Validation.MaxUncompressedMB` | `XlsxParser` | Usa su default; el techo absoluto lo pone el parser |
+| `Digitization.MaxTransactionsPerCut` | `CreateTransactionCutPlugin` | Piso de 500 en código |
+
+El parámetro lo lee el **plugin en el contexto de quien llama**, no el service
+principal: el rol del consumidor necesita Read sobre `sanic_chtblparameter` o el
+valor de la tabla no tiene ningún efecto y la fila queda de adorno (verificado
+para `CH-SR-Digitizer`).
+
 Provista por `scripts/provision-parameters-table.py` (idempotente, scope
 exclusivo CashHub — no toca variables de entorno existentes). Uso real
 verificado en código: `GuardReceptionPlugin` resuelve el grupo AAD aprobador
