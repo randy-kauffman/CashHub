@@ -421,11 +421,68 @@ scrConteo As screen:
         PaddingRight: =0
         PaddingTop: =0
         Size: =9
-        Text: =gvarMesa.Name
+        Text: |-
+            =gvarMesa.Name &
+            If(IsBlank(gvarSesion.Name), "", "   ·   " & gvarSesion.Name)
         Width: =6.2 * Len(Self.Text) + 4
         Wrap: =false
         X: =shpChipMesaCon.X + 14
         Y: =shpChipMesaCon.Y
+        ZIndex: =11
+
+    shpChipChequesCon As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        Color: =ThemeInk
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeSurface2
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        HoverFill: =ThemeSurface2
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeSurface2
+        RadiusBottomLeft: =16
+        RadiusBottomRight: =16
+        RadiusTopLeft: =16
+        RadiusTopRight: =16
+        Size: =9
+        Text: =""
+        Visible: =!IsBlank(gvarSesion.'CH-Tbl-RecountingSession')
+        Width: =28 + lblChipChequesCon.Width
+        X: =shpChipMesaCon.X - 10 - Self.Width
+        Y: =17
+        ZIndex: =10
+
+    lblChipChequesCon As label:
+        Color: =ThemeInk2
+        FontWeight: =FontWeight.Semibold
+        Height: =shpChipChequesCon.Height
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: |-
+            =With(
+                {
+                    n: CountRows(
+                           Filter(
+                               'CH-Tbl-Checks',
+                               RecountingSession.'CH-Tbl-RecountingSession'
+                                   = gvarSesion.'CH-Tbl-RecountingSession'
+                           )
+                       )
+                },
+                Text(n) & If(n = 1, " cheque", " cheques")
+            )
+        Visible: =shpChipChequesCon.Visible
+        Width: =6.2 * Len(Self.Text) + 4
+        Wrap: =false
+        X: =shpChipChequesCon.X + 14
+        Y: =shpChipChequesCon.Y
         ZIndex: =11
 
     btnCerrarTulaCon As button:
