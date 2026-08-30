@@ -131,6 +131,21 @@ DEPOSITOS = [
     dict(moneda=EUR, cuenta=100200113, efectivo=450.00, bac=0.00, otros=220.00,
          ref="Cobro Europa", cheques=[(OTROS, 220.00)]),
 ]
+# QA-E2 lleva ADEMAS tres depositos en cordobas. Con uno solo por moneda no se
+# puede probar el enlace de verdad: el recuento es NIO y solo habia UN declarado
+# NIO, asi que no habia entre que elegir. Cada uno con sus propios numeros de
+# cheque (serie 92x) para poder distinguirlos en pantalla.
+EXTRA_NIO = {
+    'QA-E2': [
+        dict(moneda=NIO, cuenta=100200114, efectivo=8750.00, bac=1800.00, otros=0.00,
+             ref="Cobranza norte", cheques=[(BAC, 1000.00), (BAC, 800.00)]),
+        dict(moneda=NIO, cuenta=100200115, efectivo=3200.75, bac=0.00, otros=950.00,
+             ref="Recaudo sucursal", cheques=[(OTROS, 950.00)]),
+        dict(moneda=NIO, cuenta=100200116, efectivo=12400.00, bac=2000.00, otros=1500.00,
+             ref="Venta mayorista", cheques=[(BAC, 2000.00), (OTROS, 900.00), (OTROS, 600.00)]),
+    ],
+}
+
 TOTAL_NIO = 15000.50 + 2500.00 + 1200.00
 TOTAL_USD = 800.25 + 300.00
 TOTAL_EUR = 450.00 + 220.00
@@ -195,6 +210,7 @@ def crear_tula(numero, planilla, estado=BOVEDA):
 
 
 def crear_declarada(numero, planilla, idx, enlazar_a=None):
+    extras = EXTRA_NIO.get(numero, []) if idx == 1 else []
     decl = crear("sanic_chtbldeclarations", {
         "sanic_name": f"{numero} declaracion {idx}",
         "sanic_sourceentity": "sanic_chtblreceivedemails",
@@ -202,11 +218,13 @@ def crear_declarada(numero, planilla, idx, enlazar_a=None):
         "sanic_Client@odata.bind": f"/sanic_chtblclients({planilla['_sanic_remitentclient_value']})",
     })["sanic_chtbldeclarationid"]
 
+    extra_nio = sum(d["efectivo"] + d["bac"] + d["otros"] for d in extras)
     cuerpo = {
         "sanic_name": f"{numero}-D{idx}",
         "sanic_bagnumber": numero,
-        "sanic_totalnio": TOTAL_NIO, "sanic_totalusd": TOTAL_USD, "sanic_totaleur": TOTAL_EUR,
-        "sanic_totaldeposits": len(DEPOSITOS),
+        "sanic_totalnio": TOTAL_NIO + extra_nio,
+        "sanic_totalusd": TOTAL_USD, "sanic_totaleur": TOTAL_EUR,
+        "sanic_totaldeposits": len(DEPOSITOS) + len(extras),
         "sanic_DeclarationID@odata.bind": f"/sanic_chtbldeclarations({decl})",
     }
     if enlazar_a:
@@ -214,7 +232,7 @@ def crear_declarada(numero, planilla, idx, enlazar_a=None):
     db = crear("sanic_chtbldeclaredbagses", cuerpo)["sanic_chtbldeclaredbagsid"]
 
     ncheque = 0
-    for n, dep in enumerate(DEPOSITOS, start=1):
+    for n, dep in enumerate(DEPOSITOS + extras, start=1):
         pid = crear("sanic_chtbldeclareddepositses", {
             "sanic_name": f"Deposito {n}",
             "sanic_accountnumber": dep["cuenta"],
@@ -229,6 +247,8 @@ def crear_declarada(numero, planilla, idx, enlazar_a=None):
         })["sanic_chtbldeclareddepositsid"]
         for tipo, monto in dep["cheques"]:
             ncheque += 1
+            # serie 91x/92x/93x para los tres base; los extras arrancan en 94x y
+            # siguen, para que NUNCA choquen con los de otra bolsa declarada.
             num = f"9{idx}{n}{ncheque:04d}"
             crear("sanic_chtbldeclaredcheckses", {
                 "sanic_name": f"Cheque {num}",
