@@ -1312,7 +1312,7 @@ scrResumen As screen:
 
             lblDlgCieSubRes As label:
                 Color: =ThemeInk2
-                Height: =34
+                Height: =38
                 PaddingBottom: =0
                 PaddingLeft: =0
                 PaddingRight: =0
@@ -1320,8 +1320,18 @@ scrResumen As screen:
                 Size: =10
                 Text: |-
                     ="Cajero " & ctxSesCierreRes.CajeroNombre & "  ·  mesa " & ctxSesCierreRes.MesaNombre &
-                    "  ·  " & CountRows(colPrevueloRes) & " tulas ligadas a esta sesión."
+                    "  ·  " & CountRows(colPrevueloRes) & " tulas ligadas" & Char(10) &
+                    CountRows(Filter(colPrevueloRes, AccionRes = "Se libera y se borra su recuento")) &
+                    " se liberan  ·  " &
+                    CountRows(Filter(colPrevueloRes, FrenaRes)) & " frenan  ·  " &
+                    CountRows(
+                        Filter(
+                            colPrevueloRes,
+                            !FrenaRes && AccionRes <> "Se libera y se borra su recuento"
+                        )
+                    ) & " quedan como están"
                 Width: =cardDlgCierreRes.Width - 48
+                Wrap: =true
                 X: =24
                 Y: =50
                 ZIndex: =2
@@ -1350,18 +1360,18 @@ scrResumen As screen:
                 Width: =cardDlgCierreRes.Width - 48
                 Wrap: =true
                 X: =24
-                Y: =86
+                Y: =92
                 ZIndex: =3
 
             galPrevueloRes As gallery.galleryVertical:
-                Height: =cardDlgCierreRes.Height - 210
+                Height: =Max(120, cardDlgCierreRes.Height - 118 - Self.Y)
                 Items: =colPrevueloRes
                 Layout: =Layout.Vertical
                 TemplatePadding: =0
                 TemplateSize: =34
                 Width: =cardDlgCierreRes.Width - 48
                 X: =24
-                Y: =130
+                Y: =If(CountRows(Filter(colPrevueloRes, FrenaRes)) > 0, 140, 96)
                 ZIndex: =4
 
                 lblPvTulaRes As label:
@@ -1394,7 +1404,7 @@ scrResumen As screen:
 
             lblDlgCieNotaRes As label:
                 Color: =ThemeInk3
-                Height: =32
+                Height: =40
                 PaddingBottom: =0
                 PaddingLeft: =0
                 PaddingRight: =0
