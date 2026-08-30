@@ -6673,6 +6673,56 @@ scrConteo As screen:
         Y: =767
         ZIndex: =118
 
+    tmrVigilaTulaCon As timer:
+        Duration: =20000
+        Height: =1
+        OnTimerEnd: |-
+            =// VIGILA QUE LA TULA SIGA SIENDO DEL CAJERO.
+            //   El servidor YA impide escribir sobre una tula devuelta: el guard
+            //   rechaza depositos, cheques y denominaciones, y la maquina de estados
+            //   rechaza el cierre. O sea que los datos nunca corren peligro.
+            //
+            //   Lo que faltaba era AVISAR. Sin esto el cajero seguia contando efectivo
+            //   contra una tula que ya no es suya, y se enteraba recien al guardar,
+            //   con un error que no explica que paso. Veinte segundos de retraso es
+            //   mucho mejor que veinte minutos de conteo tirado.
+            //
+            //   Se pregunta por la SESION, no por el estado: una devolucion deja la
+            //   sesion en blanco y si otro cajero la tomo, la sesion es la de el. Una
+            //   tula que el propio cajero acaba de cerrar conserva su sesion, asi que
+            //   cerrar bien NO dispara este aviso.
+            With(
+                { Fresca: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags') },
+                If(
+                    !IsBlank(Fresca.'CH-Tbl-Bags') &&
+                    (
+                        IsBlank(Fresca.RecountingSession.'CH-Tbl-RecountingSession') ||
+                        Fresca.RecountingSession.'CH-Tbl-RecountingSession'
+                            <> gvarSesion.'CH-Tbl-RecountingSession'
+                    ),
+                    Notify(
+                        "La tula " & Trim(gvarTula.BagID) & " fue devuelta para reasignación y ya no " &
+                        "está en su sesión. Lo que no se haya guardado se pierde: el servidor ya no " &
+                        "acepta escrituras sobre ella.",
+                        NotificationType.Error,
+                        6000
+                    );
+                    Set(gvarTula, Blank());
+                    Set(gvarSesionDetalle, Blank());
+                    Navigate(scrTulas)
+                )
+            )
+        Repeat: =true
+        Start: |-
+            =!IsBlank(gvarTula.'CH-Tbl-Bags') &&
+            !IsBlank(gvarSesion.'CH-Tbl-RecountingSession') &&
+            !ctxEsperandoCon
+        Visible: =false
+        Width: =1
+        X: =10
+        Y: =767
+        ZIndex: =121
+
     tmrPollCon As timer:
         Duration: =15000
         Height: =1

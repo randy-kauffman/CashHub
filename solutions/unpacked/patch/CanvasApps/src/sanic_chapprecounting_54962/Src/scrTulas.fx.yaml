@@ -1397,6 +1397,28 @@ scrTulas As screen:
                 IsBlank(gvarTula.'CH-Tbl-Bags'),
                 Notify("La tula ya no está disponible. Toque el botón Actualizar para refrescar la lista.", NotificationType.Error),
             
+                // ---- LA TULA PUEDE HABER CAMBIADO DE MANOS ----
+                //   colTulasSesionTul es una FOTO del momento en que se cargo la
+                //   pantalla, no un vivo. Releer la tula (arriba) no alcanzaba: se
+                //   comprobaba solo que EXISTIERA. Si el supervisor la devolvio para
+                //   reasignacion mientras la lista estaba en pantalla, la fila seguia
+                //   ahi y el cajero volvia a entrar a una tula que ya no es suya.
+                //
+                //   La pregunta correcta es "¿sigue en MI sesion?", no "¿en que estado
+                //   esta?": una devolucion le deja la sesion en blanco, y si otro cajero
+                //   la tomo, la sesion es la de el. Una tula Recontada conserva su
+                //   sesion, asi que este control no rompe el retome de solo lectura.
+                IsBlank(gvarTula.RecountingSession.'CH-Tbl-RecountingSession') ||
+                gvarTula.RecountingSession.'CH-Tbl-RecountingSession'
+                    <> gvarSesion.'CH-Tbl-RecountingSession',
+                    Notify(
+                        "La tula " & Trim(gvarTula.BagID) & " ya no está en su sesión: fue devuelta " &
+                        "para reasignación. Si la va a recontar, escanéela de nuevo.",
+                        NotificationType.Error
+                    );
+                    Set(gvarTula, Blank());
+                    Select(btnCargarSesionTul),
+            
                 // la declaracion se relee COMPLETA por PK: 04 necesita sus totales, no la anotacion
                 If(
                     IsBlank(gvarTula.BagDeclarationID.'CH-Tbl-DeclaredBags'),
