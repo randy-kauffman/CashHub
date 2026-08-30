@@ -2,6 +2,20 @@ App As appinfo:
     BackEnabled: =true
     Formulas: |-
         =// ===== Paleta (verde-tesorería, prototipo aprobado) =====
+        // ===================== TOPE DE ENVIO DE CHEQUES =====================
+        // Cuantos cheques marca de una el boton de seleccion masiva.
+        //
+        // NO es un numero de diseño, es el limite de la plataforma: una operacion de
+        // Power Apps corta a los 2 MINUTOS, y el envio patchea de a un cheque. Con
+        // ~400 ms por Patch, 50 son ~20 s: entra con margen. La ventana que carga la
+        // pantalla tenia 2920 enviables al escribir esto — mandarlos todos habrian
+        // sido ~20 minutos, o sea que se cortaba a la mitad y NADIE sabria por donde
+        // quedo.
+        //
+        // Si el envio alguna vez pasa a una Custom API por lotes, este tope deja de
+        // tener sentido y se sube.
+        TopeEnvioChq = 50;
+        
         ThemeAccent = ColorValue("#0F7A5A");
         ThemeAccentSoft = ColorValue("#DCEFE7");
         ThemeAccentInk = ColorValue("#FFFFFF");

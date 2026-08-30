@@ -507,7 +507,7 @@ scrCheques As screen:
                 DisabledFill: =RGBA(244, 244, 244, 1)
                 DisplayMode: |-
                     =If(
-                        CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado)) = 0,
+                        CountRows(Filter(galChequesChq.AllItems, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado)) = 0,
                         DisplayMode.Disabled,
                         DisplayMode.Edit
                     )
@@ -530,9 +530,20 @@ scrCheques As screen:
                     // Y conserva el paso de confirmacion: el boton de enviar sigue
                     // diciendo cuantos van ANTES de apretarlo.
                     With(
-                        { Enviables: Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado) },
+                        {
+                            // DE LA GALERIA, no de la coleccion cruda: "los primeros"
+                            // tiene que significar los primeros QUE SE VEN, con el
+                            // filtro y el orden que el supervisor tiene puesto.
+                            Enviables: FirstN(
+                                Filter(
+                                    galChequesChq.AllItems,
+                                    CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado
+                                ),
+                                TopeEnvioChq
+                            )
+                        },
                         If(
-                            // ya estaban todos marcados => el boton hace de "quitar"
+                            // ya estaban marcados => el boton hace de "quitar"
                             CountRows(colSelChq) >= CountRows(Enviables) && CountRows(Enviables) > 0,
                             Clear(colSelChq),
                             ClearCollect(colSelChq, Enviables)
@@ -550,15 +561,25 @@ scrCheques As screen:
                 Size: =9
                 Text: |-
                     =With(
-                        { n: CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado)) },
-                        If(
-                            CountRows(colSelChq) >= n && n > 0,
-                            "Quitar selección",
-                            "Seleccionar los " & n & " enviables"
+                        {
+                            hay: CountRows(
+                                Filter(galChequesChq.AllItems, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado)
+                            )
+                        },
+                        With(
+                            { n: Min(hay, TopeEnvioChq) },
+                            If(
+                                CountRows(colSelChq) >= n && n > 0,
+                                "Quitar selección",
+                                "Seleccionar " & n &
+                                If(hay > TopeEnvioChq, " (de " & hay & ")", "") & " enviables"
+                            )
                         )
                     )
                 Tooltip: |-
-                    ="Marca todos los cheques en estado Recontado del día cargado. No los envía: después confirmá con el botón de enviar."
+                    ="Marca los primeros " & TopeEnvioChq & " cheques en estado Recontado, en el orden en que se ven. " &
+                    "El tope existe porque una operación corta a los 2 minutos y el envío patchea de a un cheque: " &
+                    "mandar más quedaría a medias sin que nadie sepa por dónde. Repetí la tanda hasta terminar."
                 Width: =7 * Len(Self.Text) + 22
                 X: =220 + If(pilSelCountChq.Visible, pilSelCountChq.Width + 10, 0)
                 Y: =7
