@@ -374,6 +374,32 @@ namespace CashHub.Plugins
             public const string OutcomeBlocked = "Blocked";
         }
 
+        /// <summary>
+        /// <c>sanic_CHReturnBagForReassignment</c>: saca una tula de la mesa y la deja
+        /// libre, borrando todo lo que el cajero alcanzo a cargar.
+        ///
+        /// Va como Custom API y no como una tanda de Patch desde Power Fx porque son
+        /// CUATRO borrados y CUATRO desvinculaciones sobre cinco tablas: si la quinta
+        /// falla, la tula queda a medio limpiar y NADIE se entera. Aca, o pasa todo o
+        /// no pasa nada.
+        ///
+        /// Sin Boolean en la respuesta: el conector de Environment no expone Custom APIs
+        /// con salidas booleanas. Se devuelve texto, igual que ResolveApprovalApi.
+        /// </summary>
+        internal static class ReturnBagApi
+        {
+            public const string MessageName = "sanic_CHReturnBagForReassignment";
+
+            public const string InBagId = "BagId";
+            public const string InReason = "Reason";
+
+            public const string OutOutcome = "Outcome";
+            public const string OutMessage = "Message";
+
+            public const string OutcomeReturned = "Returned";
+            public const string OutcomeBlocked = "Blocked";
+        }
+
         internal static class CanResolveApprovalApi
         {
             public const string MessageName = "sanic_CHCanResolveApproval";
