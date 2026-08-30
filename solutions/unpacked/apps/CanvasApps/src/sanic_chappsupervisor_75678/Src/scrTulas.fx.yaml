@@ -416,7 +416,14 @@ scrTulas As screen:
 
         cntSegTula As groupContainer.horizontalAutoLayoutContainer:
             FillPortions: =0
-            Height: =If(scrTulas.Width < 1100, 68, 34)
+            Height: |-
+                =If(
+                    segTodasTula.Width + segEsclusaTula.Width + segBovedaTula.Width +
+                    segCajeroTula.Width + segDevueltaTula.Width + segPendRecTula.Width +
+                    segProcesadasTula.Width > Parent.Width - 60,
+                    68,
+                    34
+                )
             LayoutAlignItems: =LayoutAlignItems.Center
             LayoutGridColumnMinWidth: =0
             LayoutGridColumns: =6
@@ -424,7 +431,7 @@ scrTulas As screen:
             LayoutGridRows: =6
             LayoutMaxHeight: =0
             LayoutMaxWidth: =0
-            LayoutMinHeight: =If(scrTulas.Width < 1100, 68, 34)
+            LayoutMinHeight: =cntSegTula.Height
             LayoutMinWidth: =16
             LayoutMode: =LayoutMode.Auto
             LayoutWrap: =true
@@ -939,7 +946,7 @@ scrTulas As screen:
                 Visible: |-
                     =CountRows(Filter(colTulasTula, ctxSegTula = "todas" || SegTula = ctxSegTula)) > 0
                     && scrTulas.Width >= 1100
-                Width: =galTulasTula.Width * 0.17
+                Width: =Max(0, (galTulasTula.Width - 92) - galTulasTula.Width * 0.83)
                 X: =16 + galTulasTula.Width * 0.83
                 Y: =44
                 ZIndex: =21
@@ -1182,7 +1189,7 @@ scrTulas As screen:
                     Size: =9.5
                     Text: =Coalesce(ThisItem.CreadoPorTula, "—")
                     Visible: =scrTulas.Width >= 1100
-                    Width: =Parent.Width * 0.17
+                    Width: =Max(0, (Parent.Width - 92) - Parent.Width * 0.83)
                     X: =Parent.Width * 0.83
                     Y: =12
                     ZIndex: =28
