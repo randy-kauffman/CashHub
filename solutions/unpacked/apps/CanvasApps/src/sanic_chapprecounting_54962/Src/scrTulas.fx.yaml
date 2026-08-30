@@ -1215,8 +1215,25 @@ scrTulas As screen:
                                 Set(gvarSolicitud, ctxSolicitudPrevTul);
                                 UpdateContext({ ctxEsperandoTul: true, ctxRechazadaTul: false }),
             
-                            // ya aprobada ⇒ se consume: abrimos sin declaracion
-                            ctxSolicitudPrevTul.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Aprobado,
+                            // ya aprobada ⇒ se consume: abrimos sin declaracion.
+                            //
+                            //   PERO NO SI LA TULA ESTA DEVUELTA. Una aprobacion "de hoy,
+                            //   de este cajero, para esta tula y esta sesion" sigue
+                            //   calzando despues de una devolucion: no cambia el dia, ni
+                            //   el cajero, ni la tula, ni la sesion. El cajero volvia a
+                            //   entrar sin que nadie autorizara NADA sobre el nuevo ciclo.
+                            //
+                            //   El estado es la señal que los distingue, y no hace falta
+                            //   una marca nueva: aprobar esta solicitud ASIGNA la tula al
+                            //   cajero, asi que una tula que sigue en Devuelta con una
+                            //   solicitud aprobada solo puede tener la del ciclo ANTERIOR.
+                            //   Cae a la ultima rama y se vuelve a pedir permiso.
+                            //
+                            //   Las PENDIENTES si se re-adoptan (rama de arriba): esa es
+                            //   la del ciclo actual, el cajero esta esperando por ella, y
+                            //   duplicarla le crearia dos solicitudes al supervisor.
+                            ctxSolicitudPrevTul.ApprovalStatus = 'ApprovalStatus (CH-Tbl-ApprovalRequests)'.Aprobado &&
+                            ctxTulaElegidaTul.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',
                                 Set(gvarSolicitud, ctxSolicitudPrevTul);
                                 UpdateContext({ ctxDeclElegidaTul: Defaults('CH-Tbl-DeclaredBags') });
                                 Select(btnAbrirNuevaTul),
