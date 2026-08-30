@@ -714,6 +714,7 @@ scrConteo As screen:
         ZIndex: =13
 
     cmpMatNIOCon As cmpMatrizMoneda:
+        Width: =(Parent.Width - 60) / 3
         ChequesDec: =CountRows(Filter(colChequesDeclaradosCon, CheckCurrency = 'CH-Ch-Currency'.NIO))
         ChequesRec: =CountRows(Filter(colChecksTulaCon, CheckCurrency = 'CH-Ch-Currency'.NIO))
         EfectivoDec: =Sum(Filter(colDepDeclaradosCon, Currency = 'CH-Ch-Currency'.NIO), CashAmount)
@@ -726,6 +727,7 @@ scrConteo As screen:
         ZIndex: =14
 
     cmpMatUSDCon As cmpMatrizMoneda:
+        Width: =(Parent.Width - 60) / 3
         ChequesDec: =CountRows(Filter(colChequesDeclaradosCon, CheckCurrency = 'CH-Ch-Currency'.USD))
         ChequesRec: =CountRows(Filter(colChecksTulaCon, CheckCurrency = 'CH-Ch-Currency'.USD))
         EfectivoDec: =Sum(Filter(colDepDeclaradosCon, Currency = 'CH-Ch-Currency'.USD), CashAmount)
@@ -740,6 +742,7 @@ scrConteo As screen:
         ZIndex: =15
 
     cmpMatEURCon As cmpMatrizMoneda:
+        Width: =(Parent.Width - 60) / 3
         ChequesDec: =CountRows(Filter(colChequesDeclaradosCon, CheckCurrency = 'CH-Ch-Currency'.EUR))
         ChequesRec: =CountRows(Filter(colChecksTulaCon, CheckCurrency = 'CH-Ch-Currency'.EUR))
         EfectivoDec: =Sum(Filter(colDepDeclaradosCon, Currency = 'CH-Ch-Currency'.EUR), CashAmount)
@@ -1301,9 +1304,9 @@ scrConteo As screen:
         PaddingTop: =0
         Size: =7.5
         Text: ="CHQ"
-        Width: =shpCardDepCon.Width * 0.07386
+        Width: =shpCardDepCon.Width * 0.06
         Wrap: =false
-        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.29972
+        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.3
         Y: =shpHeadDepCon.Y + 8
         ZIndex: =31
 
@@ -1318,9 +1321,9 @@ scrConteo As screen:
         PaddingTop: =0
         Size: =7.5
         Text: ="MONTO CHEQUES"
-        Width: =shpCardDepCon.Width * 0.13352
+        Width: =shpCardDepCon.Width * 0.15
         Wrap: =false
-        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.38494
+        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.375
         Y: =shpHeadDepCon.Y + 8
         ZIndex: =32
 
@@ -1335,9 +1338,9 @@ scrConteo As screen:
         PaddingTop: =0
         Size: =7.5
         Text: ="EFECTIVO"
-        Width: =shpCardDepCon.Width * 0.1392
+        Width: =shpCardDepCon.Width * 0.16
         Wrap: =false
-        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.52983
+        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.54
         Y: =shpHeadDepCon.Y + 8
         ZIndex: =33
 
@@ -1352,9 +1355,9 @@ scrConteo As screen:
         PaddingTop: =0
         Size: =7.5
         Text: ="TOTAL"
-        Width: =shpCardDepCon.Width * 0.1392
+        Width: =shpCardDepCon.Width * 0.16
         Wrap: =false
-        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.6804
+        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.715
         Y: =shpHeadDepCon.Y + 8
         ZIndex: =34
 
@@ -1369,9 +1372,9 @@ scrConteo As screen:
         PaddingTop: =0
         Size: =7.5
         Text: ="ENLACE"
-        Width: =shpCardDepCon.Width * 0.13636
+        Width: =shpCardDepCon.Width * 0.095
         Wrap: =false
-        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.83097
+        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.89
         Y: =shpHeadDepCon.Y + 8
         ZIndex: =35
 
@@ -1480,9 +1483,9 @@ scrConteo As screen:
                         )
                     )
                 )
-            Width: =Parent.TemplateWidth * 0.07386
+            Width: =Parent.TemplateWidth * 0.06
             Wrap: =false
-            X: =Parent.TemplateWidth * 0.29972
+            X: =Parent.TemplateWidth * 0.3
             ZIndex: =5
 
         lblMontoChqDepDecCon As label:
@@ -1496,9 +1499,9 @@ scrConteo As screen:
             PaddingTop: =0
             Size: =9.38
             Text: =fxMonto(ThisItem.BACLocalCheckAmount + ThisItem.OtherLocalCheckAmount, fxSimbolo(Text(ThisItem.Currency)))
-            Width: =Parent.TemplateWidth * 0.13352
+            Width: =Parent.TemplateWidth * 0.15
             Wrap: =false
-            X: =Parent.TemplateWidth * 0.38494
+            X: =Parent.TemplateWidth * 0.375
             ZIndex: =6
 
         lblEfectivoDepDecCon As label:
@@ -1512,9 +1515,9 @@ scrConteo As screen:
             PaddingTop: =0
             Size: =9.38
             Text: =fxMonto(ThisItem.CashAmount, fxSimbolo(Text(ThisItem.Currency)))
-            Width: =Parent.TemplateWidth * 0.1392
+            Width: =Parent.TemplateWidth * 0.16
             Wrap: =false
-            X: =Parent.TemplateWidth * 0.52983
+            X: =Parent.TemplateWidth * 0.54
             ZIndex: =7
 
         lblTotalDepDecCon As label:
@@ -1529,9 +1532,9 @@ scrConteo As screen:
             PaddingTop: =0
             Size: =9.38
             Text: =fxMonto(ThisItem.Total, fxSimbolo(Text(ThisItem.Currency)))
-            Width: =Parent.TemplateWidth * 0.1392
+            Width: =Parent.TemplateWidth * 0.16
             Wrap: =false
-            X: =Parent.TemplateWidth * 0.6804
+            X: =Parent.TemplateWidth * 0.715
             ZIndex: =8
 
         pilEnlaceDepDecCon As button:
@@ -1555,7 +1558,7 @@ scrConteo As screen:
             Size: =7.88
             Text: =If(IsBlank(ThisItem.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'), "Sin enlazar", "Enlazado")
             Width: =14 + 6.2 * Len(Self.Text)
-            X: =Parent.TemplateWidth * 0.83097 + (Parent.TemplateWidth * 0.13636 - Self.Width) / 2
+            X: =Parent.TemplateWidth * 0.89
             Y: =7
             ZIndex: =9
 
@@ -1673,9 +1676,9 @@ scrConteo As screen:
                         )
                     )
                 )
-            Width: =Parent.TemplateWidth * 0.07386
+            Width: =Parent.TemplateWidth * 0.06
             Wrap: =false
-            X: =Parent.TemplateWidth * 0.29972
+            X: =Parent.TemplateWidth * 0.3
             ZIndex: =5
 
         lblMontoChqDepRecCon As label:
@@ -1689,9 +1692,9 @@ scrConteo As screen:
             PaddingTop: =0
             Size: =9.38
             Text: =fxMonto(ThisItem.BACLocalCheckAmount + ThisItem.OtherLocaCheckAmount, fxSimbolo(Text(ThisItem.Currency)))
-            Width: =Parent.TemplateWidth * 0.13352
+            Width: =Parent.TemplateWidth * 0.15
             Wrap: =false
-            X: =Parent.TemplateWidth * 0.38494
+            X: =Parent.TemplateWidth * 0.375
             ZIndex: =6
 
         lblEfectivoDepRecCon As label:
@@ -1705,9 +1708,9 @@ scrConteo As screen:
             PaddingTop: =0
             Size: =9.38
             Text: =fxMonto(ThisItem.CashAmount, fxSimbolo(Text(ThisItem.Currency)))
-            Width: =Parent.TemplateWidth * 0.1392
+            Width: =Parent.TemplateWidth * 0.16
             Wrap: =false
-            X: =Parent.TemplateWidth * 0.52983
+            X: =Parent.TemplateWidth * 0.54
             ZIndex: =7
 
         lblTotalDepRecCon As label:
@@ -1722,9 +1725,9 @@ scrConteo As screen:
             PaddingTop: =0
             Size: =9.38
             Text: =fxMonto(ThisItem.Total, fxSimbolo(Text(ThisItem.Currency)))
-            Width: =Parent.TemplateWidth * 0.1392
+            Width: =Parent.TemplateWidth * 0.16
             Wrap: =false
-            X: =Parent.TemplateWidth * 0.6804
+            X: =Parent.TemplateWidth * 0.715
             ZIndex: =8
 
         pilEnlaceDepRecCon As button:
@@ -1748,7 +1751,7 @@ scrConteo As screen:
             Size: =7.88
             Text: =If(IsBlank(ThisItem.RelatedDeclaredDeposit.'CH-Tbl-DeclaredDeposits'), "Sin enlazar", "Enlazado")
             Width: =14 + 6.2 * Len(Self.Text)
-            X: =Parent.TemplateWidth * 0.83097 + (Parent.TemplateWidth * 0.13636 - Self.Width) / 2
+            X: =Parent.TemplateWidth * 0.89
             Y: =7
             ZIndex: =9
 
@@ -1892,8 +1895,8 @@ scrConteo As screen:
                    ) },
                 If(IsEmpty(P), "0", Concat(P As R, Text(R.Cant), Char(10)))
             )
-        Width: =shpCardDepCon.Width * 0.07386
-        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.27415
+        Width: =shpCardDepCon.Width * 0.06
+        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.3
         Y: =shpFootDepCon.Y
         ZIndex: =42
 
@@ -1936,8 +1939,8 @@ scrConteo As screen:
                     Concat(P As R, fxMonto(R.Chq, fxSimbolo(R.Mon)), Char(10))
                 )
             )
-        Width: =shpCardDepCon.Width * 0.13352
-        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.35938
+        Width: =shpCardDepCon.Width * 0.15
+        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.375
         Y: =shpFootDepCon.Y
         ZIndex: =43
 
@@ -1980,8 +1983,8 @@ scrConteo As screen:
                     Concat(P As R, fxMonto(R.Efe, fxSimbolo(R.Mon)), Char(10))
                 )
             )
-        Width: =shpCardDepCon.Width * 0.1392
-        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.50426
+        Width: =shpCardDepCon.Width * 0.16
+        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.54
         Y: =shpFootDepCon.Y
         ZIndex: =44
 
@@ -2024,8 +2027,8 @@ scrConteo As screen:
                     Concat(P As R, fxMonto(R.Chq + R.Efe, fxSimbolo(R.Mon)), Char(10))
                 )
             )
-        Width: =shpCardDepCon.Width * 0.1392
-        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.65483
+        Width: =shpCardDepCon.Width * 0.16
+        X: =shpCardDepCon.X + shpCardDepCon.Width * 0.715
         Y: =shpFootDepCon.Y
         ZIndex: =45
 
