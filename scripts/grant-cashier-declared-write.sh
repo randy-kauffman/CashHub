@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Da Write sobre las tablas DECLARADAS al rol del cajero (CH-SR-Cashier).
+# Idempotente: AddPrivilegesRole no duplica lo que ya esta.
+#
+# POR QUE EXISTE. El cajero abria una tula CON declaracion y saltaba
+# "Network error when using Patch function: You don't have permission to edit
+# this row". La tula quedaba abierta pero SIN enlazar: el primer Patch entraba y
+# el segundo no.
+#
+# El enlace declarado <-> recontado se escribe en LAS DOS PUNTAS, y el rol solo
+# tenia Read/Append/AppendTo sobre las declaradas:
+#
+#   scrTulas  Patch('CH-Tbl-DeclaredBags',     ..., { BagID: gvarTula })
+#   scrConteo Patch('CH-Tbl-DeclaredDeposits', ..., { RelatedRecountedDeposit: ... })
+#
+# Append/AppendTo NO alcanzan: sirven para colgar un registro de otro, no para
+# modificar el registro apuntado. El Patch necesita Write.
+#
+# SOLO esas dos tablas. DeclaredChecks se queda sin Write a proposito: no hay un
+# solo Patch contra ella en toda la app del cajero.
+#
+# 🚨 TIENE UNA IMPLICANCIA DE SEGURIDAD, y hay que decirla. Write en Dataverse es
+#    por TABLA, no por columna: el cajero queda pudiendo modificar cualquier campo
+#    de la bolsa declarada, incluidos los montos que declaro el cliente. Lo que la
+#    app necesita es escribir UN lookup. Si eso molesta, el arreglo de fondo es
+#    mover esas dos escrituras a una Custom API con contrato angosto —como se hizo
+#    con sanic_CHResolveApprovalRequest— y quitarle el Write al rol.
+#
+# Uso: ./scripts/grant-cashier-declared-write.sh
+# =============================================================================
+set -euo pipefail
+source "${ENV_FILE:-pp_secrets.env}"
+DATAVERSE_URL="${DATAVERSE_URL%$'\r'}"; DATAVERSE_URL="${DATAVERSE_URL%/}"
+PP_TENANT_ID="${PP_TENANT_ID%$'\r'}"; PP_CLIENT_ID="${PP_CLIENT_ID%$'\r'}"; PP_CLIENT_SECRET="${PP_CLIENT_SECRET%$'\r'}"
+
+TOKEN=$(curl -sf -X POST "https://login.microsoftonline.com/${PP_TENANT_ID}/oauth2/v2.0/token" \
+  -d "grant_type=client_credentials&client_id=${PP_CLIENT_ID}&client_secret=${PP_CLIENT_SECRET}&scope=${DATAVERSE_URL}/.default" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+export TOKEN DATAVERSE_URL
+
+python3 - <<'PYEOF'
+import json, os, subprocess, urllib.parse
+
+API = os.environ['DATAVERSE_URL'] + '/api/data/v9.2'
+H = ['-H', f"Authorization: Bearer {os.environ['TOKEN']}", '-H', 'Content-Type: application/json',
+     '-H', 'Accept: application/json']
+
+def req(method, path, body=None):
+    cmd = ['curl', '-s', *H, '-X', method, API + path]
+    if body is not None:
+        cmd += ['-d', json.dumps(body)]
+    out = subprocess.run(cmd, capture_output=True, text=True).stdout
+    d = json.loads(out) if out.strip() else {}
+    if 'error' in d:
+        raise SystemExit(f"{method} {path}: {d['error'].get('message','')[:300]}")
+    return d
+
+def find(entityset, filtro, select):
+    return req('GET', f"/{entityset}?$select={select}&$filter={urllib.parse.quote(filtro)}").get('value', [])
+
+# El rol se busca por ID y no por nombre: en el entorno figura como
+# "CH-SR-Cashier" y en solutions/unpacked/core/Roles/ como "CH-SR-Counter.xml".
+# Mismo id, nombres distintos — buscar por nombre falla segun de que lado mires.
+ROL = 'f9bee50d-6a75-f011-b4cb-7c1e5248985f'
+rol = find('roles', f"roleid eq {ROL}", 'name,_businessunitid_value')
+if not rol:
+    raise SystemExit(f"No existe el rol {ROL}.")
+bu = rol[0]['_businessunitid_value']
+print(f"Rol: {rol[0]['name']}  ({ROL})")
+
+NECESARIOS = ['prvWritesanic_CHTblDeclaredBags', 'prvWritesanic_CHTblDeclaredDeposits']
+
+actuales = {x['name'] for x in
+            req('GET', f"/roles({ROL})/roleprivileges_association?$select=name").get('value', [])}
+
+faltan = []
+for nombre in NECESARIOS:
+    if nombre in actuales:
+        print(f"  ya lo tiene: {nombre}")
+        continue
+    p = find('privileges', f"name eq '{nombre}'", 'name,privilegeid')
+    if not p:
+        raise SystemExit(f"No existe el privilegio {nombre}.")
+    faltan.append({'Depth': 'Global', 'PrivilegeId': p[0]['privilegeid'],
+                   'BusinessUnitId': bu, 'PrivilegeName': nombre})
+    print(f"  agregando:   {nombre}")
+
+if faltan:
+    req('POST', f"/roles({ROL})/Microsoft.Dynamics.CRM.AddPrivilegesRole", {'Privileges': faltan})
+
+final = {x['name'] for x in
+         req('GET', f"/roles({ROL})/roleprivileges_association?$select=name").get('value', [])}
+print("\nEstado final sobre las tablas declaradas:")
+for tabla in ('DeclaredBags', 'DeclaredDeposits', 'DeclaredChecks'):
+    acc = [a for a in ('Read', 'Write', 'Create', 'Append', 'AppendTo', 'Delete')
+           if f"prv{a}sanic_CHTbl{tabla}" in final]
+    print(f"  {tabla:<18} {', '.join(acc) if acc else '(ninguno)'}")
+PYEOF
