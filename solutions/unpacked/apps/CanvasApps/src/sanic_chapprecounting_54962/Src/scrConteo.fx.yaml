@@ -127,7 +127,8 @@ scrConteo As screen:
                 ctxDepDecCursoCon:  Defaults('CH-Tbl-DeclaredDeposits'),
                 ctxDepSelCon:       Defaults('CH-Tbl-DepositsRecountings'),
                 ctxDepDecSelCon:    Defaults('CH-Tbl-DeclaredDeposits'),
-                ctxDecDesenlazarCon: Defaults('CH-Tbl-DeclaredDeposits')
+                ctxDecDesenlazarCon: Defaults('CH-Tbl-DeclaredDeposits'),
+                ctxDeclEfectivoCon:  Defaults('CH-Tbl-DeclaredDeposits')
             });
             UpdateContext({ ctxHayDepositoCon: false, ctxMonedaCon: "NIO" });
             Clear(colDetalleConteoCon);
@@ -1020,7 +1021,47 @@ scrConteo As screen:
                 )
             );
             
+            // ---- Se devuelve TODO lo que venia heredado de la declaracion ----
+            //      Los cheques declarados y el numero de cuenta no eran del recuento:
+            //      los tomaba prestados del declarado. Sin enlace no hay de donde
+            //      heredarlos, asi que se sueltan. Quedan SOLO los cheques manuales,
+            //      que si son del recuento.
+            ForAll(
+                Filter(
+                    colChecksTulaCon,
+                    RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting' = ctxDepSelCon.'CH-Tbl-DepositsRecounting'
+                        && !IsBlank(RelatedDeclaredCheck.'CH-Tbl-DeclaredChecks')
+                ) As C,
+                IfError(
+                    Patch(
+                        'CH-Tbl-DeclaredChecks',
+                        LookUp(colChequesDeclaradosCon, 'CH-Tbl-DeclaredChecks' = C.RelatedDeclaredCheck.'CH-Tbl-DeclaredChecks'),
+                        { MatchedCheck: Blank() }
+                    ),
+                    Notify("No se pudo soltar el cheque " & C.CheckNumber & ": " & FirstError.Message, NotificationType.Error);
+                    Blank()
+                );
+                IfError(
+                    Remove('CH-Tbl-Checks', C),
+                    Notify("No se pudo quitar el cheque " & C.CheckNumber & ": " & FirstError.Message, NotificationType.Error);
+                    Blank()
+                )
+            );
+            
+            IfError(
+                UpdateContext({
+                    ctxDepSelCon:
+                        Patch('CH-Tbl-DepositsRecountings', ctxDepSelCon,
+                              { AccountNumber: Blank(), TransactionNumber: Blank() })
+                }),
+                Notify("El depósito se desenlazó pero conservó la cuenta: " & FirstError.Message, NotificationType.Error)
+            );
+            
             // ---- Recarga: Q1 + Q5, las mismas dos consultas delegables del paso 4 de btnEnlazarCon ----
+            ClearCollect(
+                colChecksTulaCon,
+                Filter('CH-Tbl-Checks', Bag.'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags')
+            );
             ClearCollect(
                 colDepRecontadosCon,
                 SortByColumns(
@@ -1399,8 +1440,16 @@ scrConteo As screen:
         Layout: =Layout.Vertical
         OnSelect: |-
             =// galDepDeclaradosCon.OnSelect — TODA la logica de la fila, en UN solo handler.
-            // Seleccionar un declarado NO toca el deposito en curso: solo alimenta Enlazar.
-            UpdateContext({ ctxDepDecSelCon: ThisItem })
+            UpdateContext({ ctxDepDecSelCon: ThisItem });
+            
+            // Mientras el deposito en curso NO este enlazado, lo declarado se hereda de
+            // la transaccion que se elija: cuenta, monto y CHEQUES. Por eso la lista se
+            // rehace aca. Si ya esta enlazado no se toca nada — para comparar contra otra
+            // transaccion primero hay que desenlazar.
+            If(
+                IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits') && ctxHayDepositoCon,
+                Select(btnCargarChequesCon)
+            )
         TemplatePadding: =0
         TemplateSize: =34
         Visible: =tabDepositosCon.Selected.Value = "Declarado"
@@ -2212,10 +2261,18 @@ scrConteo As screen:
         BorderColor: =ThemeLine
         Color: =ThemeInk
         Default: |-
-            =If(
-                !IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
-                Text(ctxDepDecCursoCon.AccountNumber),
-                If(IsBlank(ctxDepositoCon.AccountNumber), "", Text(ctxDepositoCon.AccountNumber))
+            =With(
+                { D: If(
+                        !IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                        ctxDepDecCursoCon,
+                        If(
+                            !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
+                            Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
+                            ctxDepDecSelCon,
+                            Defaults('CH-Tbl-DeclaredDeposits')
+                        )
+                    ) },
+                If(IsBlank(D.'CH-Tbl-DeclaredDeposits'), "", Text(D.AccountNumber))
             )
         DisplayMode: =DisplayMode.View
         Fill: =ThemeSurface
@@ -2293,10 +2350,14 @@ scrConteo As screen:
         ChequesDec: |-
             =With(
                 { D: If(
-                    !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
-                    Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
-                    ctxDepDecSelCon,
-                    ctxDepDecCursoCon
+                    !IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                    ctxDepDecCursoCon,
+                    If(
+                        !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
+                        Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
+                        ctxDepDecSelCon,
+                        Defaults('CH-Tbl-DeclaredDeposits')
+                    )
                 ) },
                 If(
                     IsBlank(D.'CH-Tbl-DeclaredDeposits'),
@@ -2313,10 +2374,14 @@ scrConteo As screen:
         EfectivoDec: |-
             =With(
                 { D: If(
-                    !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
-                    Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
-                    ctxDepDecSelCon,
-                    ctxDepDecCursoCon
+                    !IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                    ctxDepDecCursoCon,
+                    If(
+                        !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
+                        Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
+                        ctxDepDecSelCon,
+                        Defaults('CH-Tbl-DeclaredDeposits')
+                    )
                 ) },
                 If(IsBlank(D.'CH-Tbl-DeclaredDeposits'), 0, D.CashAmount)
             )
@@ -2326,10 +2391,14 @@ scrConteo As screen:
         MontoChequesDec: |-
             =With(
                 { D: If(
-                    !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
-                    Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
-                    ctxDepDecSelCon,
-                    ctxDepDecCursoCon
+                    !IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                    ctxDepDecCursoCon,
+                    If(
+                        !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
+                        Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
+                        ctxDepDecSelCon,
+                        Defaults('CH-Tbl-DeclaredDeposits')
+                    )
                 ) },
                 If(
                     IsBlank(D.'CH-Tbl-DeclaredDeposits'),
@@ -5746,6 +5815,99 @@ scrConteo As screen:
         Y: =767
         ZIndex: =114
 
+    btnCargarChequesCon As button:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Fill: =Color.Transparent
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnSelect: |-
+            =// ====== BLOQUE Q — LISTA DE CHEQUES — btnCargarChequesCon.OnSelect ======
+            // Los cheques declarados que se ofrecen son los del DECLARADO EFECTIVO: el
+            // enlazado si el deposito ya lo esta, o el SELECCIONADO mientras no lo este.
+            // Todo lo declarado —cuenta, monto, cheques— se hereda de esa transaccion,
+            // asi que la lista tiene que seguirla. Sin declarado efectivo no hay cheques
+            // declarados que ofrecer: quedan solo los manuales.
+            //
+            // Vive en su propio boton porque se rehace en DOS momentos: al cargar un
+            // deposito y al cambiar la seleccion de declarados. Rehacer el cargador
+            // entero en el segundo caso pisaria el conteo en curso.
+            With(
+                { D: If(
+                !IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                ctxDepDecCursoCon,
+                If(
+                    !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
+                    Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
+                    ctxDepDecSelCon,
+                    Defaults('CH-Tbl-DeclaredDeposits')
+                )
+            ) },
+                Clear(colChecksCon);
+                ForAll(
+                    Filter(
+                        colChequesDeclaradosCon,
+                        Text(CheckCurrency) = ctxMonedaCon &&
+                        DeclaredDepositID.'CH-Tbl-DeclaredDeposits' = D.'CH-Tbl-DeclaredDeposits'
+                    ) As DC,
+                    With(
+                        {
+                            Rec: LookUp(colChecksTulaCon, RelatedDeclaredCheck.'CH-Tbl-DeclaredChecks' = DC.'CH-Tbl-DeclaredChecks')
+                        },
+                        If(
+                            IsBlank(Rec.'CH-Tbl-Checks') ||
+                            Rec.RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting' = ctxRegDepCon.'CH-Tbl-DepositsRecounting',
+                            Collect(
+                                colChecksCon,
+                                {
+                                    LocalId:       Text(DC.'CH-Tbl-DeclaredChecks'),
+                                    GUID:          Rec.'CH-Tbl-Checks',
+                                    DeclaradoGUID: DC.'CH-Tbl-DeclaredChecks',
+                                    Numero:        DC.CheckNumber,
+                                    Tipo:          Text(DC.CheckType),
+                                    Moneda:        Text(DC.CheckCurrency),
+                                    Monto:         DC.CheckAmount,
+                                    Seleccionado:  !IsBlank(Rec.'CH-Tbl-Checks'),
+                                    EsManual:      false
+                                }
+                            )
+                        )
+                    )
+                )
+            );
+            
+            // Los MANUALES son del recuento, no de la declaracion: se muestran siempre.
+            ForAll(
+                Filter(colChecksDVCon, IsBlank(RelatedDeclaredCheck.'CH-Tbl-DeclaredChecks')) As MC,
+                Collect(
+                    colChecksCon,
+                    {
+                        LocalId:       Text(MC.'CH-Tbl-Checks'),
+                        GUID:          MC.'CH-Tbl-Checks',
+                        DeclaradoGUID: Defaults('CH-Tbl-DeclaredChecks').'CH-Tbl-DeclaredChecks',
+                        Numero:        MC.CheckNumber,
+                        Tipo:          Text(MC.CheckTypes),
+                        Moneda:        Text(MC.CheckCurrency),
+                        Monto:         MC.CheckAmount,
+                        Seleccionado:  true,
+                        EsManual:      true
+                    }
+                )
+            );
+            Reset(galChequesCon)
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =Color.Transparent
+        Size: =9
+        TabIndex: =-1
+        Text: =""
+        Visible: =false
+        Width: =1
+        Y: =767
+        ZIndex: =115
+
     btnCargarDepCon As button:
         BorderThickness: =0
         Color: =ThemeInk
@@ -5807,56 +5969,8 @@ scrConteo As screen:
                 )
             );
             
-            // ---- 4. Cheques: declarados de la moneda NO tomados por OTRO deposito, + manuales ----
-            Clear(colChecksCon);
-            ForAll(
-                Filter(
-                    colChequesDeclaradosCon,
-                    Text(CheckCurrency) = ctxMonedaCon
-                ) As DC,
-                With(
-                    {
-                        // fila de Checks que HOY representa a este cheque declarado (si existe)
-                        Rec: LookUp(colChecksTulaCon, RelatedDeclaredCheck.'CH-Tbl-DeclaredChecks' = DC.'CH-Tbl-DeclaredChecks')
-                    },
-                    If(
-                        // se muestra si esta libre o si ya pertenece a ESTE deposito
-                        IsBlank(Rec.'CH-Tbl-Checks') ||
-                        Rec.RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting' = ctxRegDepCon.'CH-Tbl-DepositsRecounting',
-                        Collect(
-                            colChecksCon,
-                            {
-                                LocalId:       Text(DC.'CH-Tbl-DeclaredChecks'),
-                                GUID:          Rec.'CH-Tbl-Checks',
-                                DeclaradoGUID: DC.'CH-Tbl-DeclaredChecks',
-                                Numero:        DC.CheckNumber,
-                                Tipo:          Text(DC.CheckType),
-                                Moneda:        Text(DC.CheckCurrency),
-                                Monto:         DC.CheckAmount,
-                                Seleccionado:  !IsBlank(Rec.'CH-Tbl-Checks'),
-                                EsManual:      false
-                            }
-                        )
-                    )
-                )
-            );
-            ForAll(
-                Filter(colChecksDVCon, IsBlank(RelatedDeclaredCheck.'CH-Tbl-DeclaredChecks')) As MC,
-                Collect(
-                    colChecksCon,
-                    {
-                        LocalId:       Text(MC.'CH-Tbl-Checks'),
-                        GUID:          MC.'CH-Tbl-Checks',
-                        DeclaradoGUID: Defaults('CH-Tbl-DeclaredChecks').'CH-Tbl-DeclaredChecks',
-                        Numero:        MC.CheckNumber,
-                        Tipo:          Text(MC.CheckTypes),
-                        Moneda:        Text(MC.CheckCurrency),
-                        Monto:         MC.CheckAmount,
-                        Seleccionado:  true,
-                        EsManual:      true
-                    }
-                )
-            );
+            // ---- 4. Cheques del deposito (bloque propio: se rehace al cambiar la seleccion) ----
+            Select(btnCargarChequesCon);
             
             // ---- 5. Estado de edicion y re-anclaje de los Default de las tres grillas ----
             Set(gvarDepositoSinGuardar, false);
@@ -6035,6 +6149,23 @@ scrConteo As screen:
             // ============ PASO 1 — CABECERA DEL DEPOSITO (crea o actualiza) ============
             //   Name es AUTONUMBER DR-{SEQNUM:8}: NUNCA se patchea.
             //   El registro BASE decide crear vs. actualizar. Cero forms.
+            // Se congela el declarado efectivo ANTES de escribir: de aca salen la
+            // cuenta, el numero de transaccion y el enlace, y despues hay que escribir
+            // la otra punta con el mismo valor.
+            UpdateContext({
+                ctxDeclEfectivoCon:
+                    If(
+                        !IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
+                        ctxDepDecCursoCon,
+                        If(
+                            !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
+                            Text(ctxDepDecSelCon.Currency) = ctxMonedaCon,
+                            ctxDepDecSelCon,
+                            Defaults('CH-Tbl-DeclaredDeposits')
+                        )
+                    )
+            });
+            
             IfError(
                 UpdateContext({
                     ctxDepositoCon:
@@ -6053,27 +6184,52 @@ scrConteo As screen:
                                               "USD", 'CH-Ch-Currency'.USD,
                                               "EUR", 'CH-Ch-Currency'.EUR
                                           ),
-                                // La cuenta NO se toma del campo: sale de la declarada
-                                // enlazada, igual que TransactionNumber mas abajo. Sin
-                                // declaracion se guarda vacia — es el dato real.
-                                AccountNumber:        If(
-                                                          IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
-                                                          Blank(),
-                                                          ctxDepDecCursoCon.AccountNumber
-                                                      ),
+                                // Cuenta y enlace salen del DECLARADO EFECTIVO. Guardar con
+                                // una transaccion declarada seleccionada ENLAZA: no hace
+                                // falta apretar "Enlazar" antes. Sin declarado efectivo se
+                                // guarda vacio y sin enlace — es el dato real.
+                                AccountNumber:          If(
+                                                            IsBlank(ctxDeclEfectivoCon.'CH-Tbl-DeclaredDeposits'),
+                                                            Blank(),
+                                                            ctxDeclEfectivoCon.AccountNumber
+                                                        ),
+                                RelatedDeclaredDeposit: If(
+                                                            IsBlank(ctxDeclEfectivoCon.'CH-Tbl-DeclaredDeposits'),
+                                                            Blank(),
+                                                            ctxDeclEfectivoCon
+                                                        ),
                                 CashAmount:           Sum(colDetalleConteoCon, Denominacion * (Auto + Manual)),
                                 BACLocalCheckAmount:  Sum(Filter(colChecksCon, Seleccionado && Tipo = "BAC Local"),   Monto),
                                 OtherLocaCheckAmount: Sum(Filter(colChecksCon, Seleccionado && Tipo = "Otros Local"), Monto),
-                                TransactionNumber: If(
-                                                       IsBlank(ctxDepDecCursoCon.'CH-Tbl-DeclaredDeposits'),
-                                                       Blank(),
-                                                       ctxDepDecCursoCon.TransactionNo
-                                                   )
+                                TransactionNumber:      If(
+                                                            IsBlank(ctxDeclEfectivoCon.'CH-Tbl-DeclaredDeposits'),
+                                                            Blank(),
+                                                            ctxDeclEfectivoCon.TransactionNo
+                                                        )
                             }
                         )
                 }),
                 Collect(colFallidasCon, { Clave: Coalesce(Trim(inpCuentaCon.Text), "sin cuenta"), Detalle: "depósito", Mensaje: FirstError.Message });
                 Blank()
+            );
+            
+            // ---- La otra punta del enlace: el declarado apunta de vuelta al recuento ----
+            //      Se escribe DESPUES de la cabecera y solo si esta entro: sin recuento
+            //      persistido no hay a que apuntar.
+            If(
+                !IsBlank(ctxDepositoCon.'CH-Tbl-DepositsRecounting') &&
+                !IsBlank(ctxDeclEfectivoCon.'CH-Tbl-DeclaredDeposits') &&
+                ctxDeclEfectivoCon.RelatedRecountedDeposit.'CH-Tbl-DepositsRecounting'
+                    <> ctxDepositoCon.'CH-Tbl-DepositsRecounting',
+                IfError(
+                    Patch(
+                        'CH-Tbl-DeclaredDeposits',
+                        ctxDeclEfectivoCon,
+                        { RelatedRecountedDeposit: ctxDepositoCon }
+                    ),
+                    Collect(colFallidasCon, { Clave: "enlace", Detalle: "declarado", Mensaje: FirstError.Message });
+                    Blank()
+                )
             );
             
             // ============ GUARDA DURA: sin cabecera NO se escribe ni un hijo ============
