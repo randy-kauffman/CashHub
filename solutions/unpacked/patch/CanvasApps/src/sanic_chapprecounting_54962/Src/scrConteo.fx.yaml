@@ -3701,11 +3701,24 @@ scrConteo As screen:
             //   dispara tambien "Guardar y salir" (§13.1) con la bandera en true.
             //   Ya NO se valida el numero de cuenta: el cajero no lo escribe. Sale de
             //   la declaracion enlazada, o va vacio si no hay declaracion.
+            //   Las guardas leen EN VIVO de las galerias, no de las colecciones.
+            //   Select() es ASINCRONO: encola el volcado pero no lo espera, asi que
+            //   en el PRIMER guardado de un deposito nuevo la coleccion todavia
+            //   estaba vacia aca y saltaba "No hay nada que guardar" con el total
+            //   en pantalla mostrando el monto. Al segundo intento andaba, porque
+            //   ya habia aterrizado el volcado del primero.
+            //   Lo de abajo (el Patch dentro de tmrGuardarCon, 50 ms despues) SI
+            //   puede seguir leyendo las colecciones: para entonces el volcado ya
+            //   corrio, que es exactamente para lo que ese timer existe.
             If(
                 CountRows(
                     Filter(
-                        colChecksCon,
-                        EsManual && (IsBlank(Trim(Numero)) || IsBlank(Tipo) || Monto <= 0)
+                        galChequesCon.AllItems As C,
+                        C.EsManual && (
+                            IsBlank(Trim(C.inpNumChequeCon.Text)) ||
+                            IsBlank(C.ddTipoChequeCon.Selected.Value) ||
+                            Coalesce(Value(C.inpMontoChequeCon.Text), 0) <= 0
+                        )
                     )
                 ) > 0,
                     UpdateContext({ ctxSalirTrasGuardarCon: false });
@@ -3714,8 +3727,9 @@ scrConteo As screen:
                         NotificationType.Error
                     ),
             
-                Sum(colDetalleConteoCon, Denominacion * (Auto + Manual)) +
-                Sum(Filter(colChecksCon, Seleccionado), Monto) <= 0,
+                Sum(galBilletesCon.AllItems As B, B.Denominacion * (B.Auto + Coalesce(Value(B.inpCantidadBilCon.Text), 0))) +
+                Sum(galMonedasCon.AllItems As M, M.Denominacion * Coalesce(Value(M.inpCantidadMonCon.Text), 0)) +
+                Sum(galChequesCon.AllItems As C, If(If(C.EsManual, true, C.chkChequeCon.Value), If(C.EsManual, Coalesce(Value(C.inpMontoChequeCon.Text), 0), C.Monto), 0)) <= 0,
                     UpdateContext({ ctxSalirTrasGuardarCon: false });
                     Notify("No hay nada que guardar en este depósito.", NotificationType.Error),
             
