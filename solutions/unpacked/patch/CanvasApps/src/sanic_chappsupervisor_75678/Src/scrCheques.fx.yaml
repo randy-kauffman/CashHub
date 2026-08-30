@@ -498,6 +498,72 @@ scrCheques As screen:
                 Y: =10
                 ZIndex: =2
 
+            btnSelTodosChq As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                DisplayMode: |-
+                    =If(
+                        CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado)) = 0,
+                        DisplayMode.Disabled,
+                        DisplayMode.Edit
+                    )
+                Fill: =ThemeSurface
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =28
+                HoverBorderColor: =ThemeLineStrong
+                HoverColor: =ThemeInk
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =// NO envia: SELECCIONA. El envio ya era masivo —btnEnviarChq recorre
+                    // todo lo seleccionado—; lo que se hacia de a uno era marcar.
+                    //
+                    // Se apoya en el mismo camino de siempre: llena colSelChq y deja que
+                    // btnEnviarChq haga lo suyo. Un "enviar todo" aparte duplicaria la
+                    // logica de envio, el reporte por cheque y el descarte de los que no
+                    // estan en Recontado, y las dos copias se irian separando.
+                    //
+                    // Y conserva el paso de confirmacion: el boton de enviar sigue
+                    // diciendo cuantos van ANTES de apretarlo.
+                    With(
+                        { Enviables: Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado) },
+                        If(
+                            // ya estaban todos marcados => el boton hace de "quitar"
+                            CountRows(colSelChq) >= CountRows(Enviables) && CountRows(Enviables) > 0,
+                            Clear(colSelChq),
+                            ClearCollect(colSelChq, Enviables)
+                        )
+                    )
+                PaddingLeft: =10
+                PaddingRight: =10
+                PressedBorderColor: =ThemeLineStrong
+                PressedColor: =ThemeInk
+                PressedFill: =ThemeSurface2
+                RadiusBottomLeft: =6
+                RadiusBottomRight: =6
+                RadiusTopLeft: =6
+                RadiusTopRight: =6
+                Size: =9
+                Text: |-
+                    =With(
+                        { n: CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.Recontado)) },
+                        If(
+                            CountRows(colSelChq) >= n && n > 0,
+                            "Quitar selección",
+                            "Seleccionar los " & n & " enviables"
+                        )
+                    )
+                Tooltip: |-
+                    ="Marca todos los cheques en estado Recontado del día cargado. No los envía: después confirmá con el botón de enviar."
+                Width: =7 * Len(Self.Text) + 22
+                X: =220 + If(pilSelCountChq.Visible, pilSelCountChq.Width + 10, 0)
+                Y: =7
+                ZIndex: =9
+
             btnReenviarChq As button:
                 BorderColor: =ThemeLine
                 BorderThickness: =1
