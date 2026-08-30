@@ -39,6 +39,27 @@ scrCorte As screen:
             Width: =LayRailW
             ZIndex: =1
 
+        icoActualizarCor As icon:
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Height: =18
+            HoverColor: =ThemeAccent
+            Icon: =Icon.Reload
+            OnSelect: =Select(btnActualizarCor)
+            PaddingBottom: =2
+            PaddingLeft: =2
+            PaddingRight: =2
+            PaddingTop: =2
+            PressedColor: =ThemeAccent
+            Tooltip: |-
+                ="Volver a pedir el trabajo pendiente por cajero" &
+                If(IsBlank(ctxUltimaActCor), "", " · última: " & Text(ctxUltimaActCor, FmtHora)) &
+                ". También se actualiza solo cada minuto."
+            Width: =18
+            X: =LayRailW - 31
+            Y: =10
+            ZIndex: =50
+
         cntMainCor As groupContainer.manualLayoutContainer:
             DropShadow: =DropShadow.Light
             Fill: =Color.Transparent

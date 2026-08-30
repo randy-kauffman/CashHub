@@ -8,22 +8,7 @@ scrManual As screen:
             ctxOrdenMan: "Fecha",
             ctxErrorMan: Blank()
         });
-        ClearCollect(
-            colCajerosMan,
-            Filter(
-                ForAll(
-                    Table(ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload)),
-                    {
-                        cajero:           GUID(Text(ThisRecord.Value.cajero)),
-                        cajeroNombre:     Text(ThisRecord.Value.cajeroNombre),
-                        mesa:             Text(ThisRecord.Value.mesa),
-                        pendientesManual: Value(ThisRecord.Value.pendientesManual),
-                        badge:            Text(Value(ThisRecord.Value.pendientesManual))
-                    }
-                ),
-                pendientesManual > 0
-            )
-        );
+        Select(btnCargarMan);
         Set(gvarCajeroMan, cmpRailMan.CajeroSel);
         Set(
             gvarTxMan,
@@ -34,7 +19,7 @@ scrManual As screen:
                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                         && BatchStatus = Blank()
                         && TransactionStatus = Blank()
-                        && 'Created By'.User = gvarCajeroMan.cajero
+                        && Cajero.User = gvarCajeroMan.cajero
                 ),
                 'Created On', SortOrder.Ascending
             )
@@ -72,7 +57,74 @@ scrManual As screen:
         Y: =LayHeaderH
         ZIndex: =2
 
+    btnCargarMan As button:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Fill: =Color.Transparent
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnSelect: |-
+            =// LA carga de la pantalla. Vivia dentro de OnVisible y por eso la unica forma de
+            // refrescar era salir y volver a entrar.
+            Refresh('CH-Tbl-Transactions');
+            ClearCollect(
+                colCajerosMan,
+                Filter(
+                    ForAll(
+                        Table(ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload)),
+                        {
+                            cajero:           GUID(Text(ThisRecord.Value.cajero)),
+                            cajeroNombre:     Text(ThisRecord.Value.cajeroNombre),
+                            mesa:             Text(ThisRecord.Value.mesa),
+                            pendientesManual: Value(ThisRecord.Value.pendientesManual),
+                            badge:            Text(Value(ThisRecord.Value.pendientesManual))
+                        }
+                    ),
+                    pendientesManual > 0
+                )
+            );
+            UpdateContext({ ctxUltimaActMan: Now() })
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =Color.Transparent
+        TabIndex: =-1
+        Text: =""
+        Visible: =false
+        Width: =1
+        X: =2
+        Y: =758
+        ZIndex: =96
+
+    tmrActualizarMan As timer:
+        BorderThickness: =0
+        Color: =ThemeInk
+        Duration: =60000
+        Fill: =Color.Transparent
+        Height: =1
+        HoverFill: =Color.Transparent
+        OnTimerEnd: |-
+            =// Cada minuto, y NUNCA con una operacion en curso: refrescar debajo de
+            // alguien que esta confirmando algo es la peor forma de ayudar.
+            If(true, Select(btnCargarMan))
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =Color.Transparent
+        Repeat: =true
+        Start: =true
+        TabIndex: =-1
+        Text: =""
+        Visible: =false
+        Width: =1
+        X: =6
+        Y: =758
+        ZIndex: =97
+
         cmpRailMan As cmpRailCajeros:
+            OnActualizar: =Select(btnCargarMan)
             Datos: =AddColumns(DropColumns(colCajerosMan, pendientesManual), pendientesCorte, 0, totalNio, 0, totalUsd, 0, totalEur, 0)
             Height: =Parent.Height
             OnSeleccion: |-
@@ -87,7 +139,7 @@ scrManual As screen:
                             TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                 && BatchStatus = Blank()
                                 && TransactionStatus = Blank()
-                                && 'Created By'.User = gvarCajeroMan.cajero
+                                && Cajero.User = gvarCajeroMan.cajero
                         ),
                         'Created On', SortOrder.Ascending
                     )
@@ -99,6 +151,27 @@ scrManual As screen:
             Titulo: ="CAJEROS CON MANUALES"
             Width: =LayRailW
             ZIndex: =1
+
+        icoActualizarMan As icon:
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Height: =18
+            HoverColor: =ThemeAccent
+            Icon: =Icon.Reload
+            OnSelect: =Select(btnCargarMan)
+            PaddingBottom: =2
+            PaddingLeft: =2
+            PaddingRight: =2
+            PaddingTop: =2
+            PressedColor: =ThemeAccent
+            Tooltip: |-
+                ="Volver a pedir el trabajo pendiente por cajero" &
+                If(IsBlank(ctxUltimaActMan), "", " · última: " & Text(ctxUltimaActMan, FmtHora)) &
+                ". También se actualiza solo cada minuto."
+            Width: =18
+            X: =LayRailW - 31
+            Y: =10
+            ZIndex: =50
 
         cntMainMan As groupContainer.manualLayoutContainer:
             DropShadow: =DropShadow.Light
@@ -178,7 +251,7 @@ scrManual As screen:
                                             TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                                 && BatchStatus = Blank()
                                                 && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                                && 'Created By'.User = gvarCajeroMan.cajero
+                                                && Cajero.User = gvarCajeroMan.cajero
                                         ),
                                         'Created On', SortOrder.Descending
                                     )
@@ -222,7 +295,7 @@ scrManual As screen:
                                         TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                             && BatchStatus = Blank()
                                             && TransactionStatus = Blank()
-                                            && 'Created By'.User = gvarCajeroMan.cajero
+                                            && Cajero.User = gvarCajeroMan.cajero
                                     ),
                                     'Created On', SortOrder.Ascending
                                 )
@@ -393,7 +466,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                         && BatchStatus = Blank()
                                         && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                        && 'Created By'.User = gvarCajeroMan.cajero
+                                        && Cajero.User = gvarCajeroMan.cajero
                                 ),
                                 'Created On', SortOrder.Descending
                             ),
@@ -405,7 +478,7 @@ scrManual As screen:
                                         'CH-Tbl-Transactions',
                                         TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                             && BatchStatus = Blank() && TransactionStatus = Blank()
-                                            && 'Created By'.User = gvarCajeroMan.cajero
+                                            && Cajero.User = gvarCajeroMan.cajero
                                     ),
                                     // rango de motivo (Rechazo core > Sin cuenta > Con cheques > —)
                                     Switch(
@@ -422,7 +495,7 @@ scrManual As screen:
                                         'CH-Tbl-Transactions',
                                         TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                             && BatchStatus = Blank() && TransactionStatus = Blank()
-                                            && 'Created By'.User = gvarCajeroMan.cajero
+                                            && Cajero.User = gvarCajeroMan.cajero
                                     ),
                                     'Created On', SortOrder.Ascending
                                 )
@@ -950,7 +1023,10 @@ scrManual As screen:
                     HoverColor: =App.Theme.Colors.PrimaryForeground
                     HoverFill: =ThemeAccentSoft
                     OnSelect: |-
-                        =Refresh('CH-Tbl-Transactions');   // Refresh DELIBERADO iniciado por el usuario (≠ P-1: no es por-registro)
+                        =// Recarga tambien el RAIL: antes refrescaba la lista del cajero
+                        // seleccionado y los contadores de la izquierda quedaban viejos.
+                        Select(btnCargarMan);
+                        Refresh('CH-Tbl-Transactions');   // Refresh DELIBERADO iniciado por el usuario (≠ P-1: no es por-registro)
                         UpdateContext({ctxErrorMan: Blank()});
                         Set(
                             gvarTxMan,
@@ -961,7 +1037,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                         && BatchStatus = Blank()
                                         && TransactionStatus = Blank()
-                                        && 'Created By'.User = gvarCajeroMan.cajero
+                                        && Cajero.User = gvarCajeroMan.cajero
                                 ),
                                 'Created On', SortOrder.Ascending
                             )
@@ -1273,7 +1349,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                         && BatchStatus = Blank()
                                         && TransactionStatus = Blank()
-                                        && 'Created By'.User = gvarCajeroMan.cajero
+                                        && Cajero.User = gvarCajeroMan.cajero
                                 ),
                                 'Created On', SortOrder.Ascending
                             )

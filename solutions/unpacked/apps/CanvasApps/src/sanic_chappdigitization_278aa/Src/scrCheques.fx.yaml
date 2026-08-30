@@ -43,6 +43,53 @@ scrCheques As screen:
         Y: =LayHeaderH
         ZIndex: =2
 
+        btnActualizarChq As button:
+            BorderThickness: =0
+            Color: =ThemeInk
+            Fill: =Color.Transparent
+            Height: =1
+            HoverFill: =Color.Transparent
+            OnSelect: |-
+                =Refresh('CH-Tbl-Checks');
+                UpdateContext({ ctxUltimaActChq: Now() })
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            TabIndex: =-1
+            Text: =""
+            Visible: =false
+            Width: =1
+            X: =2
+            Y: =758
+            ZIndex: =96
+
+        tmrActualizarChq As timer:
+            BorderThickness: =0
+            Color: =ThemeInk
+            Duration: =60000
+            Fill: =Color.Transparent
+            Height: =1
+            HoverFill: =Color.Transparent
+            OnTimerEnd: |-
+                =// Cada minuto, salvo con una operacion en curso.
+                If(!ctxBusyChq, Select(btnActualizarChq))
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            PressedFill: =Color.Transparent
+            Repeat: =true
+            Start: =true
+            TabIndex: =-1
+            Text: =""
+            Visible: =false
+            Width: =1
+            X: =6
+            Y: =758
+            ZIndex: =97
+
         cntMainChq As groupContainer.manualLayoutContainer:
             DropShadow: =DropShadow.Light
             Fill: =Color.Transparent
@@ -221,6 +268,27 @@ scrCheques As screen:
                     X: =cntSegChq.X + cntSegChq.Width + 10
                     Y: =(Parent.Height - Self.Height) / 2
                     ZIndex: =2
+
+                icoActualizarChq As icon:
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =22
+                    HoverColor: =ThemeAccent
+                    Icon: =Icon.Reload
+                    OnSelect: =Select(btnActualizarChq)
+                    PaddingBottom: =2
+                    PaddingLeft: =2
+                    PaddingRight: =2
+                    PaddingTop: =2
+                    PressedColor: =ThemeAccent
+                    Tooltip: |-
+                        ="Vuelve a leer los cheques desde el servidor" &
+                        If(IsBlank(ctxUltimaActChq), "", " · última: " & Text(ctxUltimaActChq, FmtHora)) &
+                        ". También se actualiza solo cada minuto."
+                    Width: =22
+                    X: =inpBuscarChq.X + inpBuscarChq.Width + 12
+                    Y: =(Parent.Height - Self.Height) / 2
+                    ZIndex: =20
 
             cntListaChq As groupContainer.manualLayoutContainer:
                 BorderColor: =ThemeLine
