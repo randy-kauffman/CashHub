@@ -589,6 +589,7 @@ scrTulas As screen:
                                             T.BagID = ctxScanTul &&
                                             (
                                                 T.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda' ||
+                                                T.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion' ||
                                                 T.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa'  ||
                                                 T.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero'
                                             )
@@ -633,9 +634,9 @@ scrTulas As screen:
                         Select(btnReabrirTul),
             
                     // (D) una sola, pero no se puede abrir
-                    First(colTulasCandidatasTul).BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                    !(First(colTulasCandidatasTul).BagStatus in EstadosTomables),
                         Notify(
-                            "La tula " & ctxScanTul & " no está almacenada en bóveda: puede estar todavía en esclusa o asignada a otro cajero.",
+                            "La tula " & ctxScanTul & " no está disponible para tomarla: puede estar todavía en esclusa o asignada a otro cajero.",
                             NotificationType.Warning
                         );
                         Reset(inpScanTul);
@@ -1000,6 +1001,7 @@ scrTulas As screen:
                     ThisItem.BagStatus,
                     'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeInk3,
                     'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOk,
+                    'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                     ThemeWarn,
                     'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfo,
                     'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOk,
                     'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarn,
@@ -1011,6 +1013,7 @@ scrTulas As screen:
                     ThisItem.BagStatus,
                     'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
                     'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                     ThemeWarnSoft,
                     'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
                     'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
                     'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
@@ -1024,6 +1027,7 @@ scrTulas As screen:
                     ThisItem.BagStatus,
                     'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
                     'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                     ThemeWarnSoft,
                     'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
                     'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
                     'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
@@ -1040,6 +1044,7 @@ scrTulas As screen:
                     ThisItem.BagStatus,
                     'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
                     'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                    'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                     ThemeWarnSoft,
                     'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
                     'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
                     'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
@@ -1056,6 +1061,7 @@ scrTulas As screen:
                     ThisItem.BagStatus,
                     'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            "Recibida en esclusa",
                     'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           "Almacenada en bóveda",
+                    'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                     "Devuelta",
                     'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              "Asignada a cajero",
                     'BagStatus (CH-Tbl-Bags)'.Recontada,                                        "Recontada",
                     'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', "Pendiente de revisión",
@@ -1275,14 +1281,14 @@ scrTulas As screen:
                 //   misma sesion. El poll ve el visto bueno, manda a abrirla, y esta
                 //   guarda la encontraba fuera de boveda y acusaba a otro cajero de
                 //   habersela llevado. Se la habia llevado ella misma.
-                ctxTulaFrescaTul.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda' &&
+                !(ctxTulaFrescaTul.BagStatus in EstadosTomables) &&
                 !(
                     ctxTulaFrescaTul.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero' &&
                     ctxTulaFrescaTul.RecountingSession.'CH-Tbl-RecountingSession' =
                         gvarSesion.'CH-Tbl-RecountingSession'
                 ),
                     Notify(
-                        "La tula " & ctxTulaFrescaTul.BagID & " dejó de estar almacenada en bóveda: otro cajero pudo tomarla. No se abrió nada.",
+                        "La tula " & ctxTulaFrescaTul.BagID & " ya no está disponible para tomarla: otro cajero pudo llevársela. No se abrió nada.",
                         NotificationType.Error
                     );
                     Reset(inpScanTul);
@@ -1697,7 +1703,7 @@ scrTulas As screen:
                     =// Una fila NO seleccionable no cambia el centinela, y este If es el unico
                     // lugar donde eso se decide.
                     If(
-                        ThisItem.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                        ThisItem.BagStatus in EstadosTomables,
                         UpdateContext({ ctxPickTulaTul: ThisItem })
                     )
                 TemplatePadding: =0
@@ -1710,7 +1716,7 @@ scrTulas As screen:
                 btnPickTulaTul As button:
                     BorderColor: |-
                         =If(
-                            ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeLineSoft,
+                            !(ThisItem.BagStatus in EstadosTomables), ThemeLineSoft,
                             ThisItem.'CH-Tbl-Bags' = ctxPickTulaTul.'CH-Tbl-Bags',                  ThemeAccent,
                             ThemeLine
                         )
@@ -1718,7 +1724,7 @@ scrTulas As screen:
                     Color: =ThemeInk
                     Fill: |-
                         =If(
-                            ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeSurface2,
+                            !(ThisItem.BagStatus in EstadosTomables), ThemeSurface2,
                             ThisItem.'CH-Tbl-Bags' = ctxPickTulaTul.'CH-Tbl-Bags',                  ThemeAccentSoft,
                             ThemeSurface
                         )
@@ -1726,7 +1732,7 @@ scrTulas As screen:
                     Height: =81
                     HoverFill: |-
                         =If(
-                            ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeSurface2,
+                            !(ThisItem.BagStatus in EstadosTomables), ThemeSurface2,
                             ThemeAccentSoft
                         )
                     OnSelect: =Select(Parent)
@@ -1736,7 +1742,7 @@ scrTulas As screen:
                     PaddingTop: =0
                     PressedFill: |-
                         =If(
-                            ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda', ThemeSurface2,
+                            !(ThisItem.BagStatus in EstadosTomables), ThemeSurface2,
                             ThemeAccentSoft
                         )
                     RadiusBottomLeft: =11
@@ -1751,7 +1757,7 @@ scrTulas As screen:
                 lblPickTulaTitTul As label:
                     Color: |-
                         =If(
-                            ThisItem.BagStatus = 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',
+                            ThisItem.BagStatus in EstadosTomables,
                             ThemeInk,
                             ThemeInk3
                         )
@@ -1806,7 +1812,7 @@ scrTulas As screen:
                             'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',    "No seleccionable: ya está asignada a un cajero.",
                             "No seleccionable en este estado."
                         )
-                    Visible: =ThisItem.BagStatus <> 'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda'
+                    Visible: =!(ThisItem.BagStatus in EstadosTomables)
                     Width: =360
                     Wrap: =false
                     X: =14
@@ -1838,6 +1844,7 @@ scrTulas As screen:
                             ThisItem.BagStatus,
                             'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeInk3,
                             'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOk,
+                            'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                     ThemeWarn,
                             'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfo,
                             'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOk,
                             'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarn,
@@ -1849,6 +1856,7 @@ scrTulas As screen:
                             ThisItem.BagStatus,
                             'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
                             'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                     ThemeWarnSoft,
                             'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
                             'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
                             'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
@@ -1862,6 +1870,7 @@ scrTulas As screen:
                             ThisItem.BagStatus,
                             'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
                             'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                     ThemeWarnSoft,
                             'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
                             'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
                             'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
@@ -1878,6 +1887,7 @@ scrTulas As screen:
                             ThisItem.BagStatus,
                             'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            ThemeLineSoft,
                             'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           ThemeOkSoft,
+                            'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                     ThemeWarnSoft,
                             'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              ThemeInfoSoft,
                             'BagStatus (CH-Tbl-Bags)'.Recontada,                                        ThemeOkSoft,
                             'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', ThemeWarnSoft,
@@ -1894,6 +1904,7 @@ scrTulas As screen:
                             ThisItem.BagStatus,
                             'BagStatus (CH-Tbl-Bags)'.'Recibida en esclusa',                            "Recibida en esclusa",
                             'BagStatus (CH-Tbl-Bags)'.'Almacenada en boveda',                           "Almacenada en bóveda",
+                            'BagStatus (CH-Tbl-Bags)'.'Devuelta para reasignacion',                     "Devuelta",
                             'BagStatus (CH-Tbl-Bags)'.'Asignada a cajero',                              "Asignada a cajero",
                             'BagStatus (CH-Tbl-Bags)'.Recontada,                                        "Recontada",
                             'BagStatus (CH-Tbl-Bags)'.'Pendiente de revision por supervisor - recuento', "Pendiente de revisión",
