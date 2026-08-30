@@ -71,14 +71,20 @@ ROL_CAJERO = 'f9bee50d-6a75-f011-b4cb-7c1e5248985f'   # CH-SR-Cashier (por ID: e
 
 # Solo lectura, y solo sobre los dos campos que el cajero necesita para trabajar.
 # transactions.accountnumber queda AFUERA a proposito: el cajero no contabiliza.
+# (entidad, campo, canupdate)
+# depositsrecounting.accountnumber lleva UPDATE y los demas no. No es una
+# inconsistencia: al enlazar, la app COPIA ahi el numero de cuenta de la
+# declaracion (scrConteo 894). Es el registro del propio cajero y el valor es
+# derivado — el cajero no lo tipea, el input quedo de solo lectura. Lo que sigue
+# intocable es declareddeposits.accountnumber: la declaracion del cliente.
 CAMPOS = [
-    ('sanic_chtbldeclareddeposits',   'sanic_accountnumber'),
-    ('sanic_chtbldepositsrecounting', 'sanic_accountnumber'),
+    ('sanic_chtbldeclareddeposits',   'sanic_accountnumber', 0),
+    ('sanic_chtbldepositsrecounting', 'sanic_accountnumber', 4),
     # El numero del cheque declarado era SOLO-ADMIN: ni el supervisor lo veia. El
     # cajero tiene que marcar CUALES cheques declarados entran en el deposito, y
     # sin numero solo los distingue por el monto — con dos del mismo monto, no los
     # distingue. Se abre para cajero y supervisor (ver el bloque de mas abajo).
-    ('sanic_chtbldeclaredchecks',     'sanic_checknumber'),
+    ('sanic_chtbldeclaredchecks',     'sanic_checknumber', 0),
 ]
 
 perfil = find('fieldsecurityprofiles', f"name eq '{PERFIL}'", 'name')
@@ -95,22 +101,26 @@ else:
     }, prefer='return=representation')['fieldsecurityprofileid']
     print(f"perfil creado: {PERFIL}")
 
-for entidad, campo in CAMPOS:
+for entidad, campo, upd in CAMPOS:
     ya = find('fieldpermissions',
               f"_fieldsecurityprofileid_value eq {pid} and entityname eq '{entidad}' "
-              f"and attributelogicalname eq '{campo}'", 'attributelogicalname')
+              f"and attributelogicalname eq '{campo}'", 'attributelogicalname,canupdate')
     if ya:
-        print(f"  ya estaba: {entidad}.{campo}")
+        if ya[0].get('canupdate') != upd:
+            req('PATCH', f"/fieldpermissions({ya[0]['fieldpermissionid']})", {'canupdate': upd})
+            print(f"  ajustado:  {entidad}.{campo}  update={'SI' if upd else 'NO'}")
+        else:
+            print(f"  ya estaba: {entidad}.{campo}  update={'SI' if upd else 'NO'}")
         continue
     req('POST', '/fieldpermissions', {
         'entityname': entidad,
         'attributelogicalname': campo,
-        'canread': 4,       # 4 = permitido
-        'canupdate': 0,     # 0 = denegado. El cajero NO escribe cuentas.
+        'canread': 4,        # 4 = permitido
+        'canupdate': upd,    # 0 = denegado
         'cancreate': 0,
         'fieldsecurityprofileid@odata.bind': f"/fieldsecurityprofiles({pid})",
     })
-    print(f"  lectura otorgada: {entidad}.{campo}")
+    print(f"  otorgado:  {entidad}.{campo}  lectura=SI update={'SI' if upd else 'NO'}")
 
 cajeros = req('GET', f"/roles({ROL_CAJERO})/systemuserroles_association"
                      "?$select=fullname,systemuserid").get('value', [])
