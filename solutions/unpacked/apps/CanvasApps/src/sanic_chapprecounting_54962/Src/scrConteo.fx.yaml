@@ -126,7 +126,8 @@ scrConteo As screen:
                 ctxDepositoCon:     Defaults('CH-Tbl-DepositsRecountings'),
                 ctxDepDecCursoCon:  Defaults('CH-Tbl-DeclaredDeposits'),
                 ctxDepSelCon:       Defaults('CH-Tbl-DepositsRecountings'),
-                ctxDepDecSelCon:    Defaults('CH-Tbl-DeclaredDeposits')
+                ctxDepDecSelCon:    Defaults('CH-Tbl-DeclaredDeposits'),
+                ctxDecDesenlazarCon: Defaults('CH-Tbl-DeclaredDeposits')
             });
             UpdateContext({ ctxHayDepositoCon: false, ctxMonedaCon: "NIO" });
             Clear(colDetalleConteoCon);
@@ -979,32 +980,42 @@ scrConteo As screen:
         OnSelect: |-
             =Select(btnVolcarGrillaCon);          // Bloque V — VOLCADO (§6.2), PRIMERA instruccion
             
-            With(
-                { Dec: LookUp(colDepDeclaradosCon, 'CH-Tbl-DeclaredDeposits' = ctxDepSelCon.RelatedDeclaredDeposit.'CH-Tbl-DeclaredDeposits') },
+            // El declarado se captura en una VARIABLE, no en un With(). El valor del
+            // With depende de ctxDepSelCon.RelatedDeclaredDeposit, y el Patch de aqui
+            // abajo borra justamente ese enlace: cuando el With recien evaluaba su
+            // valor, el LookUp ya no encontraba nada, la guarda daba false y el lado
+            // declarado quedaba enlazado PARA SIEMPRE. UpdateContext lo resuelve YA.
+            UpdateContext({
+                ctxDecDesenlazarCon:
+                    LookUp(
+                        colDepDeclaradosCon,
+                        'CH-Tbl-DeclaredDeposits' = ctxDepSelCon.RelatedDeclaredDeposit.'CH-Tbl-DeclaredDeposits'
+                    )
+            });
             
+            IfError(
+                UpdateContext({
+                    ctxDepSelCon:
+                        Patch(
+                            'CH-Tbl-DepositsRecountings',
+                            ctxDepSelCon,
+                            { RelatedDeclaredDeposit: Blank() }
+                        )
+                }),
+                Notify("No se pudo desenlazar: " & FirstError.Message, NotificationType.Error)
+            );
+            
+            If(
+                IsBlank(ctxDepSelCon.RelatedDeclaredDeposit.'CH-Tbl-DeclaredDeposits') &&
+                !IsBlank(ctxDecDesenlazarCon.'CH-Tbl-DeclaredDeposits'),
                 IfError(
-                    UpdateContext({
-                        ctxDepSelCon:
-                            Patch(
-                                'CH-Tbl-DepositsRecountings',
-                                ctxDepSelCon,
-                                { RelatedDeclaredDeposit: Blank() }
-                            )
-                    }),
-                    Notify("No se pudo desenlazar: " & FirstError.Message, NotificationType.Error)
-                );
-            
-                If(
-                    IsBlank(ctxDepSelCon.RelatedDeclaredDeposit.'CH-Tbl-DeclaredDeposits') && !IsBlank(Dec.'CH-Tbl-DeclaredDeposits'),
-                    IfError(
-                        Patch('CH-Tbl-DeclaredDeposits', Dec, { RelatedRecountedDeposit: Blank() }),
-                        If(true,
+                    Patch('CH-Tbl-DeclaredDeposits', ctxDecDesenlazarCon, { RelatedRecountedDeposit: Blank() }),
+                    If(true,
                         Notify(
                             "El depósito quedó desenlazado pero la declaración no se actualizó: " & FirstError.Message,
                             NotificationType.Error
                         );
                         Blank()
-                    )   
                     )
                 )
             );
