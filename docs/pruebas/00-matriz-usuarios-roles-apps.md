@@ -18,7 +18,7 @@ Sigil, Procurement, CM) que se omiten por no ser relevantes acá.
 | **User 2** | `ClientAdminApprover`, `Hub` | equipo *Banca de Empresas -Approver* | ClientAdministration |
 | **User 3** | `ClientAdminContributor` | equipo *Bóveda - Contributor* | ClientAdministration |
 | **User 4** | `ClientAdminApprover`, `Hub` | equipo *Aprobadores - sanic_chtblclientbranch* | ClientAdministration |
-| **User 5** | — | — | — |
+| **User 5** | `FlowService`, `Basic User` | directo | — *(cuenta de servicio, no opera apps)* |
 | **User 6** | `CountingSupervisor`, `Receptionist`, `Hub` | directo | Reception, Supervisor |
 | **User 7** | `Cashier`, `Hub` | directo | Recounting |
 | **User 8** | `Digitizer`, `Hub` | directo | Digitization |
@@ -40,7 +40,7 @@ Sigil, Procurement, CM) que se omiten por no ser relevantes acá.
 | `CH-SR-ClientAdminApprover` | User 2, User 4, User 10 |
 | `CH-SR-Hub` | User 2, User 4, User 6, User 7, User 8, User 10 |
 | `CH-SR-ConfigAdmin` | **nadie** |
-| `CH-SR-EmailIngestionFlow` | nadie *(es identidad de servicio, correcto)* |
+| `CH-SR-FlowService` *(ex `CH-SR-EmailIngestionFlow`)* | **User 5** — cuenta de servicio de los flujos |
 
 ---
 
@@ -99,9 +99,13 @@ por otro— no se puede armar hoy.
 
 ## Usuarios libres
 
-**User 5** y **User 9** no tienen ningún rol ni app de CashHub. Son los candidatos naturales para
-cubrir los huecos: un segundo cajero, un `ConfigAdmin`, o un solicitante limpio que no pueda
-aprobarse a sí mismo.
+**User 5 pasó a ser la cuenta de servicio de los flujos** el 2026-08-31 — ver
+[`01-cuenta-de-servicio-flujos.md`](01-cuenta-de-servicio-flujos.md). No debe usarse como usuario
+de prueba: mezclar una cuenta de servicio con escenarios manuales hace imposible saber quién
+ejecutó qué.
+
+**User 9** sigue libre y es el único candidato para cubrir los huecos: un segundo cajero, un
+`ConfigAdmin`, o un solicitante limpio que no pueda aprobarse a sí mismo.
 
 ## Recomendación de asignaciones antes de arrancar
 
@@ -109,6 +113,6 @@ aprobarse a sí mismo.
 |---|---|
 | Compartir **CH-App-Hub** con los 6 que tienen el rol | Sin esto no se entra por el lanzador |
 | Compartir **CH-App-DepositsTracker** con User 1 | Ya tiene el rol |
-| Dar **`CH-SR-ConfigAdmin`** a alguien (¿User 5?) | Preparar datos maestros de los escenarios |
-| Dar **`CH-SR-ClientAdminContributor`** a User 5 o 9 | Un solicitante que NO pueda autoaprobar |
+| Dar **`CH-SR-ConfigAdmin`** a alguien | Preparar datos maestros de los escenarios. **No a User 5**: es la cuenta de servicio |
+| Dar **`CH-SR-ClientAdminContributor`** a User 9 | Un solicitante que NO pueda autoaprobar |
 | Dar **`CH-SR-Cashier`** a User 9 | Un segundo cajero para escenarios de reasignación |

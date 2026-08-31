@@ -32,7 +32,7 @@ Y los flujos están repartidos entre dos dueños: 7 de Randy Kauffman y 4 de `Po
 - Conviene marcarla en AAD como cuenta de servicio para que no entre en las políticas de rotación
   de usuarios normales.
 
-## Paso 1 — Ampliar el rol `CH-SR-EmailIngestionFlow`
+## Paso 1 — Ampliar el rol ✅ HECHO
 
 El rol existe y está pensado para esto, pero **cubre 4 tablas y los 11 flujos tocan 16**.
 
@@ -62,11 +62,20 @@ prvWritesanic_chtblemailsattachments
 > renombrarlo a algo como `CH-SR-FlowService`. El rename conserva el GUID y las asignaciones —
 > igual que hicimos con `CH-Role` → `CH-SR-Hub`.
 
-## Paso 2 — Asignar el rol a User 5
+## Paso 2 — Asignar el rol a User 5 ✅ HECHO
 
 Portal de administración → Usuarios → User 5 → Administrar roles → marcar el rol.
 
 También necesita **Basic User**, que es lo mínimo de plataforma. Los demás usuarios ya lo tienen.
+
+> **Pasos 1 y 2 ejecutados el 2026-08-31** con `scripts/setup-cuenta-servicio-flujos.py`:
+> se agregaron los 13 privilegios, el rol se renombró a **`CH-SR-FlowService`** (el `roleid`
+> `d7d07f26-…` no cambió) y se le asignó a User 5 junto con **Basic User** — que no tenía, y sin
+> el cual la cuenta no opera en Dataverse.
+>
+> Verificado: el rol cubre las 13 tablas que tocan los flujos con las operaciones exactas.
+>
+> **Lo que sigue es de portal y queda de tu lado.**
 
 ## Paso 3 — Crear las 7 conexiones COMO User 5
 

@@ -5,7 +5,8 @@
 # SIN import de solucion (hay cambios en el ambiente que el repo local no tiene
 # y un import completo arriesga pisarlos).
 #
-#   1. CH-SR-EmailIngestionFlow    -> conexion Dataverse de los Cloud Flows de
+#   1. CH-SR-FlowService (ex CH-SR-EmailIngestionFlow, renombrado 2026-08-31 al
+#      pasar a cubrir los 11 flujos) -> conexion Dataverse de los Cloud Flows de
 #      ingesta (IngestEmails/ProcessEmail/MailboxSweep/Reply to client email).
 #      El motor de validacion (ValidateReceivedEmailPlugin) corre como SYSTEM,
 #      asi que este rol NO gobierna la validacion en si, solo lo que los flujos
@@ -45,7 +46,7 @@ DEPTH_GLOBAL = 'Global'
 
 ROLES = [
     {
-        'name': 'CH-SR-EmailIngestionFlow',
+        'name': 'CH-SR-FlowService',
         'description': (
             'Conexion Dataverse de los Cloud Flows de ingesta de correos '
             '(IngestEmails/ProcessEmail/MailboxSweep/Reply to client email). '
@@ -85,7 +86,7 @@ ROLES = [
             # LA BARRA DE SALUD DE LA CONSOLA LEE EL LATIDO. La pantalla arranca con
             # LookUp('CH-Tbl-SystemHeartbeat', Name = "ingesta-correos") en OnVisible, y sin
             # este Read la app abre con un error rojo de red antes de mostrar nada. Es Read
-            # y nada mas: el latido lo escribe MailboxSweep con CH-SR-EmailIngestionFlow.
+            # y nada mas: el latido lo escribe MailboxSweep con CH-SR-FlowService.
             'sanic_chtblsystemheartbeat': ['Read'],
             # EL AVISO A BANCA RESUELVE EL BUZON DESTINO POR VARIABLE DE ENTORNO
             # (sanic_CHEVBancaMailbox y sanic_CHEVAppUrl_ClientAdmin). Sin este Read el

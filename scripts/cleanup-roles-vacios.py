@@ -61,7 +61,7 @@ DEPTH = {"Basic": "Basic", "Local": "Local", "Deep": "Deep", "Global": "Global"}
 NO_TOCAR = {"CH-SR-ConfigAdmin", "CH-SR-Cashier", "CH-SR-Digitizer",
             "CH-SR-Receptionist", "CH-SR-CountingSupervisor", "CH-SR-DepositsTracker",
             "CH-SR-ClientAdminApprover", "CH-SR-ClientAdminContributor",
-            "CH-SR-EmailIngestionFlow", "CH-SR-EmailOperationsConsole", "CH-SR-Hub"}
+            "CH-SR-FlowService", "CH-SR-EmailOperationsConsole", "CH-SR-Hub"}
 
 
 def traza(etapa, mensaje):

@@ -20,7 +20,7 @@
 | `CH-SR-ClientAdminApprover` | Aprueba/rechaza RFC de datos de cliente | `CH-App-ClientAdministration` | 11 |
 | `CH-SR-ClientAdminContributor` | Crea RFC propios de datos de cliente | `CH-App-ClientAdministration` | 11 |
 | `CH-SR-EmailOperationsConsole` | Opera la bandeja de ingesta de correos | `CH-App-IngestionConsole` | 13 |
-| `CH-SR-EmailIngestionFlow` | Identidad de servicio de los flujos de ingesta | 4 cloud flows | 3 |
+| `CH-SR-FlowService` | Identidad de servicio de los cloud flows. Renombrado desde `CH-SR-EmailIngestionFlow` el 2026-08-31 al pasar a cubrir los 11, no solo los de ingesta. | 11 cloud flows | 13 |
 | `CH-SR-ConfigAdmin` | Administra catálogos y parámetros; **rol de soporte** | `CH-App-Configuration` | 11 |
 
 `CH-SR-DepositsTracker` es el único con **cero privilegios de escritura** sobre las 22 tablas — es
