@@ -1118,6 +1118,34 @@ namespace CashHub.Plugins
             public const string OutSizeBytes = "SizeBytes";
         }
 
+        /// <summary>
+        /// Custom API del resumen por cuenta del lote, y su comparacion contra el que el
+        /// aprobador copia del IBS Branch.
+        ///
+        /// POR QUE EXISTE. El aprobador no ve el detalle transaccion por transaccion: ve un
+        /// "Resumen por Cuenta" (Cuenta | Moneda | Monto | Cant TRN) y tiene que compararlo
+        /// contra el lote. El lote mas grande del entorno tiene 600 cuentas distintas:
+        /// compararlas a ojo es lento y se cometen errores justo donde no se pueden cometer.
+        ///
+        /// Server-side y no con un GroupBy en Power Fx porque el cliente topa en 500 filas:
+        /// un lote de 600 cuentas mostraria un resumen incompleto SIN avisar.
+        /// </summary>
+        internal static class BatchSummaryApi
+        {
+            public const string MessageName = "sanic_CHBatchSummary";
+
+            /// <summary>Lote del que se arma el resumen (REQUERIDO).</summary>
+            public const string InBatchId = "BatchId";
+
+            /// <summary>Texto pegado del Resumen por Cuenta del IBS. Opcional: sin el, solo se devuelve el resumen.</summary>
+            public const string InPastedSummary = "PastedSummary";
+
+            public const string OutSummary = "Summary";
+            public const string OutComparison = "Comparison";
+            public const string OutOutcome = "Outcome";
+            public const string OutMessage = "Message";
+        }
+
         internal static class CutApi
         {
             public const string MessageName = "sanic_CHCreateTransactionCut";

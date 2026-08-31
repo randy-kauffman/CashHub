@@ -95,7 +95,13 @@ namespace CashHub.Plugins
             return csv;
         }
 
-        private static List<CoreExportTransaction> ReadTransactions(
+        /// <summary>
+        /// Las transacciones del lote, tal como las ve el CSV. Es internal a proposito:
+        /// el resumen por cuenta se arma de ESTAS filas, no de una consulta paralela. Si
+        /// cada uno consultara por su lado, el resumen podria cuadrar contra el IBS
+        /// mientras el archivo enviado dice otra cosa.
+        /// </summary>
+        internal static List<CoreExportTransaction> ReadTransactions(
             IOrganizationService service, ITracingService tracing, Guid batchId)
         {
             var query = new QueryExpression(Schema.Transaction.LogicalName)
