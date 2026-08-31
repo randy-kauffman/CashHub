@@ -18,6 +18,7 @@ Se complementa también con [`docs/referencia/`](../referencia/) (contratos vivo
 | [06-runbook-migracion-cr140.md](06-runbook-migracion-cr140.md) | Runbook del cutover `cr140_changestatus` → `sanic_changestatus`: mapeo de valores, orden de importación, migración de datos y paso de Studio para la canvas app. |
 | [07-seed-data.md](07-seed-data.md) | Datos de configuración versionados (`data/seed/`) y siembra idempotente por ambiente con `scripts/seed-data.sh`. |
 | [08-motor-validacion.md](08-motor-validacion.md) | Diseño del motor de validación de correos: arquitectura de 3 piezas, contrato del Custom API, reglas paramétricas con dependencias, hallazgos con hoja/celda, detección de fallos y nuevo oficio de la Console. |
+| [09-app-configuracion.md](09-app-configuracion.md) | CH-App-Configuration: la app model-driven que administra las 12 tablas de configuración que ninguna canvas app toca, su rol `CH-SR-ConfigAdmin`, y la trampa de `CH-Tbl-Parameter` (creada sin privilegios: ningún rol puede gobernarla). |
 
 ## Cómo leer esta carpeta
 
