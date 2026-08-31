@@ -2,12 +2,16 @@ scrMovimientos As screen:
     ContentLanguage: =""
     Fill: =ThemeBg
     OnVisible: |-
-        =// UN DIA A LA VEZ, no un rango: asi lo pidio el negocio y ademas mantiene la
-        // consulta acotada. El dia arranca en HOY.
+        =// REFRESCAR ANTES DE LEER. Sin esto la galeria sirve el CACHE del cliente y una
+        // transaccion creada hace cinco minutos —o un lote recien aplicado— simplemente no
+        // aparece: la pantalla se ve bien y esta mintiendo. Todas las demas pantallas de la
+        // app ya lo hacen; esta era la unica que no.
+        Refresh('CH-Tbl-Transactions');
         UpdateContext({
             ctxDiaMov: Today(),
             ctxFiltroMov: "Todas",
-            ctxCargandoMov: false
+            ctxCargandoMov: false,
+            ctxUltimaActMov: Blank()
         });
         Set(gvarCajeroMov, Blank());
         Clear(colCuboMov);
@@ -59,23 +63,20 @@ scrMovimientos As screen:
         lblCajNombreMov As label:
             Color: =ThemeInk
             FontWeight: =FontWeight.Semibold
-            Height: =18
+            Height: =56
             Size: =9.5
-            Text: =ThisItem.cajeroNombre
+            Text: |-
+                =// SOLO EL NOMBRE. La mesa se saco: la que devuelve el API es la mesa ACTUAL
+                // del cajero, y esta es una vista historica — poner la mesa de hoy al lado de
+                // los movimientos de otro dia es afirmar algo que no se sabe. Ademas hay
+                // cajeros con la mesa vacia. Lo que identifica al cajero es su nombre.
+                ThisItem.cajeroNombre
+            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth - 24
             X: =16
-            Y: =10
+            Y: =0
             ZIndex: =3
 
-        lblCajMesaMov As label:
-            Color: =ThemeInk3
-            Height: =16
-            Size: =8.25
-            Text: =ThisItem.mesa
-            Width: =Parent.TemplateWidth - 24
-            X: =16
-            Y: =28
-            ZIndex: =4
 
         btnCajFilaMov As button:
             BorderStyle: =BorderStyle.None
@@ -112,7 +113,7 @@ scrMovimientos As screen:
         Size: =9
         Text: |-
             =If(IsBlank(gvarCajeroMov), "Seleccioná un cajero del panel izquierdo.",
-                $"{gvarCajeroMov.mesa} · {Text(Sum(colCuboMov, cantidad))} transacciones el {Text(ctxDiaMov, ""dd/mm/yyyy"")}")
+                $"{Text(Sum(colCuboMov, cantidad))} transacciones el {Text(ctxDiaMov, ""dd/mm/yyyy"")}")
         Width: =520
         X: =256
         Y: =LayHeaderH + 42
@@ -558,6 +559,33 @@ scrMovimientos As screen:
         Y: =galMovMov.Y
         ZIndex: =12
 
+    btnRefrescarMov As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        Color: =ThemeInk2
+        Fill: =ThemeSurface
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        HoverFill: =ThemeSurface2
+        OnSelect: |-
+            =// Explicito y a mano, sin temporizador. Esta es una vista de auditoria, no una
+            // lista de trabajo pendiente: refrescar sola una grilla de 5.000 filas mientras
+            // el operador la esta recorriendo lo haria perder el lugar. El boton dice cuando
+            // fue la ultima vez, que es lo que hace falta para saber si mirar de nuevo.
+            Select(btnCargarCuboMov)
+        RadiusBottomLeft: =7
+        RadiusBottomRight: =7
+        RadiusTopLeft: =7
+        RadiusTopRight: =7
+        Size: =9
+        Text: |-
+            =If(IsBlank(ctxUltimaActMov), "Actualizar",
+                "Actualizar · " & Text(ctxUltimaActMov, "hh:mm"))
+        Width: =150
+        X: =btnHoyMov.X - 8 - Self.Width
+        Y: =LayHeaderH + 16
+        ZIndex: =15
+
     btnCargarCajerosMov As button:
         BorderThickness: =0
         Fill: =Color.Transparent
@@ -572,8 +600,7 @@ scrMovimientos As screen:
                     ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload) As w,
                     {
                         cajero:       GUID(Text(w.cajero)),
-                        cajeroNombre: Text(w.cajeroNombre),
-                        mesa:         Text(w.mesa)
+                        cajeroNombre: Text(w.cajeroNombre)
                     }
                 )
             )
@@ -588,7 +615,12 @@ scrMovimientos As screen:
         Height: =1
         HoverFill: =Color.Transparent
         OnSelect: |-
-            =// El cubo: 12 filas como mucho, con TODO el dia agregado del lado del servidor.
+            =// Refresh primero, SIEMPRE: el cubo lo calcula el servidor y siempre viene
+            // fresco, pero la tabla de abajo lee del datasource y sin esto se queda con lo
+            // que habia en cache cuando se abrio la app.
+            Refresh('CH-Tbl-Transactions');
+            UpdateContext({ctxUltimaActMov: Now()});
+            // El cubo: 12 filas como mucho, con TODO el dia agregado del lado del servidor.
             // De ahi salen el resumen grande y los contadores de los chips sin volver a
             // consultar cada vez que se toca uno. Sumar en el cliente toparia en 500 filas y
             // daria un resumen incompleto sin avisar.
