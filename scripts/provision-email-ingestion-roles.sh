@@ -82,6 +82,21 @@ ROLES = [
             'sanic_chtbldeclaredbags': ['Read'],
             'sanic_chtbldeclareddeposits': ['Read'],
             'sanic_chtbldeclaredchecks': ['Read'],
+            # LA BARRA DE SALUD DE LA CONSOLA LEE EL LATIDO. La pantalla arranca con
+            # LookUp('CH-Tbl-SystemHeartbeat', Name = "ingesta-correos") en OnVisible, y sin
+            # este Read la app abre con un error rojo de red antes de mostrar nada. Es Read
+            # y nada mas: el latido lo escribe MailboxSweep con CH-SR-EmailIngestionFlow.
+            'sanic_chtblsystemheartbeat': ['Read'],
+            # EL AVISO A BANCA RESUELVE EL BUZON DESTINO POR VARIABLE DE ENTORNO
+            # (sanic_CHEVBancaMailbox y sanic_CHEVAppUrl_ClientAdmin). Sin este Read el
+            # LookUp devuelve blanco y el boton acusa "Falta configurar CH-EV-BancaMailbox",
+            # que manda a revisar una configuracion que en realidad esta bien puesta.
+            #
+            # VA LA DEFINICION, NO EL VALOR: prvReadEnvironmentVariableValue NO EXISTE en
+            # Dataverse. El acceso a environmentvariablevalue se gobierna por el privilegio
+            # de environmentvariabledefinition. Pedir el del valor solo imprime un aviso de
+            # privilegio no encontrado y no otorga nada.
+            'environmentvariabledefinition': ['Read'],
         },
     },
 ]
