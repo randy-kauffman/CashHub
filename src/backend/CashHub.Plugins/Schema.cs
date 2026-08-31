@@ -1130,6 +1130,31 @@ namespace CashHub.Plugins
         /// Server-side y no con un GroupBy en Power Fx porque el cliente topa en 500 filas:
         /// un lote de 600 cuentas mostraria un resumen incompleto SIN avisar.
         /// </summary>
+        /// <summary>
+        /// Custom API del cubo de un cajero en un dia: una fila por moneda x tipo x via,
+        /// con efectivo, cheque BAC, cheque otros, total y conteo.
+        ///
+        /// DEVUELVE UN CUBO, NO UN TOTAL. Son a lo sumo 3 x 4 x 2 = 24 filas, asi que la
+        /// app arma con eso tanto el resumen grande —que sigue a los filtros— como los
+        /// contadores de cada chip, sin volver a consultar cada vez que se toca uno.
+        ///
+        /// Agregado server-side porque un dia de un cajero real son 5.442 transacciones:
+        /// sumarlas en el cliente toparia en 500 y daria un resumen incompleto SIN avisar.
+        /// El DETALLE no pasa por aca — la galeria se ata al datasource con un Filter
+        /// delegable y muestra todas.
+        /// </summary>
+        internal static class CashierDayApi
+        {
+            public const string MessageName = "sanic_CHCashierDay";
+
+            public const string InCajeroId = "CajeroId";
+            public const string InDesde = "Desde";
+            public const string InHasta = "Hasta";
+
+            public const string OutCube = "Cube";
+            public const string OutTotalCount = "TotalCount";
+        }
+
         internal static class BatchSummaryApi
         {
             public const string MessageName = "sanic_CHBatchSummary";

@@ -7588,6 +7588,12 @@
         <property name="Outcome" type="string" />
         <property name="Message" type="string" />
       </object>
+      <string name="Microsoft_Dynamics_CRM_sanic_CHCashierDayResponse_Cube_def" />
+      <integer name="Microsoft_Dynamics_CRM_sanic_CHCashierDayResponse_TotalCount_def" />
+      <object name="Microsoft_Dynamics_CRM_sanic_CHCashierDayResponse">
+        <property name="Cube" type="string" />
+        <property name="TotalCount" type="integer" />
+      </object>
       <string name="Microsoft_Dynamics_CRM_sanic_CHBatchSummaryResponse_Summary_def" />
       <string name="Microsoft_Dynamics_CRM_sanic_CHBatchSummaryResponse_Comparison_def" />
       <string name="Microsoft_Dynamics_CRM_sanic_CHBatchSummaryResponse_Outcome_def" />
@@ -19324,6 +19330,21 @@
         </request>
         <response>
           <representation mediaType="application/json" element="service:Microsoft_Dynamics_CRM_sanic_CHForceCloseRecountingSessionResponse" />
+        </response>
+      </method>
+    </resource>
+    <resource path="/sanic_CHCashierDay">
+      <method siena:requiresAuthentication="true" name="POST" id="sanic_CHCashierDay" actionName="sanic_CHCashierDay" siena:isDeprecated="false">
+        <doc title="Invoke actionImport sanic_CHCashierDay" />
+        <request>
+          <representation mediaType="application/json">
+            <param style="plain" name="CajeroId" path="/CajeroId" type="xs:string" />
+            <param style="plain" name="Desde" path="/Desde" type="xs:dateTime" />
+            <param style="plain" name="Hasta" path="/Hasta" type="xs:dateTime" />
+          </representation>
+        </request>
+        <response>
+          <representation mediaType="application/json" element="service:Microsoft_Dynamics_CRM_sanic_CHCashierDayResponse" />
         </response>
       </method>
     </resource>
