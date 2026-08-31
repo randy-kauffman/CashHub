@@ -1698,29 +1698,33 @@ scrManual As screen:
                 btnFocoMan As button:
                     BorderStyle: =BorderStyle.None
                     Color: =Color.Transparent
+                    DisabledColor: =Color.Transparent
                     Fill: =Color.Transparent
-                    Height: =1
+                    FocusedBorderThickness: =0
+                    Height: |-
+                        =// TAMAÑO REAL, NO 1x1. La primera version media un pixel y SetFocus() no
+                        // lo tomaba: el foco se quedaba fuera del documento y el primer TAB se iba
+                        // a la barra del navegador. Ahora ocupa lo mismo que el campo de cuenta y
+                        // vive JUSTO DEBAJO de el (ZIndex menor), asi que es un control de verdad
+                        // —enfocable— y aun asi invisible.
+                        34
                     HoverFill: =Color.Transparent
                     OnSelect: =false
                     PressedFill: =Color.Transparent
                     Size: =6
                     TabIndex: |-
-                        =// EL TRAMPOLIN DEL FOCO. SetFocus() pone el cursor en un campo pero NO
-                        // selecciona su contenido: el operador tenia que marcar el numero de
-                        // cuenta con el mouse antes de poder copiarlo. Tabular SI selecciona
-                        // todo, porque eso lo hace el navegador.
-                        //
-                        // Entonces al elegir una transaccion el foco cae ACA, y el primer TAB
-                        // aterriza en el numero de cuenta ya seleccionado, listo para Ctrl+C.
-                        // Por eso este control ocupa el TabIndex 1 y los campos arrancan en 2:
-                        // no hay tabindex positivo menor que 1 donde esconderlo.
+                        =// EL TRAMPOLIN. SetFocus() pone el cursor pero NO selecciona el contenido;
+                        // tabular SI, porque eso lo hace el navegador. Entonces al elegir una
+                        // transaccion el foco cae aca y el PRIMER TAB aterriza en el numero de
+                        // cuenta ya seleccionado, listo para Ctrl+C. Ocupa el TabIndex 1 y los
+                        // campos arrancan en 2: no hay tabindex positivo menor que 1.
                         1
                     Text: =""
                     Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
-                    Width: =1
+                    Width: =(Parent.Width - 32 - 12) / 2
                     X: =16
-                    Y: =shpDetLineaMan.Y + 2
-                    ZIndex: =39
+                    Y: =lblCampoCuentaLabMan.Y + 18
+                    ZIndex: =42
 
                 cmpEmptyDetMan As cmpEmpty:
                     Glifo: ="⌨"
