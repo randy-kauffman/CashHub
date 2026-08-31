@@ -2,10 +2,15 @@
 # =============================================================================
 # Limpieza de componentes muertos — categoria A de docs/referencia/limpieza-candidatos.md
 #
-# QUE BORRA: 1 tabla, 1 relacion implicita y 11 columnas que cumplen DOBLE condicion:
+# QUE BORRA: 1 tabla, su relacion con CH-Tbl-Client, y 10 columnas.
+#
+# Por defecto exige DOBLE condicion para borrar:
 #   (a) cero referencias en codigo — los tres arboles de fuente de canvas apps,
 #       los cloud flows, src/backend/ y scripts/
-#   (b) cero datos en el ambiente — verificado por consulta agregada
+#   (b) cero datos y cero dependencias en el ambiente — verificado en vivo
+#
+# La lista COLUMNAS_APROBADAS levanta esas barreras de a una, con justificacion
+# escrita por columna y aprobacion explicita del usuario. Ver ahi los tres casos.
 #
 # POR QUE UN SCRIPT Y NO A MANO: borrar metadata en Dataverse es IRREVERSIBLE.
 # Un script deja constancia de que se borro, en que orden y con que verificacion
@@ -56,19 +61,16 @@ COLUMNAS = [
      "Encadenado de respuestas por id de Outlook, nunca construido"),
     ("sanic_chtblreceptions", "sanic_comments",
      "Comentario libre de recepcion; sin referencias"),
-    ("sanic_chtblappcatalog", "sanic_tags",
-     "Etiquetas del Hub; el Hub filtra por acceso, no por tags"),
-    ("sanic_chtblclientaccount", "sanic_chchrecordstatus",
-     "Estado de vigencia legacy; distinto de sanic_recordstatus, que SI se usa"),
 ]
 
-# Columnas que TIENEN datos pero se aprobaron para borrado igual, con justificacion
-# explicita. La barrera de "cero datos" se levanta SOLO para estas, y solo despues de
-# haber mirado el contenido real — nunca por conveniencia.
+# Columnas aprobadas EXPLICITAMENTE por el usuario, con justificacion escrita. Ser
+# parte de esta lista habilita dos cosas que no pasan por defecto:
+#   1. despejar sus dependencias de vistas y formularios antes de borrar
+#   2. borrarlas aunque tengan datos
 #
-# OJO: la barrera de DEPENDENCIAS no se levanta nunca. Si la columna esta en un
-# formulario o vista, Dataverse la sigue bloqueando y el script la salta.
-COLUMNAS_CON_DATOS_APROBADAS = [
+# La barrera de "cero datos" se levanta SOLO aca, y solo despues de haber MIRADO el
+# contenido real — nunca por conveniencia ni para que el script termine limpio.
+COLUMNAS_APROBADAS = [
     ("sanic_chtblclient", "sanic_iseditable",
      "COLUMNA FORMULA, no autorada: "
      "=If(sanic_recordstatus = Active || sanic_recordstatus = Inactive, true, false). "
@@ -77,6 +79,27 @@ COLUMNAS_CON_DATOS_APROBADAS = [
      "de un calculo: los 32 en 'No' son exactamente los clientes en PendingApproval o "
      "PendingDeactivation. Cero perdida de informacion al borrarla — el valor se "
      "reconstruye entero desde sanic_recordstatus. Nadie la leia. "
+     "Aprobado por el usuario 2026-08-31."),
+
+    ("sanic_chtblappcatalog", "sanic_tags",
+     "Etiquetas para filtrar apps en el Hub. SIN DATOS: las 7 filas de la tabla la "
+     "tienen nula. El Hub filtra por acceso, no por tags — corroborado en "
+     "docs/procesos/00-acceso-y-plataforma.md:125 ('No se leen en pantalla'). "
+     "PENDIENTE — BLOQUEADA POR LA VISTA QUICK FIND: el script despejo las otras 4 "
+     "vistas y el formulario 'Information', pero el fetchxml de una vista Quick Find "
+     "NO es escribible por API (devuelve HTTP 400 incluso mandandolo IDENTICO, "
+     "verificado). Hay que sacar la columna de 'Quick Find Active CH-Tbl-AppCatalogs' "
+     "desde el maker portal y recien despues correr este script otra vez. "
+     "Aprobado por el usuario 2026-08-31."),
+
+    ("sanic_chtblclientaccount", "sanic_chchrecordstatus",
+     "Estado de vigencia legacy, distinto de sanic_recordstatus (que SI se usa y "
+     "convive en la misma tabla). Su nombre es el del option set global "
+     "(CH-Ch-RecordStatus), no el del concepto: se creo tomando el nombre del choice "
+     "en vez del nombre del campo. Las 2240 filas de la tabla tienen valor y las 2240 "
+     "el MISMO: PendingApproval. Un picklist con un unico valor en el 100% de los "
+     "registros no contiene informacion. El propio equipo lo documenta como no usado "
+     "en scripts/seed-clientadmin-stress.py:184-187. "
      "Aprobado por el usuario 2026-08-31."),
 ]
 
@@ -225,15 +248,79 @@ def quitar_de_vistas(api, token, tabla, columna, aplicar):
             traza("VISTAS", f"  '{vista['name']}' menciona {columna} pero no se pudo "
                             f"limpiar con el patron esperado — revisar a mano")
             continue
-        tocadas.append(vista["name"])
-        if aplicar:
-            llamar(api, token, "PATCH",
-                   f"savedqueries({vista['savedqueryid']})",
-                   {"fetchxml": nuevo_fetch, "layoutxml": nuevo_layout})
-            traza("VISTAS", f"  '{vista['name']}': {columna} removida")
-        else:
+        if not aplicar:
             traza("VISTAS", f"  '{vista['name']}': se removeria {columna}")
+            tocadas.append(vista["name"])
+            continue
+
+        # Se parchea layout y fetch por separado a proposito. Dataverse acepta el
+        # layoutxml de una vista Quick Find pero RECHAZA su fetchxml (HTTP 400): esa
+        # vista se autogenera con casi todos los atributos de la tabla y no se deja
+        # editar por API. Mandarlos juntos hace que se pierdan los dos.
+        # Un fallo en una vista no puede abortar la limpieza de las demas.
+        ok_algo = False
+        for campo, valor in (("layoutxml", nuevo_layout), ("fetchxml", nuevo_fetch)):
+            if valor == (layout if campo == "layoutxml" else fetch):
+                continue
+            try:
+                llamar(api, token, "PATCH",
+                       f"savedqueries({vista['savedqueryid']})", {campo: valor})
+                ok_algo = True
+            except RuntimeError as e:
+                traza("VISTAS", f"  '{vista['name']}': no acepto {campo} "
+                                f"({str(e)[-60:].strip()})")
+        if ok_algo:
+            tocadas.append(vista["name"])
+            traza("VISTAS", f"  '{vista['name']}': {columna} removida")
     return tocadas
+
+
+def quitar_de_formularios(api, token, tabla, columna, aplicar):
+    """Saca la columna de todo formulario que la muestre.
+
+    Regla conservadora y deliberada: se elimina la <cell> que contiene el control,
+    y SOLO si la <row> queda vacia se elimina tambien la fila. No se reacomoda nada
+    mas. Un formulario es layout que alguien diseño; mover columnas o secciones a
+    ciegas rompe trabajo ajeno.
+
+    Se opera con regex y no con un parser XML a proposito: ElementTree reserializa
+    el documento entero y produce un diff gigante donde el cambio real son 6 lineas.
+
+    Devuelve la lista de formularios modificados.
+    """
+    r = llamar(api, token, "GET",
+               "systemforms?" + urllib.parse.urlencode({
+                   "$select": "formid,name,type,formxml",
+                   "$filter": f"objecttypecode eq '{tabla}'"}))
+    tocados = []
+    for form in r.get("value", []):
+        xml = form.get("formxml") or ""
+        if f'datafieldname="{columna}"' not in xml:
+            continue
+        # 1. la celda completa que contiene el control
+        nuevo = re.sub(
+            rf'\s*<cell\b(?:(?!</cell>|<cell\b).)*?datafieldname="{re.escape(columna)}"'
+            rf'(?:(?!</cell>|<cell\b).)*?</cell>', "", xml, flags=re.S)
+        # 1b. variante con el control auto-cerrado sin hijos posteriores
+        if nuevo == xml:
+            nuevo = re.sub(
+                rf'\s*<cell\b[^>]*>(?:(?!</cell>).)*?datafieldname="{re.escape(columna)}"'
+                rf'(?:(?!</cell>).)*?</cell>', "", xml, flags=re.S)
+        # 2. filas que quedaron sin celdas
+        nuevo = re.sub(r'\s*<row>\s*</row>', "", nuevo)
+
+        if nuevo == xml or f'datafieldname="{columna}"' in nuevo:
+            traza("FORMS", f"  '{form['name']}' contiene {columna} pero el patron no "
+                           f"limpio el XML — hay que sacarlo a mano desde el maker portal")
+            continue
+        tocados.append(form["name"])
+        if aplicar:
+            llamar(api, token, "PATCH", f"systemforms({form['formid']})",
+                   {"formxml": nuevo})
+            traza("FORMS", f"  '{form['name']}': {columna} removida")
+        else:
+            traza("FORMS", f"  '{form['name']}': se removeria {columna}")
+    return tocados
 
 
 def publicar(api, token, tabla):
@@ -273,12 +360,12 @@ def main():
     borrables, bloqueados = [], []
 
     # --- columnas -------------------------------------------------------------
-    total_col = len(COLUMNAS) + len(COLUMNAS_CON_DATOS_APROBADAS)
+    total_col = len(COLUMNAS) + len(COLUMNAS_APROBADAS)
     traza("VERIFICACION", f"Revisando {total_col} columnas "
-                          f"({len(COLUMNAS_CON_DATOS_APROBADAS)} aprobadas pese a tener datos)")
+                          f"({len(COLUMNAS_APROBADAS)} aprobadas pese a tener datos)")
     cache_tabla = {}
-    aprobadas = {(t, c) for t, c, _ in COLUMNAS_CON_DATOS_APROBADAS}
-    for tabla, columna, razon in COLUMNAS + COLUMNAS_CON_DATOS_APROBADAS:
+    aprobadas = {(t, c) for t, c, _ in COLUMNAS_APROBADAS}
+    for tabla, columna, razon in COLUMNAS + COLUMNAS_APROBADAS:
         etiqueta = f"{tabla}.{columna}"
         try:
             if tabla not in cache_tabla:
@@ -301,20 +388,24 @@ def main():
         # a ciegas puede romper el layout que alguien diseño.
         if es_aprobada and deps:
             tipos = {d.get("dependentcomponenttype") for d in deps}
-            if tipos == {26}:
-                traza("VISTAS", f"  {etiqueta}: bloqueada por {len(deps)} vista(s); "
-                                f"limpiando")
-                quitar_de_vistas(api, token, tabla, columna, APPLY)
+            # 26 = SavedQuery (vista), 60 = SystemForm (formulario).
+            if tipos <= {26, 60}:
+                traza("DESPEJE", f"  {etiqueta}: bloqueada por "
+                                 f"{describir_dependencias(deps)}; despejando")
+                if 26 in tipos:
+                    quitar_de_vistas(api, token, tabla, columna, APPLY)
+                if 60 in tipos:
+                    quitar_de_formularios(api, token, tabla, columna, APPLY)
                 if APPLY:
                     publicar(api, token, tabla)
                     deps = dependencias(api, token, mid, COMPONENT_TYPE_ATTRIBUTE)
-                    traza("VISTAS", f"  {etiqueta}: dependencias tras limpiar: "
-                                    f"{describir_dependencias(deps)}")
+                    traza("DESPEJE", f"  {etiqueta}: dependencias tras despejar: "
+                                     f"{describir_dependencias(deps)}")
                 else:
                     deps = []
             else:
-                traza("VISTAS", f"  {etiqueta}: bloqueada por algo mas que vistas "
-                                f"({describir_dependencias(deps)}) — no se toca solo")
+                traza("DESPEJE", f"  {etiqueta}: bloqueada por algo que este script no "
+                                 f"toca ({describir_dependencias(deps)}) — revisar a mano")
 
         # La barrera de dependencias NO se levanta nunca: Dataverse rechaza el borrado
         # de una columna que este en un formulario o vista, sin importar la aprobacion.

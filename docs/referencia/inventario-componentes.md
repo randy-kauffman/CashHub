@@ -244,7 +244,7 @@ _No hay campos custom (`sanic_*`) agregados por esta solución en este export._
 
 | Logical name (schema) | Display name | Tipo | Requerido | Objetivo | Dónde se usa | Documentos de referencia | Estado | Notas |
 |---|---|---|---|---|---|---|---|---|
-| `sanic_chchrecordstatus` | CH-Ch-RecordStatus | Option set (picklist) | none | | Sin uso detectado (ver notas) | | Sin revisar | Sin coincidencias en fx.yaml/flows/backend/scripts ni en FormXml/SavedQueries propios; posible campo huérfano |
+| `sanic_chchrecordstatus` | CH-Ch-RecordStatus | Option set (picklist) | none | | Sin uso detectado (ver notas) | | **ELIMINADO 2026-08-31** | Sin coincidencias en fx.yaml/flows/backend/scripts ni en FormXml/SavedQueries propios; posible campo huérfano |
 | `sanic_client` | Client | Búsqueda (lookup) | required | | Canvas `CH-App-ClientAdministration` (`scrCliente.fx.yaml:33,1366`) | | Sin revisar | |
 | `sanic_currency` | Moneda | Option set (picklist) | none | | Canvas `CH-App-ClientAdministration` (`scrCliente.fx.yaml:2240,2307,2385`) | | Sin revisar | |
 | `sanic_name` | Numero de cuenta | Texto (nvarchar) | required | | Canvas `CH-App-ClientAdministration` (`scrCliente.fx.yaml:1454,2116,2189,2239,...`) | | Sin revisar | **Corrección: el Entity.xml actual marca este campo como `required`, el doc anterior decía `recommended`** |
@@ -319,7 +319,7 @@ _No hay campos custom (`sanic_*`) agregados por esta solución en este export._
 
 | Logical name (schema) | Display name | Tipo | Requerido | Objetivo | Dónde se usa | Documentos de referencia | Estado | Notas |
 |---|---|---|---|---|---|---|---|---|
-| `sanic_chchrecordstatus` | CH-Ch-RecordStatus | Option set (picklist) | none | | Sin uso detectado | | Sin revisar | Sin coincidencias ni en fx.yaml/flows/backend/scripts ni en FormXml/SavedQueries propios |
+| `sanic_chchrecordstatus` | CH-Ch-RecordStatus | Option set (picklist) | none | | Sin uso detectado | | **ELIMINADO 2026-08-31** | Sin coincidencias ni en fx.yaml/flows/backend/scripts ni en FormXml/SavedQueries propios |
 | `sanic_client` | Client | Búsqueda (lookup) | required | | Solo vistas (`SavedQueries/*.xml`) | | Sin revisar | |
 | `sanic_name` | Name | Texto (nvarchar) | recommended | | Solo formularios/vistas | | Sin revisar | La tabla completa (`sanic_chtblclientdeposithistory`) no aparece en ningún fx.yaml, flow, plugin C# ni script — parece no usada por las apps activas |
 

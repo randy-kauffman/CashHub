@@ -12,16 +12,16 @@
 
 **Categoría A ejecutada el 2026-08-31** contra DEV (`org36e60d9d`) con
 [`scripts/cleanup-categoria-a.py`](../../scripts/cleanup-categoria-a.py) — dry-run primero,
-`--apply` después. **9 de 11 componentes eliminados** (8 en la primera pasada + `sanic_iseditable` tras
-aprobación explícita). **2 siguen bloqueados y NO se tocaron.**
+`--apply` después. **10 de 11 componentes eliminados.** Queda 1 solo pendiente: `AppCatalog.sanic_tags`,
+bloqueado por un límite de la plataforma que exige un paso manual (ver B.4).
 
 El dry-run desmintió tres de mis propias conclusiones, y vale documentarlo porque explica por qué
 el script verifica en vez de confiar en el análisis estático:
 
 | Componente | Lo que decía el análisis | Lo que encontró el ambiente |
 |---|---|---|
-| `CH-Tbl-AppCatalog.sanic_tags` | Borrar directo | Está en **5 vistas y 1 formulario**. Dataverse rechaza el borrado hasta sacarlo de ahí. Pasa a categoría B. |
-| `CH-Tbl-ClientAccount.sanic_chchrecordstatus` | Borrar directo | **2240 filas con dato.** Pasa a categoría B. |
+| `CH-Tbl-AppCatalog.sanic_tags` | Borrar directo | Está en **5 vistas y 1 formulario**. Se despejaron 4 vistas y el formulario; la **Quick Find no se puede editar por API**. Requiere un paso manual — ver B.4. |
+| `CH-Tbl-ClientAccount.sanic_chchrecordstatus` | Borrar directo | **2240 filas con dato, las 2240 con el MISMO valor.** Eliminada el 2026-08-31 tras aprobación explícita — ver B.4. |
 | `CH-Tbl-Client.sanic_iseditable` | Borrar directo | **6519 filas con dato.** Resultó ser una **columna fórmula** derivada de `sanic_recordstatus` — ver C.4. Eliminada el 2026-08-31 tras aprobación explícita. |
 
 > **La lección**: "cero referencias en código" y "cero datos" son cosas distintas, y el análisis
@@ -160,21 +160,31 @@ seguir tocando, la duplicación te va a seguir costando.
 
 ### B.4 — Reclasificados desde A por la verificación en vivo
 
-**`CH-Tbl-AppCatalog.sanic_tags`** — el análisis estático acertó (nadie lo lee; corroborado por
-`docs/procesos/00-acceso-y-plataforma.md:125`, "No se leen en pantalla"), pero Dataverse bloqueó
-el borrado: la columna está en **5 vistas y 1 formulario**. El ajuste es sacarla de ahí primero.
-Trabajo mecánico, sin riesgo de negocio.
+**`CH-Tbl-ClientAccount.sanic_chchrecordstatus` — ✅ ELIMINADA**
 
-**`CH-Tbl-ClientAccount.sanic_chchrecordstatus`** — **2240 filas con dato, pero las 2240 con el
-MISMO valor: `PendingApproval`.** Es un picklist que nació con su default y nadie cambió jamás.
-Información contenida: cero.
+2240 filas con dato, **las 2240 con el mismo valor**: `PendingApproval`. Un picklist con un
+único valor en el 100% de los registros no contiene información.
 
-Es casi con certeza una columna creada por error: convive con `sanic_recordstatus` en la misma
-tabla —esa sí se usa— y su nombre es el del *option set global* (`CH-Ch-RecordStatus`), no el del
-concepto. Alguien creó la columna tomando el nombre del choice en vez del nombre del campo.
+Era una columna creada por error: convivía con `sanic_recordstatus` en la misma tabla —esa sí se
+usa— y su nombre es el del *option set global* (`CH-Ch-RecordStatus`), no el del concepto.
+Alguien creó la columna tomando el nombre del choice en vez del nombre del campo. Confirmado
+después de borrarla: la única mención que queda de `sanic_chchrecordstatus` en el `Entity.xml` de
+ClientAccount es el `<OptionSetName>` al que se enlaza `sanic_recordstatus`. El option set global
+sigue vivo y en uso.
 
-Borrarla destruye 2240 valores idénticos y por defecto. Yo la borraría, pero **no bajo la vara de
-seguridad que puse para la categoría A** ("cero datos") sin que lo decidas vos.
+**`CH-Tbl-AppCatalog.sanic_tags` — ⏳ PENDIENTE, requiere un paso manual**
+
+Sin datos (las 7 filas de la tabla la tienen nula) y sin lectores. Estaba en 5 vistas y 1
+formulario. El script despejó **4 vistas y el formulario `Information`**. Queda una sola:
+
+> **`Quick Find Active CH-Tbl-AppCatalogs`.** El `fetchxml` de una vista Quick Find **no es
+> escribible por la Web API**: devuelve HTTP 400 incluso mandándolo IDÉNTICO, sin un solo cambio.
+> Lo verifiqué aislando el caso — el `layoutxml` de esa misma vista sí acepta el PATCH, el
+> `fetchxml` no. Es un límite de la plataforma, no un problema del XML generado.
+
+**El paso manual**: en el maker portal, abrir la tabla `CH-Tbl-AppCatalog` → vistas → *Quick Find
+Active CH-Tbl-AppCatalogs* → quitar la columna *Tags* de las columnas de búsqueda → guardar y
+publicar. Después, correr `./scripts/cleanup-categoria-a.py --apply` y la columna cae sola.
 
 ---
 
@@ -279,7 +289,7 @@ borrarla: cero, por definición. Y nadie la leía.
 | Categoría | Componentes | Estado |
 |---|---|---|
 | **A — Borrar directo** | 1 tabla + 1 relación + 3 columnas propias + 7 columnas | ✅ **ELIMINADO** el 2026-08-31 en DEV |
-| **B — Borrar con ajuste** | 20 env vars, 1 Custom API, 1 librería de componentes, 2 columnas reclasificadas | Pendiente: requiere cambio previo |
+| **B — Borrar con ajuste** | 20 env vars, 1 Custom API, 1 librería de componentes | Pendiente: requiere cambio previo |
 | **C — Decisión de producto** | 7 flows, 2 roles | Pendiente: riesgo de negocio, no de limpieza |
 
 Lo eliminado en DEV: la tabla `CH-Tbl-ClientDepositHistory` (con sus 3 columnas, su relación con
