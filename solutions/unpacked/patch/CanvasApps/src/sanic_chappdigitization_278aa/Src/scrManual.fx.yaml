@@ -28,7 +28,7 @@ scrManual As screen:
         Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan); Reset(inpCampoEfectivoMan);
         Reset(inpCampoChqBacMan); Reset(inpCampoChqOtrMan);
         Reset(inpCampoTotalMan);  Reset(inpCampoRefMan);
-        SetFocus(btnFocoMan);
+        SetFocus(inpFocoMan);
         Environment.sanic_CHWorkloadByCashier().Workload
 
     cmpHeaderMan As cmpHeader:
@@ -84,7 +84,7 @@ scrManual As screen:
                 Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan); Reset(inpCampoEfectivoMan);
                 Reset(inpCampoChqBacMan); Reset(inpCampoChqOtrMan);
                 Reset(inpCampoTotalMan);  Reset(inpCampoRefMan);
-                SetFocus(btnFocoMan)
+                SetFocus(inpFocoMan)
             Titulo: ="CAJEROS CON MANUALES"
             Width: =LayRailW
             ZIndex: =1
@@ -220,7 +220,7 @@ scrManual As screen:
                             Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan); Reset(inpCampoEfectivoMan);
                             Reset(inpCampoChqBacMan); Reset(inpCampoChqOtrMan);
                             Reset(inpCampoTotalMan);  Reset(inpCampoRefMan);
-                            SetFocus(btnFocoMan)
+                            SetFocus(inpFocoMan)
                         PressedBorderColor: =App.Theme.Colors.Darker40
                         PressedColor: =Self.Color
                         PressedFill: =App.Theme.Colors.Darker40
@@ -426,7 +426,7 @@ scrManual As screen:
                         Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan); Reset(inpCampoEfectivoMan);
                         Reset(inpCampoChqBacMan); Reset(inpCampoChqOtrMan);
                         Reset(inpCampoTotalMan);  Reset(inpCampoRefMan);
-                        If(ctxSegManual = "Pendientes", SetFocus(btnFocoMan))
+                        If(ctxSegManual = "Pendientes", SetFocus(inpFocoMan))
                     TemplatePadding: =0
                     TemplateSize: =LayRowH
                     Width: =Parent.Width
@@ -1003,7 +1003,7 @@ scrManual As screen:
                         Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan); Reset(inpCampoEfectivoMan);
                         Reset(inpCampoChqBacMan); Reset(inpCampoChqOtrMan);
                         Reset(inpCampoTotalMan);  Reset(inpCampoRefMan);
-                        SetFocus(btnFocoMan)
+                        SetFocus(inpFocoMan)
                     PressedBorderColor: =App.Theme.Colors.Darker40
                     PressedColor: =Self.Color
                     PressedFill: =App.Theme.Colors.Darker40
@@ -1316,7 +1316,7 @@ scrManual As screen:
                             Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan); Reset(inpCampoEfectivoMan);
                             Reset(inpCampoChqBacMan); Reset(inpCampoChqOtrMan);
                             Reset(inpCampoTotalMan);  Reset(inpCampoRefMan);
-                            SetFocus(btnFocoMan)
+                            SetFocus(inpFocoMan)
                         )
                     PressedBorderColor: =App.Theme.Colors.Darker40
                     PressedColor: =Self.Color
@@ -1695,37 +1695,36 @@ scrManual As screen:
                     Y: =lblCampoRefLabMan.Y + 18
                     ZIndex: =55
 
-                btnFocoMan As button:
-                    BorderStyle: =BorderStyle.None
+                inpFocoMan As text:
+                    BorderColor: =Color.Transparent
+                    BorderThickness: =0
                     Color: =Color.Transparent
-                    DisabledColor: =Color.Transparent
+                    Default: =""
                     Fill: =Color.Transparent
                     FocusedBorderThickness: =0
-                    Height: |-
-                        =// TAMAÑO REAL, NO 1x1. La primera version media un pixel y SetFocus() no
-                        // lo tomaba: el foco se quedaba fuera del documento y el primer TAB se iba
-                        // a la barra del navegador. Ahora ocupa lo mismo que el campo de cuenta y
-                        // vive JUSTO DEBAJO de el (ZIndex menor), asi que es un control de verdad
-                        // —enfocable— y aun asi invisible.
-                        34
+                    Height: =34
+                    HintText: =""
+                    HoverBorderColor: =Color.Transparent
                     HoverFill: =Color.Transparent
-                    OnSelect: =false
-                    PressedFill: =Color.Transparent
                     Size: =6
                     TabIndex: |-
-                        =// EL TRAMPOLIN. SetFocus() pone el cursor pero NO selecciona el contenido;
-                        // tabular SI, porque eso lo hace el navegador. Entonces al elegir una
-                        // transaccion el foco cae aca y el PRIMER TAB aterriza en el numero de
-                        // cuenta ya seleccionado, listo para Ctrl+C. Ocupa el TabIndex 1 y los
-                        // campos arrancan en 2: no hay tabindex positivo menor que 1.
+                        =// EL TRAMPOLIN, AHORA COMO TEXT INPUT Y NO COMO BOTON.
+                        //
+                        // SetFocus() sobre el boton de 1x1 no hacia nada: el foco quedaba fuera
+                        // del documento y el primer TAB se iba a la barra del navegador. La pista
+                        // la dio el usuario: SetFocus SI funcionaba sobre inpCampoCuentaMan —el
+                        // cursor llegaba, solo que sin seleccionar—. O sea que el tipo de control
+                        // que acepta el foco es el text input, asi que el trampolin es uno.
+                        //
+                        // Vive tapado por el campo de cuenta (ZIndex 42 contra 43) y con TabIndex
+                        // 1, para que el PRIMER TAB aterrice en la cuenta ya seleccionada: la
+                        // seleccion la hace el navegador al tabular, no SetFocus.
                         1
-                    Text: =""
                     Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
                     Width: =(Parent.Width - 32 - 12) / 2
                     X: =16
                     Y: =lblCampoCuentaLabMan.Y + 18
                     ZIndex: =42
-
                 cmpEmptyDetMan As cmpEmpty:
                     Glifo: ="⌨"
                     Height: =Parent.Height - 53
