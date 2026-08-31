@@ -29,6 +29,7 @@ y más corta, pensada para consultarse mientras se trabaja sobre el código.
 |---|---|
 | [`inventario-componentes.md`](inventario-componentes.md) | Inventario exhaustivo de TODO componente (tablas, campos, relaciones, option sets, variables de entorno, roles, plugin assembly/classes, Custom APIs, Canvas Apps, Cloud Flows, apps model-driven, controles PCF, web resources) con estado de revisión por fila. Reconciliado contra el ambiente DEV el 2026-08-31; §0 lista las correcciones de la auditoría adversarial, que mandan sobre las filas. |
 | [`limpieza-candidatos.md`](limpieza-candidatos.md) | Análisis de arquitectura sobre el inventario: propósito, uso real y accionabilidad de cada componente muerto. Clasifica en borrar directo / borrar con ajuste previo / decisión de producto, con verificación de datos en vivo contra DEV. |
+| [`limpieza-env-vars.md`](limpieza-env-vars.md) | Análisis caso por caso de las 23 variables de entorno: cuáles se consumen, cuáles migraron a `CH-Tbl-Parameter` o `CH-Tbl-ValidationRules`, y cuáles nunca se cablearon. Agrupadas por causa, con recomendación por grupo. |
 | [`modelo-de-datos.md`](modelo-de-datos.md) | Las 38 tablas Dataverse agrupadas por dominio funcional: propósito, campos clave, relaciones, diagrama ER. |
 | [`roles-y-seguridad.md`](roles-y-seguridad.md) | Los 6 roles de seguridad `CH-SR-*`, matriz rol × entidad, grupos AAD, y las brechas de seguridad conocidas. |
 | [`variables-de-entorno.md`](variables-de-entorno.md) | Las 19 variables `sanic_CHEV*`: tipo, default, quién las consume y cuáles no se usan hoy. |
