@@ -8,6 +8,26 @@
 > refutó 28 de 77 veredictos de no-uso (36% de falsos positivos). **Solo entran acá los que
 > sobrevivieron la auditoría.** Los 28 refutados están en §0 del inventario.
 
+## Estado de ejecución
+
+**Categoría A ejecutada el 2026-08-31** contra DEV (`org36e60d9d`) con
+[`scripts/cleanup-categoria-a.py`](../../scripts/cleanup-categoria-a.py) — dry-run primero,
+`--apply` después. **8 de 11 componentes eliminados. 3 quedaron bloqueados por la verificación
+en vivo y NO se tocaron.**
+
+El dry-run desmintió tres de mis propias conclusiones, y vale documentarlo porque explica por qué
+el script verifica en vez de confiar en el análisis estático:
+
+| Componente | Lo que decía el análisis | Lo que encontró el ambiente |
+|---|---|---|
+| `CH-Tbl-AppCatalog.sanic_tags` | Borrar directo | Está en **5 vistas y 1 formulario**. Dataverse rechaza el borrado hasta sacarlo de ahí. Pasa a categoría B. |
+| `CH-Tbl-ClientAccount.sanic_chchrecordstatus` | Borrar directo | **2240 filas con dato.** Pasa a categoría B. |
+| `CH-Tbl-Client.sanic_iseditable` | Borrar directo | **6519 filas con dato, y 32 en `No` deliberado.** Pasa a categoría C. |
+
+> **La lección**: "cero referencias en código" y "cero datos" son cosas distintas, y el análisis
+> estático solo puede probar la primera. Ninguna búsqueda sobre el repo iba a decirme que
+> `sanic_iseditable` tiene 32 clientes marcados a mano.
+
 ## Cómo leer este documento
 
 | Categoría | Significado |
@@ -27,7 +47,7 @@ categoría C.
 Todos verificados con doble condición: **0 referencias en código** (los tres árboles de canvas,
 flows, `src/backend/`, `scripts/`) **y 0 datos en el ambiente DEV** (consultado por FetchXML).
 
-### A.1 — Tabla completa: `CH-Tbl-ClientDepositHistory`
+### A.1 — Tabla completa: `CH-Tbl-ClientDepositHistory` ✅ ELIMINADA
 
 | Aspecto | Dato |
 |---|---|
@@ -40,7 +60,7 @@ Arrastra consigo sus 3 campos custom (`sanic_name`, `sanic_client`, `sanic_chchr
 su relación con `CH-Tbl-Client`. **Es el borrado más limpio y de mayor rendimiento del lote:
 elimina una tabla, tres columnas, una relación y sus formularios/vistas de una sola pasada.**
 
-### A.2 — Columnas muertas de `CH-Tbl-Received Emails`
+### A.2 — Columnas muertas de `CH-Tbl-Received Emails` ✅ ELIMINADAS (6)
 
 De 268 filas en DEV, **las seis tienen 0 valores no nulos**:
 
@@ -60,14 +80,15 @@ Esto no es basura aleatoria — son **dos funcionalidades diseñadas y nunca con
 override manual de la validación con su pista de auditoría, y un encadenado de respuestas por
 id de mensaje. Ninguna se implementó, ninguna tiene un solo dato.
 
-### A.3 — Columnas muertas sueltas
+### A.3 — Columna muerta suelta ✅ ELIMINADA
 
-| Campo | Propósito | Datos en DEV | Nota |
-|---|---|---|---|
-| `CH-Tbl-Receptions.sanic_comments` | Comentario libre de recepción. | **0 no nulos** | Sin referencias en código. |
-| `CH-Tbl-AppCatalog.sanic_tags` | Etiquetas para filtrar apps en el Hub. | no consultado | Corroborado por `docs/procesos/00-acceso-y-plataforma.md:125` ("No se leen en pantalla"). El Hub filtra por acceso, no por tags. |
-| `CH-Tbl-ClientAccount.sanic_chchrecordstatus` | Estado de vigencia legacy. | no consultado | **Distinto** de `sanic_recordstatus` (ese sí se usa). El propio equipo lo documenta como no usado en `scripts/seed-clientadmin-stress.py:184-187`. Homónimo bien resuelto, no un falso positivo. |
-| `CH-Tbl-Client.sanic_iseditable` | Bandera de editabilidad del cliente. | **no verificable** por agregación (campo de dos opciones) | 0 referencias en los cinco árboles de búsqueda. Confirmar contenido antes de borrar. |
+| Campo | Propósito | Datos en DEV |
+|---|---|---|
+| `CH-Tbl-Receptions.sanic_comments` | Comentario libre de recepción. | **0 no nulos**, 0 dependencias |
+
+> Los otros tres candidatos que este documento clasificaba como A (`AppCatalog.sanic_tags`,
+> `ClientAccount.sanic_chchrecordstatus`, `Client.sanic_iseditable`) fueron **reclasificados**
+> tras la verificación en vivo. Ver "Estado de ejecución" arriba y B.4 / C.4 abajo.
 
 ---
 
@@ -137,6 +158,24 @@ Dos caminos, y son opuestos:
 Es una decisión tuya. Yo no la tomo por vos, pero te digo cuál me parece: si esas apps se van a
 seguir tocando, la duplicación te va a seguir costando.
 
+### B.4 — Reclasificados desde A por la verificación en vivo
+
+**`CH-Tbl-AppCatalog.sanic_tags`** — el análisis estático acertó (nadie lo lee; corroborado por
+`docs/procesos/00-acceso-y-plataforma.md:125`, "No se leen en pantalla"), pero Dataverse bloqueó
+el borrado: la columna está en **5 vistas y 1 formulario**. El ajuste es sacarla de ahí primero.
+Trabajo mecánico, sin riesgo de negocio.
+
+**`CH-Tbl-ClientAccount.sanic_chchrecordstatus`** — **2240 filas con dato, pero las 2240 con el
+MISMO valor: `PendingApproval`.** Es un picklist que nació con su default y nadie cambió jamás.
+Información contenida: cero.
+
+Es casi con certeza una columna creada por error: convive con `sanic_recordstatus` en la misma
+tabla —esa sí se usa— y su nombre es el del *option set global* (`CH-Ch-RecordStatus`), no el del
+concepto. Alguien creó la columna tomando el nombre del choice en vez del nombre del campo.
+
+Borrarla destruye 2240 valores idénticos y por defecto. Yo la borraría, pero **no bajo la vara de
+seguridad que puse para la categoría A** ("cero datos") sin que lo decidas vos.
+
 ---
 
 ## C — No tocar sin tu decisión
@@ -182,6 +221,24 @@ Pero al consultar el ambiente: **0 valores no nulos en 268 filas.** O sea que el
 la funcionalidad de cierre con nota **nunca se usó en la práctica**. No es candidato a borrar
 —romperías la pantalla— pero sí vale preguntarse si esa función hace falta.
 
+### C.4 — `CH-Tbl-Client.sanic_iseditable`: hay señal real
+
+El caso que más me alegra no haber borrado. El análisis estático decía "0 referencias en los cinco
+árboles de búsqueda", y era cierto. El ambiente dice otra cosa:
+
+| Valor | Registros |
+|---|---|
+| `Yes` | 6.487 |
+| `No` | **32** |
+
+Esos **32 clientes marcados como no editables** no son ruido de default: alguien los puso ahí a
+mano, uno por uno. Hay una regla de negocio viva —"estos clientes no se tocan"— que **está
+capturada en el dato y no está implementada en ningún lado**.
+
+Eso abre una pregunta que vale más que la limpieza: ¿quién debería estar respetando esa bandera?
+Si la respuesta es "la app de Client Administration", entonces no sobra una columna: **falta una
+validación**. Borrarla sepultaría la única evidencia de esos 32 casos.
+
 ---
 
 ## Antes de borrar cualquier cosa
@@ -202,11 +259,16 @@ la funcionalidad de cierre con nota **nunca se usó en la práctica**. No es can
 
 ## Resumen
 
-| Categoría | Componentes | Verificación |
+| Categoría | Componentes | Estado |
 |---|---|---|
-| **A — Borrar directo** | 1 tabla + 1 relación + 13 columnas | 0 refs en código **y** 0 datos en DEV |
-| **B — Borrar con ajuste** | 20 env vars, 1 Custom API, 1 librería de componentes | 0 refs; requiere cambio previo |
-| **C — Decisión de producto** | 7 flows, 2 roles, 1 columna cableada sin uso | Riesgo de negocio, no de limpieza |
+| **A — Borrar directo** | 1 tabla + 1 relación + 3 columnas propias + 7 columnas | ✅ **ELIMINADO** el 2026-08-31 en DEV |
+| **B — Borrar con ajuste** | 20 env vars, 1 Custom API, 1 librería de componentes, 2 columnas reclasificadas | Pendiente: requiere cambio previo |
+| **C — Decisión de producto** | 7 flows, 2 roles, 2 columnas con señal | Pendiente: riesgo de negocio, no de limpieza |
+
+Lo eliminado en DEV: la tabla `CH-Tbl-ClientDepositHistory` (con sus 3 columnas, su relación con
+`CH-Tbl-Client`, 3 formularios y 7 vistas), 6 columnas de `CH-Tbl-Received Emails` y
+`CH-Tbl-Receptions.sanic_comments`. Efecto colateral limpio: los roles `CH-SR-ClientAdminApprover`
+y `CH-SR-ClientAdminContributor` perdieron solos el privilegio `prvReadsanic_CHTblClientDepositHistory`.
 
 > El punto 7 de la checklist es el que más importa: **este análisis se hizo contra DEV.**
 > Nada de esto debería aplicarse a producción sin repetir la verificación de datos allá.
