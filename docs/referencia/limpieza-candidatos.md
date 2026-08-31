@@ -12,8 +12,8 @@
 
 **Categoría A ejecutada el 2026-08-31** contra DEV (`org36e60d9d`) con
 [`scripts/cleanup-categoria-a.py`](../../scripts/cleanup-categoria-a.py) — dry-run primero,
-`--apply` después. **8 de 11 componentes eliminados. 3 quedaron bloqueados por la verificación
-en vivo y NO se tocaron.**
+`--apply` después. **9 de 11 componentes eliminados** (8 en la primera pasada + `sanic_iseditable` tras
+aprobación explícita). **2 siguen bloqueados y NO se tocaron.**
 
 El dry-run desmintió tres de mis propias conclusiones, y vale documentarlo porque explica por qué
 el script verifica en vez de confiar en el análisis estático:
@@ -22,7 +22,7 @@ el script verifica en vez de confiar en el análisis estático:
 |---|---|---|
 | `CH-Tbl-AppCatalog.sanic_tags` | Borrar directo | Está en **5 vistas y 1 formulario**. Dataverse rechaza el borrado hasta sacarlo de ahí. Pasa a categoría B. |
 | `CH-Tbl-ClientAccount.sanic_chchrecordstatus` | Borrar directo | **2240 filas con dato.** Pasa a categoría B. |
-| `CH-Tbl-Client.sanic_iseditable` | Borrar directo | **6519 filas con dato, y 32 en `No` deliberado.** Pasa a categoría C. |
+| `CH-Tbl-Client.sanic_iseditable` | Borrar directo | **6519 filas con dato.** Resultó ser una **columna fórmula** derivada de `sanic_recordstatus` — ver C.4. Eliminada el 2026-08-31 tras aprobación explícita. |
 
 > **La lección**: "cero referencias en código" y "cero datos" son cosas distintas, y el análisis
 > estático solo puede probar la primera. Ninguna búsqueda sobre el repo iba a decirme que
@@ -221,23 +221,40 @@ Pero al consultar el ambiente: **0 valores no nulos en 268 filas.** O sea que el
 la funcionalidad de cierre con nota **nunca se usó en la práctica**. No es candidato a borrar
 —romperías la pantalla— pero sí vale preguntarse si esa función hace falta.
 
-### C.4 — `CH-Tbl-Client.sanic_iseditable`: hay señal real
+### C.4 — `CH-Tbl-Client.sanic_iseditable` ✅ ELIMINADA — era una columna fórmula
 
-El caso que más me alegra no haber borrado. El análisis estático decía "0 referencias en los cinco
-árboles de búsqueda", y era cierto. El ambiente dice otra cosa:
+Este caso merece quedar documentado porque **el análisis se equivocó dos veces** antes de dar
+con la respuesta, y las dos veces por no mirar el lugar correcto.
 
-| Valor | Registros |
-|---|---|
-| `Yes` | 6.487 |
-| `No` | **32** |
+**Primera lectura (incorrecta)**: "6.487 en `Yes`, 32 en `No` — alguien marcó 32 clientes a mano,
+hay una regla de negocio capturada en el dato y no implementada".
 
-Esos **32 clientes marcados como no editables** no son ruido de default: alguien los puso ahí a
-mano, uno por uno. Hay una regla de negocio viva —"estos clientes no se tocan"— que **está
-capturada en el dato y no está implementada en ningún lado**.
+**Segunda lectura (también incorrecta)**: "los 32 son `STRESS-` y `MTX`, es data de prueba".
 
-Eso abre una pregunta que vale más que la limpieza: ¿quién debería estar respetando esa bandera?
-Si la respuesta es "la app de Client Administration", entonces no sobra una columna: **falta una
-validación**. Borrarla sepultaría la única evidencia de esos 32 casos.
+**La verdad**: `sanic_iseditable` era una **columna fórmula**. Su definición vivía en
+`Entities/sanic_CHTblClient/Formulas/sanic_chtblclient-FormulaDefinitions.yaml`:
+
+```
+sanic_iseditable: =If(sanic_recordstatus = Active || sanic_recordstatus = Inactive, true, false)
+```
+
+Los 32 en `No` son **exactamente** los clientes en `PendingApproval` o `PendingDeactivation` —
+comprobable en los datos que se extrajeron antes de borrar. Que fueran registros `STRESS-` fue
+coincidencia: son clientes de prueba que estaban en estado pendiente.
+
+**Por qué el borrado fue correcto, y más seguro de lo que parecía**: era dato *derivado*, no
+autorado. El valor se reconstruye entero desde `sanic_recordstatus`. Pérdida de información al
+borrarla: cero, por definición. Y nadie la leía.
+
+> **La lección para el resto de esta limpieza**: antes de razonar sobre por qué una columna tiene
+> los datos que tiene, revisar `Entities/<tabla>/Formulas/`. Una columna fórmula no la escribe
+> nadie y sus valores no son decisiones de nadie — son el resultado de una expresión. Interpretarla
+> como dato autorado lleva a conclusiones inventadas.
+>
+> Las 6 columnas fórmula que quedan en el modelo: `CountedMoneyDetails.sanic_totalamount`,
+> `DeclaredBags.sanic_isrelatedtobag`, `DeclaredDeposits.sanic_total`,
+> `DepositsRecounting.sanic_total`, `Transactions.sanic_total`, `XMLReadingDetail.sanic_subtotal`.
+> Ninguna está en esta lista de candidatos.
 
 ---
 
@@ -263,7 +280,7 @@ validación**. Borrarla sepultaría la única evidencia de esos 32 casos.
 |---|---|---|
 | **A — Borrar directo** | 1 tabla + 1 relación + 3 columnas propias + 7 columnas | ✅ **ELIMINADO** el 2026-08-31 en DEV |
 | **B — Borrar con ajuste** | 20 env vars, 1 Custom API, 1 librería de componentes, 2 columnas reclasificadas | Pendiente: requiere cambio previo |
-| **C — Decisión de producto** | 7 flows, 2 roles, 2 columnas con señal | Pendiente: riesgo de negocio, no de limpieza |
+| **C — Decisión de producto** | 7 flows, 2 roles | Pendiente: riesgo de negocio, no de limpieza |
 
 Lo eliminado en DEV: la tabla `CH-Tbl-ClientDepositHistory` (con sus 3 columnas, su relación con
 `CH-Tbl-Client`, 3 formularios y 7 vistas), 6 columnas de `CH-Tbl-Received Emails` y

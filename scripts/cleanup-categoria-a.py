@@ -31,6 +31,7 @@
 # =============================================================================
 import json
 import os
+import re
 import sys
 import urllib.parse
 import urllib.request
@@ -59,8 +60,24 @@ COLUMNAS = [
      "Etiquetas del Hub; el Hub filtra por acceso, no por tags"),
     ("sanic_chtblclientaccount", "sanic_chchrecordstatus",
      "Estado de vigencia legacy; distinto de sanic_recordstatus, que SI se usa"),
+]
+
+# Columnas que TIENEN datos pero se aprobaron para borrado igual, con justificacion
+# explicita. La barrera de "cero datos" se levanta SOLO para estas, y solo despues de
+# haber mirado el contenido real — nunca por conveniencia.
+#
+# OJO: la barrera de DEPENDENCIAS no se levanta nunca. Si la columna esta en un
+# formulario o vista, Dataverse la sigue bloqueando y el script la salta.
+COLUMNAS_CON_DATOS_APROBADAS = [
     ("sanic_chtblclient", "sanic_iseditable",
-     "Bandera de editabilidad; sin referencias en ningun arbol de busqueda"),
+     "COLUMNA FORMULA, no autorada: "
+     "=If(sanic_recordstatus = Active || sanic_recordstatus = Inactive, true, false). "
+     "Su definicion vivia en Entities/sanic_CHTblClient/Formulas/. Por eso ningun "
+     "script la escribe y sus 6519 valores no son dato de negocio sino el resultado "
+     "de un calculo: los 32 en 'No' son exactamente los clientes en PendingApproval o "
+     "PendingDeactivation. Cero perdida de informacion al borrarla — el valor se "
+     "reconstruye entero desde sanic_recordstatus. Nadie la leia. "
+     "Aprobado por el usuario 2026-08-31."),
 ]
 
 # La tabla se borra al final: arrastra sus columnas, relaciones, formularios y vistas.
@@ -181,6 +198,51 @@ def contar_no_nulos(api, token, entity_set, columna, etiqueta):
         return None
 
 
+def quitar_de_vistas(api, token, tabla, columna, aplicar):
+    """Saca la columna de toda vista publica que la muestre.
+
+    Dataverse rechaza el borrado de una columna que este en una vista. Hay que
+    editar el fetchxml (que atributos trae) Y el layoutxml (que celdas pinta) de
+    cada savedquery: si se toca solo uno de los dos, la vista queda inconsistente.
+
+    Devuelve la lista de vistas modificadas.
+    """
+    r = llamar(api, token, "GET",
+               "savedqueries?" + urllib.parse.urlencode({
+                   "$select": "savedqueryid,name,fetchxml,layoutxml",
+                   "$filter": f"returnedtypecode eq '{tabla}'"}))
+    tocadas = []
+    for vista in r.get("value", []):
+        fetch = vista.get("fetchxml") or ""
+        layout = vista.get("layoutxml") or ""
+        if columna not in fetch and columna not in layout:
+            continue
+        nuevo_fetch = re.sub(
+            rf'\s*<attribute\s+name="{re.escape(columna)}"\s*/>', "", fetch)
+        nuevo_layout = re.sub(
+            rf'\s*<cell\s+name="{re.escape(columna)}"[^>]*/>', "", layout)
+        if nuevo_fetch == fetch and nuevo_layout == layout:
+            traza("VISTAS", f"  '{vista['name']}' menciona {columna} pero no se pudo "
+                            f"limpiar con el patron esperado — revisar a mano")
+            continue
+        tocadas.append(vista["name"])
+        if aplicar:
+            llamar(api, token, "PATCH",
+                   f"savedqueries({vista['savedqueryid']})",
+                   {"fetchxml": nuevo_fetch, "layoutxml": nuevo_layout})
+            traza("VISTAS", f"  '{vista['name']}': {columna} removida")
+        else:
+            traza("VISTAS", f"  '{vista['name']}': se removeria {columna}")
+    return tocadas
+
+
+def publicar(api, token, tabla):
+    """Publica la tabla. Sin esto los cambios de vista no se aplican."""
+    llamar(api, token, "POST", "PublishXml",
+           {"ParameterXml": f"<importexportxml><entities><entity>{tabla}"
+                            f"</entity></entities></importexportxml>"})
+
+
 def dependencias(api, token, metadata_id, tipo):
     r = llamar(api, token, "GET",
                f"RetrieveDependenciesForDelete(ObjectId={metadata_id},"
@@ -211,9 +273,12 @@ def main():
     borrables, bloqueados = [], []
 
     # --- columnas -------------------------------------------------------------
-    traza("VERIFICACION", f"Revisando {len(COLUMNAS)} columnas")
+    total_col = len(COLUMNAS) + len(COLUMNAS_CON_DATOS_APROBADAS)
+    traza("VERIFICACION", f"Revisando {total_col} columnas "
+                          f"({len(COLUMNAS_CON_DATOS_APROBADAS)} aprobadas pese a tener datos)")
     cache_tabla = {}
-    for tabla, columna, razon in COLUMNAS:
+    aprobadas = {(t, c) for t, c, _ in COLUMNAS_CON_DATOS_APROBADAS}
+    for tabla, columna, razon in COLUMNAS + COLUMNAS_CON_DATOS_APROBADAS:
         etiqueta = f"{tabla}.{columna}"
         try:
             if tabla not in cache_tabla:
@@ -228,18 +293,47 @@ def main():
         no_nulos = contar_no_nulos(api, token, entity_set, columna, etiqueta)
         deps = dependencias(api, token, mid, COMPONENT_TYPE_ATTRIBUTE)
 
-        if no_nulos is None:
-            motivo = "no se pudo verificar si tiene datos"
-        elif no_nulos > 0:
-            motivo = f"TIENE DATOS: {no_nulos} filas con valor"
-        elif deps:
+        es_aprobada = (tabla, columna) in aprobadas
+
+        # Para las aprobadas, intentar despejar el camino: si lo unico que bloquea son
+        # vistas (tipo 26), se saca la columna de esas vistas y se vuelve a preguntar.
+        # Los formularios (tipo 60) NO se tocan automaticamente — editar un formulario
+        # a ciegas puede romper el layout que alguien diseño.
+        if es_aprobada and deps:
+            tipos = {d.get("dependentcomponenttype") for d in deps}
+            if tipos == {26}:
+                traza("VISTAS", f"  {etiqueta}: bloqueada por {len(deps)} vista(s); "
+                                f"limpiando")
+                quitar_de_vistas(api, token, tabla, columna, APPLY)
+                if APPLY:
+                    publicar(api, token, tabla)
+                    deps = dependencias(api, token, mid, COMPONENT_TYPE_ATTRIBUTE)
+                    traza("VISTAS", f"  {etiqueta}: dependencias tras limpiar: "
+                                    f"{describir_dependencias(deps)}")
+                else:
+                    deps = []
+            else:
+                traza("VISTAS", f"  {etiqueta}: bloqueada por algo mas que vistas "
+                                f"({describir_dependencias(deps)}) — no se toca solo")
+
+        # La barrera de dependencias NO se levanta nunca: Dataverse rechaza el borrado
+        # de una columna que este en un formulario o vista, sin importar la aprobacion.
+        if deps:
             motivo = f"tiene dependencias ({describir_dependencias(deps)})"
+        elif no_nulos is None and not es_aprobada:
+            motivo = "no se pudo verificar si tiene datos"
+        elif no_nulos and no_nulos > 0 and not es_aprobada:
+            motivo = f"TIENE DATOS: {no_nulos} filas con valor"
         else:
             motivo = None
 
         if motivo:
             traza("VERIFICACION", f"  {etiqueta}: BLOQUEADA — {motivo}")
             bloqueados.append((etiqueta, motivo))
+        elif es_aprobada:
+            traza("VERIFICACION",
+                  f"  {etiqueta}: APROBADA PESE A {no_nulos} filas con valor — {razon}")
+            borrables.append(("columna", tabla, columna))
         else:
             traza("VERIFICACION", f"  {etiqueta}: libre (0 datos, 0 dependencias) — {razon}")
             borrables.append(("columna", tabla, columna))

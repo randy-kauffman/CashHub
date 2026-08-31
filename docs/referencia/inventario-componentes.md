@@ -235,7 +235,7 @@ _No hay campos custom (`sanic_*`) agregados por esta solución en este export._
 |---|---|---|---|---|---|---|---|---|
 | `sanic_cifbco` | CIFBCO | Texto (nvarchar) | none | | Canvas `CH-App-ClientAdministration` (`scrCliente.fx.yaml:223`, `scrClientes.fx.yaml:34,99,139`) | | Sin revisar | |
 | `sanic_cifcom` | CIFCOM | Texto (nvarchar) | none | | Canvas `CH-App-ClientAdministration` (`scrClientes.fx.yaml:34,99,139`) | | Sin revisar | |
-| `sanic_iseditable` | IsEditable | Dos opciones (bit) | none | | Solo vista `SavedQueries/{7a07d9eb-...}.xml` | | Sin revisar | |
+| `sanic_iseditable` | IsEditable | Dos opciones (bit) | none | | Solo vista `SavedQueries/{7a07d9eb-...}.xml` | | **ELIMINADO 2026-08-31** | |
 | `sanic_name` | Name | Texto (nvarchar) | required | | Canvas `CH-App-ClientAdministration` (`scrClientes.fx.yaml:34,99,139`, `Search(...)`) | | Sin revisar | |
 | `sanic_recordstatus` | RecordStatus | Option set (picklist) | required | | Canvas `CH-App-ClientAdministration` (`scrCliente.fx.yaml`, extensivo); flows Activaterow/Deactivaterow | | Sin revisar | |
 | `sanic_taxid` | TaxId | Texto (nvarchar) | none | | Canvas `CH-App-ClientAdministration` (`scrCliente.fx.yaml:353,2229,2339`, `scrClientes.fx.yaml:34,99,139`) | | Sin revisar | **NUEVO desde el export del 2026-08-24** |
