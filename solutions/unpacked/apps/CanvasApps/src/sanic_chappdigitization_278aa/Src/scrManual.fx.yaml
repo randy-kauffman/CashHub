@@ -312,6 +312,17 @@ scrManual As screen:
                     Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =7
 
+                lblHdrTipoMan As label:
+                    Color: =ThemeInk3
+                    FontWeight: =FontWeight.Semibold
+                    Height: =30
+                    Size: =7.5
+                    Text: ="TIPO"
+                    Width: =Parent.Width*0.10
+                    X: =Parent.Width*0.60
+                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
+                    ZIndex: =7
+
                 btnHdrMotivoMan As button:
                     Align: =Align.Left
                     BorderColor: =App.Theme.Colors.Primary
@@ -338,18 +349,6 @@ scrManual As screen:
                     X: =Parent.Width*0.71
                     Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =8
-
-                lblHdrTipoMan As label:
-                    Color: =ThemeInk3
-                    FontWeight: =FontWeight.Semibold
-                    Height: =30
-                    Size: =7.5
-                    Text: ="TIPO"
-                    VerticalAlign: =VerticalAlign.Middle
-                    Width: =Parent.Width*0.10
-                    X: =Parent.Width*0.60
-                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
-                    ZIndex: =7
 
                 lblHdrEstadoMan As label:
                     BorderColor: =App.Theme.Colors.Darker40
@@ -720,31 +719,6 @@ scrManual As screen:
                         X: =Parent.TemplateWidth*0.84
                         ZIndex: =8
 
-                    pilTxTipoMan As button:
-                        BorderThickness: =0
-                        Color: |-
-                            =// TIPO Y MOTIVO SON DOS PREGUNTAS DISTINTAS. El motivo dice POR QUE la
-                            // transaccion esta en manual; el tipo dice QUE ES el asiento. Meter uno
-                            // adentro del otro perdia informacion: un sobrante sin cuenta mostraba
-                            // solo "Sin cuenta" y el operador no se enteraba de que era un sobrante.
-                            // Con dos columnas se ven las dos cosas y ninguna miente.
-                            Switch(Switch(Text(ThisItem.TransactionType), "Faltante", "Faltante", "Sobrante", "Sobrante", "Sin declaracion", "Sin declaración", "Deposito", "Depósito", "—"), "Faltante", ThemeDanger, "Sobrante", ThemeInfo, "Sin declaración", ThemeWarn, ThemeInk2)
-                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
-                        DisabledColor: =RGBA(166, 166, 166, 1)
-                        DisabledFill: =RGBA(244, 244, 244, 1)
-                        DisplayMode: =DisplayMode.View
-                        Fill: |-
-                            =Switch(Switch(Text(ThisItem.TransactionType), "Faltante", "Faltante", "Sobrante", "Sobrante", "Sin declaracion", "Sin declaración", "Deposito", "Depósito", "—"), "Faltante", ThemeDangerSoft, "Sobrante", ThemeInfoSoft, "Sin declaración", ThemeWarnSoft, ThemeLineSoft)
-                        FontWeight: =FontWeight.Semibold
-                        Height: =22
-                        Size: =7.88
-                        Text: |-
-                            =Switch(Text(ThisItem.TransactionType), "Faltante", "Faltante", "Sobrante", "Sobrante", "Sin declaracion", "Sin declaración", "Deposito", "Depósito", "—")
-                        Width: =Parent.TemplateWidth*0.10
-                        X: =Parent.TemplateWidth*0.60
-                        Y: =(Parent.TemplateHeight-22)/2
-                        ZIndex: =11
-
                     shpTxFilaSepMan As rectangle:
                         BorderColor: =App.Theme.Colors.Darker40
                         Fill: =ThemeLineSoft
@@ -781,6 +755,29 @@ scrManual As screen:
                         X: =Parent.TemplateWidth*0.84
                         Y: =(Parent.TemplateHeight-22)/2
                         ZIndex: =10
+
+                    pilTxTipoMan As button:
+                        BorderThickness: =0
+                        Color: |-
+                            =// TIPO Y MOTIVO SON DOS PREGUNTAS DISTINTAS. El motivo dice POR QUE la
+                            // transaccion esta en manual; el tipo dice QUE ES el asiento. Meter uno
+                            // adentro del otro perdia informacion: un sobrante sin cuenta mostraba
+                            // solo "Sin cuenta" y el operador no se enteraba de que era un sobrante.
+                            // Con dos columnas se ven las dos cosas y ninguna miente.
+                            Switch(Switch(Text(ThisItem.TransactionType), "Faltante", "Faltante", "Sobrante", "Sobrante", "Sin declaracion", "Sin declaración", "Deposito", "Depósito", "—"), "Faltante", ThemeDanger, "Sobrante", ThemeInfo, "Sin declaración", ThemeWarn, ThemeInk2)
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        DisplayMode: =DisplayMode.View
+                        Fill: =Switch(Switch(Text(ThisItem.TransactionType), "Faltante", "Faltante", "Sobrante", "Sobrante", "Sin declaracion", "Sin declaración", "Deposito", "Depósito", "—"), "Faltante", ThemeDangerSoft, "Sobrante", ThemeInfoSoft, "Sin declaración", ThemeWarnSoft, ThemeLineSoft)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        Size: =7.88
+                        Text: =Switch(Text(ThisItem.TransactionType), "Faltante", "Faltante", "Sobrante", "Sobrante", "Sin declaracion", "Sin declaración", "Deposito", "Depósito", "—")
+                        Width: =Parent.TemplateWidth*0.10
+                        X: =Parent.TemplateWidth*0.60
+                        Y: =(Parent.TemplateHeight-22)/2
+                        ZIndex: =11
 
                     pilTxMotivoMan As button:
                         BorderColor: =App.Theme.Colors.Primary
