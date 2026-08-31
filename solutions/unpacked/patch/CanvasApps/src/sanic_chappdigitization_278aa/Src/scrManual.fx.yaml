@@ -746,7 +746,11 @@ scrManual As screen:
                     BorderThickness: =1
                     DropShadow: =DropShadow.Light
                     Fill: =ThemeSurface
-                    Height: =26 + Min(CountRows(galChequesMan.AllItems), 4) * 34 + 2
+                    Height: |-
+                        =// TODO EL ALTO QUE QUEDA, no cuatro filas. Estaba topada en 4 (26 + 4*34)
+                        // y con la letra de esta pantalla eso deja la lista minuscula mientras
+                        // abajo sobra tarjeta vacia. Ahora llega hasta el fondo con un margen.
+                        Max(Parent.Height - Self.Y - 16, 120)
                     LayoutGridColumnMinWidth: =0
                     LayoutGridColumns: =6
                     LayoutGridRowMinHeight: =0
@@ -792,8 +796,8 @@ scrManual As screen:
                             Height: =Parent.TemplateHeight
                             Size: =13
                             Text: =ThisItem.CheckNumber
-                            Width: =Parent.TemplateWidth*0.50
-                            X: =Parent.TemplateWidth*0.04
+                            Width: =Parent.TemplateWidth*0.28
+                            X: =Parent.TemplateWidth*0.03
                             ZIndex: =1
 
                         lblChqMontoMan As label:
@@ -804,8 +808,8 @@ scrManual As screen:
                             Height: =Parent.TemplateHeight
                             Size: =13
                             Text: =Text(ThisItem.CheckAmount, FmtMoney)
-                            Width: =Parent.TemplateWidth*0.28
-                            X: =Parent.TemplateWidth*0.54
+                            Width: =Parent.TemplateWidth*0.27
+                            X: =Parent.TemplateWidth*0.58
                             ZIndex: =2
 
                         lblChqMonMan As label:
@@ -816,9 +820,33 @@ scrManual As screen:
                             Height: =Parent.TemplateHeight
                             Size: =13
                             Text: =ThisItem.CheckCurrency
-                            Width: =Parent.TemplateWidth*0.14
-                            X: =Parent.TemplateWidth*0.82
+                            Width: =Parent.TemplateWidth*0.12
+                            X: =Parent.TemplateWidth*0.85
                             ZIndex: =3
+
+                        lblChqTipoMan As label:
+                            BorderRadius: =999
+                            Color: |-
+                                =// BAC y otros bancos se pagan distinto, asi que se distinguen por
+                                // color y no solo por texto: en una lista de cheques hay que poder
+                                // separarlos de un vistazo.
+                                If(Text(ThisItem.CheckTypes) = "BAC Local", ThemeInfo, ThemeWarn)
+                            Fill: |-
+                                =If(Text(ThisItem.CheckTypes) = "BAC Local", ThemeInfoSoft, ThemeWarnSoft)
+                            FontWeight: =FontWeight.Semibold
+                            Height: =22
+                            PaddingLeft: =8
+                            PaddingRight: =8
+                            Size: =8.25
+                            Text: |-
+                                =// La etiqueta cruda dice "BAC Local" / "Otros Local". Se acorta a lo
+                                // que el operador necesita distinguir.
+                                If(Text(ThisItem.CheckTypes) = "BAC Local", "BAC", "Otros bancos")
+                            VerticalAlign: =VerticalAlign.Middle
+                            Width: =Parent.TemplateWidth * 0.24
+                            X: =Parent.TemplateWidth * 0.31
+                            Y: =(Parent.TemplateHeight - 22) / 2
+                            ZIndex: =5
 
                         shpChqSepMan As rectangle:
                             BorderColor: =App.Theme.Colors.Darker40
@@ -827,6 +855,17 @@ scrManual As screen:
                             Width: =Parent.TemplateWidth
                             Y: =Parent.TemplateHeight - 1
                             ZIndex: =4
+
+                    lblChqHdrTipoMan As label:
+                        Color: =ThemeInk3
+                        FontWeight: =FontWeight.Semibold
+                        Height: =26
+                        Size: =7.5
+                        Text: ="TIPO"
+                        VerticalAlign: =VerticalAlign.Middle
+                        Width: =Parent.Width * 0.27
+                        X: =Parent.Width * 0.31
+                        ZIndex: =7
 
                     shpChqHeadLineaMan As rectangle:
                         BorderColor: =App.Theme.Colors.Darker40
@@ -845,8 +884,8 @@ scrManual As screen:
                         Height: =26
                         Size: =7.5
                         Text: ="MON."
-                        Width: =Parent.Width*0.14
-                        X: =Parent.Width*0.82
+                        Width: =Parent.Width*0.12
+                        X: =Parent.Width*0.85
                         ZIndex: =3
 
                     lblChqHdrMontoMan As label:
@@ -858,8 +897,8 @@ scrManual As screen:
                         Height: =26
                         Size: =7.5
                         Text: ="MONTO"
-                        Width: =Parent.Width*0.28
-                        X: =Parent.Width*0.54
+                        Width: =Parent.Width*0.27
+                        X: =Parent.Width*0.58
                         ZIndex: =4
 
                     lblChqHdrNumMan As label:
@@ -870,8 +909,8 @@ scrManual As screen:
                         Height: =26
                         Size: =7.5
                         Text: ="N° CHEQUE"
-                        Width: =Parent.Width*0.50
-                        X: =Parent.Width*0.04
+                        Width: =Parent.Width*0.28
+                        X: =Parent.Width*0.03
                         ZIndex: =5
 
                     shpChqHeadBgMan As rectangle:
@@ -1281,155 +1320,51 @@ scrManual As screen:
                     RadiusTopLeft: =8
                     RadiusTopRight: =8
                     Size: =9
-                    TabIndex: =5
+                    TabIndex: =8
                     Text: ="↵  Marcar como aplicada (Enter)"
                     Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
                     Width: =Parent.Width - 32
                     X: =16
-                    Y: =inpCampoRefMan.Y + inpCampoRefMan.Height + 14
+                    Y: =inpCampoRefMan.Y + inpCampoRefMan.Height + 16
                     ZIndex: =12
 
-                inpCampoRefMan As text:
-                    BorderColor: =ThemeLine
-                    BorderThickness: =2
-                    Color: =RGBA(0, 0, 0, 1)
-                    Default: =gvarTxMan.TransactionReference
-                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
-                    DisabledColor: =RGBA(166, 166, 166, 1)
-                    DisabledFill: =RGBA(244, 244, 244, 1)
-                    DisplayMode: =DisplayMode.Disabled
-                    Fill: =ThemeSurface2
-                    FocusedBorderColor: =ThemeAccent
-                    FocusedBorderThickness: =2
-                    Height: =34
-                    HintText: =""
-                    HoverBorderColor: =App.Theme.Colors.Darker40
-                    HoverColor: =RGBA(0, 0, 0, 1)
-                    HoverFill: =App.Theme.Colors.Lighter70
-                    OnChange: =Reset(Self)
-                    RadiusBottomLeft: =7
-                    RadiusBottomRight: =7
-                    RadiusTopLeft: =7
-                    RadiusTopRight: =7
-                    Size: =9
-                    TabIndex: =4
-                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
-                    Width: =Parent.Width - 32
-                    X: =16
-                    Y: =lblCampoRefLabMan.Y + 18
-                    ZIndex: =13
 
-                lblCampoRefLabMan As label:
-                    BorderColor: =App.Theme.Colors.Darker40
+
+
+
+
+
+
+
+                lblCampoCuentaLabMan As label:
                     Color: =ThemeInk2
-                    DisabledColor: =RGBA(166, 166, 166, 1)
                     FontWeight: =FontWeight.Semibold
                     Height: =16
                     Size: =8.25
-                    Text: ="TAB 4 · Referencia"
+                    Text: ="TAB 1 · Número de cuenta"
                     Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
-                    Width: =Parent.Width - 32
+                    Width: =(Parent.Width - 32 - 12) / 2
                     X: =16
-                    Y: =inpCampoMontoMan.Y + inpCampoMontoMan.Height + 10
-                    ZIndex: =14
-
-                inpCampoMontoMan As text:
-                    BorderColor: =ThemeLine
-                    BorderThickness: =2
-                    Color: =RGBA(0, 0, 0, 1)
-                    Default: =Text(gvarTxMan.Total, FmtMoney)
-                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
-                    DisabledColor: =RGBA(166, 166, 166, 1)
-                    DisabledFill: =RGBA(244, 244, 244, 1)
-                    DisplayMode: =DisplayMode.Disabled
-                    Fill: =ThemeSurface2
-                    FocusedBorderColor: =ThemeAccent
-                    FocusedBorderThickness: =2
-                    Height: =34
-                    HintText: =""
-                    HoverBorderColor: =App.Theme.Colors.Darker40
-                    HoverColor: =RGBA(0, 0, 0, 1)
-                    HoverFill: =App.Theme.Colors.Lighter70
-                    OnChange: =Reset(Self)
-                    RadiusBottomLeft: =7
-                    RadiusBottomRight: =7
-                    RadiusTopLeft: =7
-                    RadiusTopRight: =7
-                    Size: =9
-                    TabIndex: =3
-                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
-                    Width: =Parent.Width - 32
-                    X: =16
-                    Y: =lblCampoMontoLabMan.Y + 18
-                    ZIndex: =15
-
-                lblCampoMontoLabMan As label:
-                    BorderColor: =App.Theme.Colors.Darker40
-                    Color: =ThemeInk2
-                    DisabledColor: =RGBA(166, 166, 166, 1)
-                    FontWeight: =FontWeight.Semibold
-                    Height: =16
-                    Size: =8.25
-                    Text: ="TAB 3 · Monto total"
-                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
-                    Width: =Parent.Width - 32
-                    X: =16
-                    Y: =inpCampoMonedaMan.Y + inpCampoMonedaMan.Height + 10
-                    ZIndex: =16
-
-                inpCampoMonedaMan As text:
-                    BorderColor: =ThemeLine
-                    BorderThickness: =2
-                    Color: =RGBA(0, 0, 0, 1)
-                    Default: =gvarTxMan.Currency
-                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
-                    DisabledColor: =RGBA(166, 166, 166, 1)
-                    DisabledFill: =RGBA(244, 244, 244, 1)
-                    DisplayMode: =DisplayMode.Disabled
-                    Fill: =ThemeSurface2
-                    FocusedBorderColor: =ThemeAccent
-                    FocusedBorderThickness: =2
-                    Height: =34
-                    HintText: =""
-                    HoverBorderColor: =App.Theme.Colors.Darker40
-                    HoverColor: =RGBA(0, 0, 0, 1)
-                    HoverFill: =App.Theme.Colors.Lighter70
-                    OnChange: =Reset(Self)
-                    RadiusBottomLeft: =7
-                    RadiusBottomRight: =7
-                    RadiusTopLeft: =7
-                    RadiusTopRight: =7
-                    Size: =9
-                    TabIndex: =2
-                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
-                    Width: =Parent.Width - 32
-                    X: =16
-                    Y: =lblCampoMonedaLabMan.Y + 18
-                    ZIndex: =17
-
-                lblCampoMonedaLabMan As label:
-                    BorderColor: =App.Theme.Colors.Darker40
-                    Color: =ThemeInk2
-                    DisabledColor: =RGBA(166, 166, 166, 1)
-                    FontWeight: =FontWeight.Semibold
-                    Height: =16
-                    Size: =8.25
-                    Text: ="TAB 2 · Moneda"
-                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
-                    Width: =Parent.Width - 32
-                    X: =16
-                    Y: =inpCampoCuentaMan.Y + inpCampoCuentaMan.Height + 10
-                    ZIndex: =18
+                    Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12 + 0
+                    ZIndex: =42
 
                 inpCampoCuentaMan As text:
                     BorderColor: =ThemeLine
                     BorderThickness: =2
                     Color: =RGBA(0, 0, 0, 1)
-                    Default: =If(IsBlank(gvarTxMan.AccountNumber), "— sin cuenta —", Text(gvarTxMan.AccountNumber, "[$-en-US]0"))
+                    Default: |-
+                        =If(IsBlank(gvarTxMan.AccountNumber), "— sin cuenta —", Text(gvarTxMan.AccountNumber, "[$-en-US]0"))
                     DisabledBorderColor: =RGBA(166, 166, 166, 1)
                     DisabledColor: =RGBA(166, 166, 166, 1)
                     DisabledFill: =RGBA(244, 244, 244, 1)
-                    DisplayMode: =DisplayMode.View
+                    DisplayMode: |-
+                        =// EDIT, NO VIEW, Y ES A PROPOSITO. Con DisplayMode.View el control no
+                        // se renderiza como un <input> de verdad: al tabular no se selecciona
+                        // el contenido y el operador tiene que marcarlo con el mouse para
+                        // copiarlo al IBS. En Edit el navegador selecciona todo solo al
+                        // entrar con TAB, que es lo que se pidio. Si alguien escribe encima,
+                        // el OnChange lo devuelve al valor real: el campo informa, no edita.
+                        DisplayMode.Edit
                     Fill: =ThemeSurface2
                     FocusedBorderColor: =ThemeAccent
                     FocusedBorderThickness: =2
@@ -1446,24 +1381,313 @@ scrManual As screen:
                     Size: =9
                     TabIndex: =1
                     Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
-                    Width: =Parent.Width - 32
+                    Width: =(Parent.Width - 32 - 12) / 2
                     X: =16
                     Y: =lblCampoCuentaLabMan.Y + 18
-                    ZIndex: =19
+                    ZIndex: =43
 
-                lblCampoCuentaLabMan As label:
-                    BorderColor: =App.Theme.Colors.Darker40
+                lblCampoMonedaLabMan As label:
                     Color: =ThemeInk2
-                    DisabledColor: =RGBA(166, 166, 166, 1)
                     FontWeight: =FontWeight.Semibold
                     Height: =16
                     Size: =8.25
-                    Text: ="TAB 1 · Número de cuenta"
+                    Text: ="TAB 2 · Moneda"
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =(Parent.Width - 32 - 12) / 2
+                    X: =16 + (Parent.Width - 32 - 12) / 2 + 12
+                    Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12 + 0
+                    ZIndex: =44
+
+                inpCampoMonedaMan As text:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =2
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: |-
+                        =gvarTxMan.Currency
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    DisplayMode: |-
+                        =// EDIT, NO VIEW, Y ES A PROPOSITO. Con DisplayMode.View el control no
+                        // se renderiza como un <input> de verdad: al tabular no se selecciona
+                        // el contenido y el operador tiene que marcarlo con el mouse para
+                        // copiarlo al IBS. En Edit el navegador selecciona todo solo al
+                        // entrar con TAB, que es lo que se pidio. Si alguien escribe encima,
+                        // el OnChange lo devuelve al valor real: el campo informa, no edita.
+                        DisplayMode.Edit
+                    Fill: =ThemeSurface2
+                    FocusedBorderColor: =ThemeAccent
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HintText: =""
+                    HoverBorderColor: =App.Theme.Colors.Darker40
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =App.Theme.Colors.Lighter70
+                    OnChange: =Reset(Self)
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    TabIndex: =2
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =(Parent.Width - 32 - 12) / 2
+                    X: =16 + (Parent.Width - 32 - 12) / 2 + 12
+                    Y: =lblCampoMonedaLabMan.Y + 18
+                    ZIndex: =45
+
+                lblCampoEfectivoLabMan As label:
+                    Color: =ThemeInk2
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: ="TAB 3 · Efectivo"
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =(Parent.Width - 32 - 12) / 2
+                    X: =16
+                    Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12 + 60
+                    ZIndex: =46
+
+                inpCampoEfectivoMan As text:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =2
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: |-
+                        =Text(gvarTxMan.CashAmount, FmtMoney)
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    DisplayMode: |-
+                        =// EDIT, NO VIEW, Y ES A PROPOSITO. Con DisplayMode.View el control no
+                        // se renderiza como un <input> de verdad: al tabular no se selecciona
+                        // el contenido y el operador tiene que marcarlo con el mouse para
+                        // copiarlo al IBS. En Edit el navegador selecciona todo solo al
+                        // entrar con TAB, que es lo que se pidio. Si alguien escribe encima,
+                        // el OnChange lo devuelve al valor real: el campo informa, no edita.
+                        DisplayMode.Edit
+                    Fill: =ThemeSurface2
+                    FocusedBorderColor: =ThemeAccent
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HintText: =""
+                    HoverBorderColor: =App.Theme.Colors.Darker40
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =App.Theme.Colors.Lighter70
+                    OnChange: =Reset(Self)
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    TabIndex: =3
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =(Parent.Width - 32 - 12) / 2
+                    X: =16
+                    Y: =lblCampoEfectivoLabMan.Y + 18
+                    ZIndex: =47
+
+                lblCampoChqBacLabMan As label:
+                    Color: =ThemeInk2
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: ="TAB 4 · Cheques BAC"
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =(Parent.Width - 32 - 12) / 2
+                    X: =16 + (Parent.Width - 32 - 12) / 2 + 12
+                    Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12 + 60
+                    ZIndex: =48
+
+                inpCampoChqBacMan As text:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =2
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: |-
+                        =Text(gvarTxMan.BACLocalCheckAmount, FmtMoney)
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    DisplayMode: |-
+                        =// EDIT, NO VIEW, Y ES A PROPOSITO. Con DisplayMode.View el control no
+                        // se renderiza como un <input> de verdad: al tabular no se selecciona
+                        // el contenido y el operador tiene que marcarlo con el mouse para
+                        // copiarlo al IBS. En Edit el navegador selecciona todo solo al
+                        // entrar con TAB, que es lo que se pidio. Si alguien escribe encima,
+                        // el OnChange lo devuelve al valor real: el campo informa, no edita.
+                        DisplayMode.Edit
+                    Fill: =ThemeSurface2
+                    FocusedBorderColor: =ThemeAccent
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HintText: =""
+                    HoverBorderColor: =App.Theme.Colors.Darker40
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =App.Theme.Colors.Lighter70
+                    OnChange: =Reset(Self)
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    TabIndex: =4
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =(Parent.Width - 32 - 12) / 2
+                    X: =16 + (Parent.Width - 32 - 12) / 2 + 12
+                    Y: =lblCampoChqBacLabMan.Y + 18
+                    ZIndex: =49
+
+                lblCampoChqOtrLabMan As label:
+                    Color: =ThemeInk2
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: ="TAB 5 · Cheques otros bancos"
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =(Parent.Width - 32 - 12) / 2
+                    X: =16
+                    Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12 + 120
+                    ZIndex: =50
+
+                inpCampoChqOtrMan As text:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =2
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: |-
+                        =Text(gvarTxMan.OtherLocalCheckAmount, FmtMoney)
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    DisplayMode: |-
+                        =// EDIT, NO VIEW, Y ES A PROPOSITO. Con DisplayMode.View el control no
+                        // se renderiza como un <input> de verdad: al tabular no se selecciona
+                        // el contenido y el operador tiene que marcarlo con el mouse para
+                        // copiarlo al IBS. En Edit el navegador selecciona todo solo al
+                        // entrar con TAB, que es lo que se pidio. Si alguien escribe encima,
+                        // el OnChange lo devuelve al valor real: el campo informa, no edita.
+                        DisplayMode.Edit
+                    Fill: =ThemeSurface2
+                    FocusedBorderColor: =ThemeAccent
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HintText: =""
+                    HoverBorderColor: =App.Theme.Colors.Darker40
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =App.Theme.Colors.Lighter70
+                    OnChange: =Reset(Self)
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    TabIndex: =5
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =(Parent.Width - 32 - 12) / 2
+                    X: =16
+                    Y: =lblCampoChqOtrLabMan.Y + 18
+                    ZIndex: =51
+
+                lblCampoTotalLabMan As label:
+                    Color: =ThemeInk2
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: ="TAB 6 · Total de la transacción"
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =(Parent.Width - 32 - 12) / 2
+                    X: =16 + (Parent.Width - 32 - 12) / 2 + 12
+                    Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12 + 120
+                    ZIndex: =52
+
+                inpCampoTotalMan As text:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =2
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: |-
+                        =Text(gvarTxMan.Total, FmtMoney)
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    DisplayMode: |-
+                        =// EDIT, NO VIEW, Y ES A PROPOSITO. Con DisplayMode.View el control no
+                        // se renderiza como un <input> de verdad: al tabular no se selecciona
+                        // el contenido y el operador tiene que marcarlo con el mouse para
+                        // copiarlo al IBS. En Edit el navegador selecciona todo solo al
+                        // entrar con TAB, que es lo que se pidio. Si alguien escribe encima,
+                        // el OnChange lo devuelve al valor real: el campo informa, no edita.
+                        DisplayMode.Edit
+                    Fill: =ThemeSurface2
+                    FocusedBorderColor: =ThemeAccent
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HintText: =""
+                    HoverBorderColor: =App.Theme.Colors.Darker40
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =App.Theme.Colors.Lighter70
+                    OnChange: =Reset(Self)
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    TabIndex: =6
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =(Parent.Width - 32 - 12) / 2
+                    X: =16 + (Parent.Width - 32 - 12) / 2 + 12
+                    Y: =lblCampoTotalLabMan.Y + 18
+                    ZIndex: =53
+
+                lblCampoRefLabMan As label:
+                    Color: =ThemeInk2
+                    FontWeight: =FontWeight.Semibold
+                    Height: =16
+                    Size: =8.25
+                    Text: ="TAB 7 · Referencia del cliente"
                     Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
                     Width: =Parent.Width - 32
                     X: =16
-                    Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12
-                    ZIndex: =20
+                    Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12 + 180
+                    ZIndex: =54
+
+                inpCampoRefMan As text:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =2
+                    Color: =RGBA(0, 0, 0, 1)
+                    Default: |-
+                        =// Si el deposito no trae referencia del cliente, va el numero de la transaccion:
+                        // dejar la celda vacia obligaria al operador a ir a buscarlo a otra pantalla
+                        // justo cuando lo esta tecleando en el IBS.
+                        Coalesce(gvarTxMan.TransactionReference, gvarTxMan.TransactionID)
+                    DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    DisplayMode: |-
+                        =// EDIT, NO VIEW, Y ES A PROPOSITO. Con DisplayMode.View el control no
+                        // se renderiza como un <input> de verdad: al tabular no se selecciona
+                        // el contenido y el operador tiene que marcarlo con el mouse para
+                        // copiarlo al IBS. En Edit el navegador selecciona todo solo al
+                        // entrar con TAB, que es lo que se pidio. Si alguien escribe encima,
+                        // el OnChange lo devuelve al valor real: el campo informa, no edita.
+                        DisplayMode.Edit
+                    Fill: =ThemeSurface2
+                    FocusedBorderColor: =ThemeAccent
+                    FocusedBorderThickness: =2
+                    Height: =34
+                    HintText: =""
+                    HoverBorderColor: =App.Theme.Colors.Darker40
+                    HoverColor: =RGBA(0, 0, 0, 1)
+                    HoverFill: =App.Theme.Colors.Lighter70
+                    OnChange: =Reset(Self)
+                    RadiusBottomLeft: =7
+                    RadiusBottomRight: =7
+                    RadiusTopLeft: =7
+                    RadiusTopRight: =7
+                    Size: =9
+                    TabIndex: =7
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =lblCampoRefLabMan.Y + 18
+                    ZIndex: =55
 
                 cmpEmptyDetMan As cmpEmpty:
                     Glifo: ="⌨"
