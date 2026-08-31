@@ -113,14 +113,13 @@ for c in CASOS:
     for k,det,hoja,celda in c['fallos']:
         req('POST','/sanic_chtblvalidationresultses',{
           "sanic_name":f"{k} FAIL","sanic_validationresult":159460001,"sanic_detail":det,
-          "sanic_sheet":hoja,"sanic_cellref":celda,"sanic_durationms":3,"sanic_sourcetype":159460000,
+          "sanic_sheet":hoja,"sanic_cellref":celda,"sanic_durationms":3,
           "sanic_ValidationRun@odata.bind":f"/sanic_chtblvalidationrunses({rid})",
           "sanic_ValidationRule@odata.bind":f"/sanic_validationruleses({RULE[k]})"})
     for k,gid in RULE.items():
         if k in fallidas: continue
         req('POST','/sanic_chtblvalidationresultses',{
           "sanic_name":f"{k} Pass","sanic_validationresult":159460000,"sanic_durationms":1,
-          "sanic_sourcetype":159460000,
           "sanic_ValidationRun@odata.bind":f"/sanic_chtblvalidationrunses({rid})",
           "sanic_ValidationRule@odata.bind":f"/sanic_validationruleses({gid})"})
     print(f"  {c['k']}  {r['sanic_name']:<12} {c['de'][:34]:<36} {len(c['fallos'])} fallidas")

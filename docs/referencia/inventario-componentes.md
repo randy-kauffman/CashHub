@@ -634,9 +634,9 @@ _No hay campos custom (`sanic_*`) agregados por esta solución en este export._
 | `sanic_detail` | Detalle | Texto multilínea (ntext) | none | | C#: `ReceivedEmailValidationService.cs:370` (`Schema.Result.Detail`). | | Sin revisar | |
 | `sanic_durationms` | Durationms | Número entero | recommended | | C#: `ReceivedEmailValidationService.cs:363` (`Schema.Result.DurationMs`). | | Sin revisar | |
 | `sanic_name` | Name | Texto (nvarchar) | recommended | | C#: `ReceivedEmailValidationService.cs:360` (`Schema.Result.Name`). | | Sin revisar | |
-| `sanic_rownumber` | Fila | Número entero | none | | C#: `ReceivedEmailValidationService.cs:373` (`Schema.Result.RowNumber`). | | Sin revisar | |
+| `sanic_rownumber` | Fila | Número entero | none | | C#: `ReceivedEmailValidationService.cs:373` (`Schema.Result.RowNumber`). | | **ELIMINADO 2026-08-31** | |
 | `sanic_sheet` | Hoja | Texto (nvarchar) | none | | C#: `ReceivedEmailValidationService.cs:371` (`Schema.Result.Sheet`). | | Sin revisar | |
-| `sanic_sourcetype` | SourceType | Option set (picklist) | recommended | | C#: `ReceivedEmailValidationService.cs:364` (`Schema.Result.SourceType`). | | Sin revisar | |
+| `sanic_sourcetype` | SourceType | Option set (picklist) | recommended | | C#: `ReceivedEmailValidationService.cs:364` (`Schema.Result.SourceType`). | | **ELIMINADO 2026-08-31** | |
 | `sanic_validationresult` | ValidationResult | Option set (picklist) | recommended | | C#: `ReceivedEmailValidationService.cs:362` (`Schema.Result.Outcome`). | | Sin revisar | |
 | `sanic_validationrule` | ValidationRule | Búsqueda (lookup) | required | | C#: `ReceivedEmailValidationService.cs:368` (`Schema.Result.RuleLookup`). | | Sin revisar | |
 | `sanic_validationrun` | ValidationRun | Búsqueda (lookup) | required | | C#: `ReceivedEmailValidationService.cs:361` (`Schema.Result.RunLookup`). | | Sin revisar | |

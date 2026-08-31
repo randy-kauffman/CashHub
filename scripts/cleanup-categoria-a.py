@@ -106,6 +106,22 @@ COLUMNAS_APROBADAS = [
      "3 vistas (Active, Inactive, Advanced Find); ningun formulario. "
      "Aprobado por el usuario 2026-08-31."),
 
+    ("sanic_chtblvalidationresults", "sanic_sourcetype",
+     "CERO INFORMACION: 8388 de 8388 filas con el MISMO valor (Shared Mailbox), "
+     "porque el C# lo escribe hardcodeado — ReceivedEmailValidationService.CreateResult() "
+     "hace new OptionSetValue(Schema.Run.SourceSharedMailbox) sin condicion. Nadie lo lee: "
+     "0 en Power Fx, 0 en flows, 0 GetAttributeValue y 0 ColumnSet en C#, 0 steps con el "
+     "campo en filteringattributes. OJO — HOMONIMO: sanic_sourcetype existe TAMBIEN en "
+     "ValidationRuns y ValidationRules; esos NO se tocan y son otro analisis. "
+     "Aprobado por el usuario 2026-08-31."),
+
+    ("sanic_chtblvalidationresults", "sanic_rownumber",
+     "REDUNDANTE AL 100%: el numero de fila ya esta en sanic_cellref, que se guarda como "
+     "'J33' — la fila es su parte numerica. Verificado en los datos: cellref='J33' con "
+     "rownumber=33, cellref='K7' con rownumber=7. La consola muestra Hoja y Celda juntas y "
+     "a Fila la ignora, justamente porque ya esta ahi. 666 filas con valor, ningun lector. "
+     "Aprobado por el usuario 2026-08-31."),
+
     ("sanic_chtblclientaccount", "sanic_chchrecordstatus",
      "Estado de vigencia legacy, distinto de sanic_recordstatus (que SI se usa y "
      "convive en la misma tabla). Su nombre es el del option set global "

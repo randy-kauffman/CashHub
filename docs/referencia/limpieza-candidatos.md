@@ -402,6 +402,58 @@ en `GuardAppCatalogPlugin.cs`, la constante `Schema.AppCatalog.AadGroupId` (las 
 
 ---
 
+### D.2 — `CH-Tbl-ValidationResults`: 2 de 10 campos eliminados
+
+Tabla de **8.388 filas**, muy viva: la escribe `ReceivedEmailValidationService.CreateResult()` y
+la leen la consola de ingesta (`ColaDeProcesamiento`) y el tracker (`scrCorreo`). Se eliminaron 2
+campos; los otros 8 quedan.
+
+**`sanic_sourcetype` — cero información.** 8.388 de 8.388 filas con el MISMO valor
+(*Shared Mailbox*), porque el C# lo escribía hardcodeado:
+
+```csharp
+[Schema.Result.SourceType] = new OptionSetValue(Schema.Run.SourceSharedMailbox)
+```
+
+Sin condición, siempre el mismo. Un picklist con un único valor en el 100% de los registros no
+contiene información — mismo patrón que `ClientAccount.sanic_chchrecordstatus`.
+
+**`sanic_rownumber` — redundante al 100%.** El número de fila ya está en `sanic_cellref`:
+
+| `sanic_sheet` | `sanic_cellref` | `sanic_rownumber` |
+|---|---|---|
+| Depositos | **J33** | 33 |
+| Depositos | **K7** | 7 |
+
+La consola muestra *"Hoja y celda: Depositos!J33"* e ignora `Fila`, precisamente porque ya está ahí.
+
+#### Lo que se dejó, y por qué
+
+**`sanic_durationms` NO se borró** pese a no tener lectores. Tiene 8.388 valores reales y variados:
+es el tiempo de ejecución de cada regla. Si una corrida se degrada, esa columna dice **qué regla**
+la frena. Es capacidad no expuesta, no basura — mismo criterio que `AuditTrail.sanic_relatedcrl`.
+
+#### El homónimo, otra vez
+
+`sanic_sourcetype` existe **también en `CH-Tbl-ValidationRuns` y `CH-Tbl-ValidationRules`**. Solo se
+eliminó el de `ValidationResults`; los otros dos siguen y son análisis aparte. El riesgo era real:
+`seed-tracker-stress.py` y `seed-bandeja-demo.py` escriben **ambos** en el mismo archivo, y hubo que
+atribuir línea por línea cuál POST iba a `/sanic_chtblvalidationresultses` y cuál a
+`/sanic_chtblvalidationrunses`.
+
+#### Limpieza de código
+
+En `ReceivedEmailValidationService`: las 2 escrituras y el parámetro `row` de `CreateResult` con sus
+3 llamadas. En `Schema.cs`: las constantes `Result.SourceType` y `Result.RowNumber` — las de
+`Run` y `Rule` siguen. En los seeds: 4 escrituras, solo las de `ValidationResults`.
+
+> **`Finding.RowNumber` NO se tocó.** Es concepto de dominio usado en toda `ContentRules.cs` para
+> construir los hallazgos; lo que se eliminó es la plomería que lo persistía.
+
+Build 0 errores, **1041 tests** sin cambio, assembly redesplegado (37 plugintype, 0 huérfanos).
+
+---
+
 ## Antes de borrar cualquier cosa
 
 1. **Columnas**: Dataverse no deja eliminar una columna que esté en algún formulario o vista.

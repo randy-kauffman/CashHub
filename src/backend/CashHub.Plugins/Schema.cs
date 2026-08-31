@@ -115,9 +115,7 @@ namespace CashHub.Plugins
             public const string DurationMs = "sanic_durationms";
             public const string Sheet = "sanic_sheet";
             public const string CellRef = "sanic_cellref";
-            public const string RowNumber = "sanic_rownumber";
             public const string Detail = "sanic_detail";
-            public const string SourceType = "sanic_sourcetype";
 
             public const int OutcomePass = 159460000;
             public const int OutcomeFail = 159460001;

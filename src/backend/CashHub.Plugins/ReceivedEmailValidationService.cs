@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -322,7 +322,7 @@ namespace CashHub.Plugins
                     CreateResult(runId, ruleIdsByKey, execution, Schema.Result.OutcomeOmitida,
                         name: $"{execution.Definition.Key} Omitida",
                         detail: execution.EngineNote,
-                        sheet: null, cell: null, row: null);
+                        sheet: null, cell: null);
                     continue;
                 }
 
@@ -333,7 +333,7 @@ namespace CashHub.Plugins
                         CreateResult(runId, ruleIdsByKey, execution, Schema.Result.OutcomeFail,
                             name: $"{execution.Definition.Key} FAIL",
                             detail: finding.RenderedMessage,
-                            sheet: finding.Sheet, cell: finding.CellRef, row: finding.RowNumber);
+                            sheet: finding.Sheet, cell: finding.CellRef);
                     }
                 }
                 else
@@ -344,7 +344,7 @@ namespace CashHub.Plugins
                     CreateResult(runId, ruleIdsByKey, execution, outcome,
                         name: $"{execution.Definition.Key} {execution.Outcome}",
                         detail: execution.EngineNote,
-                        sheet: null, cell: null, row: null);
+                        sheet: null, cell: null);
                 }
             }
 
@@ -353,15 +353,14 @@ namespace CashHub.Plugins
 
         private void CreateResult(Guid runId, Dictionary<string, Guid> ruleIdsByKey,
             RuleExecution execution, int outcome, string name, string detail,
-            string sheet, string cell, int? row)
+            string sheet, string cell)
         {
             var entity = new Entity(Schema.Result.LogicalName)
             {
                 [Schema.Result.Name] = name,
                 [Schema.Result.RunLookup] = new EntityReference(Schema.Run.LogicalName, runId),
                 [Schema.Result.Outcome] = new OptionSetValue(outcome),
-                [Schema.Result.DurationMs] = (int)execution.DurationMs,
-                [Schema.Result.SourceType] = new OptionSetValue(Schema.Run.SourceSharedMailbox)
+                [Schema.Result.DurationMs] = (int)execution.DurationMs
             };
             if (ruleIdsByKey.TryGetValue(execution.Definition.Key, out var ruleId))
             {
@@ -370,7 +369,6 @@ namespace CashHub.Plugins
             if (detail != null) entity[Schema.Result.Detail] = detail;
             if (sheet != null) entity[Schema.Result.Sheet] = sheet;
             if (cell != null) entity[Schema.Result.CellRef] = cell;
-            if (row != null) entity[Schema.Result.RowNumber] = row.Value;
 
             _service.Create(entity);
         }

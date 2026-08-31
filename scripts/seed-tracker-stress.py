@@ -223,14 +223,12 @@ def mk_run(m):
             'sanic_ValidationRule@odata.bind': f"/sanic_validationruleses({r['sanic_validationrulesid']})",
             'sanic_validationresult': outcome,
             'sanic_durationms': random.randint(2, 300),
-            'sanic_sourcetype': 159460000,
         }
         if detail:
             body['sanic_detail'] = detail
             if outcome == 159460001:
                 body['sanic_sheet'] = 'Declaracion'
                 body['sanic_cellref'] = f'C{random.randint(3, 40)}'
-                body['sanic_rownumber'] = random.randint(3, 40)
         create('sanic_chtblvalidationresultses', body)
     return rid
 
