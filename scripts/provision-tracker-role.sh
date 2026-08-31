@@ -8,7 +8,10 @@
 #      "CashHub - Tracker", le asigna el rol y registra el GUID en
 #      CH-Tbl-Parameter — mismo patron que los approver teams.
 #
-# Decision del usuario 2026-08-12: CH-SR-AnalyticsRead NO se toca.
+# Nota historica: la decision del usuario del 2026-08-12 era no tocar
+# CH-SR-AnalyticsRead. Ese rol fue ELIMINADO el 2026-08-31 (0 privilegios sobre
+# tablas de negocio, 0 usuarios y 0 equipos asignados). La aclaracion de abajo se
+# conserva para entender por que este rol se llama como se llama.
 # Requiere pp_secrets.env.
 # Uso: ./scripts/provision-tracker-role.sh
 #      AAD_GROUP_ID=xxxx ./scripts/provision-tracker-role.sh
@@ -87,7 +90,7 @@ else:
         'businessunitid@odata.bind': f"/businessunits({root_bu})",
         'description': 'Visor del Deposits Tracker: lectura Global de la cadena de '
                        'trazabilidad (correo->declaracion->recepcion->recuento->transaccion). '
-                       'Sin escritura. NO confundir con CH-SR-AnalyticsRead.',
+                       'Sin escritura. NO confundir con el ex CH-SR-AnalyticsRead, eliminado 2026-08-31.',
     }, extra=['-H', 'MSCRM.SolutionUniqueName: CashHubCore'])
     role_id = created['roleid']
     print(f"rol creado: {ROLE_NAME} ({role_id})")

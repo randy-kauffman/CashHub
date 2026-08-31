@@ -247,15 +247,44 @@ que no pueden correr.
 
 **Resultado**: de 18 flujos se pasó a **11, todos ON**. No queda un solo Draft en el sistema.
 
-### C.2 — 2 roles funcionalmente vacíos
+### C.2 — 2 roles funcionalmente vacíos ✅ ELIMINADOS, con transferencia previa
 
-`CH-SR-AnalyticsRead` y `CH-SR-OpsAdmin`: **cero privilegios sobre tablas de negocio**, solo
-lectura de `CH-Tbl-AppCatalog(Access)` — lo mínimo para abrir el Hub. Son byte-idénticos entre sí.
+`CH-SR-AnalyticsRead` y `CH-SR-OpsAdmin`: ningún privilegio sobre tablas de negocio —solo
+`prvReadsanic_CHTblAppCatalog(Access)`, lo mínimo para abrir el Hub— y **0 usuarios y 0 equipos
+asignados**, verificado en vivo antes de borrar.
 
-Están provisionados y referenciados en 3 scripts, así que "sin uso" es impreciso: **son roles
-reales pero vacíos**. Otra vez, dos lecturas opuestas: o son placeholders que nunca se llenaron
-(y entonces falta darles privilegios), o son restos (y entonces sobran). El nombre sugiere lo
-primero: alguien quería un rol de solo-lectura analítica y otro de operaciones.
+**Pero el análisis inicial tenía un criterio incompleto**, y vale documentarlo: llamó a OpsAdmin
+"funcionalmente vacío" mirando solo privilegios sobre tablas de negocio. El valor de OpsAdmin no
+estaba ahí, estaba en un **privilegio de plataforma**:
+
+> `CH-SR-OpsAdmin` era el **único de los 13 roles con `prvReadPluginTraceLog`**, y por diseño
+> deliberado: `apply-supervisor-role-remediation.sh` se lo quitó a `CH-Role`, `AnalyticsRead`,
+> `ClientAdminContributor` y `ClientAdminApprover` para que quedara solo en el rol de soporte.
+> Motivo documentado: *"los trace logs son semi-públicos y arrastran payloads de negocio"*.
+
+Borrarlo sin más habría dejado al sistema **sin nadie capaz de leer trace logs**.
+
+**Qué se transfirió a `CH-SR-ConfigAdmin` y qué no.** El delta OpsAdmin-menos-ConfigAdmin eran 65
+privilegios:
+
+| | Cantidad | Decisión |
+|---|---|---|
+| Lectura (`prvRead*`) | **28** | **Transferidos.** Sostienen el diagnóstico, incluido `prvReadPluginTraceLog`. |
+| Autoría (`prvCreate*`/`prvWrite*`/`prvDelete*`/`prvAssign*`/`prvShare*`) sobre Workflow, NewProcess, TranslationProcess, AsyncOperation | **37** | **NO transferidos.** Darle a un rol de configuración el poder de crear, modificar y borrar flujos y procesos es escalación de privilegios, no transferencia de capacidad de soporte. |
+
+El script **transfiere primero y borra después**, y aborta el borrado si la transferencia falla.
+Verificado post-ejecución: `ConfigAdmin` tiene hoy `prvReadPluginTraceLog`, `prvReadTraceLog`,
+`prvReadWorkflow` y `prvReadAsyncOperation`.
+
+**Scripts corregidos** — los tres nombraban roles que ya no existen:
+
+| Script | Qué se arregló |
+|---|---|
+| `provision-appcatalog-access.sh` | Su lista `ROLES` nombraba `CH-SR-Counter`, `CH-SR-OpsAdmin` y `CH-SR-AnalyticsRead`. **`CH-SR-Counter` ya estaba roto desde el rename a `CH-SR-Cashier`, antes de esta limpieza.** Ahora lista los 9 roles que hoy tienen el privilegio. |
+| `apply-supervisor-role-remediation.sh` | `ROLE_FILES` actualizado; el comentario de seguridad ahora apunta a `ConfigAdmin` como rol de soporte. |
+| `provision-tracker-role.sh` | La nota "decisión del usuario 2026-08-12: AnalyticsRead no se toca" pasa a nota histórica. |
+
+**Resultado**: de 13 roles a **11**.
 
 ### C.3 — `sanic_replyclosenote`: cableado pero nunca ejercitado
 

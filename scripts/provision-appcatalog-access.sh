@@ -31,9 +31,16 @@ import json, os, subprocess, tempfile, urllib.parse
 API = os.environ['DATAVERSE_URL'] + '/api/data/v9.2'
 SOLUTION = 'CashHubCore'
 ENTITY = 'sanic_chtblappcatalogaccess'
-ROLES = ['CH-Role', 'CH-SR-Counter', 'CH-SR-Receptionist', 'CH-SR-CountingSupervisor',
-         'CH-SR-ClientAdminApprover', 'CH-SR-ClientAdminContributor', 'CH-SR-OpsAdmin',
-         'CH-SR-AnalyticsRead']
+# Actualizado 2026-08-31. La lista anterior nombraba tres roles que ya no existen y
+# habria hecho fallar la corrida:
+#   - CH-SR-Counter    -> renombrado a CH-SR-Cashier (mismo GUID); estaba roto desde
+#                         antes de esta limpieza
+#   - CH-SR-OpsAdmin   -> eliminado; su capacidad de diagnostico paso a CH-SR-ConfigAdmin
+#   - CH-SR-AnalyticsRead -> eliminado
+# Esta lista refleja los 9 roles que HOY tienen prvReadsanic_CHTblAppCatalogAccess.
+ROLES = ['CH-Role', 'CH-SR-Cashier', 'CH-SR-Receptionist', 'CH-SR-CountingSupervisor',
+         'CH-SR-ClientAdminApprover', 'CH-SR-ClientAdminContributor',
+         'CH-SR-ConfigAdmin', 'CH-SR-DepositsTracker', 'CH-SR-Digitizer']
 
 def req(method, path, body=None, extra_headers=None, ok404=False):
     out_file = tempfile.NamedTemporaryFile('r', suffix='.out', delete=False, encoding='utf-8')

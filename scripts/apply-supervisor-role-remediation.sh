@@ -53,10 +53,11 @@
 #     #12 de 01-app.md §2). Sin el privilegio la pantalla no rompe pero degrada
 #     al texto plano. Es lectura de nombre: Global es aceptable.
 #
-# CH-Role (83 -> 82) / CH-SR-AnalyticsRead (83 -> 82) /
-# CH-SR-ClientAdminContributor (67 -> 66) / CH-SR-ClientAdminApprover (67 -> 66):
+# CH-Role (83 -> 82) / CH-SR-ClientAdminContributor (67 -> 66) /
+# CH-SR-ClientAdminApprover (67 -> 66):
 #   QUITA prvReadPluginTraceLog (cada uno -1).
-#   Queda SOLO en CH-SR-OpsAdmin, que es el rol de soporte explicito.
+#   Queda SOLO en CH-SR-ConfigAdmin, que desde 2026-08-31 es el rol de soporte
+#   explicito (antes lo era CH-SR-OpsAdmin, eliminado en la limpieza).
 #   Motivo: los trace logs son semi-publicos y arrastran payloads de negocio;
 #   leerlos no es una necesidad operativa de cajero, supervisor ni analista.
 #
@@ -98,11 +99,19 @@ H = ['-H', f"Authorization: Bearer {os.environ['TOKEN']}", '-H', 'Content-Type: 
 APPLY = os.environ.get('APPLY_MODE') == '--apply'
 ROLES_DIR = 'solutions/unpacked/core/Roles'
 
-# Los 6 roles tocados por §3. OpsAdmin NO va: conserva prvReadPluginTraceLog a
-# proposito (rol de soporte) y esta remediacion no lo cambia.
+# Roles tocados por §3.
+# Actualizado 2026-08-31 por la limpieza de componentes muertos:
+#   - CH-SR-Counter -> renombrado a CH-SR-Cashier (mismo GUID)
+#   - CH-SR-AnalyticsRead -> eliminado (0 privilegios de negocio, 0 asignaciones)
+#   - CH-SR-OpsAdmin -> eliminado. Era el unico portador de prvReadPluginTraceLog;
+#     ese privilegio y los otros 27 de LECTURA de su delta pasaron a
+#     CH-SR-ConfigAdmin, que es hoy el rol de soporte y diagnostico. Los 37 de
+#     autoria sobre Workflow/NewProcess NO se transfirieron a proposito.
+# ConfigAdmin NO va en esta lista: conserva prvReadPluginTraceLog a proposito, igual
+# que antes lo hacia OpsAdmin, y esta remediacion no lo cambia.
 ROLE_FILES = [
-    'CH-SR-Counter', 'CH-SR-CountingSupervisor', 'CH-Role',
-    'CH-SR-AnalyticsRead', 'CH-SR-ClientAdminContributor', 'CH-SR-ClientAdminApprover',
+    'CH-SR-Cashier', 'CH-SR-CountingSupervisor', 'CH-Role',
+    'CH-SR-ClientAdminContributor', 'CH-SR-ClientAdminApprover',
 ]
 
 # Auditoria por columna (§3.5): viaja por solution import — aca solo se VERIFICA.
