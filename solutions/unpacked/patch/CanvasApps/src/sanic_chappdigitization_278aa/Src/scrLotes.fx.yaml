@@ -1617,7 +1617,11 @@ scrLotes As screen:
             BorderThickness: =1
             DropShadow: =DropShadow.Regular
             Fill: =ThemeSurface
-            Height: =362
+            Height: |-
+                =// ALTO CALCULADO, no fijo. Con 362 —el alto del dialogo que se clono— el
+                // contenido mas largo se desbordaba y se montaba. Se mide desde el ultimo
+                // elemento: banner + separacion + botonera + margen.
+                cntDlgDevolverBannerLot.Y + cntDlgDevolverBannerLot.Height + 20 + 32 + 20
             LayoutGridColumnMinWidth: =0
             LayoutGridColumns: =6
             LayoutGridRowMinHeight: =0
@@ -1660,7 +1664,7 @@ scrLotes As screen:
                 DisabledColor: =RGBA(166, 166, 166, 1)
                 Size: =13
                 Text: |-
-                    =$"El aprobador devolvió esta carga en el IBS Branch. El lote vuelve a quedar editable: se le pueden sacar transacciones, corregirlo y volver a marcarlo Ingresado. NO se puede saltar a Aplicado sin volver a presentarlo al IBS."
+                    ="El lote vuelve a quedar editable: se le pueden sacar transacciones y volver a marcarlo Ingresado."
                 Width: =Parent.Width - Self.X - 20
                 X: =lblDlgDevolverTitLot.X
                 Y: =lblDlgDevolverTitLot.Y + 24
@@ -1692,7 +1696,12 @@ scrLotes As screen:
                 Text: ="Motivo de la devolución (obligatorio)"
                 Width: =Parent.Width - 2*20
                 X: =20
-                Y: =116
+                Y: |-
+                    =// FLUYE, NO VA FIJO. El cuerpo de arriba tiene AutoHeight: con una Y
+                    // fija —como quedo al clonar el dialogo de "sacar del lote"— el texto
+                    // largo se le monta encima. Cada elemento arranca donde termina el
+                    // anterior, y la tarjeta crece con ellos.
+                    lblDlgDevolverTxtLot.Y + lblDlgDevolverTxtLot.Height + 18
                 ZIndex: =5
 
             inpMotivoDevLot As text:
@@ -1719,7 +1728,7 @@ scrLotes As screen:
                 Size: =13
                 Width: =Parent.Width - 2*20
                 X: =20
-                Y: =136
+                Y: =lblDlgDevolverMotivoLabLot.Y + lblDlgDevolverMotivoLabLot.Height + 6
                 ZIndex: =6
 
             cntDlgDevolverBannerLot As groupContainer.manualLayoutContainer:
@@ -1736,7 +1745,7 @@ scrLotes As screen:
                 RadiusTopRight: =9
                 Width: =Parent.Width - 2*20
                 X: =20
-                Y: =208
+                Y: =inpMotivoDevLot.Y + inpMotivoDevLot.Height + 14
                 ZIndex: =7
 
                 lblDlgDevolverBannerLot As label:
@@ -1746,7 +1755,10 @@ scrLotes As screen:
                     DisabledColor: =RGBA(166, 166, 166, 1)
                     Height: =36
                     Size: =8.25
-                    Text: ="El motivo queda registrado en la transacción para auditoría (se ve luego en su historial). Fuera del lote, la transacción no vuelve sola a un corte automático."
+                    Text: |-
+                        =// El aviso clonado hablaba de la transaccion que se saca del lote.
+                        // Aca lo que importa es OTRA cosa: que no hay atajo a Aplicado.
+                        "Quedan registrados el motivo, quién devolvió y cuándo. El lote no puede saltar a Aplicado: hay que corregirlo y presentarlo de nuevo al IBS."
                     Width: =Parent.Width - 26
                     X: =13
                     Y: =8
