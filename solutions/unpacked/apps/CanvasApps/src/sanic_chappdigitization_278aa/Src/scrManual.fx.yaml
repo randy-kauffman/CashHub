@@ -250,58 +250,6 @@ scrManual As screen:
                     Y: =18
                     ZIndex: =2
 
-                galMotivoMan As gallery.galleryHorizontal:
-                    DelayItemLoading: =true
-                    Height: =28
-                    Items: |-
-                        =// Los ocho motivos. Sobrantes y Faltantes se agregaron porque estaban
-                        // ESCONDIDOS: de los 104 sobrantes pendientes, 93 se listaban como "Sin
-                        // cuenta" y 11 como "Con cheques"; de los 116 faltantes, 98 y 13. Filtrar
-                        // por ellos era imposible aunque tambien se ingresan a mano.
-                        Table(
-                            { clave: "Todos",           texto: "Todos" },
-                            { clave: "Con cheques",     texto: "Con cheques" },
-                            { clave: "Sin cuenta",      texto: "Sin cuenta" },
-                            { clave: "Sobrantes",       texto: "Sobrantes" },
-                            { clave: "Faltantes",       texto: "Faltantes" },
-                            { clave: "Sin declaracion", texto: "Sin declaración" },
-                            { clave: "Rechazo core",    texto: "Rechazo core" },
-                            { clave: "Sin motivo",      texto: "Sin motivo" }
-                        )
-                    Layout: =Layout.Horizontal
-                    ShowScrollbar: =false
-                    TemplateSize: =112
-                    Width: =Parent.Width - 32
-                    X: =16
-                    Y: =cntSegMan.Y + cntSegMan.Height + 10
-                    ZIndex: =13
-
-                    btnMotivoMan As button:
-                        BorderColor: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeLine)
-                        BorderThickness: =1
-                        Color: =If(ThisItem.clave = ctxMotivoMan, ThemeSurface, ThemeInk2)
-                        Fill: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeSurface)
-                        FontWeight: =FontWeight.Semibold
-                        Height: =26
-                        HoverColor: =If(ThisItem.clave = ctxMotivoMan, ThemeSurface, ThemeInk)
-                        HoverFill: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeSurface2)
-                        OnSelect: |-
-                            =// Se limpia la seleccion: la transaccion abierta puede no pertenecer al
-                            // motivo elegido, y dejar el panel derecho mostrando una fila que ya no
-                            // esta en la lista es la clase de mentira que venimos sacando.
-                            UpdateContext({ctxMotivoMan: ThisItem.clave});
-                            Set(gvarTxMan, Blank())
-                        PressedFill: =ThemeInk
-                        RadiusBottomLeft: =13
-                        RadiusBottomRight: =13
-                        RadiusTopLeft: =13
-                        RadiusTopRight: =13
-                        Size: =8.25
-                        Text: =ThisItem.texto
-                        Width: =104
-                        X: =0
-                        ZIndex: =1
-
                 shpGridHeadBgMan As rectangle:
                     BorderColor: =App.Theme.Colors.Darker40
                     Fill: =ThemeSurface2
@@ -318,7 +266,7 @@ scrManual As screen:
                     Height: =30
                     Size: =7.5
                     Text: ="REFERENCIA"
-                    Width: =Parent.Width*0.13
+                    Width: =Parent.Width*0.11
                     X: =Parent.Width*0.03
                     Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =4
@@ -331,8 +279,8 @@ scrManual As screen:
                     Height: =30
                     Size: =7.5
                     Text: ="DEPÓSITO / CLIENTE"
-                    Width: =Parent.Width*0.26
-                    X: =Parent.Width*0.16
+                    Width: =Parent.Width*0.20
+                    X: =Parent.Width*0.15
                     Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =5
 
@@ -345,8 +293,8 @@ scrManual As screen:
                     Height: =30
                     Size: =7.5
                     Text: ="CUENTA"
-                    Width: =Parent.Width*0.13
-                    X: =Parent.Width*0.43
+                    Width: =Parent.Width*0.11
+                    X: =Parent.Width*0.36
                     Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =6
 
@@ -359,8 +307,8 @@ scrManual As screen:
                     Height: =30
                     Size: =7.5
                     Text: ="MONTO"
-                    Width: =Parent.Width*0.12
-                    X: =Parent.Width*0.57
+                    Width: =Parent.Width*0.10
+                    X: =Parent.Width*0.48
                     Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =7
 
@@ -386,10 +334,22 @@ scrManual As screen:
                     PressedFill: =App.Theme.Colors.Darker40
                     Size: =7.5
                     Text: ="MOTIVO " & If(ctxOrdenMan = "Motivo", "▼", "")
-                    Width: =Parent.Width*0.14
-                    X: =Parent.Width*0.70
+                    Width: =Parent.Width*0.12
+                    X: =Parent.Width*0.71
                     Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =8
+
+                lblHdrTipoMan As label:
+                    Color: =ThemeInk3
+                    FontWeight: =FontWeight.Semibold
+                    Height: =30
+                    Size: =7.5
+                    Text: ="TIPO"
+                    VerticalAlign: =VerticalAlign.Middle
+                    Width: =Parent.Width*0.10
+                    X: =Parent.Width*0.60
+                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
+                    ZIndex: =7
 
                 lblHdrEstadoMan As label:
                     BorderColor: =App.Theme.Colors.Darker40
@@ -509,7 +469,7 @@ scrManual As screen:
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
                                     && AccountNumber <> Blank()
-                                    && RelatedDepositRecounting <> Blank()
+                                    && !IsBlank(RelatedDepositRecounting) 
                                 ), 'Created On', SortOrder.Descending),
                                 "Sin motivo",
                                 Sort(Filter(
@@ -522,7 +482,7 @@ scrManual As screen:
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
                                     && AccountNumber <> Blank()
-                                    && RelatedDepositRecounting = Blank()
+                                    && IsBlank(RelatedDepositRecounting)
                                 ), 'Created On', SortOrder.Descending),
                                 Sort(Filter(
                                     'CH-Tbl-Transactions',
@@ -549,7 +509,7 @@ scrManual As screen:
                                         TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Sobrante, 4,
                                         TransactionType = 'TransactionType (CH-Tbl-Transactions)'.'Sin declaracion', 3,
                                         AccountNumber = Blank(), 2,
-                                        RelatedDepositRecounting <> Blank(), 1,
+                                        !IsBlank(RelatedDepositRecounting), 1,
                                         0
                                     ),
                                     SortOrder.Descending
@@ -618,7 +578,7 @@ scrManual As screen:
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
                                     && AccountNumber <> Blank()
-                                    && RelatedDepositRecounting <> Blank()
+                                    && !IsBlank(RelatedDepositRecounting)
                                 ), 'Created On', SortOrder.Ascending),
                                 "Sin motivo",
                                 Sort(Filter(
@@ -631,7 +591,7 @@ scrManual As screen:
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
                                     && AccountNumber <> Blank()
-                                    && RelatedDepositRecounting = Blank()
+                                    && !IsBlank(RelatedDepositRecounting)
                                 ), 'Created On', SortOrder.Ascending),
                                 Sort(Filter(
                                     'CH-Tbl-Transactions',
@@ -705,7 +665,7 @@ scrManual As screen:
                         OnSelect: =Select(Parent)
                         Size: =13
                         Text: =ThisItem.Name
-                        Width: =Parent.TemplateWidth*0.13
+                        Width: =Parent.TemplateWidth*0.11
                         X: =Parent.TemplateWidth*0.03
                         ZIndex: =4
 
@@ -717,8 +677,8 @@ scrManual As screen:
                         OnSelect: =Select(Parent)
                         Size: =13
                         Text: =Coalesce(ThisItem.RelatedDepositRecounting.Name, "—")
-                        Width: =Parent.TemplateWidth*0.26
-                        X: =Parent.TemplateWidth*0.16
+                        Width: =Parent.TemplateWidth*0.20
+                        X: =Parent.TemplateWidth*0.15
                         ZIndex: =5
 
                     lblTxCtaMan As label:
@@ -730,8 +690,8 @@ scrManual As screen:
                         OnSelect: =Select(Parent)
                         Size: =13
                         Text: =If(IsBlank(ThisItem.AccountNumber), "— sin cuenta —", Text(ThisItem.AccountNumber, "[$-en-US]0"))
-                        Width: =Parent.TemplateWidth*0.13
-                        X: =Parent.TemplateWidth*0.43
+                        Width: =Parent.TemplateWidth*0.11
+                        X: =Parent.TemplateWidth*0.36
                         ZIndex: =6
 
                     lblTxMontoMan As label:
@@ -743,8 +703,8 @@ scrManual As screen:
                         OnSelect: =Select(Parent)
                         Size: =13
                         Text: =Text(ThisItem.Total, FmtMoney)
-                        Width: =Parent.TemplateWidth*0.12
-                        X: =Parent.TemplateWidth*0.57
+                        Width: =Parent.TemplateWidth*0.10
+                        X: =Parent.TemplateWidth*0.48
                         ZIndex: =7
 
                     lblTxAplicadaMan As label:
@@ -759,6 +719,31 @@ scrManual As screen:
                         Width: =Parent.TemplateWidth*0.14
                         X: =Parent.TemplateWidth*0.84
                         ZIndex: =8
+
+                    pilTxTipoMan As button:
+                        BorderThickness: =0
+                        Color: |-
+                            =// TIPO Y MOTIVO SON DOS PREGUNTAS DISTINTAS. El motivo dice POR QUE la
+                            // transaccion esta en manual; el tipo dice QUE ES el asiento. Meter uno
+                            // adentro del otro perdia informacion: un sobrante sin cuenta mostraba
+                            // solo "Sin cuenta" y el operador no se enteraba de que era un sobrante.
+                            // Con dos columnas se ven las dos cosas y ninguna miente.
+                            Switch(Switch(Text(ThisItem.TransactionType), "Faltante", "Faltante", "Sobrante", "Sobrante", "Sin declaracion", "Sin declaración", "Deposito", "Depósito", "—"), "Faltante", ThemeDanger, "Sobrante", ThemeInfo, "Sin declaración", ThemeWarn, ThemeInk2)
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        DisplayMode: =DisplayMode.View
+                        Fill: |-
+                            =Switch(Switch(Text(ThisItem.TransactionType), "Faltante", "Faltante", "Sobrante", "Sobrante", "Sin declaracion", "Sin declaración", "Deposito", "Depósito", "—"), "Faltante", ThemeDangerSoft, "Sobrante", ThemeInfoSoft, "Sin declaración", ThemeWarnSoft, ThemeLineSoft)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =22
+                        Size: =7.88
+                        Text: |-
+                            =Switch(Text(ThisItem.TransactionType), "Faltante", "Faltante", "Sobrante", "Sobrante", "Sin declaracion", "Sin declaración", "Deposito", "Depósito", "—")
+                        Width: =Parent.TemplateWidth*0.10
+                        X: =Parent.TemplateWidth*0.60
+                        Y: =(Parent.TemplateHeight-22)/2
+                        ZIndex: =11
 
                     shpTxFilaSepMan As rectangle:
                         BorderColor: =App.Theme.Colors.Darker40
@@ -872,9 +857,59 @@ scrManual As screen:
                                 "—"
                             )
                         Width: =40 + 7*Len(Self.Text)
-                        X: =Parent.TemplateWidth*0.70
+                        X: =Parent.TemplateWidth*0.71
                         Y: =(Parent.TemplateHeight-22)/2
                         ZIndex: =11
+
+                galMotivoMan As gallery.galleryHorizontal:
+                    DelayItemLoading: =true
+                    Height: =28
+                    Items: |-
+                        =// Los ocho motivos. Sobrantes y Faltantes se agregaron porque estaban
+                        // ESCONDIDOS: de los 104 sobrantes pendientes, 93 se listaban como "Sin
+                        // cuenta" y 11 como "Con cheques"; de los 116 faltantes, 98 y 13. Filtrar
+                        // por ellos era imposible aunque tambien se ingresan a mano.
+                        Table(
+                            { clave: "Todos",           texto: "Todos" },
+                            { clave: "Con cheques",     texto: "Con cheques" },
+                            { clave: "Sin cuenta",      texto: "Sin cuenta" },
+                            { clave: "Sobrantes",       texto: "Sobrantes" },
+                            { clave: "Faltantes",       texto: "Faltantes" },
+                            { clave: "Sin declaracion", texto: "Sin declaración" },
+                            { clave: "Rechazo core",    texto: "Rechazo core" },
+                            { clave: "Sin motivo",      texto: "Sin motivo" }
+                        )
+                    ShowScrollbar: =false
+                    TemplateSize: =112
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =cntSegMan.Y + cntSegMan.Height + 10
+                    ZIndex: =13
+
+                    btnMotivoMan As button:
+                        BorderColor: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeLine)
+                        BorderThickness: =1
+                        Color: =If(ThisItem.clave = ctxMotivoMan, ThemeSurface, ThemeInk2)
+                        Fill: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeSurface)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =26
+                        HoverColor: =If(ThisItem.clave = ctxMotivoMan, ThemeSurface, ThemeInk)
+                        HoverFill: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeSurface2)
+                        OnSelect: |-
+                            =// Se limpia la seleccion: la transaccion abierta puede no pertenecer al
+                            // motivo elegido, y dejar el panel derecho mostrando una fila que ya no
+                            // esta en la lista es la clase de mentira que venimos sacando.
+                            UpdateContext({ctxMotivoMan: ThisItem.clave});
+                            Set(gvarTxMan, Blank())
+                        PressedFill: =ThemeInk
+                        RadiusBottomLeft: =13
+                        RadiusBottomRight: =13
+                        RadiusTopLeft: =13
+                        RadiusTopRight: =13
+                        Size: =8.25
+                        Text: =ThisItem.texto
+                        Width: =104
+                        ZIndex: =1
 
             cntDetalleCardMan As groupContainer.manualLayoutContainer:
                 BorderColor: =ThemeLine

@@ -14,6 +14,7 @@ Screens:
         =UpdateContext({
             ctxSegManual: "Pendientes",
             ctxOrdenMan: "Fecha",
+            ctxMotivoMan: "Todos",
             ctxErrorMan: Blank()
         });
         Select(btnCargarMan);
@@ -226,7 +227,7 @@ Screens:
                               Fill: =ThemeSurface2
                               Height: =30
                               Width: =Parent.Width
-                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                              Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                         - lblHdrRefMan:
                             Control: Label@2.5.1
                             Properties:
@@ -238,7 +239,7 @@ Screens:
                               Text: ="REFERENCIA"
                               Width: =Parent.Width*0.13
                               X: =Parent.Width*0.03
-                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                              Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                         - lblHdrDepMan:
                             Control: Label@2.5.1
                             Properties:
@@ -250,7 +251,7 @@ Screens:
                               Text: ="DEPÓSITO / CLIENTE"
                               Width: =Parent.Width*0.26
                               X: =Parent.Width*0.16
-                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                              Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                         - lblHdrCtaMan:
                             Control: Label@2.5.1
                             Properties:
@@ -263,7 +264,7 @@ Screens:
                               Text: ="CUENTA"
                               Width: =Parent.Width*0.13
                               X: =Parent.Width*0.43
-                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                              Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                         - lblHdrMontoMan:
                             Control: Label@2.5.1
                             Properties:
@@ -276,7 +277,7 @@ Screens:
                               Text: ="MONTO"
                               Width: =Parent.Width*0.12
                               X: =Parent.Width*0.57
-                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                              Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                         - btnHdrMotivoMan:
                             Control: Classic/Button@2.2.0
                             Properties:
@@ -294,7 +295,7 @@ Screens:
                               Text: ="MOTIVO " & If(ctxOrdenMan = "Motivo", "▼", "")
                               Width: =Parent.Width*0.14
                               X: =Parent.Width*0.70
-                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                              Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                         - lblHdrEstadoMan:
                             Control: Label@2.5.1
                             Properties:
@@ -306,14 +307,14 @@ Screens:
                               Text: =If(ctxSegManual = "Aplicadas", "APLICADA", "ESTADO")
                               Width: =Parent.Width*0.14
                               X: =Parent.Width*0.84
-                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                              Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                         - shpGridLineaMan:
                             Control: Rectangle@2.3.0
                             Properties:
                               Fill: =ThemeLine
                               Height: =1
                               Width: =Parent.Width
-                              Y: =cntSegMan.Y + cntSegMan.Height + 12 + 30
+                              Y: =galMotivoMan.Y + galMotivoMan.Height + 10 + 30
                         - cmpEmptyListaMan:
                             Control: CanvasComponent
                             ComponentName: cmpEmpty
@@ -330,48 +331,220 @@ Screens:
                             Properties:
                               Height: =Parent.Height - (shpGridLineaMan.Y + 1)
                               Items: |-
-                                =If(
+                                =// FILTRO POR MOTIVO, en pendientes y en aplicadas.
+                                //
+                                // EL SWITCH VA AFUERA DEL SORT, no adentro. La primera version era
+                                // Sort(Switch(...)) y devolvia CERO filas: "Con cheques" mostraba la lista
+                                // vacia aunque "Todos" estuviera lleno de filas con esa pildora. Cada rama
+                                // es ahora un Sort(Filter(...)) completo — la misma forma que ya venia
+                                // funcionando en esta galeria.
+                                //
+                                // EL MOTIVO NO ES UNA COLUMNA: se deduce, con PRIORIDAD
+                                //   Rechazo core > Faltante > Sobrante > Sin declaracion > Sin cuenta > Con cheques > —
+                                // y cada rama repite en negativo las condiciones de las de mayor rango, o
+                                // "Sin cuenta" se llevaria los sobrantes: 93 de los 104 no tienen cuenta.
+                                //
+                                // El "tipo normal" se escribe (Deposito || Blank) y NUNCA con <>: en
+                                // Dataverse un <> contra NULL descarta la fila, y hay 3.214 asientos viejos
+                                // sin tipo que desapareceran del listado sin que nadie se entere.
+                                If(
                                     ctxSegManual = "Aplicadas",
-                                    // --- APLICADAS: más recientes primero ---
-                                    Sort(
-                                        Filter(
+                                    Switch(
+                                        ctxMotivoMan,
+                                        "Rechazo core",
+                                        Sort(Filter(
                                             'CH-Tbl-Transactions',
                                             TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
-                                                && BatchStatus = Blank()
-                                                && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                                && Cajero.User = gvarCajeroMan.cajero
-                                        ),
-                                        'Created On', SortOrder.Descending
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore <> Blank()
+                                        ), 'Created On', SortOrder.Descending),
+                                        "Faltantes",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Faltante
+                                        ), 'Created On', SortOrder.Descending),
+                                        "Sobrantes",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Sobrante
+                                        ), 'Created On', SortOrder.Descending),
+                                        "Sin declaracion",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.'Sin declaracion'
+                                        ), 'Created On', SortOrder.Descending),
+                                        "Sin cuenta",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
+                                                || TransactionType = Blank())
+                                            && AccountNumber = Blank()
+                                        ), 'Created On', SortOrder.Descending),
+                                        "Con cheques",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
+                                                || TransactionType = Blank())
+                                            && AccountNumber <> Blank()
+                                            && !IsBlank(RelatedDepositRecounting) 
+                                        ), 'Created On', SortOrder.Descending),
+                                        "Sin motivo",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
+                                                || TransactionType = Blank())
+                                            && AccountNumber <> Blank()
+                                            && IsBlank(RelatedDepositRecounting)
+                                        ), 'Created On', SortOrder.Descending),
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                        ), 'Created On', SortOrder.Descending)
                                     ),
-                                    // --- PENDIENTES ---
                                     If(
-                                        ctxOrdenMan = "Motivo",
+                                        ctxOrdenMan = "Motivo" && ctxMotivoMan = "Todos",
                                         Sort(
                                             Filter(
-                                                'CH-Tbl-Transactions',
-                                                TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
-                                                    && BatchStatus = Blank() && TransactionStatus = Blank()
-                                                    && Cajero.User = gvarCajeroMan.cajero
-                                            ),
-                                            // rango de motivo (Rechazo core > Sin cuenta > Con cheques > —)
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = Blank()
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                        ),
                                             Switch(
                                                 true,
-                                                !IsBlank(MotivoRechazoCore), 3,
-                                                IsBlank(AccountNumber), 2,
+                                                MotivoRechazoCore <> Blank(), 6,
+                                                TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Faltante, 5,
+                                                TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Sobrante, 4,
+                                                TransactionType = 'TransactionType (CH-Tbl-Transactions)'.'Sin declaracion', 3,
+                                                AccountNumber = Blank(), 2,
                                                 !IsBlank(RelatedDepositRecounting), 1,
                                                 0
                                             ),
                                             SortOrder.Descending
                                         ),
-                                        Sort(
-                                            Filter(
-                                                'CH-Tbl-Transactions',
-                                                TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
-                                                    && BatchStatus = Blank() && TransactionStatus = Blank()
-                                                    && Cajero.User = gvarCajeroMan.cajero
-                                            ),
-                                            'Created On', SortOrder.Ascending
-                                        )
+                                        Switch(
+                                        ctxMotivoMan,
+                                        "Rechazo core",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = Blank()
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore <> Blank()
+                                        ), 'Created On', SortOrder.Ascending),
+                                        "Faltantes",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = Blank()
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Faltante
+                                        ), 'Created On', SortOrder.Ascending),
+                                        "Sobrantes",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = Blank()
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Sobrante
+                                        ), 'Created On', SortOrder.Ascending),
+                                        "Sin declaracion",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = Blank()
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.'Sin declaracion'
+                                        ), 'Created On', SortOrder.Ascending),
+                                        "Sin cuenta",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = Blank()
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
+                                                || TransactionType = Blank())
+                                            && AccountNumber = Blank()
+                                        ), 'Created On', SortOrder.Ascending),
+                                        "Con cheques",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = Blank()
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
+                                                || TransactionType = Blank())
+                                            && AccountNumber <> Blank()
+                                            && !IsBlank(RelatedDepositRecounting)
+                                        ), 'Created On', SortOrder.Ascending),
+                                        "Sin motivo",
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = Blank()
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                            && MotivoRechazoCore = Blank()
+                                            && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
+                                                || TransactionType = Blank())
+                                            && AccountNumber <> Blank()
+                                            && !IsBlank(RelatedDepositRecounting)
+                                        ), 'Created On', SortOrder.Ascending),
+                                        Sort(Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                            && BatchStatus = Blank()
+                                            && TransactionStatus = Blank()
+                                            && Cajero.User = gvarCajeroMan.cajero
+                                        ), 'Created On', SortOrder.Ascending)
+                                    )
                                     )
                                 )
                               OnSelect: |-
@@ -496,12 +669,22 @@ Screens:
                                     Color: |-
                                       =With(
                                           { m: Switch(true,
+                                              // MISMA PRIORIDAD QUE EL FILTRO, o la pildora y el chip dirian
+                                              // cosas distintas de la misma fila. Antes un sobrante se
+                                              // etiquetaba "Sin cuenta" —93 de los 104 no la tienen— y el
+                                              // operador no se enteraba mirando la fila de que era sobrante.
                                               !IsBlank(ThisItem.MotivoRechazoCore), "Rechazo core",
+                                              Text(ThisItem.TransactionType) = "Faltante", "Faltante",
+                                              Text(ThisItem.TransactionType) = "Sobrante", "Sobrante",
+                                              Text(ThisItem.TransactionType) = "Sin declaracion", "Sin declaración",
                                               IsBlank(ThisItem.AccountNumber),            "Sin cuenta",
                                               !IsBlank(ThisItem.RelatedDepositRecounting),"Con cheques",
                                               "—") },
                                           Switch(m,
                                               "Rechazo core", ThemeDanger,
+                                              "Faltante",     ThemeDanger,
+                                              "Sobrante",     ThemeInfo,
+                                              "Sin declaración", ThemeWarn,
                                               "Sin cuenta",   ThemeWarn,
                                               "Con cheques",  ThemeInfo,
                                               ThemeInk3)
@@ -510,12 +693,22 @@ Screens:
                                     Fill: |-
                                       =With(
                                           { m: Switch(true,
+                                              // MISMA PRIORIDAD QUE EL FILTRO, o la pildora y el chip dirian
+                                              // cosas distintas de la misma fila. Antes un sobrante se
+                                              // etiquetaba "Sin cuenta" —93 de los 104 no la tienen— y el
+                                              // operador no se enteraba mirando la fila de que era sobrante.
                                               !IsBlank(ThisItem.MotivoRechazoCore), "Rechazo core",
+                                              Text(ThisItem.TransactionType) = "Faltante", "Faltante",
+                                              Text(ThisItem.TransactionType) = "Sobrante", "Sobrante",
+                                              Text(ThisItem.TransactionType) = "Sin declaracion", "Sin declaración",
                                               IsBlank(ThisItem.AccountNumber),            "Sin cuenta",
                                               !IsBlank(ThisItem.RelatedDepositRecounting),"Con cheques",
                                               "—") },
                                           Switch(m,
                                               "Rechazo core", ThemeDangerSoft,
+                                              "Faltante",     ThemeDangerSoft,
+                                              "Sobrante",     ThemeInfoSoft,
+                                              "Sin declaración", ThemeWarnSoft,
                                               "Sin cuenta",   ThemeWarnSoft,
                                               "Con cheques",  ThemeInfoSoft,
                                               ThemeLineSoft)
@@ -538,6 +731,65 @@ Screens:
                                     Width: =40 + 7*Len(Self.Text)
                                     X: =Parent.TemplateWidth*0.70
                                     Y: =(Parent.TemplateHeight-22)/2
+                        - galMotivoMan:
+                            Control: Gallery@2.15.0
+                            Variant: Horizontal
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Height: =28
+                              Items: |-
+                                =// Los ocho motivos. Sobrantes y Faltantes se agregaron porque estaban
+                                // ESCONDIDOS: de los 104 sobrantes pendientes, 93 se listaban como "Sin
+                                // cuenta" y 11 como "Con cheques"; de los 116 faltantes, 98 y 13. Filtrar
+                                // por ellos era imposible aunque tambien se ingresan a mano.
+                                Table(
+                                    { clave: "Todos",           texto: "Todos" },
+                                    { clave: "Con cheques",     texto: "Con cheques" },
+                                    { clave: "Sin cuenta",      texto: "Sin cuenta" },
+                                    { clave: "Sobrantes",       texto: "Sobrantes" },
+                                    { clave: "Faltantes",       texto: "Faltantes" },
+                                    { clave: "Sin declaracion", texto: "Sin declaración" },
+                                    { clave: "Rechazo core",    texto: "Rechazo core" },
+                                    { clave: "Sin motivo",      texto: "Sin motivo" }
+                                )
+                              LoadingSpinner: =LoadingSpinner.None
+                              ShowScrollbar: =false
+                              TemplateSize: =112
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =cntSegMan.Y + cntSegMan.Height + 10
+                            Children:
+                              - btnMotivoMan:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderColor: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeLine)
+                                    BorderThickness: =1
+                                    Color: =If(ThisItem.clave = ctxMotivoMan, ThemeSurface, ThemeInk2)
+                                    DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                                    DisabledColor: =ColorFade(Self.Fill, 90%)
+                                    DisabledFill: =ColorFade(Self.Fill, 70%)
+                                    Fill: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeSurface)
+                                    Font: =Font.'Open Sans'
+                                    Height: =26
+                                    HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                                    HoverColor: =If(ThisItem.clave = ctxMotivoMan, ThemeSurface, ThemeInk)
+                                    HoverFill: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeSurface2)
+                                    OnSelect: |-
+                                      =// Se limpia la seleccion: la transaccion abierta puede no pertenecer al
+                                      // motivo elegido, y dejar el panel derecho mostrando una fila que ya no
+                                      // esta en la lista es la clase de mentira que venimos sacando.
+                                      UpdateContext({ctxMotivoMan: ThisItem.clave});
+                                      Set(gvarTxMan, Blank())
+                                    PressedBorderColor: =Self.Fill
+                                    PressedColor: =Self.Fill
+                                    PressedFill: =ThemeInk
+                                    RadiusBottomLeft: =13
+                                    RadiusBottomRight: =13
+                                    RadiusTopLeft: =13
+                                    RadiusTopRight: =13
+                                    Size: =8.25
+                                    Text: =ThisItem.texto
+                                    Width: =104
                   - cntDetalleCardMan:
                       Control: GroupContainer@1.5.0
                       Variant: ManualLayout
@@ -1199,6 +1451,21 @@ Screens:
                               Width: =Parent.Width - 130
                               X: =16
                               Y: =12
+                        - lblCampoCuentaLabMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =ThemeInk2
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =16
+                              Size: =8.25
+                              Text: ="TAB 1 · Número de cuenta"
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12 + 0
                         - inpFocoMan:
                             Control: Classic/TextInput@2.3.2
                             Properties:
@@ -1234,21 +1501,6 @@ Screens:
                               Width: =Parent.Width - 32
                               X: =16
                               Y: =lblCampoCuentaLabMan.Y + 18
-                        - lblCampoCuentaLabMan:
-                            Control: Label@2.5.1
-                            Properties:
-                              BorderColor: =RGBA(0, 0, 0, 1)
-                              Color: =ThemeInk2
-                              DisabledColor: =RGBA(186, 186, 186, 1)
-                              Font: =Font.'Open Sans'
-                              FontWeight: =FontWeight.Semibold
-                              Height: =16
-                              Size: =8.25
-                              Text: ="TAB 1 · Número de cuenta"
-                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
-                              Width: =Parent.Width - 32
-                              X: =16
-                              Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12 + 0
                         - inpCampoCuentaMan:
                             Control: Classic/TextInput@2.3.2
                             Properties:
