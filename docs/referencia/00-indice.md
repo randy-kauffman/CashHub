@@ -31,6 +31,7 @@ y más corta, pensada para consultarse mientras se trabaja sobre el código.
 | [`limpieza-env-vars.md`](limpieza-env-vars.md) | Análisis caso por caso de las 23 variables de entorno: cuáles se consumen, cuáles migraron a `CH-Tbl-Parameter` o `CH-Tbl-ValidationRules`, y cuáles nunca se cablearon. Agrupadas por causa, con recomendación por grupo. |
 | [`modelo-de-datos.md`](modelo-de-datos.md) | Las 38 tablas Dataverse agrupadas por dominio funcional: propósito, campos clave, relaciones, diagrama ER. |
 | [`roles-y-seguridad.md`](roles-y-seguridad.md) | Los 6 roles de seguridad `CH-SR-*`, matriz rol × entidad, grupos AAD, y las brechas de seguridad conocidas. |
+| [`analisis-roles-seguridad.md`](analisis-roles-seguridad.md) | Para qué sirve cada uno de los 11 roles y si tiene los privilegios que su función necesita. Cruza la matriz de privilegios contra las tablas que consume cada app (datasources, dot-walks y flows), lectura y escritura. Verificado contra DEV el 2026-08-31. |
 | [`variables-de-entorno.md`](variables-de-entorno.md) | ⚠️ **Obsoleto** — describe 19 variables de una época en que había 23. Hoy quedan 2. Se conserva como registro histórico; el estado real está en [`limpieza-env-vars.md`](limpieza-env-vars.md). |
 | [`conexiones-y-flujos.md`](conexiones-y-flujos.md) | Los 19 flujos Power Automate: trigger, estado, conectores, cadena real de orquestación, flujos stub/bugueados. |
 | [`catalogo-de-choices.md`](catalogo-de-choices.md) | Option sets globales y locales relevantes, con valores y las máquinas de estado que forman. |
