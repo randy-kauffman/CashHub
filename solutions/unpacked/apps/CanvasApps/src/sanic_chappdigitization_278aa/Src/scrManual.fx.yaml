@@ -11,12 +11,6 @@ scrManual As screen:
         });
         Select(btnCargarMan);
         Set(gvarCajeroMan, cmpRailMan.CajeroSel);
-        // EL REGISTRO DEL CAJERO, resuelto una sola vez. Filtrar con
-        // Cajero.User = <guid> NO DELEGA —un dot-walk sobre un lookup no se traduce a
-        // la consulta— y Dataverse devolvia las primeras 500 filas de TODOS los
-        // cajeros para despues filtrar en el cliente: de 2.050 pendientes se leian
-        // 140. Comparar el lookup contra un REGISTRO si delega.
-        Set(gvarCajeroRecMan, LookUp(Users, User = cmpRailMan.CajeroSel.cajero));
         Set(
             gvarTxMan,
             First(
@@ -26,7 +20,7 @@ scrManual As screen:
                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                         && BatchStatus = Blank()
                         && TransactionStatus = Blank()
-                        && Cajero = gvarCajeroRecMan
+                        && Cajero.User = gvarCajeroMan.cajero
                 ),
                 'Created On', SortOrder.Ascending
             )
@@ -72,9 +66,6 @@ scrManual As screen:
             OnActualizar: =Select(btnCargarMan)
             OnSeleccion: |-
                 =Set(gvarCajeroMan, cmpRailMan.CajeroSel);
-                // EL REGISTRO DEL CAJERO, resuelto una sola vez. Ver la nota del OnVisible:
-                // Cajero.User = <guid> no delega y hacia leer 140 de 2.050.
-                Set(gvarCajeroRecMan, LookUp(Users, User = cmpRailMan.CajeroSel.cajero));
                 UpdateContext({ctxSegManual: "Pendientes", ctxErrorMan: Blank()});
                 Set(
                     gvarTxMan,
@@ -85,7 +76,7 @@ scrManual As screen:
                             TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                 && BatchStatus = Blank()
                                 && TransactionStatus = Blank()
-                                && Cajero = gvarCajeroRecMan
+                                && Cajero.User = gvarCajeroMan.cajero
                         ),
                         'Created On', SortOrder.Ascending
                     )
@@ -177,7 +168,7 @@ scrManual As screen:
                                             TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                                 && BatchStatus = Blank()
                                                 && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                                && Cajero = gvarCajeroRecMan
+                                                && Cajero.User = gvarCajeroMan.cajero
                                         ),
                                         'Created On', SortOrder.Descending
                                     )
@@ -221,7 +212,7 @@ scrManual As screen:
                                         TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                             && BatchStatus = Blank()
                                             && TransactionStatus = Blank()
-                                            && Cajero = gvarCajeroRecMan
+                                            && Cajero.User = gvarCajeroMan.cajero
                                     ),
                                     'Created On', SortOrder.Ascending
                                 )
@@ -422,7 +413,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore <> Blank()
                                 ), 'Created On', SortOrder.Descending),
                                 "Faltantes",
@@ -431,7 +422,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Faltante
                                 ), 'Created On', SortOrder.Descending),
@@ -441,7 +432,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Sobrante
                                 ), 'Created On', SortOrder.Descending),
@@ -451,7 +442,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.'Sin declaracion'
                                 ), 'Created On', SortOrder.Descending),
@@ -461,7 +452,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
@@ -473,7 +464,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
@@ -486,7 +477,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
@@ -498,7 +489,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                 ), 'Created On', SortOrder.Descending)
                             ),
                             If(
@@ -509,7 +500,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = Blank()
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                 ),
                                     Switch(
                                         true,
@@ -531,7 +522,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = Blank()
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore <> Blank()
                                 ), 'Created On', SortOrder.Ascending),
                                 "Faltantes",
@@ -540,7 +531,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = Blank()
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Faltante
                                 ), 'Created On', SortOrder.Ascending),
@@ -550,7 +541,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = Blank()
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Sobrante
                                 ), 'Created On', SortOrder.Ascending),
@@ -560,7 +551,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = Blank()
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && TransactionType = 'TransactionType (CH-Tbl-Transactions)'.'Sin declaracion'
                                 ), 'Created On', SortOrder.Ascending),
@@ -570,7 +561,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = Blank()
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
@@ -582,7 +573,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = Blank()
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
@@ -595,7 +586,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = Blank()
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                     && MotivoRechazoCore = Blank()
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
@@ -607,7 +598,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                     && BatchStatus = Blank()
                                     && TransactionStatus = Blank()
-                                    && Cajero = gvarCajeroRecMan
+                                    && Cajero.User = gvarCajeroMan.cajero
                                 ), 'Created On', SortOrder.Ascending)
                             )
                             )
@@ -1279,7 +1270,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                         && BatchStatus = Blank()
                                         && TransactionStatus = Blank()
-                                        && Cajero = gvarCajeroRecMan
+                                        && Cajero.User = gvarCajeroMan.cajero
                                 ),
                                 'Created On', SortOrder.Ascending
                             )
@@ -1592,7 +1583,7 @@ scrManual As screen:
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
                                         && BatchStatus = Blank()
                                         && TransactionStatus = Blank()
-                                        && Cajero = gvarCajeroRecMan
+                                        && Cajero.User = gvarCajeroMan.cajero
                                 ),
                                 'Created On', SortOrder.Ascending
                             )
