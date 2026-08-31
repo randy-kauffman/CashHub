@@ -1,4 +1,4 @@
-using CashHub.Validation.Security;
+﻿using CashHub.Validation.Security;
 
 namespace CashHub.Plugins
 {
@@ -323,22 +323,6 @@ namespace CashHub.Plugins
         }
 
         /// <summary>
-        /// Contrato de sanic_CHCanResolveApproval: pre-vuelo de la resolucion de una
-        /// solicitud de aprobacion.
-        ///
-        /// EXISTE POR UNA RAZON PUNTUAL. Cuando GuardReceptionPlugin bloquea un Update,
-        /// Dataverse devuelve el motivo correcto en el cuerpo HTTP (code 0x80040265 +
-        /// message + @Microsoft.PowerApps.CDS.InnerError.Message), pero Power Fx arma
-        /// FirstError con la descripcion GENERICA del codigo y descarta el mensaje custom:
-        /// la app termina mostrando "Network error ... The requested operation is invalid".
-        /// Verificado en Monitor; ni FirstError.Message ni AllErrors lo recuperan.
-        ///
-        /// Por eso este contrato devuelve el veredicto como DATO (HTTP 200), nunca como
-        /// fault: el canal de error de Power Fx no participa. La autoridad sigue siendo
-        /// GuardReceptionPlugin — esto es solo el pre-vuelo que permite dar un mensaje
-        /// util ANTES de intentar el Patch.
-        /// </summary>
-        /// <summary>
         /// Contrato de sanic_CHResolveApprovalRequest: resuelve una solicitud de
         /// aprobacion (Approve/Reject) COMO UNIDAD TRANSACCIONAL.
         ///
@@ -419,27 +403,6 @@ namespace CashHub.Plugins
             public const string OutMessage = "Message";
 
             public const string OutcomeClosed = "Closed";
-            public const string OutcomeBlocked = "Blocked";
-        }
-
-        internal static class CanResolveApprovalApi
-        {
-            public const string MessageName = "sanic_CHCanResolveApproval";
-
-            public const string InApprovalRequestId = "ApprovalRequestId";
-
-            /// <summary>
-            /// Outcome es STRING, no Boolean, a proposito. El conector Environment de las
-            /// canvas apps no expuso la API mientras la respuesta tenia un parametro
-            /// Boolean: Power Fx la reportaba como "unknown or unsupported function" por
-            /// mas que estuviera en la solucion y se refrescara el datasource. Ninguna de
-            /// las Custom API del repo que SI funcionan usa Boolean (solo Guid, String,
-            /// Integer y Decimal). Se calca la forma de sanic_CHResolveChangeRequest.
-            /// </summary>
-            public const string OutOutcome = "Outcome";
-            public const string OutMessage = "Message";
-
-            public const string OutcomeAllowed = "Allowed";
             public const string OutcomeBlocked = "Blocked";
         }
 

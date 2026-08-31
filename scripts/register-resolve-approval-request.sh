@@ -26,7 +26,7 @@
 # la solicitud EN LA MISMA EJECUCION. Si algo falla, la plataforma revierte
 # todo. No hay medio estado posible.
 #
-# Como CanResolveApproval, el veredicto negativo viaja como DATO (Outcome=
+# El veredicto negativo viaja como DATO (Outcome=
 # Blocked + Message, HTTP 200) y nunca como fault: Power Fx descarta el mensaje
 # custom de los faults de plugin y muestra la descripcion generica de
 # 0x80040265 (probados FirstError.Message y AllErrors, ninguno lo recupera).
