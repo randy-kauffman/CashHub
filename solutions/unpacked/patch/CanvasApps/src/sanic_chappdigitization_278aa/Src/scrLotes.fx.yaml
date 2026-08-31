@@ -13,7 +13,9 @@ scrLotes As screen:
             ctxDlgSacarLot: false,
             ctxDlTokenLot: "",
             ctxDlgDevolverLot: false,
-            ctxDevolviendoLot: false
+            ctxDevolviendoLot: false,
+            ctxSacadoOkLot: false,
+            ctxPasoOkLot: false
         });
         Reset(tabFechaLot);
         Reset(inpBuscarLot);
@@ -710,13 +712,27 @@ scrLotes As screen:
                         HoverColor: =App.Theme.Colors.PrimaryForeground
                         HoverFill: =ThemeAccentSoft
                         OnSelect: |-
-                            =IfError(
+                            =// EL AVISO SALE DEL RESULTADO, NO DEL ORDEN DE LAS LINEAS. Antes el Notify
+                            // de exito vivia DENTRO del primer argumento de IfError, en la misma
+                            // cadena que el Patch. En una cadena de comportamiento el error del
+                            // primer paso NO corta lo que sigue, y el valor de la cadena termina
+                            // siendo el del ultimo paso —el Notify, que no falla—: IfError veia
+                            // "sin error", nunca corria el fallback, y el usuario leia que todo
+                            // habia salido bien mientras el servidor lo habia rechazado.
+                            //
+                            // Ahora IfError envuelve SOLO la escritura, y el exito se marca con
+                            // una bandera adentro del camino feliz.
+                            UpdateContext({ctxPasoOkLot: false});
+                            IfError(
                                 Patch('CH-Tbl-TransactionBatches', LookUp('CH-Tbl-TransactionBatches',TransactionBatches = gvarLote.TransactionBatches ),
                                     { BatchStatus: 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado });
+                                UpdateContext({ctxPasoOkLot: true}),
+                                Notify("No se pudo marcar Ingresado: " & FirstError.Message, NotificationType.Error)
+                            );
+                            If(ctxPasoOkLot,
                                 Set(gvarLote, LookUp('CH-Tbl-TransactionBatches',
                                     TransactionBatches = gvarLote.TransactionBatches));
-                                Notify("Lote marcado como Ingresado.", NotificationType.Success),
-                                Notify("No se pudo marcar Ingresado: " & FirstError.Message, NotificationType.Error)
+                                Notify("Lote marcado como Ingresado.", NotificationType.Success)
                             )
                         PressedBorderColor: =App.Theme.Colors.Darker40
                         PressedColor: =Self.Color
@@ -1318,14 +1334,19 @@ scrLotes As screen:
         OnCancelar: |-
             =UpdateContext({ctxDlgAplicadoLot: false})
         OnOk: |-
-            =UpdateContext({ctxAplicandoLot: true});
+            =// Ver la nota del boton "Marcar como Ingresado": el aviso de exito no puede
+            // vivir en la misma cadena que la escritura, o avisa exito aunque falle.
+            UpdateContext({ctxAplicandoLot: true, ctxPasoOkLot: false});
             IfError(
                 Patch('CH-Tbl-TransactionBatches', LookUp('CH-Tbl-TransactionBatches', TransactionBatches = gvarLote.TransactionBatches) ,
                     { BatchStatus: 'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado });
+                UpdateContext({ctxPasoOkLot: true}),
+                Notify("No se pudo aplicar: " & FirstError.Message, NotificationType.Error)
+            );
+            If(ctxPasoOkLot,
                 Set(gvarLote, LookUp('CH-Tbl-TransactionBatches',
                     TransactionBatches = gvarLote.TransactionBatches));
-                Notify("Lote aplicado.", NotificationType.Success),
-                Notify("No se pudo aplicar: " & FirstError.Message, NotificationType.Error)
+                Notify("Lote aplicado.", NotificationType.Success)
             );
             UpdateContext({ctxAplicandoLot: false, ctxDlgAplicadoLot: false})
         Texto: ="El lote pasa a Aplicado (ya ingresado al core). El servidor registra quién y cuándo. Esta acción cierra el ciclo del lote."
@@ -1552,17 +1573,45 @@ scrLotes As screen:
                 HoverColor: =App.Theme.Colors.PrimaryForeground
                 HoverFill: =App.Theme.Colors.Darker10
                 OnSelect: |-
-                    =UpdateContext({ctxSacandoLot: true});
+                    =// DOS BUGS ARREGLADOS ACA, Y EL SEGUNDO ERA EL PELIGROSO.
+                    //
+                    // 1. SE MANDABA EL ID EQUIVOCADO. TransactionID es el numero VISIBLE
+                    //    ("1068"; el grid lo muestra como T-0000001068), no la clave. El
+                    //    Custom API espera un GUID, asi que la llamada moria en la puerta
+                    //    con "Cannot convert the literal '1068' to the expected type
+                    //    'Edm.Guid'" y la transaccion nunca salia del lote. La clave es
+                    //    'CH-Tbl-Transactions', que es como se llama la PK en Power Fx.
+                    //
+                    // 2. AVISABA EN VERDE AUNQUE FALLARA. El primer argumento de IfError
+                    //    era una CADENA: la llamada, y despues el Notify de exito. En una
+                    //    cadena de comportamiento el error del primer paso NO corta lo que
+                    //    sigue, y el valor de la cadena termina siendo el del ultimo paso
+                    //    —el Notify, que no falla—. IfError veia "sin error", jamas corria
+                    //    el fallback, y el usuario leia "Transaccion sacada del lote"
+                    //    mientras la transaccion seguia adentro. Peor: el
+                    //    Set(gvarTxLot, Blank()) tambien corria, borraba la seleccion y
+                    //    dejaba la pantalla como si hubiera pasado algo.
+                    //
+                    //    Ahora IfError envuelve SOLO la llamada, el exito se marca con una
+                    //    bandera DENTRO del camino feliz, y el aviso verde depende de esa
+                    //    bandera. El aviso sale del resultado, no del orden de las lineas.
+                    UpdateContext({ctxSacandoLot: true, ctxSacadoOkLot: false});
                     IfError(
                         With(
-                            { r: Environment.sanic_CHRemoveFromCut({ TransactionId: gvarTxLot.TransactionID, Motivo: inpMotivoLot.Text }) },
+                            { r: Environment.sanic_CHRemoveFromCut({
+                                TransactionId: gvarTxLot.'CH-Tbl-Transactions',
+                                Motivo: inpMotivoLot.Text }) },
                             Set(gvarLote, Patch(gvarLote,
-                                { TotalNIO: r.TotalNIO, TotalUSD: r.TotalUSD, TotalEUR: r.TotalEUR }))
-                        );
+                                { TotalNIO: r.TotalNIO, TotalUSD: r.TotalUSD, TotalEUR: r.TotalEUR }));
+                            UpdateContext({ctxSacadoOkLot: true})
+                        ),
+                        Notify("No se pudo sacar del lote: " & FirstError.Message, NotificationType.Error)
+                    );
+                    If(ctxSacadoOkLot,
                         Set(gvarTxLot, Blank());
                         Clear(colHistLot);
-                        Notify("Transacción sacada del lote y devuelta a Manual.", NotificationType.Success),
-                        Notify("No se pudo sacar del lote: " & FirstError.Message, NotificationType.Error)
+                        Select(btnActualizarLot);
+                        Notify("Transacción sacada del lote y devuelta a Manual.", NotificationType.Success)
                     );
                     UpdateContext({ctxSacandoLot: false, ctxDlgSacarLot: false})
                 PressedBorderColor: =App.Theme.Colors.Darker40
@@ -1807,19 +1856,26 @@ scrLotes As screen:
                     =// El motivo viaja EN EL MISMO Patch que el estado. El guard lo exige asi a
                     // proposito: si se guardara aparte, un motivo viejo de una devolucion
                     // anterior alcanzaria para colar una devolucion nueva sin explicar nada.
-                    UpdateContext({ctxDevolviendoLot: true});
+                    UpdateContext({ctxDevolviendoLot: true, ctxPasoOkLot: false});
                     IfError(
                         Patch('CH-Tbl-TransactionBatches',
                             LookUp('CH-Tbl-TransactionBatches', TransactionBatches = gvarLote.TransactionBatches),
                             { BatchStatus: 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto,
                               'Motivo de la devolucion': inpMotivoDevLot.Text });
+                        UpdateContext({ctxPasoOkLot: true}),
+                        Notify("No se pudo devolver el lote: " & FirstError.Message, NotificationType.Error)
+                    );
+                    // El dialogo se cierra SOLO si la devolucion entro. Si el servidor la
+                    // rechazo —segregacion de funciones, por ejemplo— el motivo escrito no
+                    // se pierde y el usuario ve el error con el dialogo todavia abierto.
+                    If(ctxPasoOkLot,
                         Set(gvarLote, LookUp('CH-Tbl-TransactionBatches',
                             TransactionBatches = gvarLote.TransactionBatches));
                         Reset(inpMotivoDevLot);
-                        Notify("Lote marcado como Devuelto. Ya se le pueden sacar transacciones.", NotificationType.Success),
-                        Notify("No se pudo devolver el lote: " & FirstError.Message, NotificationType.Error)
+                        Notify("Lote marcado como Devuelto. Ya se le pueden sacar transacciones.", NotificationType.Success);
+                        UpdateContext({ctxDlgDevolverLot: false})
                     );
-                    UpdateContext({ctxDevolviendoLot: false, ctxDlgDevolverLot: false})
+                    UpdateContext({ctxDevolviendoLot: false})
                 PressedBorderColor: =App.Theme.Colors.Darker40
                 PressedColor: =Self.Color
                 PressedFill: =App.Theme.Colors.Darker40
