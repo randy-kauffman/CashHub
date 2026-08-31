@@ -222,8 +222,9 @@ namespace CashHub.Validation.Security
         ///   mismo request (las transacciones de lote no llevan status propio).
         /// - Asignacion a lote: solo una transaccion pendiente y sin lote, hacia un lote
         ///   Generado (a un Ingresado/Aplicado no se agrega nada). Sin reasignacion directa.
-        /// - Desasignacion: solo con el lote actual Generado o Ingresado (los rechazos del
-        ///   Core ocurren durante la carga); un lote Aplicado es intocable.
+        /// - Desasignacion: solo con el lote actual Generado o Devuelto. En Ingresado no:
+        ///   el lote esta en manos del aprobador en el IBS, y si hay algo que corregir el
+        ///   camino es que lo devuelva. Un lote Aplicado es intocable.
         /// </summary>
         /// <param name="touchesOnlyMirror">true si el request solo escribe sanic_batchstatus (+PK).</param>
         /// <param name="statusInTarget">true si el request escribe sanic_transactionstatus.</param>

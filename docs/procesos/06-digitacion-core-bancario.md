@@ -408,7 +408,7 @@ en [digitization-rebuild/06-backend.md](../digitization-rebuild/06-backend.md).
 | Campo | Contenido |
 |---|---|
 | **Quién** | Digitador |
-| **Cuándo** | `scrLotes`, lote en estado `Generado` **o** `Ingresado` (los rechazos del core ocurren durante la carga, con el lote ya subido) |
+| **Cuándo** | `scrLotes`, lote en estado `Generado` **o** `Devuelto`. En `Ingresado` **no**: el lote está en manos del aprobador en el IBS y el archivo que él tiene en pantalla dejaría de coincidir con el lote |
 | **Por qué / para qué** | El core rechazó esa transacción puntual (cuenta inválida, etc.); hay que sacarla del lote sin tocar el resto y dejar registrado el motivo |
 | **Cómo** | `scrLotes` → seleccionar la transacción en el grid del lote → *Sacar del lote* → diálogo con textarea de motivo → confirmar |
 | **Qué valida el servidor** | `sanic_CHRemoveFromCut`: relee el estado real del lote, valida `TransactionGuard.CanRemoveFromCut` (**solo** `Generado`/`Devuelto` — en `Ingresado` el lote lo tiene el aprobador en el IBS), desasigna, estampa `sanic_motivorechazocore` si vino motivo, recalcula totales — atómico, cero carrera |
