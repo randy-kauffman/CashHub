@@ -268,7 +268,16 @@ cmpHeader As CanvasComponent:
         RadiusBottomRight: =17
         RadiusTopLeft: =17
         RadiusTopRight: =17
-        Width: =lblUsuarioHdr.X + lblUsuarioHdr.Width + 12
+        Width: |-
+            =// SIN DEPENDER DE UN HIJO. Antes era lblUsuarioHdr.X + lblUsuarioHdr.Width + 12:
+            // el contenedor media su ancho a partir de un control que vive ADENTRO suyo,
+            // mientras su propia X restaba ese mismo ancho. En el primer render eso se
+            // resuelve en circulo y la resta devuelve un numero no finito — el
+            // "The function - returned a non-finite number" que aparecia al abrir la app.
+            //
+            // Ahora se calcula de los MISMOS insumos pero sin mirar a los hijos:
+            // avatar (x 4 + ancho 26) + 8 de aire + el ancho del nombre + 12 de margen.
+            38 + Min(160, Len(Coalesce(UsuarioNombre, "")) * 6 + 20) + 12
         X: =Parent.Width - LayGutter - Self.Width
         Y: =(Parent.Height-34)/2
         ZIndex: =7
@@ -308,7 +317,7 @@ cmpHeader As CanvasComponent:
             Height: =Parent.Height
             Size: =8.63
             Text: =UsuarioNombre
-            Width: =Min(160, Len(UsuarioNombre)*6 + 20)
+            Width: =Min(160, Len(Coalesce(UsuarioNombre, ""))*6 + 20)
             X: =btnAvatarHdr.X + btnAvatarHdr.Width + 8
             ZIndex: =2
 
