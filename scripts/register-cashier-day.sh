@@ -126,7 +126,7 @@ for uname in ('Desde', 'Hasta'):
         'CustomAPIId@odata.bind': f"/customapis({api_id})",
     }, f'parametro {uname}', 'customapirequestparameterid')
 
-for uname, ptype in [('Cube', 10), ('TotalCount', 7)]:
+for uname, ptype in [('Cube', 10), ('TotalCount', 7), ('Days', 10)]:
     upsert('customapiresponseproperties',
         f"_customapiid_value eq {api_id} and uniquename eq '{uname}'", {
         'uniquename': uname, 'name': uname, 'displayname': uname, 'type': ptype,

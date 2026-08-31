@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using CashHub.Validation.Export;
 using Microsoft.Xrm.Sdk;
@@ -126,6 +127,7 @@ namespace CashHub.Plugins
 
                 context.OutputParameters[Schema.CashierDayApi.OutCube] = sb.ToString();
                 context.OutputParameters[Schema.CashierDayApi.OutTotalCount] = totalTrn;
+                context.OutputParameters[Schema.CashierDayApi.OutDays] = DiasConMovimiento(service, tracing, cajeroId);
 
                 tracing.Trace("CashierDay: cajero {0} de {1} a {2} -> {3} grupo(s), {4} transaccion(es).",
                     cajeroId, d, h, filas, totalTrn);
@@ -139,6 +141,77 @@ namespace CashHub.Plugins
                 tracing.Trace("CashierDay: error inesperado: {0}", ex);
                 throw new InvalidPluginExecutionException(
                     $"No se pudo armar el resumen del cajero: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Los dias en que ESTE cajero tuvo movimientos, del mas reciente al mas viejo.
+        ///
+        /// POR QUE HACE FALTA. La pantalla filtra por fecha de CREACION y arranca en hoy.
+        /// Un cajero cuyas transacciones son del 17/08 se veia completamente vacio, sin una
+        /// sola pista de donde estaba su trabajo: la pantalla decia la verdad y aun asi
+        /// dejaba al operador en un callejon. Con esta lista puede saltar al dia que le
+        /// importa en vez de ir probando fechas a mano.
+        ///
+        /// Se acota a los ultimos 180 dias y a 60 filas: es una ayuda de navegacion, no un
+        /// historico.
+        /// </summary>
+        private static string DiasConMovimiento(
+            IOrganizationService service, ITracingService tracing, Guid cajeroId)
+        {
+            var desde = DateTime.UtcNow.AddDays(-180).ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
+
+            var fetch = $@"
+<fetch aggregate='true'>
+  <entity name='{Schema.Transaction.LogicalName}'>
+    <attribute name='{Schema.Transaction.Id}' alias='cant' aggregate='count' />
+    <attribute name='{Schema.Transaction.CreatedOn}' alias='dia' groupby='true' dategrouping='day' />
+    <attribute name='{Schema.Transaction.CreatedOn}' alias='mes' groupby='true' dategrouping='month' />
+    <attribute name='{Schema.Transaction.CreatedOn}' alias='anio' groupby='true' dategrouping='year' />
+    <filter type='and'>
+      <condition attribute='{Schema.Transaction.Cajero}' operator='eq' value='{cajeroId}' />
+      <condition attribute='{Schema.Transaction.CreatedOn}' operator='on-or-after' value='{desde}' />
+    </filter>
+  </entity>
+</fetch>";
+
+            try
+            {
+                var filas = service.RetrieveMultiple(new FetchExpression(fetch)).Entities
+                    .Select(e => new
+                    {
+                        Anio = Int(e, "anio"),
+                        Mes = Int(e, "mes"),
+                        Dia = Int(e, "dia"),
+                        Cant = Int(e, "cant"),
+                    })
+                    .Where(x => x.Anio > 0)
+                    .OrderByDescending(x => x.Anio).ThenByDescending(x => x.Mes).ThenByDescending(x => x.Dia)
+                    .Take(60)
+                    .ToList();
+
+                var sb = new StringBuilder("[");
+                var primera = true;
+                foreach (var f in filas)
+                {
+                    if (!primera) { sb.Append(','); }
+                    primera = false;
+                    sb.Append("{\"fecha\":\"")
+                      .Append(f.Anio.ToString("0000", CultureInfo.InvariantCulture)).Append('-')
+                      .Append(f.Mes.ToString("00", CultureInfo.InvariantCulture)).Append('-')
+                      .Append(f.Dia.ToString("00", CultureInfo.InvariantCulture))
+                      .Append("\",\"cantidad\":").Append(f.Cant).Append('}');
+                }
+
+                tracing.Trace("CashierDay: {0} dia(s) con movimiento para el cajero {1}.", filas.Count, cajeroId);
+                return sb.Append(']').ToString();
+            }
+            catch (Exception ex)
+            {
+                // Es una AYUDA de navegacion: si falla, la pantalla sigue sirviendo. No se
+                // voltea la consulta principal por no poder ofrecer un atajo.
+                tracing.Trace("CashierDay: no se pudieron listar los dias con movimiento ({0}).", ex.Message);
+                return "[]";
             }
         }
 

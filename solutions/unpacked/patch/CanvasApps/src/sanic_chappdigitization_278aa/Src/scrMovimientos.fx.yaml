@@ -15,6 +15,7 @@ scrMovimientos As screen:
         });
         Set(gvarCajeroMov, Blank());
         Clear(colCuboMov);
+        Clear(colDiasMov);
         Select(btnCargarCajerosMov)
 
     cmpHeaderMov As cmpHeader:
@@ -37,8 +38,17 @@ scrMovimientos As screen:
         Layout: =Layout.Vertical
         LoadingSpinner: =LoadingSpinner.Data
         OnSelect: |-
-            =Set(gvarCajeroMov, ThisItem);
-            Select(btnCargarCuboMov)
+            =// AL ELEGIR UN CAJERO SE SALTA A SU ULTIMO DIA CON MOVIMIENTOS. Antes se
+            // quedaba en HOY, y un cajero cuyas transacciones son del 17/08 se veia
+            // completamente vacio: la pantalla decia la verdad y aun asi dejaba al operador
+            // sin saber donde mirar. Si el dia elegido ya tiene datos, no se toca.
+            Set(gvarCajeroMov, ThisItem);
+            Select(btnCargarCuboMov);
+            If(IsEmpty(colCuboMov) && !IsEmpty(colDiasMov),
+                UpdateContext({ctxDiaMov: First(colDiasMov).fecha});
+                Reset(dtpDiaMov);
+                Select(btnCargarCuboMov)
+            )
         TemplateSize: =56
         Width: =236
         Y: =LayHeaderH
@@ -122,6 +132,11 @@ scrMovimientos As screen:
     dtpDiaMov As datepicker.dateValue:
         BorderColor: =ThemeLine
         Color: =ThemeInk
+        DefaultDate: |-
+            =// Sigue a la variable, no a Today(): cuando la pantalla salta sola al ultimo dia
+            // con movimientos del cajero, el selector tiene que mostrar ESE dia. Clavado en
+            // hoy diria una fecha y estaria mostrando otra.
+            ctxDiaMov
         Fill: =ThemeSurface
         Height: =32
         OnChange: |-
@@ -608,12 +623,54 @@ scrMovimientos As screen:
         Mensaje: |-
             =If(IsBlank(gvarCajeroMov),
                 "Elegí un cajero del panel izquierdo para ver sus movimientos.",
-                "Este cajero no tiene movimientos con ese filtro en la fecha elegida.")
+                If(!IsEmpty(colDiasMov),
+                   "Sin movimientos en esta fecha. Abajo están los días en que este cajero sí tuvo.",
+                   "Este cajero no tiene movimientos registrados."))
         Visible: =IsEmpty(galMovMov.AllItems)
         Width: =galMovMov.Width
         X: =galMovMov.X
         Y: =galMovMov.Y
         ZIndex: =12
+
+    galDiasMov As gallery.galleryVertical:
+        DelayItemLoading: =true
+        Height: =Min(CountRows(colDiasMov) * 30 + 24, 220)
+        Items: =colDiasMov
+        Layout: =Layout.Vertical
+        ShowScrollbar: =true
+        TemplateSize: =30
+        Visible: |-
+            =// EL VACIO TIENE QUE SER UN CARTEL, NO UN CALLEJON. Que la fecha elegida no
+            // tenga nada es una respuesta legitima; dejar al operador probando fechas a mano
+            // hasta dar con la buena, no.
+            !IsBlank(gvarCajeroMov) && IsEmpty(colCuboMov) && !IsEmpty(colDiasMov)
+        Width: =360
+        X: =galMovMov.X + 24
+        Y: =galMovMov.Y + 150
+        ZIndex: =16
+
+        btnDiaMov As button:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk2
+            Fill: =ThemeSurface
+            FontWeight: =FontWeight.Semibold
+            Height: =26
+            HoverFill: =ThemeSurface2
+            OnSelect: |-
+                =UpdateContext({ctxDiaMov: ThisItem.fecha});
+                Reset(dtpDiaMov);
+                Select(btnCargarCuboMov)
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =8.25
+            Text: |-
+                =$"{Text(ThisItem.fecha, ""dd/mm/yyyy"")}   ·   {Text(ThisItem.cantidad)} transacciones"
+            Width: =340
+            X: =0
+            ZIndex: =1
 
     btnRefrescarMov As button:
         BorderColor: =ThemeLine
@@ -701,7 +758,10 @@ scrMovimientos As screen:
                                     chequeOtros: Value(c.chequeOtros),
                                     total:       Value(c.total),
                                     cantidad:    Value(c.cantidad)
-                                }))
+                                }));
+                        ClearCollect(colDiasMov,
+                            ForAll(ParseJSON(r.Days) As x,
+                                { fecha: DateValue(Text(x.fecha)), cantidad: Value(x.cantidad) }))
                     ),
                     Clear(colCuboMov);
                     Notify("No se pudo cargar el resumen del cajero: " & FirstError.Message, NotificationType.Error)

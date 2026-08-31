@@ -1153,6 +1153,14 @@ namespace CashHub.Plugins
 
             public const string OutCube = "Cube";
             public const string OutTotalCount = "TotalCount";
+
+            /// <summary>
+            /// Dias en que el cajero tuvo movimientos, del mas reciente al mas viejo. La
+            /// pantalla filtra por fecha de CREACION y arranca en hoy: sin esta lista, un
+            /// cajero cuyas transacciones son de otro dia se ve vacio y sin una sola pista
+            /// de donde esta su trabajo.
+            /// </summary>
+            public const string OutDays = "Days";
         }
 
         internal static class BatchSummaryApi
