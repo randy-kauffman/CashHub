@@ -123,7 +123,7 @@ scrMovimientos As screen:
         Size: =9
         Text: |-
             =If(IsBlank(gvarCajeroMov), "Seleccioná un cajero del panel izquierdo.",
-                $"{Text(Sum(colCuboMov, cantidad))} transacciones el {Text(ctxDiaMov, ""dd/mm/yyyy"")}")
+                Text(Coalesce(Sum(colCuboMov, cantidad), 0)) & " transacciones el " & Text(ctxDiaMov, "dd/mm/yyyy"))
         Width: =520
         X: =256
         Y: =LayHeaderH + 42
@@ -195,10 +195,13 @@ scrMovimientos As screen:
                         // EL FALTANTE RESTA. El signo viene del servidor (+1 / -1) para
                         // que la regla contable no viva en la pantalla. Sumar un faltante
                         // seria inflar el cierre del cajero justo con lo que le falta.
-                        efectivo: Sum(f, efectivo * signo),
-                        cheques:  Sum(f, chequeBac * signo) + Sum(f, chequeOtros * signo),
-                        total:    Sum(f, total * signo),
-                        cantidad: Sum(f, cantidad)
+                        // Coalesce: Sum() sobre una tabla vacia devuelve BLANK, no cero, y
+                        // Text(blank) es cadena vacia. Las tarjetas salian con el simbolo de
+                        // la moneda y ningun numero — que se lee como "roto", no como "cero".
+                        efectivo: Coalesce(Sum(f, efectivo * signo), 0),
+                        cheques:  Coalesce(Sum(f, chequeBac * signo), 0) + Coalesce(Sum(f, chequeOtros * signo), 0),
+                        total:    Coalesce(Sum(f, total * signo), 0),
+                        cantidad: Coalesce(Sum(f, cantidad), 0)
                     }
                 )
             )
@@ -355,17 +358,170 @@ scrMovimientos As screen:
         Y: =LayHeaderH + 240
         ZIndex: =9
 
-    lblCabMov As label:
+    lblCabIdMov As label:
+        Align: =Align.Left
         Color: =ThemeInk3
         FontWeight: =FontWeight.Semibold
         Height: =32
-        PaddingLeft: =12
+        PaddingLeft: =8
+        PaddingRight: =0
         Size: =7.5
-        Text: ="ID          REFERENCIA            TIPO             VÍA / LOTE          CUENTA      MON.        EFECTIVO       CHEQUE BAC     CHEQUE OTROS          TOTAL     HORA"
-        Width: =Parent.Width - 256 - 16
-        X: =256
+        Text: ="ID"
+        VerticalAlign: =VerticalAlign.Middle
+        Width: =galMovMov.Width * 0.10
+        X: =galMovMov.X + galMovMov.Width * 0.00
         Y: =LayHeaderH + 240
-        ZIndex: =10
+        ZIndex: =20
+
+    lblCabRefMov As label:
+        Align: =Align.Left
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingLeft: =8
+        PaddingRight: =0
+        Size: =7.5
+        Text: ="REFERENCIA"
+        VerticalAlign: =VerticalAlign.Middle
+        Width: =galMovMov.Width * 0.12
+        X: =galMovMov.X + galMovMov.Width * 0.10
+        Y: =LayHeaderH + 240
+        ZIndex: =21
+
+    lblCabTipoMov As label:
+        Align: =Align.Left
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingLeft: =8
+        PaddingRight: =0
+        Size: =7.5
+        Text: ="TIPO"
+        VerticalAlign: =VerticalAlign.Middle
+        Width: =galMovMov.Width * 0.10
+        X: =galMovMov.X + galMovMov.Width * 0.22
+        Y: =LayHeaderH + 240
+        ZIndex: =22
+
+    lblCabViaMov As label:
+        Align: =Align.Left
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingLeft: =8
+        PaddingRight: =0
+        Size: =7.5
+        Text: ="VÍA / LOTE"
+        VerticalAlign: =VerticalAlign.Middle
+        Width: =galMovMov.Width * 0.12
+        X: =galMovMov.X + galMovMov.Width * 0.32
+        Y: =LayHeaderH + 240
+        ZIndex: =23
+
+    lblCabCuentaMov As label:
+        Align: =Align.Left
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingLeft: =8
+        PaddingRight: =0
+        Size: =7.5
+        Text: ="CUENTA"
+        VerticalAlign: =VerticalAlign.Middle
+        Width: =galMovMov.Width * 0.08
+        X: =galMovMov.X + galMovMov.Width * 0.44
+        Y: =LayHeaderH + 240
+        ZIndex: =24
+
+    lblCabMonMov As label:
+        Align: =Align.Left
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingLeft: =8
+        PaddingRight: =0
+        Size: =7.5
+        Text: ="MON."
+        VerticalAlign: =VerticalAlign.Middle
+        Width: =galMovMov.Width * 0.05
+        X: =galMovMov.X + galMovMov.Width * 0.52
+        Y: =LayHeaderH + 240
+        ZIndex: =25
+
+    lblCabEfeMov As label:
+        Align: =Align.Right
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingLeft: =0
+        PaddingRight: =8
+        Size: =7.5
+        Text: ="EFECTIVO"
+        VerticalAlign: =VerticalAlign.Middle
+        Width: =galMovMov.Width * 0.10
+        X: =galMovMov.X + galMovMov.Width * 0.57
+        Y: =LayHeaderH + 240
+        ZIndex: =26
+
+    lblCabBacMov As label:
+        Align: =Align.Right
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingLeft: =0
+        PaddingRight: =8
+        Size: =7.5
+        Text: ="CHEQUE BAC"
+        VerticalAlign: =VerticalAlign.Middle
+        Width: =galMovMov.Width * 0.10
+        X: =galMovMov.X + galMovMov.Width * 0.67
+        Y: =LayHeaderH + 240
+        ZIndex: =27
+
+    lblCabOtrMov As label:
+        Align: =Align.Right
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingLeft: =0
+        PaddingRight: =8
+        Size: =7.5
+        Text: ="CHEQUE OTROS"
+        VerticalAlign: =VerticalAlign.Middle
+        Width: =galMovMov.Width * 0.10
+        X: =galMovMov.X + galMovMov.Width * 0.77
+        Y: =LayHeaderH + 240
+        ZIndex: =28
+
+    lblCabTotMov As label:
+        Align: =Align.Right
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingLeft: =0
+        PaddingRight: =8
+        Size: =7.5
+        Text: ="TOTAL"
+        VerticalAlign: =VerticalAlign.Middle
+        Width: =galMovMov.Width * 0.08
+        X: =galMovMov.X + galMovMov.Width * 0.87
+        Y: =LayHeaderH + 240
+        ZIndex: =29
+
+    lblCabHoraMov As label:
+        Align: =Align.Right
+        Color: =ThemeInk3
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        PaddingLeft: =0
+        PaddingRight: =8
+        Size: =7.5
+        Text: ="HORA"
+        VerticalAlign: =VerticalAlign.Middle
+        Width: =galMovMov.Width * 0.05
+        X: =galMovMov.X + galMovMov.Width * 0.95
+        Y: =LayHeaderH + 240
+        ZIndex: =30
 
     galMovMov As gallery.galleryVertical:
         BorderColor: =ThemeLine
@@ -445,7 +601,8 @@ scrMovimientos As screen:
             PaddingLeft: =12
             Size: =8.25
             Text: ="T-" & Right("0000000000" & ThisItem.TransactionID, 10)
-            Width: =Parent.TemplateWidth * 0.11
+            X: =Parent.TemplateWidth * 0.00
+            Width: =Parent.TemplateWidth * 0.10
             ZIndex: =2
 
         lblMovRefMov As label:
@@ -453,8 +610,8 @@ scrMovimientos As screen:
             Height: =38
             Size: =8.25
             Text: =Coalesce(ThisItem.TransactionReference, "—")
-            Width: =Parent.TemplateWidth * 0.13
-            X: =Parent.TemplateWidth * 0.11
+            Width: =Parent.TemplateWidth * 0.12
+            X: =Parent.TemplateWidth * 0.10
             ZIndex: =3
 
         lblMovTipoMov As label:
@@ -479,7 +636,7 @@ scrMovimientos As screen:
             Size: =7.5
             Text: =Text(ThisItem.TransactionType)
             Width: =Parent.TemplateWidth * 0.10
-            X: =Parent.TemplateWidth * 0.24
+            X: =Parent.TemplateWidth * 0.22
             Y: =9
             ZIndex: =4
 
@@ -496,7 +653,7 @@ scrMovimientos As screen:
                    "Lote " & ThisItem.'Transaction Batch'.Name)
             VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.12
-            X: =Parent.TemplateWidth * 0.34
+            X: =Parent.TemplateWidth * 0.32
             Y: =2
             ZIndex: =5
 
@@ -524,7 +681,7 @@ scrMovimientos As screen:
                     "")
             VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.12
-            X: =Parent.TemplateWidth * 0.34
+            X: =Parent.TemplateWidth * 0.32
             Y: =19
             ZIndex: =13
 
@@ -533,8 +690,8 @@ scrMovimientos As screen:
             Height: =38
             Size: =8.25
             Text: =Text(ThisItem.AccountNumber, "[$-en-US]000000000")
-            Width: =Parent.TemplateWidth * 0.09
-            X: =Parent.TemplateWidth * 0.46
+            Width: =Parent.TemplateWidth * 0.08
+            X: =Parent.TemplateWidth * 0.44
             ZIndex: =6
 
         lblMovMonMov As label:
@@ -543,7 +700,7 @@ scrMovimientos As screen:
             Size: =8.25
             Text: =Text(ThisItem.Currency)
             Width: =Parent.TemplateWidth * 0.05
-            X: =Parent.TemplateWidth * 0.55
+            X: =Parent.TemplateWidth * 0.52
             ZIndex: =7
 
         lblMovEfeMov As label:
@@ -559,7 +716,7 @@ scrMovimientos As screen:
                 // obligaria a hacer la traduccion mentalmente en cada linea.
                 Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.CashAmount, ThisItem.CashAmount), FmtMoney)
             Width: =Parent.TemplateWidth * 0.10
-            X: =Parent.TemplateWidth * 0.60
+            X: =Parent.TemplateWidth * 0.57
             ZIndex: =8
 
         lblMovBacMov As label:
@@ -575,7 +732,7 @@ scrMovimientos As screen:
                 // obligaria a hacer la traduccion mentalmente en cada linea.
                 Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.BACLocalCheckAmount, ThisItem.BACLocalCheckAmount), FmtMoney)
             Width: =Parent.TemplateWidth * 0.10
-            X: =Parent.TemplateWidth * 0.70
+            X: =Parent.TemplateWidth * 0.67
             ZIndex: =9
 
         lblMovOtrMov As label:
@@ -591,7 +748,7 @@ scrMovimientos As screen:
                 // obligaria a hacer la traduccion mentalmente en cada linea.
                 Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.OtherLocalCheckAmount, ThisItem.OtherLocalCheckAmount), FmtMoney)
             Width: =Parent.TemplateWidth * 0.10
-            X: =Parent.TemplateWidth * 0.80
+            X: =Parent.TemplateWidth * 0.77
             ZIndex: =10
 
         lblMovTotMov As label:
@@ -606,9 +763,21 @@ scrMovimientos As screen:
                 // al total de arriba. Verlo positivo en la fila y restando en el resumen
                 // obligaria a hacer la traduccion mentalmente en cada linea.
                 Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.Total, ThisItem.Total), FmtMoney)
-            Width: =Parent.TemplateWidth * 0.10
-            X: =Parent.TemplateWidth * 0.90
+            Width: =Parent.TemplateWidth * 0.08
+            X: =Parent.TemplateWidth * 0.87
             ZIndex: =11
+
+        lblMovHoraMov As label:
+            Align: =Align.Right
+            Color: =ThemeInk3
+            Height: =38
+            PaddingRight: =8
+            Size: =8.25
+            Text: =Text(ThisItem.'Created On', "hh:mm")
+            VerticalAlign: =VerticalAlign.Middle
+            Width: =Parent.TemplateWidth * 0.05
+            X: =Parent.TemplateWidth * 0.95
+            ZIndex: =14
 
         shpMovLineaMov As rectangle:
             Fill: =ThemeLineSoft
@@ -644,9 +813,9 @@ scrMovimientos As screen:
             // tenga nada es una respuesta legitima; dejar al operador probando fechas a mano
             // hasta dar con la buena, no.
             !IsBlank(gvarCajeroMov) && IsEmpty(colCuboMov) && !IsEmpty(colDiasMov)
-        Width: =360
-        X: =galMovMov.X + 24
-        Y: =galMovMov.Y + 150
+        Width: =420
+        X: =galMovMov.X + (galMovMov.Width - 420) / 2
+        Y: =galMovMov.Y + galMovMov.Height / 2 + 24
         ZIndex: =16
 
         btnDiaMov As button:
@@ -667,8 +836,11 @@ scrMovimientos As screen:
             RadiusTopRight: =7
             Size: =8.25
             Text: |-
-                =$"{Text(ThisItem.fecha, ""dd/mm/yyyy"")}   ·   {Text(ThisItem.cantidad)} transacciones"
-            Width: =340
+                =// Concatenacion en vez de interpolacion: un $"..." con comillas anidadas
+                // adentro de {} no resolvia y el boton salia VACIO — se veia una caja blanca
+                // sin texto, que es justo lo que reporto el usuario.
+                Text(ThisItem.fecha, "dd/mm/yyyy") & "   ·   " & Text(ThisItem.cantidad) & " transacciones"
+            Width: =420
             X: =0
             ZIndex: =1
 
