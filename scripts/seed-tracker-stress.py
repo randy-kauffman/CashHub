@@ -201,10 +201,8 @@ def mk_run(m):
     rid = create('sanic_chtblvalidationrunses', {
         'sanic_runstart': iso(m['when']), 'sanic_runend': iso(m['when'] + timedelta(seconds=40)),
         'sanic_runresult': 159460000 if m['ok'] else 159460001,
-        'sanic_sourceentity': 'sanic_chtblreceivedemails',
         'sanic_sourcerecordid': m['id'],
         'sanic_ReceivedEmail@odata.bind': f"/sanic_chtblreceivedemailses({m['id']})",
-        'sanic_sourcetype': 159460000,
     })
     fail_at = random.randint(4, len(rules) - 6) if not m['ok'] else -1
     for idx, r in enumerate(rules):

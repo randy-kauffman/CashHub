@@ -303,11 +303,9 @@ namespace CashHub.Plugins
                 [Schema.Run.Start] = started,
                 [Schema.Run.End] = DateTime.UtcNow,
                 [Schema.Run.Result] = new OptionSetValue(result.Passed ? Schema.Run.ResultPass : Schema.Run.ResultFail),
-                [Schema.Run.SourceEntity] = Schema.ReceivedEmail.LogicalName,
                 [Schema.Run.SourceRecordId] = emailId.ToString("D"),
                 [Schema.Run.ReceivedEmailLookup] =
-                    new EntityReference(Schema.ReceivedEmail.LogicalName, emailId),
-                [Schema.Run.SourceType] = new OptionSetValue(Schema.Run.SourceSharedMailbox)
+                    new EntityReference(Schema.ReceivedEmail.LogicalName, emailId)
             };
             var runId = _service.Create(run);
             _tracing.Trace("Validate[{0}]: ValidationRun {1} creado.", emailId, runId);

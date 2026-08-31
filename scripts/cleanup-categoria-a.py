@@ -122,6 +122,26 @@ COLUMNAS_APROBADAS = [
      "a Fila la ignora, justamente porque ya esta ahi. 666 filas con valor, ningun lector. "
      "Aprobado por el usuario 2026-08-31."),
 
+    # --- CH-Tbl-ValidationRuns --------------------------------------------------
+    # Los dos tienen UN SOLO valor en las 292 filas: no distinguen nada. Sobreviven
+    # sanic_sourcerecordid (lo filtran la consola y CH-Flow-MailboxSweep) y
+    # sanic_receivedemail (lo filtra el tracker) — las dos formas del vinculo estan
+    # vivas, cada una en una app distinta.
+    ("sanic_chtblvalidationruns", "sanic_sourcetype",
+     "CERO INFORMACION: 292 de 292 filas con el MISMO valor (Shared Mailbox), escrito "
+     "hardcodeado por ReceivedEmailValidationService. Tercero del mismo nombre que se "
+     "elimina: ya cayeron los de ValidationResults y ValidationRules. 0 lectores en "
+     "Power Fx, flows, C# y scripts; 0 formularios, 0 vistas, 0 steps. "
+     "Aprobado por el usuario 2026-08-31."),
+
+    ("sanic_chtblvalidationruns", "sanic_sourceentity",
+     "CERO INFORMACION: 292 de 292 filas con el MISMO valor "
+     "('sanic_chtblreceivedemails'). La genericidad de la 'tabla generica' nunca se "
+     "uso: solo hubo una fuente. Era el guard del paso B1b del backfill, pero un guard "
+     "sobre un valor constante es vacuo — se saco de ahi y el chequeo real lo hace el "
+     "propio PATCH. OJO: el homonimo de CH-Tbl-Declaration SI se conserva, porque el "
+     "paso B1 lo lee de verdad. Aprobado por el usuario 2026-08-31."),
+
     # --- sanic_ValidationRules (OJO: la carpeta NO lleva prefijo CHTbl) ---------
     # Las 27 reglas de validacion son CLASES C# (IValidationRule en ContentRules,
     # EnvelopeRules, StructureRules y BusinessRules). Esta tabla solo les da

@@ -650,9 +650,9 @@ _No hay campos custom (`sanic_*`) agregados por esta solución en este export._
 | `sanic_runend` | RunEnd | Fecha y hora | none | | C#: `ReceivedEmailValidationService.cs:304` (`Schema.Run.End`). | | Sin revisar | |
 | `sanic_runresult` | RunResult | Option set (picklist) | recommended | | C#: `ReceivedEmailValidationService.cs:305` (`Schema.Run.Result`). | | Sin revisar | |
 | `sanic_runstart` | RunStart | Fecha y hora | required | | C#: `ReceivedEmailValidationService.cs:303` (`Schema.Run.Start`). | | Sin revisar | |
-| `sanic_sourceentity` | SourceEntity | Texto (nvarchar) | required | | C#: `ReceivedEmailValidationService.cs:306` (`Schema.Run.SourceEntity`). | | Sin revisar | |
+| `sanic_sourceentity` | SourceEntity | Texto (nvarchar) | required | | C#: `ReceivedEmailValidationService.cs:306` (`Schema.Run.SourceEntity`). | | **ELIMINADO 2026-08-31** | |
 | `sanic_sourcerecordid` | SourceRecordID | Texto (nvarchar) | required | | C#: `ReceivedEmailValidationService.cs:307` (`Schema.Run.SourceRecordId`). | | Sin revisar | |
-| `sanic_sourcetype` | SourceType | Option set (picklist) | required | | C#: `ReceivedEmailValidationService.cs:310` (`Schema.Run.SourceType`). | | Sin revisar | |
+| `sanic_sourcetype` | SourceType | Option set (picklist) | required | | C#: `ReceivedEmailValidationService.cs:310` (`Schema.Run.SourceType`). | | **ELIMINADO 2026-08-31** | |
 
 ### CH-Tbl-XMLReading (`sanic_CHTblXMLReading`)
 

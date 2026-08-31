@@ -75,6 +75,36 @@ for d in decls:
     n += 1
 print(f'  estampadas: {n} de {len(decls)}')
 
+# ---------- B1b: ValidationRuns.ReceivedEmail desde sourcerecordid ----------
+# El mismo caso que B1 pero en la tabla de corridas, que se habia quedado afuera.
+#
+# OJO — NO LLEVA EL GUARD DE sourceentity que si tiene B1. Esa columna se elimino de
+# ValidationRuns el 2026-08-31 (tenia el MISMO valor en las 292 filas, o sea que el
+# guard era vacuo). El chequeo real lo hace el propio PATCH: si el correo no existe,
+# Dataverse lo rechaza.
+#
+# OJO — LOS FALLOS SON ESPERABLES Y SE REPORTAN, NO ROMPEN. Al correrlo por primera
+# vez, las 13 corridas sin lookup resultaron ser HUERFANAS: su correo de origen habia
+# sido borrado. Eso es justamente lo que sanic_sourcerecordid permite y el lookup no —
+# el texto no tiene integridad referencial, asi que conserva punteros colgados. Un
+# huerfano no se puede estampar; se cuenta y se informa.
+print('== B1b: ValidationRuns -> ReceivedEmail')
+runs = get_all("/sanic_chtblvalidationrunses?$select=sanic_chtblvalidationrunsid,"
+               "sanic_sourcerecordid,_sanic_receivedemail_value")
+n = 0
+huerfanas = 0
+for r in runs:
+    if r.get('_sanic_receivedemail_value') or not r.get('sanic_sourcerecordid'):
+        continue
+    try:
+        req('PATCH', f"/sanic_chtblvalidationrunses({r['sanic_chtblvalidationrunsid']})", {
+            'sanic_ReceivedEmail@odata.bind': f"/sanic_chtblreceivedemailses({r['sanic_sourcerecordid']})"
+        })
+        n += 1
+    except Exception:
+        huerfanas += 1
+print(f'  estampadas: {n} de {len(runs)}; huerfanas (correo de origen borrado): {huerfanas}')
+
 # ---------- B7: DeclaredDeposits/DeclaredChecks -> Declaration ----------
 print('== B7: DeclaredDeposits -> Declaration')
 deps = get_all("/sanic_chtbldeclareddepositses?$select=sanic_chtbldeclareddepositsid,"

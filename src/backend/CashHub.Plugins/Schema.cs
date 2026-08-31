@@ -88,7 +88,6 @@ namespace CashHub.Plugins
             public const string Start = "sanic_runstart";
             public const string End = "sanic_runend";
             public const string Result = "sanic_runresult";
-            public const string SourceEntity = "sanic_sourceentity";
             public const string SourceRecordId = "sanic_sourcerecordid";
 
             /// <summary>
@@ -98,11 +97,9 @@ namespace CashHub.Plugins
             /// deja de encontrar las nuevas SIN dar error.
             /// </summary>
             public const string ReceivedEmailLookup = "sanic_receivedemail";
-            public const string SourceType = "sanic_sourcetype";
 
             public const int ResultPass = 159460000;
             public const int ResultFail = 159460001;
-            public const int SourceSharedMailbox = 159460000;
         }
 
         internal static class Result

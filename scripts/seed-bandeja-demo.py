@@ -102,8 +102,8 @@ for c in CASOS:
     eid=r['sanic_chtblreceivedemailsid']; creados+=1
 
     run=req('POST','/sanic_chtblvalidationrunses',{
-      "sanic_name":f"Validacion de correo {eid}","sanic_sourceentity":"sanic_chtblreceivedemails",
-      "sanic_sourcerecordid":eid,"sanic_sourcetype":159460000,
+      "sanic_name":f"Validacion de correo {eid}",
+      "sanic_sourcerecordid":eid,
       "sanic_runstart":hace(c['h']),"sanic_runend":hace(c['h']),
       "sanic_runresult":159460001 if c['fallos'] else 159460000,
       "sanic_ReceivedEmail@odata.bind":f"/sanic_chtblreceivedemailses({eid})"})

@@ -503,6 +503,69 @@ ningún `.cs`. El único hit de `sanic_sourcetype` en `Schema.cs` es `Schema.Run
 
 ---
 
+### D.4 — `CH-Tbl-ValidationRuns`: 2 de 8 campos, y un hallazgo que invirtió el análisis
+
+292 filas. Se eliminaron `sanic_sourcetype` y `sanic_sourceentity`: **los dos con un único valor
+en las 292 filas** (*Shared Mailbox* y `sanic_chtblreceivedemails`). La genericidad de la "tabla
+genérica" nunca se usó — solo hubo una fuente.
+
+`sourcetype` es el **tercero del mismo nombre** que cae, después de `ValidationResults` y
+`ValidationRules`. Hoy ese nombre ya no existe en el modelo.
+
+#### Las dos formas del vínculo están vivas, una por app
+
+A diferencia de `Declaration`, acá **no se puede borrar el campo de texto**:
+
+| Consumidor | Filtra por |
+|---|---|
+| Consola de ingesta | `SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')` — **el texto** |
+| `CH-Flow-MailboxSweep` | `$filter=sanic_sourcerecordid eq '...'` — **el texto** |
+| Tracker (`scrCorreo`) | `ReceivedEmail.'CH-Tbl-Received Emails' = ...` — **el lookup** |
+
+#### El hallazgo: 13 corridas huérfanas, y por qué el texto las conserva
+
+`sanic_receivedemail` estaba en 279 de 292. Se escribió el paso **B1b** del backfill para estampar
+las 13 faltantes, y **las 13 fallaron**:
+
+```
+'sanic_CHTblReceivedEmails' With Id = ... Does Not Exist
+```
+
+**Su correo de origen fue borrado.** No les falta el lookup: no puede existir. Y eso expone
+exactamente el costo del diseño de texto:
+
+> El lookup tiene **integridad referencial** — cuando se borra el correo, se limpia. El texto no:
+> `sourcerecordid` conserva un **puntero colgado** a un registro que ya no está. Las 13 corridas
+> sobreviven apuntando a la nada.
+
+**Corrección de un análisis previo publicado en esta misma sesión**: se afirmó que *"la consola
+muestra esas corridas y el tracker no"*. Es falso. La consola las filtra contra un correo de su
+galería; si el correo no existe, no está en la galería y la corrida tampoco se muestra. **La
+inconsistencia no es alcanzable.** El impacto real de las 13 es cero, y 12 de ellas son artefactos
+`PROBE-*` de `probe-parser-limits.py`.
+
+El paso B1b quedó en `backfill-tracker.py`, reescrito para **reportar los huérfanos en vez de
+romper**, y sin el guard de `sourceentity` — que además ya no existe en esta tabla.
+
+#### Lo que se dejó
+
+**`sanic_runend`** (292/292, timestamps reales): con `runstart` da la duración de cada corrida.
+Telemetría sin exponer, mismo criterio que `durationms`.
+
+**`sanic_runresult`** (292/292, **99 Fail / 193 Pass**): variación real. Es el veredicto
+desnormalizado de la corrida; la consola lo recalcula agregando `ValidationResults`. Un campo
+contra agregar 8.388 filas de detalle es una desnormalización legítima.
+
+#### Deuda que queda anotada
+
+La consola filtra con `SourceRecordID = Text(...)`. **Comparar un GUID convertido a texto no delega
+en Power Fx** — es precisamente lo que documenta el campo hermano de `Declaration`: *"este lookup
+existe porque un GUID en texto no delega"*. Con 292 filas no se nota; con volumen, esa pantalla se
+degrada. Cambiar ese filtro a `ReceivedEmail.'CH-Tbl-Received Emails' = ...`, como ya hace el
+tracker, resolvería la delegación. **No se tocó**: es cambio de canvas app y esos van por el Studio.
+
+---
+
 ## Antes de borrar cualquier cosa
 
 1. **Columnas**: Dataverse no deja eliminar una columna que esté en algún formulario o vista.
