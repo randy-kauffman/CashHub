@@ -2185,6 +2185,14 @@ scrLotes As screen:
                 Height: =104
                 HintText: |-
                     ="Pegá acá el Resumen por Cuenta del IBS (Ctrl+V). Da igual si traés el encabezado, la columna Select, tabulaciones o espacios."
+                MaxLength: |-
+                    =// SIN ESTO EL PEGADO SE CORTABA EN 100 CARACTERES. El control no
+                    // declaraba MaxLength y heredaba el default de la plataforma: de un
+                    // resumen de 500 cuentas (16.409 caracteres) entraban dos lineas, y el
+                    // comparador reportaba 498 cuentas "no estan en el IBS" — cierto, y
+                    // completamente enganoso. Un lote de 600 cuentas ronda los 20.000
+                    // caracteres; se deja holgura de sobra en vez de ajustar al caso de hoy.
+                    500000
                 Mode: =TextMode.MultiLine
                 RadiusBottomLeft: =7
                 RadiusBottomRight: =7
@@ -2195,6 +2203,26 @@ scrLotes As screen:
                 X: =Parent.Width * 0.36 + 24
                 Y: =104
                 ZIndex: =6
+
+            lblPegadoContadorLot As label:
+                Align: =Align.Right
+                Color: |-
+                    =// Se pone en alerta si el pegado quedo sospechosamente corto para la
+                    // cantidad de cuentas del lote: es la senal temprana de un copiado
+                    // incompleto, ANTES de comparar y confundirse con el resultado.
+                    If(!IsBlank(inpPegarIbsLot.Text)
+                       && CountRows(Split(inpPegarIbsLot.Text, Char(10))) < CountRows(colResumenLot),
+                       ThemeWarn, ThemeInk3)
+                Height: =16
+                Size: =8.25
+                Text: |-
+                    =If(IsBlank(inpPegarIbsLot.Text), "",
+                        $"{CountRows(Split(inpPegarIbsLot.Text, Char(10)))} línea(s) pegadas · {Len(inpPegarIbsLot.Text)} caracteres")
+                VerticalAlign: =VerticalAlign.Middle
+                Width: =Parent.Width * 0.64 - 48
+                X: =Parent.Width * 0.36 + 24
+                Y: =210
+                ZIndex: =45
 
             btnCompararLot As button:
                 BorderStyle: =BorderStyle.None
@@ -2249,7 +2277,7 @@ scrLotes As screen:
                 Text: =If(ctxComparandoLot, "Comparando…", "Comparar con el IBS")
                 Width: =180
                 X: =Parent.Width - 24 - Self.Width
-                Y: =216
+                Y: =232
                 ZIndex: =7
 
             lblVeredictoLot As label:
@@ -2269,12 +2297,12 @@ scrLotes As screen:
                 Visible: =!IsBlank(ctxVeredictoLot)
                 Width: =Parent.Width * 0.64 - 48 - 188
                 X: =Parent.Width * 0.36 + 24
-                Y: =216
+                Y: =232
                 ZIndex: =8
 
             galComparacionLot As gallery.galleryVertical:
                 DelayItemLoading: =true
-                Height: =Parent.Height - 268 - 24
+                Height: =Parent.Height - 284 - 24
                 Items: =colCompLot
                 Layout: =Layout.Vertical
                 LoadingSpinner: =LoadingSpinner.Data
@@ -2282,7 +2310,7 @@ scrLotes As screen:
                 TemplateSize: =38
                 Width: =Parent.Width * 0.64 - 48
                 X: =Parent.Width * 0.36 + 24
-                Y: =268
+                Y: =284
                 ZIndex: =9
 
                 shpCompEstadoLot As rectangle:

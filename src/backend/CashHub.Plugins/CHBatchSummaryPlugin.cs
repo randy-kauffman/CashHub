@@ -122,6 +122,13 @@ namespace CashHub.Plugins
                 ? $"{batchName} COINCIDE con el IBS: {comparacion.MatchingAccounts} cuenta(s), todo igual."
                 : $"{batchName} NO coincide: {comparacion.DifferingAccounts} de {comparacion.TotalAccounts} cuenta(s) con diferencia.");
 
+            // CUANTAS FILAS SE LEYERON, SIEMPRE. Si el texto llega cortado —por un tope
+            // del cuadro de pegado, por un copiado incompleto— el comparador reporta
+            // cientos de "no esta en el IBS" que son perfectamente ciertos y
+            // completamente enganosos: el problema no es el lote, es que no llego todo.
+            // Diciendo "se leyeron 3 filas" contra 500 cuentas, el desfasaje salta solo.
+            sb.Append($" Se leyeron {leido.Rows.Count} fila(s) del texto pegado contra {resumen.Count} cuenta(s) del lote.");
+
             if (leido.IgnoredLines.Count > 0)
             {
                 sb.Append($" Ojo: {leido.IgnoredLines.Count} linea(s) del texto pegado no se entendieron y NO se compararon.");
