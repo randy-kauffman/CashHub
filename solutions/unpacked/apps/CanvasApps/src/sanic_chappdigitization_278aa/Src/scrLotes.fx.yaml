@@ -15,7 +15,10 @@ scrLotes As screen:
             ctxDlgDevolverLot: false,
             ctxDevolviendoLot: false,
             ctxSacadoOkLot: false,
-            ctxPasoOkLot: false
+            ctxPasoOkLot: false,
+            ctxDlgResumenLot: false,
+            ctxVeredictoLot: "",
+            ctxMensajeLot: ""
         });
         Reset(tabFechaLot);
         Reset(inpBuscarLot);
@@ -813,6 +816,61 @@ scrLotes As screen:
                         X: =btnMarcarAplicadoLot.X + btnMarcarAplicadoLot.Width + 8
                         Y: =8
                         ZIndex: =7
+
+                    btnAbrirResumenLot As button:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =If(ctxCargandoResumenLot, DisplayMode.Disabled, DisplayMode.Edit)
+                        Fill: =ThemeSurface
+                        FontWeight: =FontWeight.Semibold
+                        Height: =26
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =App.Theme.Colors.Darker10
+                        OnSelect: |-
+                            =// Se abre LIMPIO: sin veredicto viejo ni texto pegado de otro lote.
+                            // Un resultado anterior sobreviviendo al cambio de lote seria una
+                            // mentira peor que no mostrar nada.
+                            UpdateContext({
+                                ctxCargandoResumenLot: true,
+                                ctxVeredictoLot: "",
+                                ctxMensajeLot: ""
+                            });
+                            Clear(colCompLot);
+                            Reset(inpPegarIbsLot);
+                            IfError(
+                                With(
+                                    { r: Environment.sanic_CHBatchSummary({ BatchId: gvarLote.TransactionBatches }) },
+                                    ClearCollect(colResumenLot,
+                                        ForAll(ParseJSON(r.Summary) As s,
+                                            {
+                                                cuenta:   Text(s.cuenta),
+                                                moneda:   Text(s.moneda),
+                                                monto:    Value(s.monto),
+                                                cantidad: Value(s.cantidad)
+                                            }));
+                                    UpdateContext({ctxDlgResumenLot: true})
+                                ),
+                                Notify("No se pudo armar el resumen del lote: " & FirstError.Message, NotificationType.Error)
+                            );
+                            UpdateContext({ctxCargandoResumenLot: false})
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =8.25
+                        Text: =If(ctxCargandoResumenLot, "Cargando…", "Resumen / Comparar IBS")
+                        Width: =178
+                        X: =btnDescargarCsvLot.X - 8 - Self.Width
+                        Y: =11
+                        ZIndex: =8
 
                     btnDescargarCsvLot As button:
                         BorderColor: =ThemeAccent
@@ -1896,6 +1954,337 @@ scrLotes As screen:
                 Y: =Parent.Height - 20 - 32
                 ZIndex: =9
 
+
+    cntDlgResumenLot As groupContainer.manualLayoutContainer:
+        DropShadow: =DropShadow.Light
+        Fill: |-
+            =// EL APROBADOR NO VE EL DETALLE. En el IBS Branch ve un "Resumen por Cuenta"
+            // (Cuenta | Moneda | Monto | Cant TRN) y decide con eso. Esta pantalla le
+            // muestra el MISMO corte del lote y le deja pegar el del IBS para que la
+            // comparacion la haga la maquina: el lote mas grande del entorno tiene 600
+            // cuentas distintas, y compararlas a ojo es lento y se cometen errores justo
+            // donde no se pueden cometer.
+            //
+            // Va como dialogo aparte y no dentro del panel del lote a proposito: ese panel
+            // ya tiene los botones de estado, los KPI y la grilla, y meterle un tercer modo
+            // obligaba a mover controles que hoy funcionan.
+            ThemeOverlay
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        Visible: =ctxDlgResumenLot
+        Width: =Parent.Width
+        ZIndex: =6
+
+        btnDlgResumenBloqueoLot As button:
+            BorderStyle: =BorderStyle.None
+            Color: =Color.Transparent
+            Fill: =Color.Transparent
+            Height: =Parent.Height
+            HoverFill: =Color.Transparent
+            OnSelect: |-
+                =UpdateContext({ctxDlgResumenLot: false})
+            PressedFill: =Color.Transparent
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntDlgResumenCardLot As groupContainer.manualLayoutContainer:
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: |-
+                =// GRANDE A PROPOSITO: aca se comparan cientos de filas. Un dialogo chico
+                // obligaria a scrollear las dos listas en paralelo, que es exactamente el
+                // trabajo manual que esto viene a eliminar.
+                Parent.Height - 48
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =12
+            RadiusBottomRight: =12
+            RadiusTopLeft: =12
+            RadiusTopRight: =12
+            Width: =Min(Parent.Width - 48, 1280)
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =24
+            ZIndex: =2
+
+            lblDlgResumenTitLot As label:
+                Color: =RGBA(0, 0, 0, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =26
+                Size: =12
+                Text: =$"Resumen por cuenta · Lote {gvarLote.Name}"
+                Width: =Parent.Width - 80
+                X: =24
+                Y: =20
+                ZIndex: =1
+
+            lblDlgResumenSubLot As label:
+                Color: =ThemeInk2
+                Height: =18
+                Size: =9
+                Text: ="Es lo mismo que el aprobador ve en el IBS Branch. Pegá el resumen del IBS a la derecha para compararlo automáticamente."
+                Width: =Parent.Width - 80
+                X: =24
+                Y: =46
+                ZIndex: =2
+
+            icoDlgResumenXLot As icon:
+                AccessibleLabel: ="Cerrar"
+                Color: =ThemeInk3
+                Height: =20
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ctxDlgResumenLot: false})
+                PaddingBottom: =0
+                PaddingLeft: =0
+                PaddingRight: =0
+                PaddingTop: =0
+                Width: =20
+                X: =Parent.Width - 24 - 20
+                Y: =22
+                ZIndex: =3
+
+            lblResLoteCabLot As label:
+                Color: =ThemeInk2
+                FontWeight: =FontWeight.Semibold
+                Height: =20
+                Size: =9
+                Text: |-
+                    =$"En CashHub · {CountRows(colResumenLot)} cuenta(s)"
+                Width: =Parent.Width * 0.36 - 8
+                X: =24
+                Y: =80
+                ZIndex: =4
+
+            galResumenLot As gallery.galleryVertical:
+                DelayItemLoading: =true
+                Height: =Parent.Height - 80 - 24 - 24
+                Items: =colResumenLot
+                Layout: =Layout.Vertical
+                LoadingSpinner: =LoadingSpinner.Data
+                ShowScrollbar: =true
+                TemplateSize: =34
+                Width: =Parent.Width * 0.36 - 8
+                X: =24
+                Y: =104
+                ZIndex: =5
+
+                lblResCuentaLot As label:
+                    Color: =ThemeInk
+                    Height: =34
+                    Size: =9
+                    Text: =ThisItem.cuenta
+                    VerticalAlign: =VerticalAlign.Middle
+                    Width: =Parent.TemplateWidth * 0.34
+                    X: =0
+                    ZIndex: =1
+
+                lblResMonedaLot As label:
+                    Color: =ThemeInk2
+                    Height: =34
+                    Size: =9
+                    Text: =ThisItem.moneda
+                    VerticalAlign: =VerticalAlign.Middle
+                    Width: =Parent.TemplateWidth * 0.14
+                    X: =Parent.TemplateWidth * 0.34
+                    ZIndex: =2
+
+                lblResMontoLot As label:
+                    Align: =Align.Right
+                    Color: =ThemeInk
+                    Height: =34
+                    Size: =9
+                    Text: =Text(ThisItem.monto, FmtMoney)
+                    VerticalAlign: =VerticalAlign.Middle
+                    Width: =Parent.TemplateWidth * 0.34
+                    X: =Parent.TemplateWidth * 0.48
+                    ZIndex: =3
+
+                lblResCantLot As label:
+                    Align: =Align.Right
+                    Color: =ThemeInk2
+                    Height: =34
+                    Size: =9
+                    Text: =Text(ThisItem.cantidad)
+                    VerticalAlign: =VerticalAlign.Middle
+                    Width: =Parent.TemplateWidth * 0.16
+                    X: =Parent.TemplateWidth * 0.82
+                    ZIndex: =4
+
+                shpResLineaLot As rectangle:
+                    Fill: =ThemeLine
+                    Height: =1
+                    Width: =Parent.TemplateWidth
+                    Y: =33
+                    ZIndex: =5
+
+            inpPegarIbsLot As text:
+                BorderColor: =ThemeLine
+                BorderThickness: =2
+                Fill: =ThemeSurface
+                FocusedBorderThickness: =3
+                Height: =104
+                HintText: |-
+                    ="Pegá acá el Resumen por Cuenta del IBS (Ctrl+V). Da igual si traés el encabezado, la columna Select, tabulaciones o espacios."
+                Mode: =TextMode.MultiLine
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Width: =Parent.Width * 0.64 - 48
+                X: =Parent.Width * 0.36 + 24
+                Y: =104
+                ZIndex: =6
+
+            btnCompararLot As button:
+                BorderStyle: =BorderStyle.None
+                Color: =ThemeSurface
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: =If(ctxComparandoLot Or IsBlank(inpPegarIbsLot.Text), DisplayMode.Disabled, DisplayMode.Edit)
+                Fill: =ThemeAccent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverFill: =App.Theme.Colors.Darker10
+                OnSelect: |-
+                    =// El aviso sale del RESULTADO, no del orden de las lineas: IfError
+                    // envuelve solo la llamada y el veredicto se pinta con lo que devolvio
+                    // el servidor. Mismo criterio que el resto de la pantalla.
+                    UpdateContext({ctxComparandoLot: true});
+                    IfError(
+                        With(
+                            { r: Environment.sanic_CHBatchSummary({
+                                BatchId: gvarLote.TransactionBatches,
+                                PastedSummary: inpPegarIbsLot.Text }) },
+                            ClearCollect(colCompLot,
+                                ForAll(ParseJSON(r.Comparison) As c,
+                                    {
+                                        cuenta:    Text(c.cuenta),
+                                        moneda:    Text(c.moneda),
+                                        estado:    Text(c.estado),
+                                        montoLote: Value(c.montoLote),
+                                        montoCore: Value(c.montoCore),
+                                        difMonto:  Value(c.difMonto),
+                                        cantLote:  Value(c.cantLote),
+                                        cantCore:  Value(c.cantCore)
+                                    }));
+                            UpdateContext({
+                                ctxVeredictoLot: r.Outcome,
+                                ctxMensajeLot: r.Message
+                            })
+                        ),
+                        UpdateContext({ctxVeredictoLot: "error", ctxMensajeLot: FirstError.Message})
+                    );
+                    UpdateContext({ctxComparandoLot: false})
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =9
+                Text: =If(ctxComparandoLot, "Comparando…", "Comparar con el IBS")
+                Width: =180
+                X: =Parent.Width - 24 - Self.Width
+                Y: =216
+                ZIndex: =7
+
+            lblVeredictoLot As label:
+                Align: =Align.Left
+                BorderRadius: =8
+                Color: |-
+                    =Switch(ctxVeredictoLot, "coincide", ThemeOk, "difiere", ThemeDanger, ThemeWarn)
+                Fill: |-
+                    =Switch(ctxVeredictoLot, "coincide", ThemeOkSoft, "difiere", ThemeDangerSoft, ThemeWarnSoft)
+                FontWeight: =FontWeight.Semibold
+                Height: =44
+                PaddingLeft: =12
+                PaddingRight: =12
+                Size: =9
+                Text: =ctxMensajeLot
+                VerticalAlign: =VerticalAlign.Middle
+                Visible: =!IsBlank(ctxVeredictoLot)
+                Width: =Parent.Width * 0.64 - 48 - 188
+                X: =Parent.Width * 0.36 + 24
+                Y: =216
+                ZIndex: =8
+
+            galComparacionLot As gallery.galleryVertical:
+                DelayItemLoading: =true
+                Height: =Parent.Height - 268 - 24
+                Items: =colCompLot
+                Layout: =Layout.Vertical
+                LoadingSpinner: =LoadingSpinner.Data
+                ShowScrollbar: =true
+                TemplateSize: =38
+                Width: =Parent.Width * 0.64 - 48
+                X: =Parent.Width * 0.36 + 24
+                Y: =268
+                ZIndex: =9
+
+                shpCompEstadoLot As rectangle:
+                    Fill: |-
+                        =// Las diferencias ya vienen PRIMERO del servidor; la banda de color
+                        // hace que se vean sin leer.
+                        If(ThisItem.estado = "coincide", ThemeOkSoft, ThemeDangerSoft)
+                    Height: =3
+                    Width: =Parent.TemplateWidth
+                    Y: =34
+                    ZIndex: =1
+
+                lblCompCuentaLot As label:
+                    Color: =ThemeInk
+                    FontWeight: =FontWeight.Semibold
+                    Height: =20
+                    Size: =9
+                    Text: =$"{ThisItem.cuenta}  {ThisItem.moneda}"
+                    VerticalAlign: =VerticalAlign.Middle
+                    Width: =Parent.TemplateWidth * 0.30
+                    X: =0
+                    Y: =2
+                    ZIndex: =2
+
+                lblCompEstadoLot As label:
+                    Color: |-
+                        =If(ThisItem.estado = "coincide", ThemeOk, ThemeDanger)
+                    Height: =20
+                    Size: =8.25
+                    Text: =ThisItem.estado
+                    VerticalAlign: =VerticalAlign.Middle
+                    Width: =Parent.TemplateWidth * 0.28
+                    X: =Parent.TemplateWidth * 0.30
+                    Y: =2
+                    ZIndex: =3
+
+                lblCompDetalleLot As label:
+                    Align: =Align.Right
+                    Color: =ThemeInk2
+                    Height: =30
+                    Size: =8.25
+                    Text: |-
+                        =$"lote {Text(ThisItem.montoLote, FmtMoney)} ({ThisItem.cantLote})   ·   IBS {Text(ThisItem.montoCore, FmtMoney)} ({ThisItem.cantCore})"
+                    VerticalAlign: =VerticalAlign.Middle
+                    Width: =Parent.TemplateWidth * 0.42
+                    X: =Parent.TemplateWidth * 0.58
+                    Y: =2
+                    ZIndex: =4
+
+                lblCompDifLot As label:
+                    Align: =Align.Right
+                    Color: =ThemeDanger
+                    FontWeight: =FontWeight.Semibold
+                    Height: =14
+                    Size: =8.25
+                    Text: |-
+                        =If(ThisItem.difMonto = 0, "", $"diferencia {Text(ThisItem.difMonto, FmtMoney)}")
+                    Visible: =ThisItem.estado <> "coincide"
+                    Width: =Parent.TemplateWidth * 0.42
+                    X: =Parent.TemplateWidth * 0.58
+                    Y: =20
+                    ZIndex: =5
 
     btnActualizarLot As button:
         BorderThickness: =0
