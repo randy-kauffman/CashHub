@@ -560,6 +560,28 @@
                     Y: =54
                     ZIndex: =6
 
+                lblGalEnCola As label:
+                    Align: =Align.Center
+                    Color: =RGBA(20, 107, 58, 1)
+                    Fill: =RGBA(232, 242, 236, 1)
+                    FontWeight: =FontWeight.Semibold
+                    Height: =20
+                    OnSelect: =Select(Parent)
+                    PaddingLeft: =8
+                    PaddingRight: =8
+                    Size: =8
+                    Text: ="En cola del barrido"
+                    Visible: |-
+                        =// Verde y no ambar: no es algo que el operador tenga que atender, es algo
+                        // que ya esta encaminado. Sale del dato, no de haber apretado el boton, asi
+                        // que tambien marca los correos nuevos que el barrido todavia no evaluo.
+                        ThisItem.ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
+                            && ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente
+                    Width: =150
+                    X: =174
+                    Y: =54
+                    ZIndex: =7
+
             "'container Detalle' As groupContainer.verticalAutoLayoutContainer":
                 DropShadow: =DropShadow.Light
                 Fill: =RGBA(255, 255, 255, 1)
@@ -744,7 +766,17 @@
                         BorderColor: =
                         BorderStyle: =""
                         ContentLanguage: =""
-                        DisplayMode: =DisplayMode.Edit
+                        DisplayMode: |-
+                            =// YA ENCOLADO = NO SE PUEDE VOLVER A MARCAR. El estado vive en los datos,
+                            // no en una variable de pantalla: si el operador se va y vuelve, o si lo
+                            // marco otro, el boton sigue apagado. Se reactiva solo cuando el barrido
+                            // valida y ValidationStatus deja de ser Pendiente.
+                            If(
+                                galBandeja.Selected.ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
+                                    && galBandeja.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente,
+                                DisplayMode.Disabled,
+                                DisplayMode.Edit
+                            )
                         Font: =""
                         FontColor: =
                         FontItalic: =false
@@ -773,11 +805,17 @@
                             Refresh('CH-Tbl-Received Emails');
                             Notify("Marcado para reproceso. El barrido lo revalida en su proxima corrida, dentro de 10 minutos como maximo.", NotificationType.Success);
                         TabIndex: =0
-                        Text: ="Marcar para reproceso"
-                        Tooltip: =""
+                        Text: |-
+                            =If(
+                                galBandeja.Selected.ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
+                                    && galBandeja.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente,
+                                "Ya esta en la cola del barrido",
+                                "Marcar para reproceso"
+                            )
+                        Tooltip: ="Lo manda a revalidar en la proxima corrida del barrido. Se apaga mientras el correo ya esta encolado."
                         VerticalAlign: =""
                         Visible: =true
-                        Width: =190
+                        Width: =230
                         X: =0
                         Y: =0
                         ZIndex: =2
