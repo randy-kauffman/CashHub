@@ -108,8 +108,11 @@ namespace CashHub.Plugins
                     var cant = Int(g, "cant");
                     totalTrn += cant;
 
+                    var tipo = Opt(g, "tipo");
+
                     sb.Append("{\"moneda\":").Append(Moneda(Opt(g, "moneda")))
-                      .Append(",\"tipo\":").Append(Tipo(Opt(g, "tipo")))
+                      .Append(",\"tipo\":").Append(Tipo(tipo))
+                      .Append(",\"signo\":").Append(Signo(tipo))
                       .Append(",\"via\":").Append(Via(Opt(g, "via")))
                       .Append(",\"efectivo\":").Append(Num(Dec(g, "efectivo")))
                       .Append(",\"chequeBac\":").Append(Num(Dec(g, "chqbac")))
@@ -171,9 +174,22 @@ namespace CashHub.Plugins
                 case 159460001: return "\"Faltante\"";
                 case 159460002: return "\"Sobrante\"";
                 case 159460003: return "\"Sin declaracion\"";
-                default: return "\"\"";
+                // Los asientos sembrados viejos no tienen tipo. Se etiquetan en vez de
+                // dejarlos con la cadena vacia: una fila sin nombre en el resumen parece un
+                // error de la pantalla, no un dato incompleto.
+                default: return "\"Sin tipo\"";
             }
         }
+
+        /// <summary>
+        /// EL FALTANTE RESTA. Un faltante es plata que NO esta: se guarda en positivo —los
+        /// 116 de la base lo estan— pero en cualquier total del dia va con signo negativo.
+        /// Sumarlo seria inflar el cierre del cajero justo con lo que le falta.
+        ///
+        /// El signo viaja EN EL CUBO, calculado en el servidor, para que la app no tenga que
+        /// conocer la regla contable: solo multiplica.
+        /// </summary>
+        private static int Signo(int tipoCode) => tipoCode == 159460001 ? -1 : 1;
 
         /// <summary>Manual / Lote (sanic_transactionprocessingtype).</summary>
         private static string Via(int code)

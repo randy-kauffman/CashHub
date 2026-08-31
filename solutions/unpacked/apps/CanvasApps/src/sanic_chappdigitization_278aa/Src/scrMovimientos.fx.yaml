@@ -177,9 +177,12 @@ scrMovimientos As screen:
                         moneda:   mon.m,
                         simbolo:  mon.sim,
                         nombre:   mon.nom,
-                        efectivo: Sum(f, efectivo),
-                        cheques:  Sum(f, chequeBac) + Sum(f, chequeOtros),
-                        total:    Sum(f, total),
+                        // EL FALTANTE RESTA. El signo viene del servidor (+1 / -1) para
+                        // que la regla contable no viva en la pantalla. Sumar un faltante
+                        // seria inflar el cierre del cajero justo con lo que le falta.
+                        efectivo: Sum(f, efectivo * signo),
+                        cheques:  Sum(f, chequeBac * signo) + Sum(f, chequeOtros * signo),
+                        total:    Sum(f, total * signo),
                         cantidad: Sum(f, cantidad)
                     }
                 )
@@ -468,7 +471,7 @@ scrMovimientos As screen:
         lblMovViaMov As label:
             Color: =If(IsBlank(ThisItem.'Transaction Batch'), ThemeInk2, ThemeOk)
             FontWeight: =FontWeight.Semibold
-            Height: =38
+            Height: =20
             Size: =8.25
             Text: |-
                 =// La VIA se lee del hecho —tener lote o no—, no del ruteo. Es la unica de
@@ -476,9 +479,39 @@ scrMovimientos As screen:
                 If(IsBlank(ThisItem.'Transaction Batch'),
                    "Manual",
                    "Lote " & ThisItem.'Transaction Batch'.Name)
+            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.12
             X: =Parent.TemplateWidth * 0.34
+            Y: =2
             ZIndex: =5
+
+        lblMovEstadoMov As label:
+            Color: |-
+                =// Verde SOLO cuando de verdad entro al Core. Un lote Generado o Ingresado
+                // no es plata aplicada, y pintarlo igual seria decir que si.
+                Switch(ThisItem.BatchStatus,
+                    159460003, ThemeOk,
+                    159460004, ThemeDanger,
+                    159460001, ThemeInfo,
+                    ThemeInk3)
+            Height: =16
+            Size: =7.5
+            Text: |-
+                =// SIN ESTO, APLICAR UN LOTE NO SE NOTA. La fila decia "Lote TB-1048" y nada
+                // mas, asi que un lote recien aplicado se veia identico a uno que todavia no
+                // entro al Core. El espejo sanic_batchstatus ya viaja en la transaccion:
+                // existe justo para no tener que dar dos saltos.
+                Switch(ThisItem.BatchStatus,
+                    159460000, "Generado",
+                    159460001, "Ingresado",
+                    159460003, "Aplicado",
+                    159460004, "Devuelto",
+                    "")
+            VerticalAlign: =VerticalAlign.Middle
+            Width: =Parent.TemplateWidth * 0.12
+            X: =Parent.TemplateWidth * 0.34
+            Y: =19
+            ZIndex: =13
 
         lblMovCuentaMov As label:
             Color: =ThemeInk2
@@ -500,41 +533,64 @@ scrMovimientos As screen:
 
         lblMovEfeMov As label:
             Align: =Align.Right
-            Color: =If(ThisItem.CashAmount = 0, ThemeInk3, ThemeInk)
+            Color: |-
+                =If(Text(ThisItem.TransactionType) = "Faltante", ThemeDanger,
+                   If(ThisItem.CashAmount = 0, ThemeInk3, ThemeInk))
             Height: =38
             Size: =8.25
-            Text: =Text(ThisItem.CashAmount, FmtMoney)
+            Text: |-
+                =// El faltante se muestra en NEGATIVO: el mismo signo con el que entra
+                // al total de arriba. Verlo positivo en la fila y restando en el resumen
+                // obligaria a hacer la traduccion mentalmente en cada linea.
+                Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.CashAmount, ThisItem.CashAmount), FmtMoney)
             Width: =Parent.TemplateWidth * 0.10
             X: =Parent.TemplateWidth * 0.60
             ZIndex: =8
 
         lblMovBacMov As label:
             Align: =Align.Right
-            Color: =If(ThisItem.BACLocalCheckAmount = 0, ThemeInk3, ThemeInk)
+            Color: |-
+                =If(Text(ThisItem.TransactionType) = "Faltante", ThemeDanger,
+                   If(ThisItem.BACLocalCheckAmount = 0, ThemeInk3, ThemeInk))
             Height: =38
             Size: =8.25
-            Text: =Text(ThisItem.BACLocalCheckAmount, FmtMoney)
+            Text: |-
+                =// El faltante se muestra en NEGATIVO: el mismo signo con el que entra
+                // al total de arriba. Verlo positivo en la fila y restando en el resumen
+                // obligaria a hacer la traduccion mentalmente en cada linea.
+                Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.BACLocalCheckAmount, ThisItem.BACLocalCheckAmount), FmtMoney)
             Width: =Parent.TemplateWidth * 0.10
             X: =Parent.TemplateWidth * 0.70
             ZIndex: =9
 
         lblMovOtrMov As label:
             Align: =Align.Right
-            Color: =If(ThisItem.OtherLocalCheckAmount = 0, ThemeInk3, ThemeInk)
+            Color: |-
+                =If(Text(ThisItem.TransactionType) = "Faltante", ThemeDanger,
+                   If(ThisItem.OtherLocalCheckAmount = 0, ThemeInk3, ThemeInk))
             Height: =38
             Size: =8.25
-            Text: =Text(ThisItem.OtherLocalCheckAmount, FmtMoney)
+            Text: |-
+                =// El faltante se muestra en NEGATIVO: el mismo signo con el que entra
+                // al total de arriba. Verlo positivo en la fila y restando en el resumen
+                // obligaria a hacer la traduccion mentalmente en cada linea.
+                Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.OtherLocalCheckAmount, ThisItem.OtherLocalCheckAmount), FmtMoney)
             Width: =Parent.TemplateWidth * 0.10
             X: =Parent.TemplateWidth * 0.80
             ZIndex: =10
 
         lblMovTotMov As label:
             Align: =Align.Right
-            Color: =ThemeInk
+            Color: |-
+                =If(Text(ThisItem.TransactionType) = "Faltante", ThemeDanger, ThemeInk)
             FontWeight: =FontWeight.Bold
             Height: =38
             Size: =8.25
-            Text: =Text(ThisItem.Total, FmtMoney)
+            Text: |-
+                =// El faltante se muestra en NEGATIVO: el mismo signo con el que entra
+                // al total de arriba. Verlo positivo en la fila y restando en el resumen
+                // obligaria a hacer la traduccion mentalmente en cada linea.
+                Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.Total, ThisItem.Total), FmtMoney)
             Width: =Parent.TemplateWidth * 0.10
             X: =Parent.TemplateWidth * 0.90
             ZIndex: =11
@@ -639,6 +695,7 @@ scrMovimientos As screen:
                                     moneda:      Text(c.moneda),
                                     tipo:        Text(c.tipo),
                                     via:         Text(c.via),
+                                    signo:       Value(c.signo),
                                     efectivo:    Value(c.efectivo),
                                     chequeBac:   Value(c.chequeBac),
                                     chequeOtros: Value(c.chequeOtros),
