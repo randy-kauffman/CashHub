@@ -20,7 +20,15 @@ Screens:
             ctxAplicandoLot: false,
             ctxSacandoLot: false,
             ctxDlgAplicadoLot: false,
-            ctxDlgSacarLot: false
+            ctxDlgSacarLot: false,
+            ctxDlTokenLot: "",
+            ctxDlgDevolverLot: false,
+            ctxDevolviendoLot: false,
+            ctxSacadoOkLot: false,
+            ctxPasoOkLot: false,
+            ctxDlgResumenLot: false,
+            ctxVeredictoLot: "",
+            ctxMensajeLot: ""
         });
         Reset(tabFechaLot);
         Reset(inpBuscarLot);
@@ -36,6 +44,7 @@ Screens:
                     || ( ctxFiltroEstadoLot = "Por aplicar"
                          && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                               || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
+                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
                               || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                     ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                     ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
@@ -48,8 +57,34 @@ Screens:
           Control: CodeComponent
           ComponentName: sanic_CashHub.FileDownloader
           Properties:
-            X: =40
-            Y: =40
+            Content: |-
+              =// ARMA EL ARCHIVO EN EL NAVEGADOR, sin navegar a Dataverse.
+              //
+              // La descarga vieja era Download(".../sanic_csvcore/$value"): una NAVEGACION,
+              // en la que Power Fx no puede poner un header Authorization. Lo unico que la
+              // autenticaba era la cookie del org, que los usuarios de negocio no tienen
+              // —viven en apps.powerapps.com—. Les daba HTTP 401 y una pestaña en blanco. Y
+              // muda: el Download() queda FUERA del alcance de cualquier IfError, asi que la
+              // app ni se enteraba de que habia fallado.
+              //
+              // Mide 1x1 y queda detras del header a proposito: es un componente de
+              // COMPORTAMIENTO, no de presentacion. NO se le pone Visible: =false porque un
+              // componente que no se renderiza no recibe los cambios de propiedad — y
+              // entonces no bajaria nunca nada.
+              ctxCsvLot
+            ExpectedBytes: |-
+              =// Bytes que el servidor dice haber archivado. El componente los compara con
+              // los que realmente arma: si no coinciden, NO baja nada y lo reporta. Un CSV
+              // cortado entrando a un core bancario es peor que una descarga que falla.
+              ctxCsvBytesLot
+            FileName: =ctxCsvNombreLot
+            Height: =1
+            MimeType: ="text/csv;charset=utf-8"
+            Trigger: |-
+              =// Dispara por CAMBIO de token, no por valor presente: si no, cualquier
+              // re-render volveria a bajar el archivo y el usuario juntaria copias.
+              ctxDlTokenLot
+            Width: =1
       - cmpHeaderLot:
           Control: CanvasComponent
           ComponentName: cmpHeader
@@ -60,6 +95,7 @@ Screens:
             OnCorte: =Navigate(scrCorte, ScreenTransition.None)
             OnLotes: =Navigate(scrLotes, ScreenTransition.None)
             OnManual: =Navigate(scrManual, ScreenTransition.None)
+            OnMovimientos: =
             Subtitulo: ="Lotes"
             Titulo: ="Digitación"
             Width: =Parent.Width
@@ -92,7 +128,8 @@ Screens:
                                 || ( ctxFiltroEstadoLot = "Por aplicar"
                                      && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                           || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                          || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                          || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                                  || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                 ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                 ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                             ),
@@ -164,7 +201,8 @@ Screens:
                                                   || ( ctxFiltroEstadoLot = "Por aplicar"
                                                        && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                                             || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                                        || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                                   ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                                   ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                                               ),
@@ -201,7 +239,8 @@ Screens:
                                                   || ( ctxFiltroEstadoLot = "Por aplicar"
                                                        && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                                             || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                                        || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                                   ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                                   ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                                               ),
@@ -238,7 +277,8 @@ Screens:
                                                   || ( ctxFiltroEstadoLot = "Por aplicar"
                                                        && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                                             || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                                            || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                                        || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                                   ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                                   ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                                               ),
@@ -294,7 +334,8 @@ Screens:
                                             || ( ctxFiltroEstadoLot = "Por aplicar"
                                                  && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                                       || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                             ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                             ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                                         ),
@@ -332,7 +373,8 @@ Screens:
                                         || ( ctxFiltroEstadoLot = "Por aplicar"
                                              && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                                   || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                  || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                                  || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                         ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                         ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                                     ),
@@ -416,6 +458,7 @@ Screens:
                                       =Switch(ThisItem.BatchStatus,
                                           'BatchStatus (CH-Tbl-TransactionBatches)'.Generado,  "Generado",
                                           'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado, "Ingresado",
+                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto,  "Devuelto",
                                           'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado,  "Aprobado",
                                           'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado,  "Aplicado", "—")
                                     Width: =84
@@ -439,7 +482,8 @@ Screens:
                                             || ( ctxFiltroEstadoLot = "Por aplicar"
                                                  && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                                       || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                             ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                             ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                                         ),
@@ -505,6 +549,7 @@ Screens:
                                       =Switch(gvarLote.BatchStatus,
                                           'BatchStatus (CH-Tbl-TransactionBatches)'.Generado,  "Generado",
                                           'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado, "Ingresado",
+                                          'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto,  "Devuelto",
                                           'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado,  "Aprobado",
                                           'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado,  "Aplicado", "—")
                                     Tono: |-
@@ -542,17 +587,37 @@ Screens:
                                     Height: =32
                                     HoverFill: =ThemeAccentSoft
                                     OnSelect: |-
-                                      =IfError(
+                                      =// EL AVISO SALE DEL RESULTADO, NO DEL ORDEN DE LAS LINEAS. Antes el Notify
+                                      // de exito vivia DENTRO del primer argumento de IfError, en la misma
+                                      // cadena que el Patch. En una cadena de comportamiento el error del
+                                      // primer paso NO corta lo que sigue, y el valor de la cadena termina
+                                      // siendo el del ultimo paso —el Notify, que no falla—: IfError veia
+                                      // "sin error", nunca corria el fallback, y el usuario leia que todo
+                                      // habia salido bien mientras el servidor lo habia rechazado.
+                                      //
+                                      // Ahora IfError envuelve SOLO la escritura, y el exito se marca con
+                                      // una bandera adentro del camino feliz.
+                                      UpdateContext({ctxPasoOkLot: false});
+                                      IfError(
                                           Patch('CH-Tbl-TransactionBatches', LookUp('CH-Tbl-TransactionBatches',TransactionBatches = gvarLote.TransactionBatches ),
                                               { BatchStatus: 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado });
+                                          UpdateContext({ctxPasoOkLot: true}),
+                                          Notify("No se pudo marcar Ingresado: " & FirstError.Message, NotificationType.Error)
+                                      );
+                                      If(ctxPasoOkLot,
                                           Set(gvarLote, LookUp('CH-Tbl-TransactionBatches',
                                               TransactionBatches = gvarLote.TransactionBatches));
-                                          Notify("Lote marcado como Ingresado.", NotificationType.Success),
-                                          Notify("No se pudo marcar Ingresado: " & FirstError.Message, NotificationType.Error)
+                                          Notify("Lote marcado como Ingresado.", NotificationType.Success)
                                       )
                                     Size: =10
-                                    Text: ="Marcar como Ingresado"
-                                    Visible: =gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
+                                    Text: |-
+                                      =// Desde Devuelto el mismo boton es la RECARGA: se corrigio y se
+                                      // vuelve a presentar al IBS.
+                                      If(gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto,
+                                         "Volver a marcar Ingresado", "Marcar como Ingresado")
+                                    Visible: |-
+                                      =gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
+                                      || gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
                                     Width: =176
                                     X: =16
                                     Y: =8
@@ -590,13 +655,32 @@ Screens:
                                     Font: =Font.'Open Sans'
                                     Height: =26
                                     OnSelect: |-
-                                      =UpdateContext({ctxDescargandoLot: true});
+                                      =// EL CSV YA NO SE BAJA NAVEGANDO. Antes esto terminaba en
+                                      // Download(".../sanic_csvcore/$value"), que es una navegacion del
+                                      // navegador: Power Fx no puede ponerle un header Authorization, asi
+                                      // que lo unico que la autenticaba era la cookie del org. Los usuarios
+                                      // de negocio no la tienen y recibian un 401 mudo, fuera del alcance
+                                      // del IfError.
+                                      //
+                                      // Ahora el contenido viene por el conector, que si va autenticado, y
+                                      // el archivo lo arma el navegador. CH-Flow-DownloadData sigue
+                                      // generando y ARCHIVANDO el CSV: la API lo lee, no lo regenera, para
+                                      // que lo que se baja y lo que queda archivado sean el mismo archivo.
+                                      UpdateContext({ctxDescargandoLot: true, ctxDlTokenLot: ""});
                                       IfError(
                                           With(
                                               { res: 'CH-Flow-DownloadData'.Run(gvarLote.TransactionBatches, gvarLote.Name) },
-                                              Download(LookUp('Environment Variable Values','Schema Name' = "sanic_CHEVEnvironmentURL").Value&"api/data/v9.2/sanic_transactionbatcheses(" & gvarLote.TransactionBatches & ")/sanic_csvcore/$value")
+                                              With(
+                                                  { archivo: Environment.sanic_CHGetBatchCsv({ BatchId: gvarLote.TransactionBatches }) },
+                                                  UpdateContext({
+                                                      ctxCsvLot: archivo.Csv,
+                                                      ctxCsvNombreLot: archivo.FileName,
+                                                      ctxCsvBytesLot: archivo.SizeBytes
+                                                  });
+                                                  UpdateContext({ ctxDlTokenLot: Text(Now(), "[$-en-US]yyyymmddhhmmssfff") })
+                                              )
                                           ),
-                                          Notify("No se pudo generar el CSV: " & FirstError.Message, NotificationType.Error)
+                                          Notify("No se pudo descargar el CSV: " & FirstError.Message, NotificationType.Error)
                                       );
                                       UpdateContext({ctxDescargandoLot: false})
                                     RadiusBottomLeft: =7
@@ -630,7 +714,17 @@ Screens:
                                     RadiusTopRight: =7
                                     Size: =8.25
                                     Text: ="Sacar del lote"
-                                    Visible: =Or(gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado, gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado)
+                                    Visible: |-
+                                      =// MIENTRAS ESTA EN EL IBS NO SE TOCA. Un lote 'Ingresado' esta en manos
+                                      // del aprobador esperando veredicto: sacarle una transaccion por atras
+                                      // dejaria el archivo que el tiene en pantalla diciendo una cosa y el lote
+                                      // de CashHub diciendo otra. Si hay algo que corregir, el aprobador lo
+                                      // DEVUELVE, y ahi si vuelve a ser editable.
+                                      //
+                                      // El servidor lo vuelve a exigir igual (TransactionGuard.CanRemoveFromCut):
+                                      // esconder el boton es cortesia, no seguridad.
+                                      gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
+                                      || gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
                                     Width: =108
                                     X: =btnDescargarCsvLot.X - 8 - Self.Width
                                     Y: =11
@@ -641,6 +735,82 @@ Screens:
                                     Height: =1
                                     Width: =Parent.Width
                                     Y: =Parent.Height - 1
+                              - btnMarcarDevueltoLot:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderColor: =ThemeDangerLine
+                                    BorderThickness: =1
+                                    Color: =ThemeDanger
+                                    Fill: =ThemeSurface
+                                    Font: =Font.'Open Sans'
+                                    Height: =32
+                                    HoverFill: =ThemeDangerSoft
+                                    OnSelect: |-
+                                      =UpdateContext({ctxDlgDevolverLot: true})
+                                    Size: =10
+                                    Text: ="Marcar como Devuelto"
+                                    Visible: |-
+                                      =// LAS DOS CARAS DEL MISMO VEREDICTO. El aprobador revisa la carga en
+                                      // el IBS y o la aplica o la devuelve, asi que este boton aparece
+                                      // exactamente cuando aparece "Marcar como Aplicado": con el lote
+                                      // Ingresado y con alguien que NO sea quien lo subio.
+                                      //
+                                      // El servidor lo vuelve a exigir igual (segregacion de funciones en
+                                      // TransactionGuard): esconder el boton es cortesia, no seguridad.
+                                      gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
+                                      && Lower(Coalesce(gvarLote.'Ingresado por'.'Primary Email', "")) <> Lower(User().Email)
+                                    Width: =176
+                                    X: =btnMarcarAplicadoLot.X + btnMarcarAplicadoLot.Width + 8
+                                    Y: =8
+                              - btnAbrirResumenLot:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderColor: =ThemeLine
+                                    BorderThickness: =1
+                                    Color: =ThemeInk2
+                                    DisabledBorderColor: =Color.Transparent
+                                    DisabledColor: =ThemeInk3
+                                    DisabledFill: =ThemeLineSoft
+                                    DisplayMode: =If(ctxCargandoResumenLot, DisplayMode.Disabled, DisplayMode.Edit)
+                                    Fill: =ThemeSurface
+                                    Font: =Font.'Open Sans'
+                                    Height: =26
+                                    OnSelect: |-
+                                      =// Se abre LIMPIO: sin veredicto viejo ni texto pegado de otro lote.
+                                      // Un resultado anterior sobreviviendo al cambio de lote seria una
+                                      // mentira peor que no mostrar nada.
+                                      UpdateContext({
+                                          ctxCargandoResumenLot: true,
+                                          ctxVeredictoLot: "",
+                                          ctxMensajeLot: ""
+                                      });
+                                      Clear(colCompLot);
+                                      Reset(inpPegarIbsLot);
+                                      IfError(
+                                          With(
+                                              { r: Environment.sanic_CHBatchSummary({ BatchId: gvarLote.TransactionBatches }) },
+                                              ClearCollect(colResumenLot,
+                                                  ForAll(ParseJSON(r.Summary) As s,
+                                                      {
+                                                          cuenta:   Text(s.cuenta),
+                                                          moneda:   Text(s.moneda),
+                                                          monto:    Value(s.monto),
+                                                          cantidad: Value(s.cantidad)
+                                                      }));
+                                              UpdateContext({ctxDlgResumenLot: true})
+                                          ),
+                                          Notify("No se pudo armar el resumen del lote: " & FirstError.Message, NotificationType.Error)
+                                      );
+                                      UpdateContext({ctxCargandoResumenLot: false})
+                                    RadiusBottomLeft: =7
+                                    RadiusBottomRight: =7
+                                    RadiusTopLeft: =7
+                                    RadiusTopRight: =7
+                                    Size: =8.25
+                                    Text: =If(ctxCargandoResumenLot, "Cargando…", "Resumen / Comparar IBS")
+                                    Width: =178
+                                    X: =btnDescargarCsvLot.X - 8 - Self.Width
+                                    Y: =11
                         - cntProgresoLot:
                             Control: GroupContainer@1.5.0
                             Variant: ManualLayout
@@ -1004,14 +1174,19 @@ Screens:
             OnCancelar: |-
               =UpdateContext({ctxDlgAplicadoLot: false})
             OnOk: |-
-              =UpdateContext({ctxAplicandoLot: true});
+              =// Ver la nota del boton "Marcar como Ingresado": el aviso de exito no puede
+              // vivir en la misma cadena que la escritura, o avisa exito aunque falle.
+              UpdateContext({ctxAplicandoLot: true, ctxPasoOkLot: false});
               IfError(
                   Patch('CH-Tbl-TransactionBatches', LookUp('CH-Tbl-TransactionBatches', TransactionBatches = gvarLote.TransactionBatches) ,
                       { BatchStatus: 'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado });
+                  UpdateContext({ctxPasoOkLot: true}),
+                  Notify("No se pudo aplicar: " & FirstError.Message, NotificationType.Error)
+              );
+              If(ctxPasoOkLot,
                   Set(gvarLote, LookUp('CH-Tbl-TransactionBatches',
                       TransactionBatches = gvarLote.TransactionBatches));
-                  Notify("Lote aplicado.", NotificationType.Success),
-                  Notify("No se pudo aplicar: " & FirstError.Message, NotificationType.Error)
+                  Notify("Lote aplicado.", NotificationType.Success)
               );
               UpdateContext({ctxAplicandoLot: false, ctxDlgAplicadoLot: false})
             Texto: ="El lote pasa a Aplicado (ya ingresado al core). El servidor registra quién y cuándo. Esta acción cierra el ciclo del lote."
@@ -1021,6 +1196,210 @@ Screens:
             Tono: ="ok"
             Visible: =ctxDlgAplicadoLot
             Width: =Parent.Width
+      - cntDlgDevolverLot:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Fill: =ThemeOverlay
+            Height: =Parent.Height
+            Visible: =ctxDlgDevolverLot
+            Width: =Parent.Width
+          Children:
+            - btnDlgDevolverBloqueoLot:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  Fill: =Color.Transparent
+                  Height: =Parent.Height
+                  HoverFill: =Color.Transparent
+                  PressedFill: =Color.Transparent
+                  Text: =""
+                  Width: =Parent.Width
+            - cntDlgDevolverCardLot:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  DropShadow: =DropShadow.Regular
+                  Fill: =ThemeSurface
+                  Height: |-
+                    =// ALTO CALCULADO, no fijo. Con 362 —el alto del dialogo que se clono— el
+                    // contenido mas largo se desbordaba y se montaba. Se mide desde el ultimo
+                    // elemento: banner + separacion + botonera + margen.
+                    cntDlgDevolverBannerLot.Y + cntDlgDevolverBannerLot.Height + 20 + 32 + 20
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Width: =440
+                  X: =(Parent.Width - Self.Width) / 2
+                  Y: =(Parent.Height - Self.Height) / 2
+                Children:
+                  - shpDlgDevolverIcoLot:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        Fill: =ThemeDangerSoft
+                        Height: =34
+                        Width: =34
+                        X: =20
+                        Y: =20
+                  - lblDlgDevolverTitLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =22
+                        Size: =10.88
+                        Text: =$"¿Marcar {gvarLote.Name} como Devuelto?"
+                        Width: =Parent.Width - Self.X - 44
+                        X: =shpDlgDevolverIcoLot.X + shpDlgDevolverIcoLot.Width + 10
+                        Y: =20
+                  - lblDlgDevolverTxtLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        AutoHeight: =true
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        Text: |-
+                          ="El lote vuelve a quedar editable: se le pueden sacar transacciones y volver a marcarlo Ingresado."
+                        Width: =Parent.Width - Self.X - 20
+                        X: =lblDlgDevolverTitLot.X
+                        Y: =lblDlgDevolverTitLot.Y + 24
+                  - icoDlgDevolverXLot:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AccessibleLabel: ="Cancelar"
+                        Color: =ThemeInk3
+                        Height: =18
+                        HoverColor: =ThemeInk
+                        Icon: =Icon.Cancel
+                        OnSelect: |-
+                          =UpdateContext({ctxDlgDevolverLot: false})
+                        Width: =18
+                        X: =Parent.Width - 20 - 18
+                        Y: =20
+                  - lblDlgDevolverMotivoLabLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        Color: =ThemeInk2
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =8.25
+                        Text: ="Motivo de la devolución (obligatorio)"
+                        Width: =Parent.Width - 2*20
+                        X: =20
+                        Y: |-
+                          =// FLUYE, NO VA FIJO. El cuerpo de arriba tiene AutoHeight: con una Y
+                          // fija —como quedo al clonar el dialogo de "sacar del lote"— el texto
+                          // largo se le monta encima. Cada elemento arranca donde termina el
+                          // anterior, y la tarjeta crece con ellos.
+                          lblDlgDevolverTxtLot.Y + lblDlgDevolverTxtLot.Height + 18
+                  - inpMotivoDevLot:
+                      Control: Classic/TextInput@2.3.2
+                      Properties:
+                        BorderColor: =ThemeLine
+                        Default: =
+                        Fill: =ThemeSurface
+                        Font: =Font.'Open Sans'
+                        Height: =64
+                        HintText: |-
+                          ="Ej: la cuenta 992983992 no existe en el IBS, faltan 2 depósitos…"
+                        Mode: =TextMode.MultiLine
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Width: =Parent.Width - 2*20
+                        X: =20
+                        Y: =lblDlgDevolverMotivoLabLot.Y + lblDlgDevolverMotivoLabLot.Height + 6
+                  - cntDlgDevolverBannerLot:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        Fill: =ThemeWarnSoft
+                        Height: =52
+                        RadiusBottomLeft: =9
+                        RadiusBottomRight: =9
+                        RadiusTopLeft: =9
+                        RadiusTopRight: =9
+                        Width: =Parent.Width - 2*20
+                        X: =20
+                        Y: =inpMotivoDevLot.Y + inpMotivoDevLot.Height + 14
+                      Children:
+                        - lblDlgDevolverBannerLot:
+                            Control: Label@2.5.1
+                            Properties:
+                              AutoHeight: =true
+                              Color: =ThemeWarn
+                              Font: =Font.'Open Sans'
+                              Height: =36
+                              Size: =8.25
+                              Text: |-
+                                =// El aviso clonado hablaba de la transaccion que se saca del lote.
+                                // Aca lo que importa es OTRA cosa: que no hay atajo a Aplicado.
+                                "Quedan registrados el motivo, quién devolvió y cuándo. El lote no puede saltar a Aplicado: hay que corregirlo y presentarlo de nuevo al IBS."
+                              Width: =Parent.Width - 26
+                              X: =13
+                              Y: =8
+                  - btnDlgDevolverCancelLot:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Color: =ThemeInk2
+                        Fill: =Color.Transparent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverFill: =ThemeSurface2
+                        OnSelect: |-
+                          =UpdateContext({ctxDlgDevolverLot: false})
+                        Size: =10
+                        Text: ="Cancelar"
+                        Width: =96
+                        X: =btnDlgDevolverOkLot.X - 10 - Self.Width
+                        Y: =btnDlgDevolverOkLot.Y
+                  - btnDlgDevolverOkLot:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderStyle: =BorderStyle.None
+                        Color: =ThemeSurface
+                        DisabledBorderColor: =Color.Transparent
+                        DisabledColor: =ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =If(ctxDevolviendoLot Or IsBlank(inpMotivoDevLot.Text), DisplayMode.Disabled, DisplayMode.Edit)
+                        Fill: =ThemeDanger
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        OnSelect: |-
+                          =// El motivo viaja EN EL MISMO Patch que el estado. El guard lo exige asi a
+                          // proposito: si se guardara aparte, un motivo viejo de una devolucion
+                          // anterior alcanzaria para colar una devolucion nueva sin explicar nada.
+                          UpdateContext({ctxDevolviendoLot: true, ctxPasoOkLot: false});
+                          IfError(
+                              Patch('CH-Tbl-TransactionBatches',
+                                  LookUp('CH-Tbl-TransactionBatches', TransactionBatches = gvarLote.TransactionBatches),
+                                  { BatchStatus: 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto,
+                                    'Motivo de la devolucion': inpMotivoDevLot.Text });
+                              UpdateContext({ctxPasoOkLot: true}),
+                              Notify("No se pudo devolver el lote: " & FirstError.Message, NotificationType.Error)
+                          );
+                          // El dialogo se cierra SOLO si la devolucion entro. Si el servidor la
+                          // rechazo —segregacion de funciones, por ejemplo— el motivo escrito no
+                          // se pierde y el usuario ve el error con el dialogo todavia abierto.
+                          If(ctxPasoOkLot,
+                              Set(gvarLote, LookUp('CH-Tbl-TransactionBatches',
+                                  TransactionBatches = gvarLote.TransactionBatches));
+                              Reset(inpMotivoDevLot);
+                              Notify("Lote marcado como Devuelto. Ya se le pueden sacar transacciones.", NotificationType.Success);
+                              UpdateContext({ctxDlgDevolverLot: false})
+                          );
+                          UpdateContext({ctxDevolviendoLot: false})
+                        Size: =10
+                        Text: ="Marcar Devuelto"
+                        Width: =130
+                        X: =Parent.Width - 20 - Self.Width
+                        Y: =Parent.Height - 20 - 32
       - cntDlgSacarLot:
           Control: GroupContainer@1.5.0
           Variant: ManualLayout
@@ -1184,17 +1563,45 @@ Screens:
                         Font: =Font.'Open Sans'
                         Height: =32
                         OnSelect: |-
-                          =UpdateContext({ctxSacandoLot: true});
+                          =// DOS BUGS ARREGLADOS ACA, Y EL SEGUNDO ERA EL PELIGROSO.
+                          //
+                          // 1. SE MANDABA EL ID EQUIVOCADO. TransactionID es el numero VISIBLE
+                          //    ("1068"; el grid lo muestra como T-0000001068), no la clave. El
+                          //    Custom API espera un GUID, asi que la llamada moria en la puerta
+                          //    con "Cannot convert the literal '1068' to the expected type
+                          //    'Edm.Guid'" y la transaccion nunca salia del lote. La clave es
+                          //    'CH-Tbl-Transactions', que es como se llama la PK en Power Fx.
+                          //
+                          // 2. AVISABA EN VERDE AUNQUE FALLARA. El primer argumento de IfError
+                          //    era una CADENA: la llamada, y despues el Notify de exito. En una
+                          //    cadena de comportamiento el error del primer paso NO corta lo que
+                          //    sigue, y el valor de la cadena termina siendo el del ultimo paso
+                          //    —el Notify, que no falla—. IfError veia "sin error", jamas corria
+                          //    el fallback, y el usuario leia "Transaccion sacada del lote"
+                          //    mientras la transaccion seguia adentro. Peor: el
+                          //    Set(gvarTxLot, Blank()) tambien corria, borraba la seleccion y
+                          //    dejaba la pantalla como si hubiera pasado algo.
+                          //
+                          //    Ahora IfError envuelve SOLO la llamada, el exito se marca con una
+                          //    bandera DENTRO del camino feliz, y el aviso verde depende de esa
+                          //    bandera. El aviso sale del resultado, no del orden de las lineas.
+                          UpdateContext({ctxSacandoLot: true, ctxSacadoOkLot: false});
                           IfError(
                               With(
-                                  { r: Environment.sanic_CHRemoveFromCut({ TransactionId: gvarTxLot.TransactionID, Motivo: inpMotivoLot.Text }) },
+                                  { r: Environment.sanic_CHRemoveFromCut({
+                                      TransactionId: gvarTxLot.'CH-Tbl-Transactions',
+                                      Motivo: inpMotivoLot.Text }) },
                                   Set(gvarLote, Patch(gvarLote,
-                                      { TotalNIO: r.TotalNIO, TotalUSD: r.TotalUSD, TotalEUR: r.TotalEUR }))
-                              );
+                                      { TotalNIO: r.TotalNIO, TotalUSD: r.TotalUSD, TotalEUR: r.TotalEUR }));
+                                  UpdateContext({ctxSacadoOkLot: true})
+                              ),
+                              Notify("No se pudo sacar del lote: " & FirstError.Message, NotificationType.Error)
+                          );
+                          If(ctxSacadoOkLot,
                               Set(gvarTxLot, Blank());
                               Clear(colHistLot);
-                              Notify("Transacción sacada del lote y devuelta a Manual.", NotificationType.Success),
-                              Notify("No se pudo sacar del lote: " & FirstError.Message, NotificationType.Error)
+                              Select(btnActualizarLot);
+                              Notify("Transacción sacada del lote y devuelta a Manual.", NotificationType.Success)
                           );
                           UpdateContext({ctxSacandoLot: false, ctxDlgSacarLot: false})
                         Size: =10
@@ -1202,6 +1609,478 @@ Screens:
                         Width: =130
                         X: =Parent.Width - 20 - Self.Width
                         Y: =Parent.Height - 20 - 32
+      - cntDlgResumenLot:
+          Control: GroupContainer@1.5.0
+          Variant: ManualLayout
+          Properties:
+            Fill: |-
+              =// EL APROBADOR NO VE EL DETALLE. En el IBS Branch ve un "Resumen por Cuenta"
+              // (Cuenta | Moneda | Monto | Cant TRN) y decide con eso. Esta pantalla le
+              // muestra el MISMO corte del lote y le deja pegar el del IBS para que la
+              // comparacion la haga la maquina: el lote mas grande del entorno tiene 600
+              // cuentas distintas, y compararlas a ojo es lento y se cometen errores justo
+              // donde no se pueden cometer.
+              //
+              // Va como dialogo aparte y no dentro del panel del lote a proposito: ese panel
+              // ya tiene los botones de estado, los KPI y la grilla, y meterle un tercer modo
+              // obligaba a mover controles que hoy funcionan.
+              ThemeOverlay
+            Height: =Parent.Height
+            RadiusBottomLeft: =0
+            RadiusBottomRight: =0
+            RadiusTopLeft: =0
+            RadiusTopRight: =0
+            Visible: =ctxDlgResumenLot
+            Width: =Parent.Width
+          Children:
+            - btnDlgResumenBloqueoLot:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderStyle: =BorderStyle.None
+                  Color: =Color.Transparent
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =Parent.Height
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =Color.Transparent
+                  OnSelect: |-
+                    =UpdateContext({ctxDlgResumenLot: false})
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Color.Transparent
+                  Size: =13
+                  Text: =""
+                  Width: =Parent.Width
+            - cntDlgResumenCardLot:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  DropShadow: =DropShadow.Regular
+                  Fill: =ThemeSurface
+                  Height: |-
+                    =// GRANDE A PROPOSITO: aca se comparan cientos de filas. Un dialogo chico
+                    // obligaria a scrollear las dos listas en paralelo, que es exactamente el
+                    // trabajo manual que esto viene a eliminar.
+                    Parent.Height - 48
+                  RadiusBottomLeft: =12
+                  RadiusBottomRight: =12
+                  RadiusTopLeft: =12
+                  RadiusTopRight: =12
+                  Width: =Min(Parent.Width - 48, 1280)
+                  X: =(Parent.Width - Self.Width) / 2
+                  Y: =24
+                Children:
+                  - lblDlgResumenTitLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Bold
+                        Height: =26
+                        Size: =12
+                        Text: =$"Resumen por cuenta · Lote {gvarLote.Name}"
+                        Width: =Parent.Width - 80
+                        X: =24
+                        Y: =20
+                  - lblDlgResumenSubLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        Height: =18
+                        Size: =9
+                        Text: ="Es lo mismo que el aprobador ve en el IBS Branch. Pegá el resumen del IBS a la derecha para compararlo automáticamente."
+                        Width: =Parent.Width - 80
+                        X: =24
+                        Y: =46
+                  - icoDlgResumenXLot:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        AccessibleLabel: ="Cerrar"
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk3
+                        DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                        DisabledColor: =RGBA(119, 119, 119, 1)
+                        Height: =20
+                        Icon: =Icon.Cancel
+                        OnSelect: |-
+                          =UpdateContext({ctxDlgResumenLot: false})
+                        Width: =20
+                        X: =Parent.Width - 24 - 20
+                        Y: =22
+                  - lblResLoteCabLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk2
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =20
+                        Size: =9
+                        Text: =$"En CashHub · {CountRows(colResumenLot)} cuenta(s)"
+                        Width: =Parent.Width * 0.36 - 8
+                        X: =24
+                        Y: =80
+                  - galResumenLot:
+                      Control: Gallery@2.15.0
+                      Variant: Vertical
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Height: =Parent.Height - 130 - 24
+                        Items: =colResumenLot
+                        TemplateSize: =34
+                        Width: =Parent.Width * 0.36 - 8
+                        X: =24
+                        Y: =130
+                      Children:
+                        - lblResCuentaLot:
+                            Control: Label@2.5.1
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =ThemeInk
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              Height: =34
+                              Size: =9
+                              Text: =ThisItem.cuenta
+                              Width: =Parent.TemplateWidth * 0.34
+                        - lblResMonedaLot:
+                            Control: Label@2.5.1
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =ThemeInk2
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              Height: =34
+                              Size: =9
+                              Text: =ThisItem.moneda
+                              Width: =Parent.TemplateWidth * 0.14
+                              X: =Parent.TemplateWidth * 0.34
+                        - lblResMontoLot:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =ThemeInk
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              Height: =34
+                              Size: =9
+                              Text: =Text(ThisItem.monto, FmtMoney)
+                              Width: =Parent.TemplateWidth * 0.34
+                              X: =Parent.TemplateWidth * 0.48
+                        - lblResCantLot:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =ThemeInk2
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              Height: =34
+                              Size: =9
+                              Text: =Text(ThisItem.cantidad)
+                              Width: =Parent.TemplateWidth * 0.16
+                              X: =Parent.TemplateWidth * 0.82
+                        - shpResLineaLot:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 255, 1)
+                              Fill: =ThemeLine
+                              Height: =1
+                              Width: =Parent.TemplateWidth
+                              Y: =33
+                  - inpPegarIbsLot:
+                      Control: Classic/TextInput@2.3.2
+                      Properties:
+                        BorderColor: =ThemeLine
+                        Color: =RGBA(70, 68, 64, 1)
+                        DisabledBorderColor: =ColorFade(Self.BorderColor, 40%)
+                        DisabledColor: =ColorFade(Self.Color, 40%)
+                        DisabledFill: =Self.Fill
+                        Fill: =ThemeSurface
+                        FocusedBorderThickness: =3
+                        Font: =Font.'Open Sans'
+                        Height: =104
+                        HintText: ="Pegá acá el Resumen por Cuenta del IBS (Ctrl+V). Da igual si traés el encabezado, la columna Select, tabulaciones o espacios."
+                        HoverBorderColor: =Self.Color
+                        HoverColor: =Self.Color
+                        HoverFill: =Self.Fill
+                        MaxLength: |-
+                          =// SIN ESTO EL PEGADO SE CORTABA EN 100 CARACTERES. El control no
+                          // declaraba MaxLength y heredaba el default de la plataforma: de un
+                          // resumen de 500 cuentas (16.409 caracteres) entraban dos lineas, y el
+                          // comparador reportaba 498 cuentas "no estan en el IBS" — cierto, y
+                          // completamente enganoso. Un lote de 600 cuentas ronda los 20.000
+                          // caracteres; se deja holgura de sobra en vez de ajustar al caso de hoy.
+                          500000
+                        Mode: =TextMode.MultiLine
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9
+                        Width: =Parent.Width * 0.64 - 48
+                        X: =Parent.Width * 0.36 + 24
+                        Y: =104
+                  - btnCompararLot:
+                      Control: Classic/Button@2.2.0
+                      Properties:
+                        BorderColor: =ColorFade(Self.Fill, -15%)
+                        BorderStyle: =BorderStyle.None
+                        Color: =ThemeSurface
+                        DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                        DisabledColor: |-
+                          =// Sin esto el boton deshabilitado quedaba ILEGIBLE: hereda Color
+                          // (ThemeSurface, blanco) sobre DisabledFill gris claro. Un boton que no
+                          // se puede leer no comunica que esta deshabilitado, comunica que la
+                          // pantalla esta rota.
+                          ThemeInk3
+                        DisabledFill: =ThemeLineSoft
+                        DisplayMode: =If(ctxComparandoLot Or IsBlank(inpPegarIbsLot.Text), DisplayMode.Disabled, DisplayMode.Edit)
+                        Fill: =ThemeAccent
+                        Font: =Font.'Open Sans'
+                        Height: =32
+                        HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                        HoverColor: =Self.Color
+                        OnSelect: |-
+                          =// El aviso sale del RESULTADO, no del orden de las lineas: IfError
+                          // envuelve solo la llamada y el veredicto se pinta con lo que devolvio
+                          // el servidor. Mismo criterio que el resto de la pantalla.
+                          UpdateContext({ctxComparandoLot: true});
+                          IfError(
+                              With(
+                                  { r: Environment.sanic_CHBatchSummary({
+                                      BatchId: gvarLote.TransactionBatches,
+                                      PastedSummary: inpPegarIbsLot.Text }) },
+                                  ClearCollect(colCompLot,
+                                      ForAll(ParseJSON(r.Comparison) As c,
+                                          {
+                                              cuenta:    Text(c.cuenta),
+                                              moneda:    Text(c.moneda),
+                                              estado:    Text(c.estado),
+                                              montoLote: Value(c.montoLote),
+                                              montoCore: Value(c.montoCore),
+                                              difMonto:  Value(c.difMonto),
+                                              cantLote:  Value(c.cantLote),
+                                              cantCore:  Value(c.cantCore)
+                                          }));
+                                  UpdateContext({
+                                      ctxVeredictoLot: r.Outcome,
+                                      ctxMensajeLot: r.Message
+                                  })
+                              ),
+                              UpdateContext({ctxVeredictoLot: "error", ctxMensajeLot: FirstError.Message})
+                          );
+                          UpdateContext({ctxComparandoLot: false})
+                        PressedBorderColor: =Self.Fill
+                        PressedColor: =Self.Fill
+                        PressedFill: =Self.Color
+                        RadiusBottomLeft: =7
+                        RadiusBottomRight: =7
+                        RadiusTopLeft: =7
+                        RadiusTopRight: =7
+                        Size: =9
+                        Text: =If(ctxComparandoLot, "Comparando…", "Comparar con el IBS")
+                        Width: =180
+                        X: =Parent.Width - 24 - Self.Width
+                        Y: =232
+                  - lblVeredictoLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =Switch(ctxVeredictoLot, "coincide", ThemeOk, "difiere", ThemeDanger, ThemeWarn)
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Fill: =Switch(ctxVeredictoLot, "coincide", ThemeOkSoft, "difiere", ThemeDangerSoft, ThemeWarnSoft)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =44
+                        PaddingLeft: =12
+                        PaddingRight: =12
+                        Size: =9
+                        Text: =ctxMensajeLot
+                        Visible: =!IsBlank(ctxVeredictoLot)
+                        Width: =Parent.Width * 0.64 - 48 - 188
+                        X: =Parent.Width * 0.36 + 24
+                        Y: =232
+                  - galComparacionLot:
+                      Control: Gallery@2.15.0
+                      Variant: Vertical
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Height: =Parent.Height - 284 - 24
+                        Items: =colCompLot
+                        TemplateSize: =38
+                        Width: =Parent.Width * 0.64 - 48
+                        X: =Parent.Width * 0.36 + 24
+                        Y: =284
+                      Children:
+                        - shpCompEstadoLot:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 255, 1)
+                              Fill: |-
+                                =// Las diferencias ya vienen PRIMERO del servidor; la banda de color
+                                // hace que se vean sin leer.
+                                If(ThisItem.estado = "coincide", ThemeOkSoft, ThemeDangerSoft)
+                              Height: =3
+                              Width: =Parent.TemplateWidth
+                              Y: =34
+                        - lblCompCuentaLot:
+                            Control: Label@2.5.1
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =ThemeInk
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =20
+                              Size: =9
+                              Text: =$"{ThisItem.cuenta}  {ThisItem.moneda}"
+                              Width: =Parent.TemplateWidth * 0.30
+                              Y: =2
+                        - lblCompEstadoLot:
+                            Control: Label@2.5.1
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =If(ThisItem.estado = "coincide", ThemeOk, ThemeDanger)
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              Height: =20
+                              Size: =8.25
+                              Text: =ThisItem.estado
+                              Width: =Parent.TemplateWidth * 0.28
+                              X: =Parent.TemplateWidth * 0.30
+                              Y: =2
+                        - lblCompDetalleLot:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =ThemeInk2
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              Height: =30
+                              Size: =8.25
+                              Text: =$"lote {Text(ThisItem.montoLote, FmtMoney)} ({ThisItem.cantLote})   ·   IBS {Text(ThisItem.montoCore, FmtMoney)} ({ThisItem.cantCore})"
+                              Width: =Parent.TemplateWidth * 0.42
+                              X: =Parent.TemplateWidth * 0.58
+                              Y: =2
+                        - lblCompDifLot:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =ThemeDanger
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =14
+                              Size: =8.25
+                              Text: =If(ThisItem.difMonto = 0, "", $"diferencia {Text(ThisItem.difMonto, FmtMoney)}")
+                              Visible: =ThisItem.estado <> "coincide"
+                              Width: =Parent.TemplateWidth * 0.42
+                              X: =Parent.TemplateWidth * 0.58
+                              Y: =20
+                  - lblResColCuentaLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =8.25
+                        Text: ="CUENTA"
+                        Width: =(Parent.Width * 0.36 - 8) * 0.34
+                        X: =24
+                        Y: =106
+                  - lblResColMonedaLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =8.25
+                        Text: ="MON."
+                        Width: =(Parent.Width * 0.36 - 8) * 0.14
+                        X: =24 + (Parent.Width * 0.36 - 8) * 0.34
+                        Y: =106
+                  - lblResColMontoLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Right
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =8.25
+                        Text: ="MONTO"
+                        Width: =(Parent.Width * 0.36 - 8) * 0.34
+                        X: =24 + (Parent.Width * 0.36 - 8) * 0.48
+                        Y: =106
+                  - lblResColCantLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Right
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =ThemeInk3
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        FontWeight: =FontWeight.Semibold
+                        Height: =16
+                        Size: =8.25
+                        Text: ="CANT TRN"
+                        Width: =(Parent.Width * 0.36 - 8) * 0.16
+                        X: =24 + (Parent.Width * 0.36 - 8) * 0.82
+                        Y: =106
+                  - shpResCabLineaLot:
+                      Control: Rectangle@2.3.0
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 255, 1)
+                        Fill: =ThemeLine
+                        Height: =1
+                        Width: =Parent.Width * 0.36 - 8
+                        X: =24
+                        Y: =124
+                  - lblPegadoContadorLot:
+                      Control: Label@2.5.1
+                      Properties:
+                        Align: =Align.Right
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: |-
+                          =// Se pone en alerta si el pegado quedo sospechosamente corto para la
+                          // cantidad de cuentas del lote: es la senal temprana de un copiado
+                          // incompleto, ANTES de comparar y confundirse con el resultado.
+                          If(!IsBlank(inpPegarIbsLot.Text)
+                             && CountRows(Split(inpPegarIbsLot.Text, Char(10))) < CountRows(colResumenLot),
+                             ThemeWarn, ThemeInk3)
+                        DisabledColor: =RGBA(186, 186, 186, 1)
+                        Font: =Font.'Open Sans'
+                        Height: =16
+                        Size: =8.25
+                        Text: |-
+                          =If(IsBlank(inpPegarIbsLot.Text), "",
+                              $"{CountRows(Split(inpPegarIbsLot.Text, Char(10)))} línea(s) pegadas · {Len(inpPegarIbsLot.Text)} caracteres")
+                        Width: =Parent.Width * 0.64 - 48
+                        X: =Parent.Width * 0.36 + 24
+                        Y: =210
       - btnActualizarLot:
           Control: Classic/Button@2.2.0
           Properties:
@@ -1290,3 +2169,30 @@ Screens:
             Width: =1
             X: =6
             Y: =758
+      - lblErrorDescargaLot:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Fill: =ThemeDanger
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =44
+            PaddingLeft: =14
+            PaddingRight: =14
+            Size: =9
+            Text: |-
+              =// EL FALLO TIENE QUE VERSE. Con Download() no habia forma de mostrarlo: no
+              // era una operacion de la app y no habia nada que reportar. Ahora el
+              // componente informa, y esto lo pone en pantalla.
+              $"No se pudo bajar el CSV del lote: {FileDownloader1.Status}"
+            Visible: |-
+              =// Se limpia sola: cada intento borra el token antes de empezar, asi que el
+              // cartel de un fallo viejo no sobrevive al siguiente intento.
+              !IsBlank(ctxDlTokenLot)
+              && !IsBlank(FileDownloader1.Status)
+              && FileDownloader1.Status <> "ok"
+            Width: =Parent.Width - 32
+            X: =16
+            Y: =LayHeaderH + 12

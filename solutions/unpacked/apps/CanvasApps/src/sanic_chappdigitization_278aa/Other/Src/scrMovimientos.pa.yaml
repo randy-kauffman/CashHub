@@ -1,0 +1,781 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  scrMovimientos:
+    Properties:
+      Fill: =ThemeBg
+      LoadingSpinnerColor: =RGBA(0, 51, 102, 1)
+      OnVisible: |-
+        =// UN DIA A LA VEZ, no un rango: asi lo pidio el negocio y ademas mantiene la
+        // consulta acotada. El dia arranca en HOY.
+        UpdateContext({
+            ctxDiaMov: Today(),
+            ctxFiltroMov: "Todas",
+            ctxCargandoMov: false
+        });
+        Set(gvarCajeroMov, Blank());
+        Clear(colCuboMov);
+        Select(btnCargarCajerosMov)
+    Children:
+      - cmpHeaderMov:
+          Control: CanvasComponent
+          ComponentName: cmpHeader
+          Properties:
+            Activo: |-
+              =// Ninguna de las cuatro pestañas queda marcada: esta pantalla todavia no tiene
+              // la suya. Agregarle un quinto tab al componente exige una propiedad nueva
+              // (OnMovimientos) y `pac canvas pack` no puede crear propiedades de componente
+              // —PA3004—: eso se agrega una vez desde Studio.
+              ""
+            Height: =LayHeaderH
+            OnCheques: =Navigate(scrCheques, ScreenTransition.None)
+            OnCorte: =Navigate(scrCorte, ScreenTransition.None)
+            OnLotes: =Navigate(scrLotes, ScreenTransition.None)
+            OnManual: =Navigate(scrManual, ScreenTransition.None)
+            OnMovimientos: =
+            Subtitulo: ="Movimientos"
+            Titulo: ="Digitación"
+            Width: =Parent.Width
+      - galCajerosMov:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            BorderColor: =ThemeLine
+            Height: =Parent.Height - LayHeaderH
+            Items: =colCajerosMov
+            OnSelect: |-
+              =Set(gvarCajeroMov, ThisItem);
+              Select(btnCargarCuboMov)
+            TemplateSize: =56
+            Width: =236
+            Y: =LayHeaderH
+          Children:
+            - shpCajSelMov:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 255, 1)
+                  Fill: |-
+                    =If(!IsBlank(gvarCajeroMov) && ThisItem.cajero = gvarCajeroMov.cajero,
+                        ThemeAccentSoft, ThemeSurface)
+                  Height: =56
+                  Width: =Parent.TemplateWidth
+            - shpCajBarraMov:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 255, 1)
+                  Fill: |-
+                    =If(!IsBlank(gvarCajeroMov) && ThisItem.cajero = gvarCajeroMov.cajero,
+                        ThemeAccent, Color.Transparent)
+                  Height: =56
+                  Width: =3
+            - lblCajNombreMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =18
+                  Size: =9.5
+                  Text: =ThisItem.cajeroNombre
+                  Width: =Parent.TemplateWidth - 24
+                  X: =16
+                  Y: =10
+            - lblCajMesaMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk3
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =16
+                  Size: =8.25
+                  Text: =ThisItem.mesa
+                  Width: =Parent.TemplateWidth - 24
+                  X: =16
+                  Y: =28
+            - btnCajFilaMov:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ColorFade(Self.Fill, -15%)
+                  BorderStyle: =BorderStyle.None
+                  Color: =Color.Transparent
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =Color.Transparent
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Normal
+                  Height: =56
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =ThemeSurface2
+                  OnSelect: =Select(Parent)
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Color.Transparent
+                  Size: =13
+                  Text: =""
+                  Width: =Parent.TemplateWidth
+            - shpCajLineaMov:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 255, 1)
+                  Fill: =ThemeLine
+                  Height: =1
+                  Width: =Parent.TemplateWidth
+                  Y: =55
+      - lblTituloMov:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            Size: =14
+            Text: =Coalesce(gvarCajeroMov.cajeroNombre, "Elegí un cajero")
+            Width: =520
+            X: =256
+            Y: =LayHeaderH + 16
+      - lblSubtituloMov:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk2
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            Height: =18
+            Size: =9
+            Text: |-
+              =If(IsBlank(gvarCajeroMov), "Seleccioná un cajero del panel izquierdo.",
+                  $"{gvarCajeroMov.mesa} · {Text(Sum(colCuboMov, cantidad))} transacciones el {Text(ctxDiaMov, ""dd/mm/yyyy"")}")
+            Width: =520
+            X: =256
+            Y: =LayHeaderH + 42
+      - dtpDiaMov:
+          Control: Classic/DatePicker@2.6.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderStyle: =%BorderStyle.RESERVED%.Solid
+            Color: =ThemeInk
+            DateTimeZone: =%DateTimeZone.RESERVED%.Local
+            DisabledBorderColor: =RGBA(56, 56, 56, 1)
+            DisabledColor: =RGBA(70, 68, 64, 1)
+            DisabledFill: =Self.Fill
+            DisplayMode: =%DisplayMode.RESERVED%.Edit
+            Fill: =ThemeSurface
+            Font: =%Font.RESERVED%.'Open Sans'
+            FontWeight: =%FontWeight.RESERVED%.Normal
+            Height: =32
+            IconBackground: =RGBA(35, 31, 32, 1)
+            IconFill: =RGBA(255, 255, 255, 1)
+            OnChange: |-
+              =// UN SOLO DIA. No hay "desde/hasta": el negocio revisa el cierre de una jornada,
+              // y un rango largo ademas haria pesada la consulta sin agregar nada.
+              UpdateContext({ctxDiaMov: dtpDiaMov.SelectedDate});
+              Select(btnCargarCuboMov)
+            StartOfWeek: =%StartOfWeek.RESERVED%.Sunday
+            Width: =150
+            X: =Parent.Width - 16 - 150
+            Y: =LayHeaderH + 16
+      - btnHoyMov:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk2
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            Height: =32
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            OnSelect: |-
+              =Reset(dtpDiaMov);
+              UpdateContext({ctxDiaMov: Today()});
+              Select(btnCargarCuboMov)
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =Self.Color
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =9
+            Text: ="Hoy"
+            Width: =64
+            X: =dtpDiaMov.X - 8 - Self.Width
+            Y: =LayHeaderH + 16
+      - galResumenMov:
+          Control: Gallery@2.15.0
+          Variant: Horizontal
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Height: =108
+            Items: |-
+              =// EL RESUMEN SIGUE AL FILTRO. Se arma sobre el cubo (12 filas como mucho), asi
+              // que cambiar de chip es instantaneo y no vuelve a consultar. Las tres monedas
+              // se muestran SIEMPRE, aunque el filtro las deje en cero: que una desaparezca
+              // haria dudar de si no hubo movimientos o si la pantalla se comio la fila.
+              ForAll(
+                  Table({ m: "COR", sim: SimboloNIO, nom: "Córdobas" },
+                        { m: "USD", sim: SimboloUSD, nom: "Dólares" },
+                        { m: "EUR", sim: SimboloEUR, nom: "Euros" }) As mon,
+                  With(
+                      { f: Filter(colCuboMov,
+                              moneda = mon.m,
+                              ctxFiltroMov = "Todas" || tipo = ctxFiltroMov || via = ctxFiltroMov) },
+                      {
+                          moneda:   mon.m,
+                          simbolo:  mon.sim,
+                          nombre:   mon.nom,
+                          efectivo: Sum(f, efectivo),
+                          cheques:  Sum(f, chequeBac) + Sum(f, chequeOtros),
+                          total:    Sum(f, total),
+                          cantidad: Sum(f, cantidad)
+                      }
+                  )
+              )
+            LoadingSpinner: =LoadingSpinner.None
+            ShowScrollbar: =false
+            TemplateSize: =(Parent.Width - 256 - 16 - 24) / 3
+            Width: =Parent.Width - 256 - 16
+            X: =256
+            Y: =LayHeaderH + 76
+          Children:
+            - shpMonCardMov:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Fill: =ThemeSurface
+                  Height: =108
+                  Width: =Parent.TemplateWidth - 12
+            - lblMonNombreMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk3
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =16
+                  Size: =8.25
+                  Text: =Upper(ThisItem.nombre) & " · " & ThisItem.simbolo
+                  Width: =Parent.TemplateWidth - 120
+                  X: =16
+                  Y: =12
+            - lblMonCantMov:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk3
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =16
+                  Size: =8.25
+                  Text: =Text(ThisItem.cantidad) & " trn"
+                  Width: =92
+                  X: =Parent.TemplateWidth - 12 - 16 - 92
+                  Y: =12
+            - lblMonTotalMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Bold
+                  Height: =32
+                  Size: =18
+                  Text: =ThisItem.simbolo & " " & Text(ThisItem.total, FmtMoney)
+                  Width: =Parent.TemplateWidth - 12 - 32
+                  X: =16
+                  Y: =30
+            - lblMonEfeEtMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk3
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =14
+                  Size: =7.5
+                  Text: ="EFECTIVO"
+                  Width: =(Parent.TemplateWidth - 12 - 32) / 2
+                  X: =16
+                  Y: =68
+            - lblMonEfeMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =18
+                  Size: =9.5
+                  Text: =Text(ThisItem.efectivo, FmtMoney)
+                  Width: =(Parent.TemplateWidth - 12 - 32) / 2
+                  X: =16
+                  Y: =82
+            - lblMonChqEtMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk3
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =14
+                  Size: =7.5
+                  Text: ="CHEQUES"
+                  Width: =(Parent.TemplateWidth - 12 - 32) / 2
+                  X: =16 + (Parent.TemplateWidth - 12 - 32) / 2
+                  Y: =68
+            - lblMonChqMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =18
+                  Size: =9.5
+                  Text: =Text(ThisItem.cheques, FmtMoney)
+                  Width: =(Parent.TemplateWidth - 12 - 32) / 2
+                  X: =16 + (Parent.TemplateWidth - 12 - 32) / 2
+                  Y: =82
+      - galChipsMov:
+          Control: Gallery@2.15.0
+          Variant: Horizontal
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Height: =32
+            Items: |-
+              =// UN FILTRO A LA VEZ, y por eso son excluyentes. No es solo simplicidad de UI:
+              // cada opcion se traduce en un Filter DELEGABLE distinto sobre el datasource, y
+              // combinarlos libremente obligaria a filtrar del lado del cliente — que topa en
+              // 500 filas y mostraria un dia incompleto sin avisar.
+              ForAll(
+                  Table({ k: "Todas",           t: "Todas" },
+                        { k: "Deposito",        t: "Depósitos" },
+                        { k: "Faltante",        t: "Faltantes" },
+                        { k: "Sobrante",        t: "Sobrantes" },
+                        { k: "Sin declaracion", t: "Sin declaración" },
+                        { k: "Lote",            t: "Por lote" },
+                        { k: "Manual",          t: "Manuales" }) As c,
+                  {
+                      clave: c.k,
+                      texto: c.t,
+                      cant: Sum(
+                          Filter(colCuboMov, c.k = "Todas" || tipo = c.k || via = c.k),
+                          cantidad)
+                  }
+              )
+            LoadingSpinner: =LoadingSpinner.None
+            ShowScrollbar: =false
+            TemplateSize: =136
+            Width: =Parent.Width - 256 - 16
+            X: =256
+            Y: =LayHeaderH + 196
+          Children:
+            - btnChipMov:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =If(ThisItem.clave = ctxFiltroMov, ThemeInk, ThemeLine)
+                  BorderThickness: =1
+                  Color: =If(ThisItem.clave = ctxFiltroMov, ThemeSurface, ThemeInk2)
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =If(ThisItem.clave = ctxFiltroMov, ThemeInk, ThemeSurface)
+                  Font: =Font.'Open Sans'
+                  Height: =30
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =If(ThisItem.clave = ctxFiltroMov, ThemeSurface, ThemeInk)
+                  HoverFill: =If(ThisItem.clave = ctxFiltroMov, ThemeInk, ThemeSurface2)
+                  OnSelect: |-
+                    =UpdateContext({ctxFiltroMov: ThisItem.clave})
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Self.Color
+                  RadiusBottomLeft: =15
+                  RadiusBottomRight: =15
+                  RadiusTopLeft: =15
+                  RadiusTopRight: =15
+                  Size: =8.25
+                  Text: =ThisItem.texto & "  " & Text(ThisItem.cant)
+                  Width: =128
+      - shpTablaCabMov:
+          Control: Rectangle@2.3.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Fill: =ThemeSurface2
+            Height: =32
+            Width: =Parent.Width - 256 - 16
+            X: =256
+            Y: =LayHeaderH + 240
+      - lblCabMov:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =12
+            Size: =7.5
+            Text: ="ID          REFERENCIA            TIPO             VÍA / LOTE          CUENTA      MON.        EFECTIVO       CHEQUE BAC     CHEQUE OTROS          TOTAL     HORA"
+            Width: =Parent.Width - 256 - 16
+            X: =256
+            Y: =LayHeaderH + 240
+      - galMovMov:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            BorderColor: =ThemeLine
+            Height: =Parent.Height - LayHeaderH - 272 - 16
+            Items: |-
+              =// TODAS LAS DEL DIA, no las primeras 500. La galeria se ata DIRECTO al
+              // datasource con un Filter delegable: Dataverse resuelve el filtro y la galeria
+              // va trayendo mientras se scrollea. Si esto se armara con una coleccion, un dia
+              // real —5.442 transacciones de un solo cajero— se cortaria en 500 sin avisar.
+              //
+              // Por eso el filtro de los chips es EXCLUYENTE y cada rama es un Filter completo
+              // y delegable: mezclarlos obligaria a filtrar del lado del cliente y volveriamos
+              // al tope de 500.
+              SortByColumns(
+                  Switch(ctxFiltroMov,
+                      "Deposito",
+                      Filter('CH-Tbl-Transactions',
+                          Cajero.User = gvarCajeroMov.cajero,
+                          'Created On' >= ctxDiaMov,
+                          'Created On' < DateAdd(ctxDiaMov, 1, TimeUnit.Days),
+                          TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito),
+                      "Faltante",
+                      Filter('CH-Tbl-Transactions',
+                          Cajero.User = gvarCajeroMov.cajero,
+                          'Created On' >= ctxDiaMov,
+                          'Created On' < DateAdd(ctxDiaMov, 1, TimeUnit.Days),
+                          TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Faltante),
+                      "Sobrante",
+                      Filter('CH-Tbl-Transactions',
+                          Cajero.User = gvarCajeroMov.cajero,
+                          'Created On' >= ctxDiaMov,
+                          'Created On' < DateAdd(ctxDiaMov, 1, TimeUnit.Days),
+                          TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Sobrante),
+                      "Sin declaracion",
+                      Filter('CH-Tbl-Transactions',
+                          Cajero.User = gvarCajeroMov.cajero,
+                          'Created On' >= ctxDiaMov,
+                          'Created On' < DateAdd(ctxDiaMov, 1, TimeUnit.Days),
+                          TransactionType = 'TransactionType (CH-Tbl-Transactions)'.'Sin declaracion'),
+                      "Lote",
+                      Filter('CH-Tbl-Transactions',
+                          Cajero.User = gvarCajeroMov.cajero,
+                          'Created On' >= ctxDiaMov,
+                          'Created On' < DateAdd(ctxDiaMov, 1, TimeUnit.Days),
+                          TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Batch),
+                      "Manual",
+                      Filter('CH-Tbl-Transactions',
+                          Cajero.User = gvarCajeroMov.cajero,
+                          'Created On' >= ctxDiaMov,
+                          'Created On' < DateAdd(ctxDiaMov, 1, TimeUnit.Days),
+                          TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual),
+                      Filter('CH-Tbl-Transactions',
+                          Cajero.User = gvarCajeroMov.cajero,
+                          'Created On' >= ctxDiaMov,
+                          'Created On' < DateAdd(ctxDiaMov, 1, TimeUnit.Days))
+                  ),
+                  "createdon", SortOrder.Descending)
+            TemplateSize: =38
+            Width: =Parent.Width - 256 - 16
+            X: =256
+            Y: =LayHeaderH + 272
+          Children:
+            - shpMovFilaMov:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 255, 1)
+                  Fill: =ThemeSurface
+                  Height: =38
+                  Width: =Parent.TemplateWidth
+            - lblMovIdMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =38
+                  PaddingLeft: =12
+                  Size: =8.25
+                  Text: ="T-" & Right("0000000000" & ThisItem.TransactionID, 10)
+                  Width: =Parent.TemplateWidth * 0.11
+            - lblMovRefMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk2
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =38
+                  Size: =8.25
+                  Text: =Coalesce(ThisItem.TransactionReference, "—")
+                  Width: =Parent.TemplateWidth * 0.13
+                  X: =Parent.TemplateWidth * 0.11
+            - lblMovTipoMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: |-
+                    =Switch(Text(ThisItem.TransactionType),
+                        "Sobrante", ThemeInfo,
+                        "Faltante", ThemeDanger,
+                        "Sin declaracion", ThemeWarn,
+                        ThemeInk2)
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Fill: |-
+                    =// El estado se ve por la FORMA y el color, no solo por la palabra: un
+                    // faltante y un sobrante tienen que saltar en una tabla de 5.000 filas.
+                    Switch(Text(ThisItem.TransactionType),
+                        "Sobrante", ThemeInfoSoft,
+                        "Faltante", ThemeDangerSoft,
+                        "Sin declaracion", ThemeWarnSoft,
+                        ThemeLineSoft)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =20
+                  PaddingLeft: =8
+                  PaddingRight: =8
+                  Size: =7.5
+                  Text: =Text(ThisItem.TransactionType)
+                  Width: =Parent.TemplateWidth * 0.10
+                  X: =Parent.TemplateWidth * 0.24
+                  Y: =9
+            - lblMovViaMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =If(IsBlank(ThisItem.'Transaction Batch'), ThemeInk2, ThemeOk)
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Semibold
+                  Height: =38
+                  Size: =8.25
+                  Text: |-
+                    =// La VIA se lee del hecho —tener lote o no—, no del ruteo. Es la unica de
+                    // las dos que no puede contradecir lo que realmente paso.
+                    If(IsBlank(ThisItem.'Transaction Batch'),
+                       "Manual",
+                       "Lote " & ThisItem.'Transaction Batch'.Name)
+                  Width: =Parent.TemplateWidth * 0.12
+                  X: =Parent.TemplateWidth * 0.34
+            - lblMovCuentaMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk2
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =38
+                  Size: =8.25
+                  Text: =Text(ThisItem.AccountNumber, "[$-en-US]000000000")
+                  Width: =Parent.TemplateWidth * 0.09
+                  X: =Parent.TemplateWidth * 0.46
+            - lblMovMonMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk2
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =38
+                  Size: =8.25
+                  Text: =Text(ThisItem.Currency)
+                  Width: =Parent.TemplateWidth * 0.05
+                  X: =Parent.TemplateWidth * 0.55
+            - lblMovEfeMov:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =If(ThisItem.CashAmount = 0, ThemeInk3, ThemeInk)
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =38
+                  Size: =8.25
+                  Text: =Text(ThisItem.CashAmount, FmtMoney)
+                  Width: =Parent.TemplateWidth * 0.10
+                  X: =Parent.TemplateWidth * 0.60
+            - lblMovBacMov:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =If(ThisItem.BACLocalCheckAmount = 0, ThemeInk3, ThemeInk)
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =38
+                  Size: =8.25
+                  Text: =Text(ThisItem.BACLocalCheckAmount, FmtMoney)
+                  Width: =Parent.TemplateWidth * 0.10
+                  X: =Parent.TemplateWidth * 0.70
+            - lblMovOtrMov:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =If(ThisItem.OtherLocalCheckAmount = 0, ThemeInk3, ThemeInk)
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =38
+                  Size: =8.25
+                  Text: =Text(ThisItem.OtherLocalCheckAmount, FmtMoney)
+                  Width: =Parent.TemplateWidth * 0.10
+                  X: =Parent.TemplateWidth * 0.80
+            - lblMovTotMov:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =FontWeight.Bold
+                  Height: =38
+                  Size: =8.25
+                  Text: =Text(ThisItem.Total, FmtMoney)
+                  Width: =Parent.TemplateWidth * 0.10
+                  X: =Parent.TemplateWidth * 0.90
+            - shpMovLineaMov:
+                Control: Rectangle@2.3.0
+                Properties:
+                  BorderColor: =RGBA(0, 0, 255, 1)
+                  Fill: =ThemeLineSoft
+                  Height: =1
+                  Width: =Parent.TemplateWidth
+                  Y: =37
+      - cmpVacioMov:
+          Control: CanvasComponent
+          ComponentName: cmpEmpty
+          Properties:
+            Glifo: ="⛁"
+            Height: =galMovMov.Height
+            Mensaje: |-
+              =If(IsBlank(gvarCajeroMov),
+                  "Elegí un cajero del panel izquierdo para ver sus movimientos.",
+                  "Este cajero no tiene movimientos con ese filtro en la fecha elegida.")
+            Visible: =IsEmpty(galMovMov.AllItems)
+            Width: =galMovMov.Width
+            X: =galMovMov.X
+            Y: =galMovMov.Y
+      - btnCargarCajerosMov:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            Fill: =Color.Transparent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =1
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =Color.Transparent
+            OnSelect: |-
+              =// El rail sale del mismo API que las otras pantallas, pero SIN filtrar por
+              // pendientes: aca se consulta el historico, y un cajero sin trabajo pendiente
+              // igual tuvo movimientos ayer.
+              ClearCollect(colCajerosMov,
+                  ForAll(
+                      ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload) As w,
+                      {
+                          cajero:       GUID(Text(w.cajero)),
+                          cajeroNombre: Text(w.cajeroNombre),
+                          mesa:         Text(w.mesa)
+                      }
+                  )
+              )
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =Color.Transparent
+            Size: =13
+            Text: =""
+            Width: =1
+      - btnCargarCuboMov:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ColorFade(Self.Fill, -15%)
+            BorderThickness: =0
+            Color: =RGBA(255, 255, 255, 1)
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            Fill: =Color.Transparent
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Normal
+            Height: =1
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =Color.Transparent
+            OnSelect: |-
+              =// El cubo: 12 filas como mucho, con TODO el dia agregado del lado del servidor.
+              // De ahi salen el resumen grande y los contadores de los chips sin volver a
+              // consultar cada vez que se toca uno. Sumar en el cliente toparia en 500 filas y
+              // daria un resumen incompleto sin avisar.
+              If(IsBlank(gvarCajeroMov),
+                  Clear(colCuboMov),
+                  UpdateContext({ctxCargandoMov: true});
+                  IfError(
+                      With(
+                          { r: Environment.sanic_CHCashierDay({
+                              CajeroId: gvarCajeroMov.cajero,
+                              Desde: ctxDiaMov,
+                              Hasta: DateAdd(ctxDiaMov, 1, TimeUnit.Days) }) },
+                          ClearCollect(colCuboMov,
+                              ForAll(ParseJSON(r.Cube) As c,
+                                  {
+                                      moneda:      Text(c.moneda),
+                                      tipo:        Text(c.tipo),
+                                      via:         Text(c.via),
+                                      efectivo:    Value(c.efectivo),
+                                      chequeBac:   Value(c.chequeBac),
+                                      chequeOtros: Value(c.chequeOtros),
+                                      total:       Value(c.total),
+                                      cantidad:    Value(c.cantidad)
+                                  }))
+                      ),
+                      Clear(colCuboMov);
+                      Notify("No se pudo cargar el resumen del cajero: " & FirstError.Message, NotificationType.Error)
+                  );
+                  UpdateContext({ctxCargandoMov: false})
+              )
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =Color.Transparent
+            Size: =13
+            Text: =""
+            Width: =1

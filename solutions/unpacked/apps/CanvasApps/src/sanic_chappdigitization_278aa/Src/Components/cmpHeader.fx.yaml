@@ -11,6 +11,9 @@ cmpHeader As CanvasComponent:
     OnManual():
         ThisProperty:
             Default: =
+    OnMovimientos():
+        ThisProperty:
+            Default: =
     Activo: ="Corte"
     ChildTabPriority: =true
     ContentLanguage: =""
@@ -106,7 +109,7 @@ cmpHeader As CanvasComponent:
         RadiusBottomRight: =16
         RadiusTopLeft: =16
         RadiusTopRight: =16
-        Width: =360
+        Width: =460
         X: =lblTituloHdr.X + 190
         Y: =(Parent.Height-32)/2
         ZIndex: =6
@@ -134,7 +137,7 @@ cmpHeader As CanvasComponent:
             RadiusTopRight: =13
             Size: =9
             Text: ="Corte"
-            Width: =(Parent.Width - 6)/4
+            Width: =(Parent.Width - 6)/5
             X: =3
             Y: =3
             ZIndex: =1
@@ -162,7 +165,7 @@ cmpHeader As CanvasComponent:
             RadiusTopRight: =13
             Size: =9
             Text: ="Manual"
-            Width: =(Parent.Width - 6)/4
+            Width: =(Parent.Width - 6)/5
             X: =btnNavCorteHdr.X + btnNavCorteHdr.Width
             Y: =3
             ZIndex: =2
@@ -190,7 +193,7 @@ cmpHeader As CanvasComponent:
             RadiusTopRight: =13
             Size: =9
             Text: ="Lotes"
-            Width: =(Parent.Width - 6)/4
+            Width: =(Parent.Width - 6)/5
             X: =btnNavManualHdr.X + btnNavManualHdr.Width
             Y: =3
             ZIndex: =3
@@ -218,10 +221,38 @@ cmpHeader As CanvasComponent:
             RadiusTopRight: =13
             Size: =9
             Text: ="Cheques"
-            Width: =(Parent.Width - 6)/4
+            Width: =(Parent.Width - 6)/5
             X: =btnNavLotesHdr.X + btnNavLotesHdr.Width
             Y: =3
             ZIndex: =4
+
+        btnNavMovimientosHdr As button:
+            BorderColor: =App.Theme.Colors.Primary
+            BorderThickness: =0
+            Color: =If(cmpHeader.Activo = "Movimientos", ThemeAccent, ThemeInk2)
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            Fill: =If(cmpHeader.Activo = "Movimientos", ThemeSurface, Color.Transparent)
+            FontWeight: =If(cmpHeader.Activo = "Movimientos", FontWeight.Semibold, FontWeight.Normal)
+            Height: =26
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =If(cmpHeader.Activo = "Movimientos", ThemeSurface, ThemeSurface2)
+            OnSelect: =cmpHeader.OnMovimientos()
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =App.Theme.Colors.Darker40
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Size: =9
+            Text: ="Movimientos"
+            Width: =(Parent.Width - 6)/5
+            X: =btnNavChequesHdr.X + btnNavChequesHdr.Width
+            Y: =3
+            ZIndex: =5
 
     cntUserHdr As groupContainer.manualLayoutContainer:
         BorderColor: =ThemeLine

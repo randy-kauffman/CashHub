@@ -14,17 +14,13 @@ scrMovimientos As screen:
         Select(btnCargarCajerosMov)
 
     cmpHeaderMov As cmpHeader:
-        Activo: |-
-            =// Ninguna de las cuatro pestañas queda marcada: esta pantalla todavia no tiene
-            // la suya. Agregarle un quinto tab al componente exige una propiedad nueva
-            // (OnMovimientos) y `pac canvas pack` no puede crear propiedades de componente
-            // —PA3004—: eso se agrega una vez desde Studio.
-            ""
+        Activo: ="Movimientos"
         Height: =LayHeaderH
         OnCheques: =Navigate(scrCheques, ScreenTransition.None)
         OnCorte: =Navigate(scrCorte, ScreenTransition.None)
         OnLotes: =Navigate(scrLotes, ScreenTransition.None)
         OnManual: =Navigate(scrManual, ScreenTransition.None)
+        OnMovimientos: =Select(btnCargarCuboMov)
         Subtitulo: ="Movimientos"
         Width: =Parent.Width
         ZIndex: =1
@@ -39,10 +35,8 @@ scrMovimientos As screen:
         OnSelect: |-
             =Set(gvarCajeroMov, ThisItem);
             Select(btnCargarCuboMov)
-        ShowScrollbar: =true
         TemplateSize: =56
         Width: =236
-        X: =0
         Y: =LayHeaderH
         ZIndex: =2
 
@@ -60,7 +54,6 @@ scrMovimientos As screen:
                     ThemeAccent, Color.Transparent)
             Height: =56
             Width: =3
-            X: =0
             ZIndex: =2
 
         lblCajNombreMov As label:
@@ -107,7 +100,6 @@ scrMovimientos As screen:
         Color: =ThemeInk
         FontWeight: =FontWeight.Bold
         Height: =26
-        Size: =14
         Text: =Coalesce(gvarCajeroMov.cajeroNombre, "Elegí un cajero")
         Width: =520
         X: =256
@@ -129,9 +121,7 @@ scrMovimientos As screen:
     dtpDiaMov As datepicker.dateValue:
         BorderColor: =ThemeLine
         Color: =ThemeInk
-        DefaultDate: =Today()
         Fill: =ThemeSurface
-        Format: =DateTimeFormat.ShortDate
         Height: =32
         OnChange: |-
             =// UN SOLO DIA. No hay "desde/hasta": el negocio revisa el cierre de una jornada,
@@ -193,7 +183,6 @@ scrMovimientos As screen:
                     }
                 )
             )
-        Layout: =Layout.Horizontal
         ShowScrollbar: =false
         TemplateSize: =(Parent.Width - 256 - 16 - 24) / 3
         Width: =Parent.Width - 256 - 16
@@ -206,12 +195,7 @@ scrMovimientos As screen:
             BorderThickness: =1
             Fill: =ThemeSurface
             Height: =108
-            RadiusBottomLeft: =12
-            RadiusBottomRight: =12
-            RadiusTopLeft: =12
-            RadiusTopRight: =12
             Width: =Parent.TemplateWidth - 12
-            X: =0
             ZIndex: =1
 
         lblMonNombreMov As label:
@@ -315,7 +299,6 @@ scrMovimientos As screen:
                         cantidad)
                 }
             )
-        Layout: =Layout.Horizontal
         ShowScrollbar: =false
         TemplateSize: =136
         Width: =Parent.Width - 256 - 16
@@ -341,7 +324,6 @@ scrMovimientos As screen:
             Size: =8.25
             Text: =ThisItem.texto & "  " & Text(ThisItem.cant)
             Width: =128
-            X: =0
             ZIndex: =1
 
     shpTablaCabMov As rectangle:
@@ -349,8 +331,6 @@ scrMovimientos As screen:
         BorderThickness: =1
         Fill: =ThemeSurface2
         Height: =32
-        RadiusTopLeft: =12
-        RadiusTopRight: =12
         Width: =Parent.Width - 256 - 16
         X: =256
         Y: =LayHeaderH + 240
@@ -363,7 +343,6 @@ scrMovimientos As screen:
         PaddingLeft: =12
         Size: =7.5
         Text: ="ID          REFERENCIA            TIPO             VÍA / LOTE          CUENTA      MON.        EFECTIVO       CHEQUE BAC     CHEQUE OTROS          TOTAL     HORA"
-        VerticalAlign: =VerticalAlign.Middle
         Width: =Parent.Width - 256 - 16
         X: =256
         Y: =LayHeaderH + 240
@@ -428,7 +407,6 @@ scrMovimientos As screen:
                 "createdon", SortOrder.Descending)
         Layout: =Layout.Vertical
         LoadingSpinner: =LoadingSpinner.Data
-        ShowScrollbar: =true
         TemplateSize: =38
         Width: =Parent.Width - 256 - 16
         X: =256
@@ -448,9 +426,7 @@ scrMovimientos As screen:
             PaddingLeft: =12
             Size: =8.25
             Text: ="T-" & Right("0000000000" & ThisItem.TransactionID, 10)
-            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.11
-            X: =0
             ZIndex: =2
 
         lblMovRefMov As label:
@@ -458,13 +434,11 @@ scrMovimientos As screen:
             Height: =38
             Size: =8.25
             Text: =Coalesce(ThisItem.TransactionReference, "—")
-            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.13
             X: =Parent.TemplateWidth * 0.11
             ZIndex: =3
 
         lblMovTipoMov As label:
-            BorderRadius: =999
             Color: |-
                 =Switch(Text(ThisItem.TransactionType),
                     "Sobrante", ThemeInfo,
@@ -485,15 +459,13 @@ scrMovimientos As screen:
             PaddingRight: =8
             Size: =7.5
             Text: =Text(ThisItem.TransactionType)
-            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.10
             X: =Parent.TemplateWidth * 0.24
             Y: =9
             ZIndex: =4
 
         lblMovViaMov As label:
-            Color: |-
-                =If(IsBlank(ThisItem.'Transaction Batch'), ThemeInk2, ThemeOk)
+            Color: =If(IsBlank(ThisItem.'Transaction Batch'), ThemeInk2, ThemeOk)
             FontWeight: =FontWeight.Semibold
             Height: =38
             Size: =8.25
@@ -503,7 +475,6 @@ scrMovimientos As screen:
                 If(IsBlank(ThisItem.'Transaction Batch'),
                    "Manual",
                    "Lote " & ThisItem.'Transaction Batch'.Name)
-            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.12
             X: =Parent.TemplateWidth * 0.34
             ZIndex: =5
@@ -513,7 +484,6 @@ scrMovimientos As screen:
             Height: =38
             Size: =8.25
             Text: =Text(ThisItem.AccountNumber, "[$-en-US]000000000")
-            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.09
             X: =Parent.TemplateWidth * 0.46
             ZIndex: =6
@@ -523,7 +493,6 @@ scrMovimientos As screen:
             Height: =38
             Size: =8.25
             Text: =Text(ThisItem.Currency)
-            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.05
             X: =Parent.TemplateWidth * 0.55
             ZIndex: =7
@@ -534,7 +503,6 @@ scrMovimientos As screen:
             Height: =38
             Size: =8.25
             Text: =Text(ThisItem.CashAmount, FmtMoney)
-            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.10
             X: =Parent.TemplateWidth * 0.60
             ZIndex: =8
@@ -545,7 +513,6 @@ scrMovimientos As screen:
             Height: =38
             Size: =8.25
             Text: =Text(ThisItem.BACLocalCheckAmount, FmtMoney)
-            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.10
             X: =Parent.TemplateWidth * 0.70
             ZIndex: =9
@@ -556,7 +523,6 @@ scrMovimientos As screen:
             Height: =38
             Size: =8.25
             Text: =Text(ThisItem.OtherLocalCheckAmount, FmtMoney)
-            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.10
             X: =Parent.TemplateWidth * 0.80
             ZIndex: =10
@@ -568,7 +534,6 @@ scrMovimientos As screen:
             Height: =38
             Size: =8.25
             Text: =Text(ThisItem.Total, FmtMoney)
-            VerticalAlign: =VerticalAlign.Middle
             Width: =Parent.TemplateWidth * 0.10
             X: =Parent.TemplateWidth * 0.90
             ZIndex: =11
@@ -615,8 +580,6 @@ scrMovimientos As screen:
         PressedFill: =Color.Transparent
         Text: =""
         Width: =1
-        X: =0
-        Y: =0
         ZIndex: =13
 
     btnCargarCuboMov As button:
@@ -659,6 +622,5 @@ scrMovimientos As screen:
         PressedFill: =Color.Transparent
         Text: =""
         Width: =1
-        X: =0
-        Y: =0
         ZIndex: =14
+
