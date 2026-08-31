@@ -2061,9 +2061,63 @@ scrLotes As screen:
                 Y: =80
                 ZIndex: =4
 
+            lblResColCuentaLot As label:
+                Color: =ThemeInk3
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                Size: =8.25
+                Text: ="CUENTA"
+                Width: =(Parent.Width * 0.36 - 8) * 0.34
+                X: =24
+                Y: =106
+                ZIndex: =40
+
+            lblResColMonedaLot As label:
+                Color: =ThemeInk3
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                Size: =8.25
+                Text: ="MON."
+                Width: =(Parent.Width * 0.36 - 8) * 0.14
+                X: =24 + (Parent.Width * 0.36 - 8) * 0.34
+                Y: =106
+                ZIndex: =41
+
+            lblResColMontoLot As label:
+                Align: =Align.Right
+                Color: =ThemeInk3
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                Size: =8.25
+                Text: ="MONTO"
+                Width: =(Parent.Width * 0.36 - 8) * 0.34
+                X: =24 + (Parent.Width * 0.36 - 8) * 0.48
+                Y: =106
+                ZIndex: =42
+
+            lblResColCantLot As label:
+                Align: =Align.Right
+                Color: =ThemeInk3
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                Size: =8.25
+                Text: ="CANT TRN"
+                Width: =(Parent.Width * 0.36 - 8) * 0.16
+                X: =24 + (Parent.Width * 0.36 - 8) * 0.82
+                Y: =106
+                ZIndex: =43
+
+            shpResCabLineaLot As rectangle:
+                Fill: =ThemeLine
+                Height: =1
+                Width: =Parent.Width * 0.36 - 8
+                X: =24
+                Y: =124
+                ZIndex: =44
+
             galResumenLot As gallery.galleryVertical:
                 DelayItemLoading: =true
-                Height: =Parent.Height - 80 - 24 - 24
+                Height: =Parent.Height - 130 - 24
                 Items: =colResumenLot
                 Layout: =Layout.Vertical
                 LoadingSpinner: =LoadingSpinner.Data
@@ -2071,7 +2125,7 @@ scrLotes As screen:
                 TemplateSize: =34
                 Width: =Parent.Width * 0.36 - 8
                 X: =24
-                Y: =104
+                Y: =130
                 ZIndex: =5
 
                 lblResCuentaLot As label:
@@ -2145,6 +2199,12 @@ scrLotes As screen:
             btnCompararLot As button:
                 BorderStyle: =BorderStyle.None
                 Color: =ThemeSurface
+                DisabledColor: |-
+                    =// Sin esto el boton deshabilitado quedaba ILEGIBLE: hereda Color
+                    // (ThemeSurface, blanco) sobre DisabledFill gris claro. Un boton que no
+                    // se puede leer no comunica que esta deshabilitado, comunica que la
+                    // pantalla esta rota.
+                    ThemeInk3
                 DisabledFill: =ThemeLineSoft
                 DisplayMode: =If(ctxComparandoLot Or IsBlank(inpPegarIbsLot.Text), DisplayMode.Disabled, DisplayMode.Edit)
                 Fill: =ThemeAccent
