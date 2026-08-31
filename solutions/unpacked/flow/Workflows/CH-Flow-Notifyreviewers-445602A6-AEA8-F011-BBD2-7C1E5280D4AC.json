@@ -203,8 +203,9 @@
           "type": "OpenApiConnection",
           "inputs": {
             "parameters": {
-              "entityName": "environmentvariablevalues",
-              "$filter": "schemaname eq 'sanic_CHEVAppUrl_ClientAdmin' ",
+              "entityName": "sanic_chtblparameters",
+              "$select": "sanic_value",
+              "$filter": "sanic_name eq 'Apps.ClientAdministration.Url' and sanic_isactive eq true",
               "$top": 1
             },
             "host": {
@@ -346,7 +347,7 @@
                     "horizontalAlignment": "Center",
                     "style": "positive",
                     "tooltip": "Abrir app",
-                    "url": "@{first(outputs('Obtener_enlace_a_la_app_de_adminsitracion_de_clientes')?['body/value'])?['value']}&RFC=@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']}"
+                    "url": "@{first(outputs('Obtener_enlace_a_la_app_de_adminsitracion_de_clientes')?['body/value'])?['sanic_value']}&RFC=@{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']}"
                   }
                 ]
               }

@@ -290,6 +290,41 @@ SEED = [
                              "coma, comilla doble, punto y coma ni saltos de linea. Vacia = no pasa "
                              "nada (default-deny).",
     },
+    {
+        # Buzon al que CH-App-IngestionConsole le avisa a Banca de Empresas cuando
+        # llega un pre-registro de un remitente sin registrar o con CIF inexistente.
+        # Migrado desde la environment variable sanic_CHEVBancaMailbox (CH-EV-BancaMailbox),
+        # que quedaba con el default de DEV al importar y habia que acordarse de pisarla
+        # por ambiente. Aca lo cambia negocio desde CH-App-Configuration, sin solucion.
+        # Vacio/inactivo => el boton avisa "falta configurar" y NO manda nada.
+        # Category=Email(159460001), Datatype=Email(159460006).
+        "sanic_name": "Email.Banca.Mailbox",
+        "sanic_value": "cashhub@55xljh.onmicrosoft.com",
+        "sanic_category": 159460001, "sanic_datatype": 159460006, "sanic_isactive": True,
+        "sanic_description": "Buzon de Banca de Empresas al que la consola de ingesta avisa que "
+                             "hay que registrar un remitente. Si esta vacio o inactivo, el boton "
+                             "'Avisar a Banca' no envia y muestra el error de configuracion.",
+    },
+    {
+        # URL de CH-App-ClientAdministration para el link del correo que manda la
+        # consola de ingesta. Migrado desde sanic_CHEVAppUrl_ClientAdmin, que estaba
+        # SIN default y SIN valor asignado: el link nunca se renderizaba.
+        # Se guarda la forma canonica (sin los query params 'hint' y 'sourcetime',
+        # que son de sesion y no sirven en un link que se manda por correo).
+        # OJO: la environment variable NO se elimina — CH-Flow-Notifyreviewers y
+        # CH-Flow-NotifywhenRFCimplementationfinish todavia la leen.
+        # Category=General(159460005), Datatype=Url(159460007).
+        "sanic_name": "Apps.ClientAdministration.Url",
+        "sanic_value": ("https://apps.powerapps.com/play/e/"
+                        "9c8994b8-b1bc-ee23-9184-2f6346502613/a/"
+                        "2307804d-aeb1-419e-a392-effd969d1a57"
+                        "?tenantId=7bcfee03-896e-4ad3-947b-8a2d9ce17974"),
+        "sanic_category": 159460005, "sanic_datatype": 159460007, "sanic_isactive": True,
+        "sanic_description": "URL de CH-App-ClientAdministration. La usa el correo que la consola "
+                             "de ingesta le manda a Banca de Empresas para linkear la app. Cambia "
+                             "por ambiente: al importar a TEST/PROD hay que poner la URL de ESE "
+                             "ambiente. Vacio = el correo sale sin link (no falla).",
+    },
 ]
 
 def seed():

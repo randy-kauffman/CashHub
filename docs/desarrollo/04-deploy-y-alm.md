@@ -36,7 +36,7 @@ Importar Apps antes que Flow dejaría los botones `.Run('CH-Flow-...')` de Recou
 | `sanic_CHEVAADGroup_EmailValidation` | (vacío) | Ídem. |
 | `sanic_CHEVAADGroup_Reception` | (vacío) | Ídem. |
 | `sanic_CHEVAADGroup_Supervisor` | (vacío) | Ídem. |
-| `sanic_CHEVAppUrl_ClientAdmin` | (vacío) | URL de la app — Power Apps genera una URL/GUID de app nueva en cada ambiente al importar. Esta es la única variable de entorno efectivamente **consumida por un flujo** (`Notifyreviewers`, `NotifywhenRFCimplementationfinish`, vía `ListRecords` sobre `environmentvariablevalues`) — si queda vacía, los mensajes de Teams del módulo RFC quedan sin link a la app. |
+| `sanic_CHEVAppUrl_ClientAdmin` | (vacío) | **MIGRADA — ya no se consume.** El 2026-08-31 sus tres consumidores (`CH-Flow-Notifyreviewers`, `CH-Flow-NotifywhenRFCimplementationfinish` y `CH-App-IngestionConsole`) pasaron a leer el parámetro `Apps.ClientAdministration.Url` de `CH-Tbl-Parameter`. La variable sigue definida pero **nadie la lee**; se puede quitar de `CashHubCore` en la próxima ventana. Ver [09-app-configuracion.md](09-app-configuracion.md) §9. |
 | `sanic_CHEVAppUrl_Counting` | (vacío) | Ídem (aunque no se detectó consumo activo en flujos ni apps — confirmar antes de asumir que no se usa). |
 | `sanic_CHEVAppUrl_EmailValidation` | (vacío) | Ídem. |
 | `sanic_CHEVAppUrl_Reception` | (vacío) | Ídem. |

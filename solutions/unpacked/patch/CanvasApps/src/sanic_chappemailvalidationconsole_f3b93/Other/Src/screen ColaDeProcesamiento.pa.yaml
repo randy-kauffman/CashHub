@@ -582,15 +582,15 @@ Screens:
                                     OnSelect: |-
                                       =With(
                                           {
-                                              destino: LookUp('Environment Variable Values', 'Schema Name' = "sanic_CHEVBancaMailbox", Value),
-                                              urlAdmin: LookUp('Environment Variable Values', 'Schema Name' = "sanic_CHEVAppUrl_ClientAdmin", Value),
+                                              destino: LookUp('CH-Tbl-Parameters', Key = "Email.Banca.Mailbox" && 'Is Active' = true, Value),
+                                              urlAdmin: LookUp('CH-Tbl-Parameters', Key = "Apps.ClientAdministration.Url" && 'Is Active' = true, Value),
                                               cli: galBandeja.Selected.'Cliente atribuido',
                                               dir: galBandeja.Selected.SourceEmailAddress,
                                               ges: galBandeja.Selected.Name
                                           },
                                           If(
                                               IsBlank(destino),
-                                              Notify("Falta configurar CH-EV-BancaMailbox: no se sabe a que buzon avisarle a Banca de Empresas.", NotificationType.Error),
+                                              Notify("Falta configurar el parametro Email.Banca.Mailbox en CH-App-Configuration: no se sabe a que buzon avisarle a Banca de Empresas.", NotificationType.Error),
                                               Office365Outlook.SendEmailV2(
                                                   destino,
                                                   If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso,
