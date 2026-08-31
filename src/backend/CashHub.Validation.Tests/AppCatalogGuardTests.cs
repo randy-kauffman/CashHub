@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using CashHub.Validation.Security;
 using Xunit;
 using static CashHub.Validation.Security.AppCatalogGuard;
@@ -85,25 +85,6 @@ namespace CashHub.Validation.Tests
         {
             Assert.False(EvaluateAppUrl("javascript:alert(1)").IsAllowed);
             Assert.False(EvaluateAppUrl("esto no es una url").IsAllowed);
-        }
-
-        // ---- catalogo: sanic_aadgroupid esta DEPRECADO (los grupos viven en CH-Tbl-AppCatalogAccess) ----
-
-        [Fact]
-        public void CatalogGroups_Blank_IsAllowed()
-        {
-            // Limpiar la columna deprecada (o no tocarla) es legitimo.
-            Assert.True(EvaluateDeprecatedCatalogGroups(null).IsAllowed);
-            Assert.True(EvaluateDeprecatedCatalogGroups("   ").IsAllowed);
-        }
-
-        [Fact]
-        public void CatalogGroups_AnyValue_IsBlocked()
-        {
-            // Nadie vuelve al modelo viejo por accidente: el guard señala la tabla nueva.
-            var result = EvaluateDeprecatedCatalogGroups(G1);
-            Assert.False(result.IsAllowed);
-            Assert.Contains("CH-Tbl-AppCatalogAccess", result.Reason);
         }
 
         // ---- tabla de accesos: sanic_aadgroupid = UN grupo AAD por fila ----

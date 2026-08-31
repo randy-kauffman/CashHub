@@ -92,6 +92,20 @@ COLUMNAS_APROBADAS = [
      "desde el maker portal y recien despues correr este script otra vez. "
      "Aprobado por el usuario 2026-08-31."),
 
+    ("sanic_chtblappcatalog", "sanic_aadgroupid",
+     "DEPRECADO POR DISENO PROPIO, no es un campo en uso: es una lapida. El modelo "
+     "de gating por grupos AAD se movio a la tabla relacional CH-Tbl-AppCatalogAccess "
+     "(una fila por par app-grupo). El UNICO codigo que lo toca es "
+     "AppCatalogGuard.EvaluateDeprecatedCatalogGroups(), invocado desde "
+     "GuardAppCatalogPlugin, y existe para BLOQUEAR cualquier escritura con el "
+     "mensaje 'declare los grupos en CH-Tbl-AppCatalogAccess'. Nadie lo LEE. "
+     "0 de 7 filas tienen valor (AppCatalogAccess tiene 4). Los hits de "
+     "'aadgroupid' en el Hub, en ClientAdministration, en CH-Flow-Notifyreviewers y "
+     "en ChangeRequestApproverResolver pertenecen a OTRAS dos tablas que tienen un "
+     "campo homonimo: AppCatalogAccess y ClientDataChangePermission. Bloqueado por "
+     "3 vistas (Active, Inactive, Advanced Find); ningun formulario. "
+     "Aprobado por el usuario 2026-08-31."),
+
     ("sanic_chtblclientaccount", "sanic_chchrecordstatus",
      "Estado de vigencia legacy, distinto de sanic_recordstatus (que SI se usa y "
      "convive en la misma tabla). Su nombre es el del option set global "
@@ -323,6 +337,41 @@ def quitar_de_formularios(api, token, tabla, columna, aplicar):
     return tocados
 
 
+def quitar_de_filtros_de_step(api, token, columna, deps, aplicar):
+    """Saca la columna de los filteringattributes de los steps que la referencian.
+
+    Dataverse no deja borrar una columna que un SdkMessageProcessingStep tenga en
+    sus filtros.
+
+    OJO — SE IDENTIFICA EL STEP POR EL ID QUE REPORTA LA DEPENDENCIA, no por nombre
+    ni buscando 'contains(filteringattributes, columna)'. La razon: un mismo nombre
+    logico puede existir en VARIAS tablas y sus guards respectivos lo tienen en los
+    filtros. Buscar por texto agarraria tambien el step de la otra tabla y le
+    romperia el filtro. La dependencia ya sabe cual es el step correcto.
+    """
+    ids = [d.get("dependentcomponentobjectid") for d in deps
+           if d.get("dependentcomponenttype") == 92]
+    tocados = []
+    for sid in [i for i in ids if i]:
+        s = llamar(api, token, "GET",
+                   f"sdkmessageprocessingsteps({sid})"
+                   f"?$select=name,filteringattributes")
+        attrs = [a for a in (s.get("filteringattributes") or "").split(",") if a]
+        if columna not in attrs:
+            continue
+        nuevos = [a for a in attrs if a != columna]
+        if not nuevos:
+            traza("STEPS", f"  '{s['name']}': {columna} es su UNICO filtro. No se toca: "
+                           f"dejarlo sin filtros cambiaria cuando se dispara el plugin")
+            continue
+        traza("STEPS", f"  '{s['name']}': {','.join(attrs)} -> {','.join(nuevos)}")
+        if aplicar:
+            llamar(api, token, "PATCH", f"sdkmessageprocessingsteps({sid})",
+                   {"filteringattributes": ",".join(nuevos)})
+        tocados.append(s["name"])
+    return tocados
+
+
 def publicar(api, token, tabla):
     """Publica la tabla. Sin esto los cambios de vista no se aplican."""
     llamar(api, token, "POST", "PublishXml",
@@ -388,14 +437,17 @@ def main():
         # a ciegas puede romper el layout que alguien diseño.
         if es_aprobada and deps:
             tipos = {d.get("dependentcomponenttype") for d in deps}
-            # 26 = SavedQuery (vista), 60 = SystemForm (formulario).
-            if tipos <= {26, 60}:
+            # 26 = SavedQuery (vista), 60 = SystemForm (formulario),
+            # 92 = SdkMessageProcessingStep (la columna esta en sus filteringattributes).
+            if tipos <= {26, 60, 92}:
                 traza("DESPEJE", f"  {etiqueta}: bloqueada por "
                                  f"{describir_dependencias(deps)}; despejando")
                 if 26 in tipos:
                     quitar_de_vistas(api, token, tabla, columna, APPLY)
                 if 60 in tipos:
                     quitar_de_formularios(api, token, tabla, columna, APPLY)
+                if 92 in tipos:
+                    quitar_de_filtros_de_step(api, token, columna, deps, APPLY)
                 if APPLY:
                     publicar(api, token, tabla)
                     deps = dependencias(api, token, mid, COMPONENT_TYPE_ATTRIBUTE)

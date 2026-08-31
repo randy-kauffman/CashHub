@@ -476,7 +476,6 @@ namespace CashHub.Plugins
             public const string LogicalName = "sanic_chtblappcatalog";
             public const string Id = "sanic_chtblappcatalogid";
             public const string AppUrl = "sanic_appurl";
-            public const string AadGroupId = "sanic_aadgroupid";
         }
 
         /// <summary>Acceso por grupo AAD a una app del hub: una fila = (app, grupo).</summary>

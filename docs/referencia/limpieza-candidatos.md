@@ -333,6 +333,75 @@ borrarla: cero, por definición. Y nadie la leía.
 
 ---
 
+## D — Hallazgos posteriores (análisis tabla por tabla)
+
+### D.1 — `CH-Tbl-AppCatalog.sanic_aadgroupid` ✅ ELIMINADA — era una lápida
+
+`nvarchar(255)`, opcional, sin descripción. **0 de 7 filas con valor.**
+
+**Qué era**: los grupos AAD que habilitaban una app en el Hub, como string multivalor
+separado por `;`.
+
+**Qué lo reemplazó**: la tabla relacional `CH-Tbl-AppCatalogAccess` — una fila por par
+(app, grupo), que sí tiene 4 filas con valor. El Hub lee de ahí:
+
+```powerfx
+ClearCollect(colAccess, ForAll('CH-Tbl-AppCatalogAccesses' As row, {
+    AppId:   row.'App Catalog'.'CH-Tbl-AppCatalog',
+    GroupId: Substitute(Trim(row.'AAD Group Id'), " ", "")
+}));
+```
+
+**Por qué era una lápida y no un campo en uso**: el único código que lo tocaba era
+`AppCatalogGuard.EvaluateDeprecatedCatalogGroups()`, invocado desde `GuardAppCatalogPlugin`,
+y existía para **bloquear** cualquier escritura:
+
+> *"El campo de grupos AAD del catálogo está deprecado. Declare los grupos en la tabla
+> CH-Tbl-AppCatalogAccess (una fila por grupo)."*
+
+Nadie lo leía. Se mantenía vivo solo para poder rechazar el modelo viejo — y si la columna no
+existe, Dataverse rechaza la escritura por sí solo, sin necesidad de código defendiendo la puerta.
+
+#### El campo se llama igual en TRES tablas
+
+Esta es la parte que contamina cualquier búsqueda por nombre. De los 5 hits de `aadgroupid` en
+Power Fx, flows y C#, **ninguno era de AppCatalog**:
+
+| Dónde aparece | A qué tabla pertenece |
+|---|---|
+| App Hub (`App.fx.yaml`) | `CH-Tbl-AppCatalogAccess` |
+| App ClientAdministration | `CH-Tbl-ClientDataChangePermission` |
+| `CH-Flow-Notifyreviewers` | `CH-Tbl-ClientDataChangePermission` (`entityName` lo confirma) |
+| `ChangeRequestApproverResolver.cs` | `CH-Tbl-ClientDataChangePermission` |
+| `provision-approver-teams.sh`, `assign-clientadmin-team-roles.sh` | `CH-Tbl-ClientDataChangePermission` |
+
+#### Una dependencia nueva: los filtros de un plugin step
+
+Además de 3 vistas, la columna estaba en los **`filteringattributes` de un
+`SdkMessageProcessingStep`** — componente tipo **92**, que no había aparecido antes. Dataverse no
+deja borrar una columna que un step tenga en sus filtros.
+
+Y acá el homónimo era peligroso de verdad: **dos steps distintos filtraban por `sanic_aadgroupid`**,
+uno de cada tabla.
+
+| Step | Filtros antes | Filtros después |
+|---|---|---|
+| `GuardAppCatalog: Update de app del catalogo` | `sanic_appurl,sanic_aadgroupid` | `sanic_appurl` |
+| `GuardAppCatalogAccess: Update de acceso` | `sanic_aadgroupid,sanic_appcatalog` | **sin cambio** |
+
+> El script identifica el step **por el id que reporta `RetrieveDependenciesForDelete`**, no
+> buscando `contains(filteringattributes, columna)`. Buscar por texto habría agarrado también el
+> step de `AppCatalogAccess` y le habría roto el filtro.
+
+#### Limpieza de código asociada
+
+Eliminados: `EvaluateDeprecatedCatalogGroups()` en `AppCatalogGuard.cs`, el bloque que la invocaba
+en `GuardAppCatalogPlugin.cs`, la constante `Schema.AppCatalog.AadGroupId` (las de
+`AppCatalogAccess` y `ChangePermission` siguen) y sus 2 tests. Build 0 errores; suite de
+**1041 tests** (eran 1043 — bajan exactamente los 2 eliminados). Assembly redesplegado.
+
+---
+
 ## Antes de borrar cualquier cosa
 
 1. **Columnas**: Dataverse no deja eliminar una columna que esté en algún formulario o vista.

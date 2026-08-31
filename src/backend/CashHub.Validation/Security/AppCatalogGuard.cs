@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace CashHub.Validation.Security
 {
@@ -76,24 +76,6 @@ namespace CashHub.Validation.Security
             }
 
             return AppCatalogGuardResult.Allow();
-        }
-
-        /// <summary>
-        /// El sanic_aadgroupid del catalogo esta DEPRECADO: los grupos viven en
-        /// CH-Tbl-AppCatalogAccess (una fila por grupo, con relacion real). Limpiarlo es
-        /// valido; cualquier intento de escribirle un valor se bloquea para que nadie
-        /// vuelva al modelo multi-valor con ';' por accidente.
-        /// </summary>
-        public static AppCatalogGuardResult EvaluateDeprecatedCatalogGroups(string? aadGroupIds)
-        {
-            if (string.IsNullOrWhiteSpace(aadGroupIds))
-            {
-                return AppCatalogGuardResult.Allow();
-            }
-
-            return AppCatalogGuardResult.Block(
-                "El campo de grupos AAD del catalogo esta deprecado. " +
-                "Declare los grupos en la tabla CH-Tbl-AppCatalogAccess (una fila por grupo).");
         }
 
         /// <summary>

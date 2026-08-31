@@ -156,7 +156,7 @@ _No hay campos custom (`sanic_*`) agregados por esta solución en este export._
 
 | Logical name (schema) | Display name | Tipo | Requerido | Objetivo | Dónde se usa | Documentos de referencia | Estado | Notas |
 |---|---|---|---|---|---|---|---|---|
-| `sanic_aadgroupid` | AAD Group Id | Texto (nvarchar) | none | | Canvas `CH-App-Hub` (`App.fx.yaml:52`); plugin `GuardAppCatalogPlugin.cs`; `scripts/provision-appcatalog-access.sh` | | Sin revisar | |
+| `sanic_aadgroupid` | AAD Group Id | Texto (nvarchar) | none | | Canvas `CH-App-Hub` (`App.fx.yaml:52`); plugin `GuardAppCatalogPlugin.cs`; `scripts/provision-appcatalog-access.sh` | | **ELIMINADO 2026-08-31** | |
 | `sanic_appkey` | App Key | Texto (nvarchar) | required | | `scripts/provision-appcatalog-access.sh` (lee/compara `sanic_appkey`) | | Sin revisar | |
 | `sanic_appurl` | AppURL | Texto (nvarchar) | recommended | | Canvas `CH-App-Hub` (`App.fx.yaml:99`, `scrHub.fx.yaml:449`); plugin `GuardAppCatalogPlugin.cs` | | Sin revisar | |
 | `sanic_description` | Description | Texto (nvarchar) | none | | Solo `scripts/provision-config-app.py` (arma metadata de formulario) | | Sin revisar | |
