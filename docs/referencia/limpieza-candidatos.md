@@ -182,6 +182,48 @@ duplicación real era mucho menor de lo que se dijo.
 
 ## C — No tocar sin tu decisión
 
+### C.0 — Un flujo puede llamar a otro: el cuarto canal de invocación
+
+**Hallazgo del 2026-08-31, a partir de una pregunta del usuario.** El método de verificación que
+se venía usando —buscar invocadores en los tres árboles de canvas, el backend y los scripts—
+**tenía un hueco: no contemplaba que un flujo invoque a otro.**
+
+`CH-Flow-Create a Teams chat group based on Office 365 Group Members` parecía basura de manual:
+encendido, con trigger de botón y sin ninguna app que lo llamara. **Está vivo**:
+
+```json
+"Run_a_Child_Flow": {
+  "type": "Workflow",
+  "inputs": { "host": { "workflowReferenceName": "f386eeb1-f2aa-f011-bbd2-000d3a52eba2" } }
+}
+```
+
+Lo invoca `CH-Flow-Notify reviewers` (ON) dentro de un `For_each`, pasándole `sanic_aadgroupid`.
+**No es candidato a limpieza.**
+
+#### Cómo buscar este canal
+
+```bash
+rg -o '"workflowReferenceName":\s*"[0-9a-fA-F-]{36}"' solutions/unpacked/flow/Workflows/*.json
+```
+
+Mapa completo de child flows en el sistema (2026-08-31) — solo 3 flujos invocan a otros:
+
+| Flujo padre | Child flow que invoca |
+|---|---|
+| `CH-Flow-IngestEmails` | `CH-Flow-ProcessEmail` |
+| `CH-Flow-MailboxSweep` | `CH-Flow-ProcessEmail` |
+| `CH-Flow-Notify reviewers` | `CH-Flow-Create a Teams chat group…` |
+
+> **Verificación posterior al borrado de los 7**: se buscaron los GUID de los 7 flujos eliminados
+> en los flujos supervivientes, en `apps/` y en `patch/`. **Cero referencias** — estaban realmente
+> huérfanos. Y los dos destinos de child flow resuelven contra el ambiente y están ON. Nada se
+> rompió, pero el hueco existía y podría haber costado caro con otro conjunto de candidatos.
+
+**Los cuatro canales por los que se invoca algo en este sistema**: Power Fx de canvas app, acción
+dentro de un cloud flow, código C# de plugin, y **`Run a Child Flow` de flujo a flujo**. Cualquier
+verificación de "esto no se usa" que no cubra los cuatro es incompleta.
+
 ### C.1 — 7 cloud flows sin invocador ✅ ELIMINADOS
 
 Confirmado por el usuario el 2026-08-31: `CH-Flow-Create client data` **se apagó a propósito**
