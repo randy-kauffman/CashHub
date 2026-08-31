@@ -268,6 +268,28 @@ SEED = [
                              "corte al limite de requests de la base; bajarlo obliga a mas "
                              "cortes, mas chicos. Si falta, el plugin usa 500.",
     },
+    {
+        # Lista BLANCA de caracteres para los campos de texto libre del CSV al core.
+        # El archivo va separado por comas y SIN entrecomillar nada: un depositante
+        # "PEREZ, JUAN" parte la fila y corre TODAS las columnas siguientes. El core
+        # lee la moneda donde va el deposito y postea mal SIN fallar — un archivo que
+        # falla se ve, uno que postea mal no se ve hasta que alguien cuadra.
+        # Derivada de los datos reales (letras, digitos, espacio, - y /) mas punto y
+        # letras del español para no mutilar nombres. VACIA = no pasa nada
+        # (default-deny). La misma lista la usara la validacion de entrada para
+        # rebotar en origen: una regla, dos defensas.
+        # Category=General(159460005), Datatype=Text(159460003).
+        "sanic_name": "Export.Core.AllowedCharacters",
+        "sanic_value": ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+                        "\u00c1\u00c9\u00cd\u00d3\u00da\u00dc\u00d1"
+                        "\u00e1\u00e9\u00ed\u00f3\u00fa\u00fc\u00f1"
+                        "0123456789 .-/"),
+        "sanic_category": 159460005, "sanic_datatype": 159460003, "sanic_isactive": True,
+        "sanic_description": "Caracteres permitidos en los campos de texto libre del CSV al core. "
+                             "Lo que no este aca se reemplaza por espacio al exportar. NO incluye "
+                             "coma, comilla doble, punto y coma ni saltos de linea. Vacia = no pasa "
+                             "nada (default-deny).",
+    },
 ]
 
 def seed():

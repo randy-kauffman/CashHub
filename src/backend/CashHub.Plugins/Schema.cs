@@ -473,6 +473,26 @@ namespace CashHub.Plugins
             /// Fila ausente/inactiva/no numerica => el plugin usa su piso (500).
             /// </summary>
             public const string MaxTransactionsPerCutKey = "Digitization.MaxTransactionsPerCut";
+
+            /// <summary>Identidad bancaria fija del CSV al core, en JSON plano.</summary>
+            public const string CoreIdentityKey = "Export.Core.Identidad";
+
+            /// <summary>
+            /// Lista BLANCA de caracteres permitidos en los campos de texto libre que van
+            /// al CSV del core (Export.Core.AllowedCharacters).
+            ///
+            /// El CSV va separado por comas y SIN entrecomillar nada. Un depositante
+            /// "PEREZ, JUAN" parte la fila y corre TODAS las columnas siguientes: el core
+            /// lee la moneda donde va el deposito y postea mal SIN fallar. Un archivo que
+            /// falla se ve; uno que postea mal no se ve hasta que alguien cuadra.
+            ///
+            /// Una regla, dos defensas: aca se SANEA lo que ya esta guardado, y la
+            /// validacion de entrada usara la misma lista para REBOTAR en origen.
+            ///
+            /// Ausente o vacia => no pasa nada (default-deny). Si fuera al reves, borrar
+            /// el parametro por error apagaria la defensa justo cuando mas hace falta.
+            /// </summary>
+            public const string AllowedCharactersKey = "Export.Core.AllowedCharacters";
         }
 
         /// <summary>Permiso de cambio de datos de cliente: mapea tabla objetivo -> grupo AAD por tipo.</summary>
@@ -657,6 +677,13 @@ namespace CashHub.Plugins
             /// La copia el asiento al crearse; en blanco en la ruta "tula sin declaracion".
             /// </summary>
             public const string TransactionReference = "sanic_transactionreference";
+
+            /// <summary>
+            /// Numero de transaccion visible (texto, NO la clave primaria). En el CSV al
+            /// core va en REFERENCIA y en DEPOSITID, y ademas es el respaldo de
+            /// DEPOSITANTE cuando la referencia viene vacia o se sanea hasta quedar vacia.
+            /// </summary>
+            public const string TransactionIdText = "sanic_transactionid";
 
             /// <summary>
             /// Total CALCULADO (SourceType 3): ValidForCreateApi/UpdateApi = 0, la

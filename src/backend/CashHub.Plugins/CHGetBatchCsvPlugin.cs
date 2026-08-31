@@ -1,7 +1,5 @@
 using System;
-using System.IO;
 using System.Text;
-using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 
@@ -33,17 +31,6 @@ namespace CashHub.Plugins
     /// </summary>
     public sealed class CHGetBatchCsvPlugin : IPlugin
     {
-        /// <summary>
-        /// Techo defensivo del archivo que se devuelve como texto. Con el tope del corte
-        /// (Digitization.MaxTransactionsPerCut = 500) un CSV real ronda los 50 KB, asi que
-        /// 5 MB es holgado por dos ordenes de magnitud. Existe para que un archivo absurdo
-        /// falle con un mensaje claro y no reventando la app del otro lado.
-        /// </summary>
-        private const int MaxCsvBytes = 5 * 1024 * 1024;
-
-        /// <summary>Bloque de descarga. Dataverse admite hasta 4 MB por DownloadBlock.</summary>
-        private const int BlockSize = 4 * 1024 * 1024;
-
         public void Execute(IServiceProvider serviceProvider)
         {
             var context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
@@ -56,6 +43,19 @@ namespace CashHub.Plugins
                 return;
             }
 
+            // CONTEXTO DEL LLAMADOR, SIN ELEVAR.
+            //
+            // Hubo un momento en que esto corria elevado a SYSTEM, para esquivar la Field
+            // Level Security de sanic_accountnumber —el digitador no podia leerla y las
+            // cuentas salian en 000000000—. Se revirtio: el permiso se resolvio donde
+            // correspondia, con un perfil FLS de SOLO LECTURA para el digitador
+            // (scripts/grant-digitizer-account-read.sh).
+            //
+            // Asi el archivo contiene exactamente lo que el operador esta autorizado a
+            // ver, y no hay una escalada de privilegios escondida adentro de una
+            // exportacion bancaria. Ademas el Retrieve del lote en este mismo contexto ES
+            // el control de acceso: si el usuario no puede leer el lote, Dataverse lo
+            // frena ahi y no hay que reimplementar permisos.
             var service = serviceFactory.CreateOrganizationService(context.UserId);
 
             try
@@ -73,99 +73,37 @@ namespace CashHub.Plugins
                 // y no un GUID: el que lee el error es el digitador, no el desarrollador.
                 var batch = service.Retrieve(
                     Schema.TransactionBatch.LogicalName, batchId,
-                    new ColumnSet(Schema.TransactionBatch.Name, Schema.TransactionBatch.CsvCore + "_name"));
+                    new ColumnSet(Schema.TransactionBatch.Name));
                 var batchName = batch.GetAttributeValue<string>(Schema.TransactionBatch.Name) ?? batchId.ToString();
 
                 tracing.Trace("GetBatchCsv: lote {0} ({1}).", batchName, batchId);
 
-                InitializeFileBlocksDownloadResponse init;
-                try
-                {
-                    init = (InitializeFileBlocksDownloadResponse)service.Execute(
-                        new InitializeFileBlocksDownloadRequest
-                        {
-                            Target = new EntityReference(Schema.TransactionBatch.LogicalName, batchId),
-                            FileAttributeName = Schema.TransactionBatch.CsvCore,
-                        });
-                }
-                catch (Exception ex)
-                {
-                    // El caso normal aca es "el lote todavia no tiene CSV". Se dice asi, en
-                    // el idioma del usuario, en vez de escupir la excepcion de plataforma.
-                    tracing.Trace("GetBatchCsv: no se pudo abrir el archivo del lote {0}: {1}", batchName, ex);
-                    throw new InvalidPluginExecutionException(
-                        $"El lote {batchName} todavia no tiene un CSV generado. " +
-                        "Genera el archivo antes de descargarlo.", ex);
-                }
-
-                if (init.FileSizeInBytes <= 0)
-                {
-                    throw new InvalidPluginExecutionException(
-                        $"El CSV del lote {batchName} esta vacio (0 bytes). " +
-                        "Hay que volver a generarlo antes de descargarlo.");
-                }
-
-                if (init.FileSizeInBytes > MaxCsvBytes)
-                {
-                    throw new InvalidPluginExecutionException(
-                        $"El CSV del lote {batchName} pesa {init.FileSizeInBytes / 1024} KB y supera el maximo " +
-                        $"de {MaxCsvBytes / 1024} KB que se puede devolver a la aplicacion.");
-                }
-
-                var bytes = new byte[init.FileSizeInBytes];
-                var offset = 0L;
-                using (var buffer = new MemoryStream(bytes))
-                {
-                    while (offset < init.FileSizeInBytes)
-                    {
-                        var block = (DownloadBlockResponse)service.Execute(new DownloadBlockRequest
-                        {
-                            FileContinuationToken = init.FileContinuationToken,
-                            Offset = offset,
-                            BlockLength = Math.Min(BlockSize, init.FileSizeInBytes - offset),
-                        });
-
-                        if (block.Data == null || block.Data.Length == 0)
-                        {
-                            // Sin esta guarda un bloque vacio deja el while girando para
-                            // siempre y el plugin muere por timeout, no por el error real.
-                            throw new InvalidPluginExecutionException(
-                                $"La descarga del CSV del lote {batchName} se corto en el byte {offset} " +
-                                $"de {init.FileSizeInBytes}.");
-                        }
-
-                        buffer.Write(block.Data, 0, block.Data.Length);
-                        offset += block.Data.Length;
-                    }
-                }
-
-                // FIDELIDAD BYTE A BYTE: se devuelve el archivo TAL CUAL quedo archivado.
-                // Nada de normalizar saltos de linea ni de sacar el BOM. Este CSV es el
-                // artefacto que va al core y que queda para auditoria: lo que se baja tiene
-                // que ser identico a lo que se archivo, o el archivo deja de probar nada.
-                // El BOM, si viniera, viaja igual — dentro de un string de Power Fx es
-                // invisible y la app nunca lo muestra.
+                // EL CSV SE GENERA ACA, no se lee de lo que dejo el flujo.
                 //
-                // Se devuelve ademas SizeBytes para que el otro lado pueda VERIFICAR que
-                // llego completo, en vez de confiar.
-                var csv = new UTF8Encoding(false).GetString(bytes);
-
-                var fileName = batch.GetAttributeValue<string>(Schema.TransactionBatch.CsvCore + "_name");
-                if (string.IsNullOrWhiteSpace(fileName))
-                {
-                    fileName = init.FileName;
-                }
-                if (string.IsNullOrWhiteSpace(fileName))
-                {
-                    fileName = batchName + ".csv";
-                }
+                // Antes este API leia la columna File que subia CH-Flow-DownloadData. Ya
+                // no alcanza: el flujo armaba el archivo con "Create CSV table", que NO
+                // escapa nada. Un depositante "PEREZ, JUAN" parte la fila y corre todas
+                // las columnas siguientes — el core lee la moneda donde va el deposito y
+                // postea mal SIN fallar. Y ademas el mapeo hacia float(formatNumber(x,
+                // '0.00')), que anula los dos decimales que el core exige.
+                //
+                // Ninguna de las dos cosas se podia arreglar en el flujo: Power Automate
+                // no tiene regex replace, y la lista de caracteres permitidos tiene que
+                // ser LA MISMA que va a usar la validacion de entrada para rebotar en
+                // origen. Una regla, dos defensas.
+                //
+                // Se genera Y se archiva en la misma pasada, para que el archivo que baja
+                // el digitador y el que queda para auditoria sean el mismo.
+                var fileName = (batchName ?? "lote") + ".csv";
+                var csv = CoreCsvExport.BuildArchiveAndReturn(service, tracing, batchId, fileName);
+                var sizeBytes = new UTF8Encoding(false).GetByteCount(csv);
 
                 context.OutputParameters[Schema.BatchCsvApi.OutCsv] = csv;
                 context.OutputParameters[Schema.BatchCsvApi.OutFileName] = fileName;
-                context.OutputParameters[Schema.BatchCsvApi.OutSizeBytes] = (int)init.FileSizeInBytes;
+                context.OutputParameters[Schema.BatchCsvApi.OutSizeBytes] = sizeBytes;
 
                 tracing.Trace("GetBatchCsv: lote {0} -> '{1}', {2} bytes, {3} caracteres.",
-                    batchName, fileName, init.FileSizeInBytes, csv.Length);
+                    batchName, fileName, sizeBytes, csv.Length);
             }
             catch (InvalidPluginExecutionException)
             {
