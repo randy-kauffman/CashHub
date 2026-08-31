@@ -454,6 +454,55 @@ Build 0 errores, **1041 tests** sin cambio, assembly redesplegado (37 plugintype
 
 ---
 
+### D.3 — `sanic_ValidationRules`: 3 de 11 campos eliminados
+
+29 filas — el catálogo de reglas del motor de validación de correo. **Las 27 reglas son clases C#**
+(`IValidationRule` en `ContentRules`, `EnvelopeRules`, `StructureRules`, `BusinessRules`); la tabla
+solo les da configuración.
+
+`ReceivedEmailValidationService` las carga con un `ColumnSet` explícito de **7 campos**:
+`validationname` (la clave VR-nn), `name`, `validationorder`, `isactive`, `validationvalue`,
+`validationfailmessage`, `validationdependency`. Los otros 4 quedaron afuera.
+
+**`sanic_sourcetype` — cero información.** 29 de 29 filas con el mismo valor (*Shared Mailbox*), y
+marcado `required`. Mismo caso que el homónimo de `ValidationResults`.
+
+**`sanic_validationdatatype` y `sanic_validationoperation` — el motor declarativo que nunca se
+construyó.** 0 de 29 filas con valor, vacíos al 100%. Juntos formaban el diseño *"regla como dato"*
+(`dataType` + `operation` + `value`): declarar una validación sin escribir código. Solo `value`
+sobrevivió — es el que hoy parametriza reglas como VR-06 (el tope de 5120 KB).
+
+> `validationdatatype` estaba marcado **`required`** y sin embargo vacío en las 29 filas. Eso prueba
+> que `RequiredLevel` en Dataverse es requisito de **formulario**, no de base: nunca se enforzó.
+
+#### Efecto en la UI de la app de Configuración
+
+Los tres estaban en el formulario `Information`, y `validationoperation` además en 2 vistas:
+`Active ValidationRules` y **`CH-Config | Reglas inactivas`**. O sea que la app de Configuración
+mostraba dos campos siempre vacíos y una columna en blanco en dos grillas.
+
+Se corrigió `scripts/provision-config-app.py`, que los declaraba en su definición de formulario y
+vistas — sin eso, la próxima corrida habría fallado al referenciar columnas inexistentes.
+
+#### Lo que se dejó
+
+**`sanic_notes` NO se borró** pese a tener solo 2 de 29 filas con valor y ningún lector en código.
+El contenido es documentación real para quien configura:
+
+> *VR-27: "Regla recomendada por arquitectura (lee TemplateId/TemplateVersion de la hoja Metadata).
+> **Apagable** si negocio decide aceptar archivos libres."*
+
+`provision-config-app.py` lo pone en una pestaña "Notas" del formulario. Lo lee un humano, no el
+motor — mismo criterio que `relatedcrl` y `durationms`.
+
+#### Sin recompilación
+
+A diferencia de los campos de `ValidationResults`, estos tres **no estaban en `Schema.Rule`** ni en
+ningún `.cs`. El único hit de `sanic_sourcetype` en `Schema.cs` es `Schema.Run.SourceType`, de
+`ValidationRuns`, que no se tocó.
+
+---
+
 ## Antes de borrar cualquier cosa
 
 1. **Columnas**: Dataverse no deja eliminar una columna que esté en algún formulario o vista.

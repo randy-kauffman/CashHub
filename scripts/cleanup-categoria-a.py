@@ -122,6 +122,32 @@ COLUMNAS_APROBADAS = [
      "a Fila la ignora, justamente porque ya esta ahi. 666 filas con valor, ningun lector. "
      "Aprobado por el usuario 2026-08-31."),
 
+    # --- sanic_ValidationRules (OJO: la carpeta NO lleva prefijo CHTbl) ---------
+    # Las 27 reglas de validacion son CLASES C# (IValidationRule en ContentRules,
+    # EnvelopeRules, StructureRules y BusinessRules). Esta tabla solo les da
+    # configuracion: Value, FailMessage, Order, IsActive, Dependency — los 7 campos
+    # que el motor lee via Schema.Rule. Los tres de abajo quedaron afuera de ese
+    # ColumnSet y de todo el resto del sistema.
+    ("sanic_validationrules", "sanic_sourcetype",
+     "CERO INFORMACION: 29 de 29 filas con el MISMO valor (Shared Mailbox). Marcado "
+     "required, lo que hace mas ruido todavia. No esta en Schema.Rule; 0 en Power Fx, "
+     "0 en flows, 0 en C#. OJO — HOMONIMO: sanic_sourcetype sigue existiendo en "
+     "ValidationRuns (Schema.Run.SourceType) y ahi NO se toca; los seeds "
+     "seed-tracker-stress.py y seed-bandeja-demo.py lo escriben para ESA tabla. "
+     "Aprobado por el usuario 2026-08-31."),
+
+    ("sanic_validationrules", "sanic_validationdatatype",
+     "MOTOR DECLARATIVO NUNCA CONSTRUIDO: 0 de 29 filas con valor, vacio al 100%. "
+     "Marcado required — prueba de que ese required es de formulario y nunca se "
+     "enforzo. Junto con validationoperation formaban el diseno 'regla como dato' "
+     "(dataType + operation + value); solo value sobrevivio y se usa. Las reglas "
+     "reales son 27 clases C#. Aprobado por el usuario 2026-08-31."),
+
+    ("sanic_validationrules", "sanic_validationoperation",
+     "MOTOR DECLARATIVO NUNCA CONSTRUIDO: 0 de 29 filas con valor. Ademas ensucia la "
+     "UI: esta en el formulario de la app de Configuracion y en 2 VISTAS, o sea una "
+     "columna siempre en blanco en dos grillas. Aprobado por el usuario 2026-08-31."),
+
     ("sanic_chtblclientaccount", "sanic_chchrecordstatus",
      "Estado de vigencia legacy, distinto de sanic_recordstatus (que SI se usa y "
      "convive en la misma tabla). Su nombre es el del option set global "

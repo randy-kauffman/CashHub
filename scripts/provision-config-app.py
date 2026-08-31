@@ -241,20 +241,22 @@ TABLES = [
         "label": "Reglas de validacion",
         "group": "email",
         "view": [("sanic_validationorder", 90), ("sanic_validationname", 180), ("sanic_name", 220),
-                 ("sanic_validationoperation", 150), ("sanic_validationvalue", 170),
+                 ("sanic_validationvalue", 170),
                  ("sanic_isactive", 90), ("sanic_validationfailmessage", 320)],
         "order": [("sanic_validationorder", False)],
         "form": [
             ("Identificacion", ["sanic_validationname", "sanic_name", "sanic_validationorder", "sanic_isactive"]),
-            ("Definicion", ["sanic_sourcetype", "sanic_validationdatatype", "sanic_validationoperation",
-                            "sanic_validationvalue", "sanic_validationdependency"]),
+            # sanic_sourcetype, sanic_validationdatatype y sanic_validationoperation se
+            # eliminaron el 2026-08-31: el primero tenia un unico valor en las 29 filas y los
+            # otros dos estaban vacios al 100% (motor declarativo que nunca se construyo).
+            ("Definicion", ["sanic_validationvalue", "sanic_validationdependency"]),
             ("Mensaje al cliente", ["sanic_validationfailmessage"]),
             ("Notas", ["sanic_notes"]),
         ],
         "extra": [(
             "CH-Config | Reglas inactivas",
             [("sanic_validationorder", 90), ("sanic_validationname", 180), ("sanic_name", 260),
-             ("sanic_validationoperation", 150), ("sanic_validationvalue", 170)],
+             ("sanic_validationvalue", 170)],
             [("sanic_validationorder", False)],
             '<filter type="and"><condition attribute="statecode" operator="eq" value="0" />'
             '<condition attribute="sanic_isactive" operator="eq" value="0" /></filter>',
