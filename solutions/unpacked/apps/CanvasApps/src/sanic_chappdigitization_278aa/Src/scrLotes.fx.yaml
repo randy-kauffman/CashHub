@@ -10,7 +10,8 @@ scrLotes As screen:
             ctxAplicandoLot: false,
             ctxSacandoLot: false,
             ctxDlgAplicadoLot: false,
-            ctxDlgSacarLot: false
+            ctxDlgSacarLot: false,
+            ctxDlTokenLot: ""
         });
         Reset(tabFechaLot);
         Reset(inpBuscarLot);
@@ -34,6 +35,66 @@ scrLotes As screen:
             )
         ))
 
+    "FileDownloader1 As 'CashHub File Downloader'":
+        Content: |-
+            =// ARMA EL ARCHIVO EN EL NAVEGADOR, sin navegar a Dataverse.
+            //
+            // La descarga vieja era Download(".../sanic_csvcore/$value"): una NAVEGACION,
+            // en la que Power Fx no puede poner un header Authorization. Lo unico que la
+            // autenticaba era la cookie del org, que los usuarios de negocio no tienen
+            // —viven en apps.powerapps.com—. Les daba HTTP 401 y una pestaña en blanco. Y
+            // muda: el Download() queda FUERA del alcance de cualquier IfError, asi que la
+            // app ni se enteraba de que habia fallado.
+            //
+            // Mide 1x1 y queda detras del header a proposito: es un componente de
+            // COMPORTAMIENTO, no de presentacion. NO se le pone Visible: =false porque un
+            // componente que no se renderiza no recibe los cambios de propiedad — y
+            // entonces no bajaria nunca nada.
+            ctxCsvLot
+        DisplayMode: =DisplayMode.Edit
+        ExpectedBytes: |-
+            =// Bytes que el servidor dice haber archivado. El componente los compara con
+            // los que realmente arma: si no coinciden, NO baja nada y lo reporta. Un CSV
+            // cortado entrando a un core bancario es peor que una descarga que falla.
+            ctxCsvBytesLot
+        FileName: =ctxCsvNombreLot
+        Height: =1
+        MimeType: ="text/csv;charset=utf-8"
+        Trigger: |-
+            =// Dispara por CAMBIO de token, no por valor presente: si no, cualquier
+            // re-render volveria a bajar el archivo y el usuario juntaria copias.
+            ctxDlTokenLot
+        Width: =1
+        X: =0
+        Y: =0
+        ZIndex: =1
+
+    lblErrorDescargaLot As label:
+        BorderRadius: =8
+        Color: =RGBA(255, 255, 255, 1)
+        Fill: =ThemeDanger
+        FontWeight: =FontWeight.Semibold
+        Height: =44
+        PaddingLeft: =14
+        PaddingRight: =14
+        Size: =9
+        Text: |-
+            =// EL FALLO TIENE QUE VERSE. Con Download() no habia forma de mostrarlo: no
+            // era una operacion de la app y no habia nada que reportar. Ahora el
+            // componente informa, y esto lo pone en pantalla.
+            $"No se pudo bajar el CSV del lote: {FileDownloader1.Status}"
+        VerticalAlign: =VerticalAlign.Middle
+        Visible: |-
+            =// Se limpia sola: cada intento borra el token antes de empezar, asi que el
+            // cartel de un fallo viejo no sobrevive al siguiente intento.
+            !IsBlank(ctxDlTokenLot)
+            && !IsBlank(FileDownloader1.Status)
+            && FileDownloader1.Status <> "ok"
+        Width: =Parent.Width - 32
+        X: =16
+        Y: =LayHeaderH + 12
+        ZIndex: =200
+
     cmpHeaderLot As cmpHeader:
         Activo: ="Lotes"
         Height: =LayHeaderH
@@ -43,7 +104,7 @@ scrLotes As screen:
         OnManual: =Navigate(scrManual, ScreenTransition.None)
         Subtitulo: ="Lotes"
         Width: =Parent.Width
-        ZIndex: =1
+        ZIndex: =2
 
     cntBodyLot As groupContainer.manualLayoutContainer:
         DropShadow: =DropShadow.Light
@@ -59,7 +120,7 @@ scrLotes As screen:
         RadiusTopRight: =4
         Width: =Parent.Width
         Y: =LayHeaderH
-        ZIndex: =2
+        ZIndex: =3
 
         cmpRailLot As cmpRailCajeros:
             Datos: =AddColumns(DropColumns(colCajerosLot, lotesPorAplicar), pendientesCorte, 0, totalNio, 0, totalUsd, 0, totalEur, 0)
@@ -699,13 +760,32 @@ scrLotes As screen:
                         HoverColor: =App.Theme.Colors.PrimaryForeground
                         HoverFill: =App.Theme.Colors.Darker10
                         OnSelect: |-
-                            =UpdateContext({ctxDescargandoLot: true});
+                            =// EL CSV YA NO SE BAJA NAVEGANDO. Antes esto terminaba en
+                            // Download(".../sanic_csvcore/$value"), que es una navegacion del
+                            // navegador: Power Fx no puede ponerle un header Authorization, asi
+                            // que lo unico que la autenticaba era la cookie del org. Los usuarios
+                            // de negocio no la tienen y recibian un 401 mudo, fuera del alcance
+                            // del IfError.
+                            //
+                            // Ahora el contenido viene por el conector, que si va autenticado, y
+                            // el archivo lo arma el navegador. CH-Flow-DownloadData sigue
+                            // generando y ARCHIVANDO el CSV: la API lo lee, no lo regenera, para
+                            // que lo que se baja y lo que queda archivado sean el mismo archivo.
+                            UpdateContext({ctxDescargandoLot: true, ctxDlTokenLot: ""});
                             IfError(
                                 With(
                                     { res: 'CH-Flow-DownloadData'.Run(gvarLote.TransactionBatches, gvarLote.Name) },
-                                    Download(LookUp('Environment Variable Values','Schema Name' = "sanic_CHEVEnvironmentURL").Value&"api/data/v9.2/sanic_transactionbatcheses(" & gvarLote.TransactionBatches & ")/sanic_csvcore/$value")
+                                    With(
+                                        { archivo: Environment.sanic_CHGetBatchCsv({ BatchId: gvarLote.TransactionBatches }) },
+                                        UpdateContext({
+                                            ctxCsvLot: archivo.Csv,
+                                            ctxCsvNombreLot: archivo.FileName,
+                                            ctxCsvBytesLot: archivo.SizeBytes
+                                        });
+                                        UpdateContext({ ctxDlTokenLot: Text(Now(), "[$-en-US]yyyymmddhhmmssfff") })
+                                    )
                                 ),
-                                Notify("No se pudo generar el CSV: " & FirstError.Message, NotificationType.Error)
+                                Notify("No se pudo descargar el CSV: " & FirstError.Message, NotificationType.Error)
                             );
                             UpdateContext({ctxDescargandoLot: false})
                         PressedBorderColor: =App.Theme.Colors.Darker40
@@ -1201,7 +1281,7 @@ scrLotes As screen:
         Tono: ="ok"
         Visible: =ctxDlgAplicadoLot
         Width: =Parent.Width
-        ZIndex: =3
+        ZIndex: =4
 
     cntDlgSacarLot As groupContainer.manualLayoutContainer:
         DropShadow: =DropShadow.Light
@@ -1217,7 +1297,7 @@ scrLotes As screen:
         RadiusTopRight: =4
         Visible: =ctxDlgSacarLot
         Width: =Parent.Width
-        ZIndex: =4
+        ZIndex: =5
 
         btnDlgSacarBloqueoLot As button:
             BorderColor: =App.Theme.Colors.Primary
@@ -1478,7 +1558,7 @@ scrLotes As screen:
         Width: =1
         X: =2
         Y: =758
-        ZIndex: =96
+        ZIndex: =6
 
     tmrActualizarLot As timer:
         BorderThickness: =0
@@ -1503,6 +1583,5 @@ scrLotes As screen:
         Width: =1
         X: =6
         Y: =758
-        ZIndex: =97
-
+        ZIndex: =7
 

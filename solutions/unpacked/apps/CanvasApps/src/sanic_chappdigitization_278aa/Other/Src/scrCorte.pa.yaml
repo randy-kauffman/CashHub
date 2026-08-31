@@ -43,7 +43,7 @@ Screens:
                 Properties:
                   Datos: =AddColumns(Filter(colCajerosCor, pendientesCorte > 0), badge, pendientesCorte)
                   Height: =Parent.Height
-                  OnActualizar: =
+                  OnActualizar: =Select(btnActualizarCor)
                   OnSeleccion: =Set(gvarCajeroCor, cmpRailCor.CajeroSel)
                   Titulo: ="CAJEROS CON CORTE PENDIENTE"
                   Width: =LayRailW
@@ -426,29 +426,6 @@ Screens:
                         Width: =Parent.Width - 2*LayGutter
                         X: =LayGutter
                         Y: =LayGutter
-            - icoActualizarCor:
-                Control: Classic/Icon@2.5.0
-                Properties:
-                  BorderColor: =RGBA(0, 0, 0, 1)
-                  Color: =ThemeInk3
-                  DisabledBorderColor: =RGBA(56, 56, 56, 1)
-                  DisabledColor: =RGBA(166, 166, 166, 1)
-                  Height: =18
-                  HoverColor: =ThemeAccent
-                  Icon: =Icon.Reload
-                  OnSelect: =Select(btnActualizarCor)
-                  PaddingBottom: =2
-                  PaddingLeft: =2
-                  PaddingRight: =2
-                  PaddingTop: =2
-                  PressedColor: =ThemeAccent
-                  Tooltip: |-
-                    ="Volver a pedir el trabajo pendiente por cajero" &
-                    If(IsBlank(ctxUltimaActCor), "", " · última: " & Text(ctxUltimaActCor, FmtHora)) &
-                    ". También se actualiza solo cada minuto."
-                  Width: =18
-                  X: =LayRailW - 31
-                  Y: =10
       - cmpDlgCorteCor:
           Control: CanvasComponent
           ComponentName: cmpDialogo
@@ -460,17 +437,53 @@ Screens:
             OnCancelar: |-
               =UpdateContext({ctxDlgCorteCor: false})
             OnOk: |-
-              =UpdateContext({ctxCorriendoCor: true});
-              'CH-Flow-CreateCut'.Run(gvarCajeroCor.cajero);
-              UpdateContext({ctxCorriendoCor: false, ctxDlgCorteCor: false});
-              Set(gvarCajeroCor, Blank());
-              Select(btnActualizarCor);
-              Notify("Corte generado. El lote quedó en estado Generado.", NotificationType.Success)
+              =// SE LLAMA A LA CUSTOM API DIRECTO, no al flujo intermedio, que era un
+              // pasamanos: una sola accion, PerformUnboundAction sobre esta misma API, y responder. Ese salto de mas por APIM es el que devolvia
+              // "BadGateway / The server did not receive a response from an upstream
+              // server" y dejaba al usuario sin saber si el corte se hizo o no.
+              //
+              // Y ADEMAS AVISABA "Corte generado" PASARA LO QUE PASARA: el Notify estaba
+              // despues del Run, sin mirar el resultado. Se veia el exito en verde y el
+              // 502 en rojo, al mismo tiempo. Ahora el aviso sale del lote de verdad.
+              UpdateContext({ctxCorriendoCor: true});
+              IfError(
+                  UpdateContext({
+                      ctxRespCorteCor: Environment.sanic_CHCreateTransactionCut(
+                          { CajeroId: gvarCajeroCor.cajero }
+                      )
+                  }),
+                  Notify("No se pudo generar el corte: " & FirstError.Message, NotificationType.Error);
+                  UpdateContext({ ctxRespCorteCor: Blank() })
+              );
+              UpdateContext({ctxCorriendoCor: false});
+              If(
+                  !IsBlank(ctxRespCorteCor.BatchName),
+                  UpdateContext({ctxDlgCorteCor: false});
+                  Set(gvarCajeroCor, Blank());
+                  Select(btnActualizarCor);
+                  Notify(
+                      "Lote " & ctxRespCorteCor.BatchName & " generado con " &
+                      ctxRespCorteCor.AssignedCount & " transacciones.",
+                      NotificationType.Success
+                  )
+              )
             Texto: |-
-              =$"Se creará un lote en estado Generado con las {ctxCortePreviewCor.EligibleCount} transacciones de efectivo pendientes del cajero (" &
+              =// LAS TRES MONEDAS. Faltaba el euro: el dialogo pedia confirmar un corte
+              // mostrando cordobas y dolares, y el euro entraba igual sin que nadie lo
+              // viera. No es un detalle de formato — en el corte de User 10 eran
+              // € 17.544,42 que se cortaban a ciegas. Los KPI de arriba ya mostraban las
+              // tres; el que mentia por omision era justo el paso donde se firma.
+              //
+              // Y NO PROMETE EL TOTAL. El servidor corta hasta un tope
+              // (Digitization.MaxTransactionsPerCut, 500) porque un corte de miles
+              // revienta el limite de requests de la base y termina no cortando NADA.
+              // Si el pendiente es mayor que el tope, el dialogo lo dice ANTES de
+              // firmar: el numero de arriba es lo que hay, no lo que se va a llevar.
+              $"Hay {ctxCortePreviewCor.EligibleCount} transacciones de efectivo pendientes del cajero (" &
               SimboloNIO & " " & Text(ctxCortePreviewCor.TotalNIO, FmtMoney) & " · " &
-              SimboloUSD & " " & Text(ctxCortePreviewCor.TotalUSD, FmtMoney) &
-              "). El lote queda a su nombre. El conteo lo confirma el servidor en el momento del corte: las transacciones creadas después entran en el próximo corte."
+              SimboloUSD & " " & Text(ctxCortePreviewCor.TotalUSD, FmtMoney) & " · " &
+              SimboloEUR & " " & Text(ctxCortePreviewCor.TotalEUR, FmtMoney) &
+              "). Se creará un lote en estado Generado, a su nombre, con las que el servidor alcance a tomar en este corte: hay un tope por corte, así que si quedan pendientes hay que repetir el corte hasta vaciarlas. El conteo final lo confirma el servidor: las transacciones creadas después entran en el próximo corte."
             TextoCancelar: ="Cancelar"
             TextoOk: ="Sí, generar corte"
             Titulo: =$"¿Generar el corte de {gvarCajeroCor.cajeroNombre}?"

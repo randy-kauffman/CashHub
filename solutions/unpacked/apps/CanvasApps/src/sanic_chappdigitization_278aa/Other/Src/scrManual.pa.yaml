@@ -59,6 +59,1238 @@ Screens:
             Height: =Parent.Height - LayHeaderH
             Width: =Parent.Width
             Y: =LayHeaderH
+          Children:
+            - cmpRailMan:
+                Control: CanvasComponent
+                ComponentName: cmpRailCajeros
+                Properties:
+                  Datos: =AddColumns(DropColumns(colCajerosMan, pendientesManual), pendientesCorte, 0, totalNio, 0, totalUsd, 0, totalEur, 0)
+                  Height: =Parent.Height
+                  OnActualizar: =Select(btnCargarMan)
+                  OnSeleccion: |-
+                    =Set(gvarCajeroMan, cmpRailMan.CajeroSel);
+                    UpdateContext({ctxSegManual: "Pendientes", ctxErrorMan: Blank()});
+                    Set(
+                        gvarTxMan,
+                        First(
+                            Sort(
+                            Filter(
+                                'CH-Tbl-Transactions',
+                                TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                            ),
+                            'Created On', SortOrder.Ascending
+                        )
+                        )
+                    );
+                    Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan);
+                    Reset(inpCampoMontoMan);  Reset(inpCampoRefMan);
+                    SetFocus(inpCampoCuentaMan)
+                  Titulo: ="CAJEROS CON MANUALES"
+                  Width: =LayRailW
+            - cntMainMan:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  Fill: =Color.Transparent
+                  Height: =Parent.Height
+                  Width: =Parent.Width - LayRailW
+                  X: =LayRailW
+                Children:
+                  - cntListaCardMan:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Fill: =ThemeSurface
+                        Height: =Parent.Height - LayGutter*2
+                        RadiusBottomLeft: =LayCardR
+                        RadiusBottomRight: =LayCardR
+                        RadiusTopLeft: =LayCardR
+                        RadiusTopRight: =LayCardR
+                        Width: =(Parent.Width - LayGutter*2 - LayGap) * 0.6
+                        X: =LayGutter
+                        Y: =LayGutter
+                      Children:
+                        - cntSegMan:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              BorderColor: =ThemeLine
+                              BorderThickness: =1
+                              Fill: =ThemeSurface2
+                              Height: =30
+                              RadiusBottomLeft: =9
+                              RadiusBottomRight: =9
+                              RadiusTopLeft: =9
+                              RadiusTopRight: =9
+                              Width: =210
+                              X: =16
+                              Y: =12
+                            Children:
+                              - btnSegAplicadasMan:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderStyle: =BorderStyle.None
+                                    Color: =If(ctxSegManual = "Aplicadas", ThemeAccent, ThemeInk2)
+                                    Fill: =If(ctxSegManual = "Aplicadas", ThemeSurface, Color.Transparent)
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =If(ctxSegManual = "Aplicadas", FontWeight.Semibold, FontWeight.Normal)
+                                    Height: =Parent.Height - 6
+                                    OnSelect: |-
+                                      =UpdateContext({ctxSegManual: "Aplicadas", ctxErrorMan: Blank()});
+                                      Set(
+                                          gvarTxMan,
+                                          First(
+                                              Sort(
+                                                  Filter(
+                                                      'CH-Tbl-Transactions',
+                                                      TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                                          && BatchStatus = Blank()
+                                                          && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                                          && Cajero.User = gvarCajeroMan.cajero
+                                                  ),
+                                                  'Created On', SortOrder.Descending
+                                              )
+                                          )
+                                      )
+                                    RadiusBottomLeft: =7
+                                    RadiusBottomRight: =7
+                                    RadiusTopLeft: =7
+                                    RadiusTopRight: =7
+                                    Size: =9
+                                    Text: ="Aplicadas" & If(ctxSegManual = "Aplicadas", " (" & CountRows(galTxMan.AllItems) & ")", "")
+                                    Width: =(Parent.Width - 6) / 2
+                                    X: =btnSegPendientesMan.X + btnSegPendientesMan.Width
+                                    Y: =3
+                              - btnSegPendientesMan:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderStyle: =BorderStyle.None
+                                    Color: =If(ctxSegManual = "Pendientes", ThemeAccent, ThemeInk2)
+                                    Fill: =If(ctxSegManual = "Pendientes", ThemeSurface, Color.Transparent)
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =If(ctxSegManual = "Pendientes", FontWeight.Semibold, FontWeight.Normal)
+                                    Height: =Parent.Height - 6
+                                    OnSelect: |-
+                                      =UpdateContext({ctxSegManual: "Pendientes", ctxErrorMan: Blank()});
+                                      Set(
+                                          gvarTxMan,
+                                          First(
+                                              Sort(
+                                              Filter(
+                                                  'CH-Tbl-Transactions',
+                                                  TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                                      && BatchStatus = Blank()
+                                                      && TransactionStatus = Blank()
+                                                      && Cajero.User = gvarCajeroMan.cajero
+                                              ),
+                                              'Created On', SortOrder.Ascending
+                                          )
+                                          )
+                                      );
+                                      Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan);
+                                      Reset(inpCampoMontoMan);  Reset(inpCampoRefMan);
+                                      SetFocus(inpCampoCuentaMan)
+                                    RadiusBottomLeft: =7
+                                    RadiusBottomRight: =7
+                                    RadiusTopLeft: =7
+                                    RadiusTopRight: =7
+                                    Size: =9
+                                    Text: ="Pendientes" & If(ctxSegManual = "Pendientes", " (" & CountRows(galTxMan.AllItems) & ")", "")
+                                    Width: =(Parent.Width - 6) / 2
+                                    X: =3
+                                    Y: =3
+                        - lblOrdenMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              Height: =18
+                              Text: |-
+                                ="Orden: " & If(ctxSegManual = "Aplicadas", "Aplicada ↓", If(ctxOrdenMan = "Motivo", "Motivo", "Fecha"))
+                              Width: =170
+                              X: =Parent.Width - 16 - Self.Width
+                              Y: =18
+                        - shpGridHeadBgMan:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =ThemeSurface2
+                              Height: =30
+                              Width: =Parent.Width
+                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                        - lblHdrRefMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =30
+                              Size: =7.5
+                              Text: ="REFERENCIA"
+                              Width: =Parent.Width*0.13
+                              X: =Parent.Width*0.03
+                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                        - lblHdrDepMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =30
+                              Size: =7.5
+                              Text: ="DEPÓSITO / CLIENTE"
+                              Width: =Parent.Width*0.26
+                              X: =Parent.Width*0.16
+                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                        - lblHdrCtaMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =30
+                              Size: =7.5
+                              Text: ="CUENTA"
+                              Width: =Parent.Width*0.13
+                              X: =Parent.Width*0.43
+                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                        - lblHdrMontoMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =30
+                              Size: =7.5
+                              Text: ="MONTO"
+                              Width: =Parent.Width*0.12
+                              X: =Parent.Width*0.57
+                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                        - btnHdrMotivoMan:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              Align: =Align.Left
+                              BorderThickness: =0
+                              Color: =If(ctxOrdenMan = "Motivo", ThemeAccent, ThemeInk2)
+                              Fill: =Color.Transparent
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =30
+                              OnSelect: |-
+                                =UpdateContext({ctxOrdenMan: If(ctxOrdenMan = "Motivo", "Fecha", "Motivo")})
+                              PaddingLeft: =0
+                              Size: =7.5
+                              Text: ="MOTIVO " & If(ctxOrdenMan = "Motivo", "▼", "")
+                              Width: =Parent.Width*0.14
+                              X: =Parent.Width*0.70
+                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                        - lblHdrEstadoMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =30
+                              Size: =7.5
+                              Text: =If(ctxSegManual = "Aplicadas", "APLICADA", "ESTADO")
+                              Width: =Parent.Width*0.14
+                              X: =Parent.Width*0.84
+                              Y: =cntSegMan.Y + cntSegMan.Height + 12
+                        - shpGridLineaMan:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =ThemeLine
+                              Height: =1
+                              Width: =Parent.Width
+                              Y: =cntSegMan.Y + cntSegMan.Height + 12 + 30
+                        - cmpEmptyListaMan:
+                            Control: CanvasComponent
+                            ComponentName: cmpEmpty
+                            Properties:
+                              Glifo: ="⛁"
+                              Height: =galTxMan.Height
+                              Mensaje: =If(ctxSegManual = "Aplicadas", "Sin transacciones aplicadas para este cajero.", "Sin manuales pendientes para este cajero.")
+                              Visible: =CountRows(galTxMan.AllItems) = 0
+                              Width: =Parent.Width
+                              Y: =galTxMan.Y
+                        - galTxMan:
+                            Control: Gallery@2.15.0
+                            Variant: Vertical
+                            Properties:
+                              Height: =Parent.Height - (shpGridLineaMan.Y + 1)
+                              Items: |-
+                                =If(
+                                    ctxSegManual = "Aplicadas",
+                                    // --- APLICADAS: más recientes primero ---
+                                    Sort(
+                                        Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                                && BatchStatus = Blank()
+                                                && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                                && Cajero.User = gvarCajeroMan.cajero
+                                        ),
+                                        'Created On', SortOrder.Descending
+                                    ),
+                                    // --- PENDIENTES ---
+                                    If(
+                                        ctxOrdenMan = "Motivo",
+                                        Sort(
+                                            Filter(
+                                                'CH-Tbl-Transactions',
+                                                TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                                    && BatchStatus = Blank() && TransactionStatus = Blank()
+                                                    && Cajero.User = gvarCajeroMan.cajero
+                                            ),
+                                            // rango de motivo (Rechazo core > Sin cuenta > Con cheques > —)
+                                            Switch(
+                                                true,
+                                                !IsBlank(MotivoRechazoCore), 3,
+                                                IsBlank(AccountNumber), 2,
+                                                !IsBlank(RelatedDepositRecounting), 1,
+                                                0
+                                            ),
+                                            SortOrder.Descending
+                                        ),
+                                        Sort(
+                                            Filter(
+                                                'CH-Tbl-Transactions',
+                                                TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                                    && BatchStatus = Blank() && TransactionStatus = Blank()
+                                                    && Cajero.User = gvarCajeroMan.cajero
+                                            ),
+                                            'Created On', SortOrder.Ascending
+                                        )
+                                    )
+                                )
+                              OnSelect: |-
+                                =Set(gvarTxMan, galTxMan.Selected);
+                                UpdateContext({ctxErrorMan: Blank()});
+                                Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan);
+                                Reset(inpCampoMontoMan);  Reset(inpCampoRefMan);
+                                If(ctxSegManual = "Pendientes", SetFocus(inpCampoCuentaMan))
+                              TemplatePadding: =0
+                              TemplateSize: =LayRowH
+                              Width: =Parent.Width
+                              Y: =shpGridLineaMan.Y + 1
+                            Children:
+                              - shpTxSelMan:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =If(!IsBlank(gvarTxMan) && ThisItem.'CH-Tbl-Transactions' = gvarTxMan.'CH-Tbl-Transactions', ThemeAccentSoft, Color.Transparent)
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: =Select(Parent)
+                                    Width: =Parent.TemplateWidth
+                              - shpTxSelBarraMan:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeAccent
+                                    Height: =Parent.TemplateHeight
+                                    Visible: =!IsBlank(gvarTxMan) && ThisItem.'CH-Tbl-Transactions' = gvarTxMan.'CH-Tbl-Transactions'
+                                    Width: =3
+                              - btnTxFilaMan:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderThickness: =0
+                                    Fill: =Color.Transparent
+                                    Font: =Font.'Open Sans'
+                                    Height: =Parent.TemplateHeight
+                                    HoverFill: =ThemeSurface2
+                                    OnSelect: =Select(Parent)
+                                    PressedFill: =ThemeAccentSoft
+                                    Text: =""
+                                    Width: =Parent.TemplateWidth
+                              - lblTxRefMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: =Select(Parent)
+                                    Text: =ThisItem.Name
+                                    Width: =Parent.TemplateWidth*0.13
+                                    X: =Parent.TemplateWidth*0.03
+                              - lblTxDepMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: =Select(Parent)
+                                    Text: =Coalesce(ThisItem.RelatedDepositRecounting.Name, "—")
+                                    Width: =Parent.TemplateWidth*0.26
+                                    X: =Parent.TemplateWidth*0.16
+                              - lblTxCtaMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Color: =If(IsBlank(ThisItem.AccountNumber), ThemeInk3, ThemeInk)
+                                    Font: =Font.'Open Sans'
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: =Select(Parent)
+                                    Text: =If(IsBlank(ThisItem.AccountNumber), "— sin cuenta —", Text(ThisItem.AccountNumber, "[$-en-US]0"))
+                                    Width: =Parent.TemplateWidth*0.13
+                                    X: =Parent.TemplateWidth*0.43
+                              - lblTxMontoMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: =Select(Parent)
+                                    Text: =Text(ThisItem.Total, FmtMoney)
+                                    Width: =Parent.TemplateWidth*0.12
+                                    X: =Parent.TemplateWidth*0.57
+                              - lblTxAplicadaMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Font: =Font.'Open Sans'
+                                    Height: =Parent.TemplateHeight
+                                    OnSelect: =Select(Parent)
+                                    Text: =Text(ThisItem.'Modified On', FmtHora)
+                                    Visible: =ctxSegManual = "Aplicadas"
+                                    Width: =Parent.TemplateWidth*0.14
+                                    X: =Parent.TemplateWidth*0.84
+                              - shpTxFilaSepMan:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeLineSoft
+                                    Height: =1
+                                    Width: =Parent.TemplateWidth
+                                    Y: =Parent.TemplateHeight - 1
+                              - pilTxEstadoMan:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderColor: =ThemeLineSoft
+                                    BorderThickness: =1
+                                    Color: =ThemeInk3
+                                    DisplayMode: =DisplayMode.View
+                                    Fill: =ThemeLineSoft
+                                    Font: =Font.'Open Sans'
+                                    Height: =22
+                                    RadiusBottomLeft: =12
+                                    RadiusBottomRight: =12
+                                    RadiusTopLeft: =12
+                                    RadiusTopRight: =12
+                                    Size: =7.88
+                                    Text: ="Pendiente"
+                                    Visible: =ctxSegManual = "Pendientes"
+                                    Width: =78
+                                    X: =Parent.TemplateWidth*0.84
+                                    Y: =(Parent.TemplateHeight-22)/2
+                              - pilTxMotivoMan:
+                                  Control: Classic/Button@2.2.0
+                                  Properties:
+                                    BorderThickness: =0
+                                    Color: |-
+                                      =With(
+                                          { m: Switch(true,
+                                              !IsBlank(ThisItem.MotivoRechazoCore), "Rechazo core",
+                                              IsBlank(ThisItem.AccountNumber),            "Sin cuenta",
+                                              !IsBlank(ThisItem.RelatedDepositRecounting),"Con cheques",
+                                              "—") },
+                                          Switch(m,
+                                              "Rechazo core", ThemeDanger,
+                                              "Sin cuenta",   ThemeWarn,
+                                              "Con cheques",  ThemeInfo,
+                                              ThemeInk3)
+                                      )
+                                    DisplayMode: =DisplayMode.View
+                                    Fill: |-
+                                      =With(
+                                          { m: Switch(true,
+                                              !IsBlank(ThisItem.MotivoRechazoCore), "Rechazo core",
+                                              IsBlank(ThisItem.AccountNumber),            "Sin cuenta",
+                                              !IsBlank(ThisItem.RelatedDepositRecounting),"Con cheques",
+                                              "—") },
+                                          Switch(m,
+                                              "Rechazo core", ThemeDangerSoft,
+                                              "Sin cuenta",   ThemeWarnSoft,
+                                              "Con cheques",  ThemeInfoSoft,
+                                              ThemeLineSoft)
+                                      )
+                                    Font: =Font.'Open Sans'
+                                    Height: =22
+                                    RadiusBottomLeft: =12
+                                    RadiusBottomRight: =12
+                                    RadiusTopLeft: =12
+                                    RadiusTopRight: =12
+                                    Size: =7.88
+                                    Text: |-
+                                      =Switch(
+                                          true,
+                                          !IsBlank(ThisItem.MotivoRechazoCore), "Rechazo core",
+                                          IsBlank(ThisItem.AccountNumber),            "Sin cuenta",
+                                          !IsBlank(ThisItem.RelatedDepositRecounting),"Con cheques",
+                                          "—"
+                                      )
+                                    Width: =40 + 7*Len(Self.Text)
+                                    X: =Parent.TemplateWidth*0.70
+                                    Y: =(Parent.TemplateHeight-22)/2
+                  - cntDetalleCardMan:
+                      Control: GroupContainer@1.5.0
+                      Variant: ManualLayout
+                      Properties:
+                        BorderColor: =ThemeLine
+                        BorderThickness: =1
+                        Fill: =ThemeSurface
+                        Height: =Parent.Height - LayGutter*2
+                        RadiusBottomLeft: =LayCardR
+                        RadiusBottomRight: =LayCardR
+                        RadiusTopLeft: =LayCardR
+                        RadiusTopRight: =LayCardR
+                        Width: =Parent.Width - cntDetalleCardMan.X - LayGutter
+                        X: =cntListaCardMan.X + cntListaCardMan.Width + LayGap
+                        Y: =LayGutter
+                      Children:
+                        - cntKbHintMan:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =ThemeInfoSoft
+                              Height: =lblKbHintMan.Y + lblKbHintMan.Height + 9
+                              RadiusBottomLeft: =9
+                              RadiusBottomRight: =9
+                              RadiusTopLeft: =9
+                              RadiusTopRight: =9
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =shpDetLineaMan.Y + 14
+                            Children:
+                              - icoKbHintMan:
+                                  Control: Classic/Icon@2.5.0
+                                  Properties:
+                                    Color: =ThemeInfo
+                                    Height: =16
+                                    Icon: =Icon.Laptop
+                                    Width: =16
+                                    X: =13
+                                    Y: =11
+                              - lblKbHintMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    AutoHeight: =true
+                                    Color: =ThemeInfo
+                                    Font: =Font.'Open Sans'
+                                    Size: =9
+                                    Text: |-
+                                      ="Copiá y tabulá: Cuenta → Tab → Moneda → … → Referencia → Tab → Enter aplica y pasa al siguiente."
+                                    Width: =Parent.Width - 51
+                                    X: =38
+                                    Y: =9
+                        - cntChequesHintMan:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =ThemeInfoSoft
+                              Height: =lblChequesHintMan.Y + lblChequesHintMan.Height + 9
+                              RadiusBottomLeft: =9
+                              RadiusBottomRight: =9
+                              RadiusTopLeft: =9
+                              RadiusTopRight: =9
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =lblChequesSecMan.Y + lblChequesSecMan.Height + 8
+                            Children:
+                              - lblChequesHintMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    AutoHeight: =true
+                                    Color: =ThemeInfo
+                                    Font: =Font.'Open Sans'
+                                    Size: =9
+                                    Text: ="Cotejá contra los cheques que tenés en mano antes de aplicar."
+                                    Width: =Parent.Width - 51
+                                    X: =38
+                                    Y: =9
+                              - icoChequesHintMan:
+                                  Control: Classic/Icon@2.5.0
+                                  Properties:
+                                    Color: =ThemeInfo
+                                    Height: =16
+                                    Icon: =Icon.Information
+                                    Width: =16
+                                    X: =13
+                                    Y: =11
+                        - cmpEmptyChequesMan:
+                            Control: CanvasComponent
+                            ComponentName: cmpEmpty
+                            Properties:
+                              Glifo: ="—"
+                              Height: =70
+                              Mensaje: ="Esta transacción no tiene cheques asociados."
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan) && CountRows(galChequesMan.AllItems) = 0
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =cntChequesHintMan.Y + cntChequesHintMan.Height + 8
+                        - cntChequesGridMan:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              BorderColor: =ThemeLine
+                              BorderThickness: =1
+                              Fill: =ThemeSurface
+                              Height: =26 + Min(CountRows(galChequesMan.AllItems), 4) * 34 + 2
+                              RadiusBottomLeft: =9
+                              RadiusBottomRight: =9
+                              RadiusTopLeft: =9
+                              RadiusTopRight: =9
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan) && CountRows(galChequesMan.AllItems) > 0
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =cntChequesHintMan.Y + cntChequesHintMan.Height + 8
+                            Children:
+                              - galChequesMan:
+                                  Control: Gallery@2.15.0
+                                  Variant: Vertical
+                                  Properties:
+                                    Height: =Parent.Height - 27
+                                    Items: |-
+                                      =If(
+                                          !IsBlank(gvarTxMan.RelatedDepositRecounting),
+                                          Filter(
+                                              'CH-Tbl-Checks',
+                                              RelatedReCounterDepositID.'CH-Tbl-DepositsRecounting'
+                                                  = gvarTxMan.RelatedDepositRecounting.'CH-Tbl-DepositsRecounting'
+                                          ),
+                                          // else explícito (nunca Blank como fuente → evita ErrorKind.Internal)
+                                          FirstN('CH-Tbl-Checks', 0)
+                                      )
+                                    TemplateSize: =34
+                                    Width: =Parent.Width
+                                    Y: =27
+                                  Children:
+                                    - lblChqNumMan:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Font: =Font.'Open Sans'
+                                          FontWeight: =FontWeight.Semibold
+                                          Height: =Parent.TemplateHeight
+                                          Text: =ThisItem.CheckNumber
+                                          Width: =Parent.TemplateWidth*0.50
+                                          X: =Parent.TemplateWidth*0.04
+                                    - lblChqMontoMan:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.TemplateHeight
+                                          Text: =Text(ThisItem.CheckAmount, FmtMoney)
+                                          Width: =Parent.TemplateWidth*0.28
+                                          X: =Parent.TemplateWidth*0.54
+                                    - lblChqMonMan:
+                                        Control: Label@2.5.1
+                                        Properties:
+                                          Align: =Align.Right
+                                          Font: =Font.'Open Sans'
+                                          Height: =Parent.TemplateHeight
+                                          Text: =ThisItem.CheckCurrency
+                                          Width: =Parent.TemplateWidth*0.14
+                                          X: =Parent.TemplateWidth*0.82
+                                    - shpChqSepMan:
+                                        Control: Rectangle@2.3.0
+                                        Properties:
+                                          Fill: =ThemeLineSoft
+                                          Height: =1
+                                          Width: =Parent.TemplateWidth
+                                          Y: =Parent.TemplateHeight - 1
+                              - shpChqHeadLineaMan:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeLine
+                                    Height: =1
+                                    Width: =Parent.Width
+                                    Y: =26
+                              - lblChqHdrMonMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =26
+                                    Size: =7.5
+                                    Text: ="MON."
+                                    Width: =Parent.Width*0.14
+                                    X: =Parent.Width*0.82
+                              - lblChqHdrMontoMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =26
+                                    Size: =7.5
+                                    Text: ="MONTO"
+                                    Width: =Parent.Width*0.28
+                                    X: =Parent.Width*0.54
+                              - lblChqHdrNumMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk2
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Bold
+                                    Height: =26
+                                    Size: =7.5
+                                    Text: ="N° CHEQUE"
+                                    Width: =Parent.Width*0.50
+                                    X: =Parent.Width*0.04
+                              - shpChqHeadBgMan:
+                                  Control: Rectangle@2.3.0
+                                  Properties:
+                                    Fill: =ThemeSurface2
+                                    Height: =26
+                                    Width: =Parent.Width
+                        - cntDangerMan:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =ThemeDangerSoft
+                              Height: =lblDangerMan.Y + lblDangerMan.Height + 9
+                              RadiusBottomLeft: =9
+                              RadiusBottomRight: =9
+                              RadiusTopLeft: =9
+                              RadiusTopRight: =9
+                              Visible: =ctxSegManual = "Pendientes" && !IsBlank(ctxErrorMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =shpDetLineaMan.Y + 14
+                            Children:
+                              - icoDangerMan:
+                                  Control: Classic/Icon@2.5.0
+                                  Properties:
+                                    Color: =ThemeDanger
+                                    Height: =16
+                                    Icon: =Icon.Error
+                                    Width: =16
+                                    X: =13
+                                    Y: =11
+                              - lblDangerMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    AutoHeight: =true
+                                    Color: =ThemeDanger
+                                    Font: =Font.'Open Sans'
+                                    Size: =9
+                                    Text: =ctxErrorMan
+                                    Width: =Parent.Width - 51
+                                    X: =38
+                                    Y: =9
+                        - btnActualizarMan:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderColor: =ThemeAccent
+                              BorderThickness: =1
+                              Color: =ThemeAccent
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              Fill: =ThemeSurface
+                              Font: =Font.'Open Sans'
+                              Height: =32
+                              HoverFill: =ThemeAccentSoft
+                              OnSelect: |-
+                                =// Recarga tambien el RAIL: antes refrescaba la lista del cajero
+                                // seleccionado y los contadores de la izquierda quedaban viejos.
+                                Select(btnCargarMan);
+                                Refresh('CH-Tbl-Transactions');   // Refresh DELIBERADO iniciado por el usuario (≠ P-1: no es por-registro)
+                                UpdateContext({ctxErrorMan: Blank()});
+                                Set(
+                                    gvarTxMan,
+                                    First(
+                                        Sort(
+                                        Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                                && BatchStatus = Blank()
+                                                && TransactionStatus = Blank()
+                                                && Cajero.User = gvarCajeroMan.cajero
+                                        ),
+                                        'Created On', SortOrder.Ascending
+                                    )
+                                    )
+                                );
+                                Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan);
+                                Reset(inpCampoMontoMan);  Reset(inpCampoRefMan);
+                                SetFocus(inpCampoCuentaMan)
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              Size: =9
+                              Text: ="↻ Actualizar lista"
+                              Visible: =ctxSegManual = "Pendientes" && !IsBlank(ctxErrorMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =cntDangerMan.Y + cntDangerMan.Height + 14
+                        - cntInfoAplicadaMan:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =ThemeInfoSoft
+                              Height: =lblInfoAplicadaMan.Y + lblInfoAplicadaMan.Height + 9
+                              RadiusBottomLeft: =9
+                              RadiusBottomRight: =9
+                              RadiusTopLeft: =9
+                              RadiusTopRight: =9
+                              Visible: =ctxSegManual = "Aplicadas" && !IsBlank(gvarTxMan) && !IsBlank(gvarTxMan.MotivoRechazoCore)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =shpDetLineaMan.Y + 14
+                            Children:
+                              - lblInfoAplicadaMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    AutoHeight: =true
+                                    Color: =ThemeInfo
+                                    Font: =Font.'Open Sans'
+                                    Size: =9
+                                    Text: ="Esta transacción fue sacada de un lote por rechazo del core y aplicada manualmente después."
+                                    Width: =Parent.Width - 51
+                                    X: =38
+                                    Y: =9
+                              - icoInfoAplicadaMan:
+                                  Control: Classic/Icon@2.5.0
+                                  Properties:
+                                    Color: =ThemeInfo
+                                    Height: =16
+                                    Icon: =Icon.Information
+                                    Width: =16
+                                    X: =13
+                                    Y: =11
+                        - lblDatosSecMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =16
+                              Size: =7.88
+                              Text: ="DATOS"
+                              Visible: =ctxSegManual = "Aplicadas" && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =shpDetLineaMan.Y + 14 + If(!IsBlank(gvarTxMan.MotivoRechazoCore), cntInfoAplicadaMan.Height + 12, 0)
+                        - cntKvAplicadaMan:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Height: =5 * 24
+                              Visible: =ctxSegManual = "Aplicadas" && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =lblDatosSecMan.Y + lblDatosSecMan.Height + 8
+                            Children:
+                              - lblKvK1Man:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    Height: =22
+                                    Size: =9
+                                    Text: ="Cuenta"
+                                    Width: =Parent.Width*0.4
+                              - lblKvV1Man:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =22
+                                    Size: =9
+                                    Text: =If(IsBlank(gvarTxMan.AccountNumber), "— sin cuenta —", Text(gvarTxMan.AccountNumber, "[$-en-US]0"))
+                                    Width: =Parent.Width*0.6
+                                    X: =Parent.Width*0.4
+                              - lblKvK2Man:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    Height: =22
+                                    Size: =9
+                                    Text: ="Moneda"
+                                    Width: =Parent.Width*0.4
+                                    Y: =24
+                              - lblKvV2Man:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =22
+                                    Size: =9
+                                    Text: =gvarTxMan.Currency
+                                    Width: =Parent.Width*0.6
+                                    X: =Parent.Width*0.4
+                                    Y: =24
+                              - lblKvK3Man:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    Height: =22
+                                    Size: =9
+                                    Text: ="Total"
+                                    Width: =Parent.Width*0.4
+                                    Y: =48
+                              - lblKvV3Man:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =22
+                                    Size: =9
+                                    Text: =Text(gvarTxMan.Total, FmtMoney)
+                                    Width: =Parent.Width*0.6
+                                    X: =Parent.Width*0.4
+                                    Y: =48
+                              - lblKvK4Man:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    Height: =22
+                                    Size: =9
+                                    Text: ="Aplicada por"
+                                    Width: =Parent.Width*0.4
+                                    Y: =72
+                              - lblKvV4Man:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =22
+                                    Size: =9
+                                    Text: =gvarTxMan.'Modified By'.'Full Name'
+                                    Width: =Parent.Width*0.6
+                                    X: =Parent.Width*0.4
+                                    Y: =72
+                              - lblKvK5Man:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Color: =ThemeInk3
+                                    Font: =Font.'Open Sans'
+                                    Height: =22
+                                    Size: =9
+                                    Text: ="Aplicada"
+                                    Width: =Parent.Width*0.4
+                                    Y: =96
+                              - lblKvV5Man:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    Align: =Align.Right
+                                    Font: =Font.'Open Sans'
+                                    FontWeight: =FontWeight.Semibold
+                                    Height: =22
+                                    Size: =9
+                                    Text: =Text(gvarTxMan.'Modified On', FmtFecha)
+                                    Width: =Parent.Width*0.6
+                                    X: =Parent.Width*0.4
+                                    Y: =96
+                        - cntWarnMotivoMan:
+                            Control: GroupContainer@1.5.0
+                            Variant: ManualLayout
+                            Properties:
+                              Fill: =ThemeWarnSoft
+                              Height: =lblWarnMotivoMan.Y + lblWarnMotivoMan.Height + 9
+                              RadiusBottomLeft: =9
+                              RadiusBottomRight: =9
+                              RadiusTopLeft: =9
+                              RadiusTopRight: =9
+                              Visible: =ctxSegManual = "Aplicadas" && !IsBlank(gvarTxMan) && !IsBlank(gvarTxMan.MotivoRechazoCore)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =cntKvAplicadaMan.Y + cntKvAplicadaMan.Height + 12 + 16 + 8
+                            Children:
+                              - icoWarnMotivoMan:
+                                  Control: Classic/Icon@2.5.0
+                                  Properties:
+                                    Color: =ThemeWarn
+                                    Height: =16
+                                    Icon: =Icon.Warning
+                                    Width: =16
+                                    X: =13
+                                    Y: =11
+                              - lblWarnMotivoMan:
+                                  Control: Label@2.5.1
+                                  Properties:
+                                    AutoHeight: =true
+                                    Color: =ThemeWarn
+                                    Font: =Font.'Open Sans'
+                                    Size: =9
+                                    Text: =Coalesce(gvarTxMan.MotivoRechazoCore, gvarTxMan.Comentarios)
+                                    Width: =Parent.Width - 51
+                                    X: =38
+                                    Y: =9
+                        - lblChequesSecMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =16
+                              Size: =7.88
+                              Text: ="CHEQUES DE LA TRANSACCIÓN (" & CountRows(galChequesMan.AllItems) & ")"
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =btnAplicarMan.Y + btnAplicarMan.Height + 16
+                        - btnAplicarMan:
+                            Control: Classic/Button@2.2.0
+                            Properties:
+                              BorderThickness: =0
+                              Color: =ThemeSurface
+                              DisabledBorderColor: =Color.Transparent
+                              DisabledColor: =ThemeInk3
+                              DisabledFill: =ThemeLineSoft
+                              Fill: =ThemeAccent
+                              Font: =Font.'Open Sans'
+                              HoverFill: =ThemeAccentDark
+                              OnSelect: |-
+                                =IfError(
+                                    // 1 sola columna, SIN SubmitForm, SIN Refresh de tabla completa
+                                    Patch(
+                                        'CH-Tbl-Transactions',
+                                        gvarTxMan,
+                                        { TransactionStatus: 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada }
+                                    ),
+                                    // --- Fallback: el guard rechazó / hubo error → feedback VISIBLE (MA3) ---
+                                    UpdateContext({ctxErrorMan: Coalesce(FirstError.Message, "No se pudo aplicar la transacción.")});
+                                    Notify(ctxErrorMan, NotificationType.Error),
+                                    // --- DefaultResult (sin error): éxito + auto-avance ---
+                                    UpdateContext({ctxErrorMan: Blank()});
+                                    Notify("Transacción aplicada.", NotificationType.Success);
+                                    // la tx recién aplicada ya tiene TransactionStatus → sale del filtro sin Refresh
+                                    Set(
+                                        gvarTxMan,
+                                        First(
+                                            Sort(
+                                        Filter(
+                                            'CH-Tbl-Transactions',
+                                            TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                                && BatchStatus = Blank()
+                                                && TransactionStatus = Blank()
+                                                && Cajero.User = gvarCajeroMan.cajero
+                                        ),
+                                        'Created On', SortOrder.Ascending
+                                    )
+                                        )
+                                    );
+                                    Reset(inpCampoCuentaMan); Reset(inpCampoMonedaMan);
+                                    Reset(inpCampoMontoMan);  Reset(inpCampoRefMan);
+                                    SetFocus(inpCampoCuentaMan)
+                                )
+                              RadiusBottomLeft: =8
+                              RadiusBottomRight: =8
+                              RadiusTopLeft: =8
+                              RadiusTopRight: =8
+                              Size: =9
+                              TabIndex: =5
+                              Text: ="↵  Marcar como aplicada (Enter)"
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =inpCampoRefMan.Y + inpCampoRefMan.Height + 14
+                        - inpCampoRefMan:
+                            Control: Classic/TextInput@2.3.2
+                            Properties:
+                              BorderColor: =ThemeLine
+                              Default: =gvarTxMan.TransactionReference
+                              DisplayMode: =DisplayMode.Disabled
+                              Fill: =ThemeSurface2
+                              FocusedBorderColor: =ThemeAccent
+                              FocusedBorderThickness: =2
+                              Font: =Font.'Open Sans'
+                              Height: =34
+                              OnChange: =Reset(Self)
+                              RadiusBottomLeft: =7
+                              RadiusBottomRight: =7
+                              RadiusTopLeft: =7
+                              RadiusTopRight: =7
+                              Size: =9
+                              TabIndex: =4
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =lblCampoRefLabMan.Y + 18
+                        - lblCampoRefLabMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =16
+                              Size: =8.25
+                              Text: ="TAB 4 · Referencia"
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =inpCampoMontoMan.Y + inpCampoMontoMan.Height + 10
+                        - inpCampoMontoMan:
+                            Control: Classic/TextInput@2.3.2
+                            Properties:
+                              BorderColor: =ThemeLine
+                              Default: =Text(gvarTxMan.Total, FmtMoney)
+                              DisplayMode: =DisplayMode.Disabled
+                              Fill: =ThemeSurface2
+                              FocusedBorderColor: =ThemeAccent
+                              FocusedBorderThickness: =2
+                              Font: =Font.'Open Sans'
+                              Height: =34
+                              OnChange: =Reset(Self)
+                              RadiusBottomLeft: =7
+                              RadiusBottomRight: =7
+                              RadiusTopLeft: =7
+                              RadiusTopRight: =7
+                              Size: =9
+                              TabIndex: =3
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =lblCampoMontoLabMan.Y + 18
+                        - lblCampoMontoLabMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =16
+                              Size: =8.25
+                              Text: ="TAB 3 · Monto total"
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =inpCampoMonedaMan.Y + inpCampoMonedaMan.Height + 10
+                        - inpCampoMonedaMan:
+                            Control: Classic/TextInput@2.3.2
+                            Properties:
+                              BorderColor: =ThemeLine
+                              Default: =gvarTxMan.Currency
+                              DisplayMode: =DisplayMode.Disabled
+                              Fill: =ThemeSurface2
+                              FocusedBorderColor: =ThemeAccent
+                              FocusedBorderThickness: =2
+                              Font: =Font.'Open Sans'
+                              Height: =34
+                              OnChange: =Reset(Self)
+                              RadiusBottomLeft: =7
+                              RadiusBottomRight: =7
+                              RadiusTopLeft: =7
+                              RadiusTopRight: =7
+                              Size: =9
+                              TabIndex: =2
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =lblCampoMonedaLabMan.Y + 18
+                        - lblCampoMonedaLabMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =16
+                              Size: =8.25
+                              Text: ="TAB 2 · Moneda"
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =inpCampoCuentaMan.Y + inpCampoCuentaMan.Height + 10
+                        - inpCampoCuentaMan:
+                            Control: Classic/TextInput@2.3.2
+                            Properties:
+                              BorderColor: =ThemeLine
+                              Default: =If(IsBlank(gvarTxMan.AccountNumber), "— sin cuenta —", Text(gvarTxMan.AccountNumber, "[$-en-US]0"))
+                              DisplayMode: =DisplayMode.View
+                              Fill: =ThemeSurface2
+                              FocusedBorderColor: =ThemeAccent
+                              FocusedBorderThickness: =2
+                              Font: =Font.'Open Sans'
+                              Height: =34
+                              OnChange: =Reset(Self)
+                              RadiusBottomLeft: =7
+                              RadiusBottomRight: =7
+                              RadiusTopLeft: =7
+                              RadiusTopRight: =7
+                              Size: =9
+                              TabIndex: =1
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =lblCampoCuentaLabMan.Y + 18
+                        - lblCampoCuentaLabMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk2
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =16
+                              Size: =8.25
+                              Text: ="TAB 1 · Número de cuenta"
+                              Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                              Width: =Parent.Width - 32
+                              X: =16
+                              Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12
+                        - cmpEmptyDetMan:
+                            Control: CanvasComponent
+                            ComponentName: cmpEmpty
+                            Properties:
+                              Glifo: ="⌨"
+                              Height: =Parent.Height - 53
+                              Mensaje: ="Seleccioná una transacción para grabarla."
+                              Visible: =IsBlank(gvarTxMan)
+                              Width: =Parent.Width
+                              Y: =53
+                        - shpDetLineaMan:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              Fill: =ThemeLine
+                              Height: =1
+                              Width: =Parent.Width
+                              Y: =52
+                        - cmpPilDetEstadoMan:
+                            Control: CanvasComponent
+                            ComponentName: cmpPildora
+                            Properties:
+                              Height: =22
+                              Texto: =If(ctxSegManual = "Aplicadas", "Aplicada", Switch(true, !IsBlank(gvarTxMan.MotivoRechazoCore), "Rechazo core", IsBlank(gvarTxMan.AccountNumber), "Sin cuenta", !IsBlank(gvarTxMan.RelatedDepositRecounting), "Con cheques", "—"))
+                              Tono: =If(ctxSegManual = "Aplicadas", "ok", Switch(Self.Texto, "Rechazo core", "danger", "Sin cuenta", "warn", "Con cheques", "info", "neutro"))
+                              Width: =40 + 7*Len(Self.Texto)
+                              X: =Parent.Width - 16 - Self.Width
+                              Y: =16
+                        - lblDetSubMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Color: =ThemeInk3
+                              Font: =Font.'Open Sans'
+                              Height: =16
+                              Size: =8.25
+                              Text: =Coalesce(gvarTxMan.RelatedDepositRecounting.Name, "—")
+                              Width: =Parent.Width - 130
+                              X: =16
+                              Y: =34
+                        - lblDetRefMan:
+                            Control: Label@2.5.1
+                            Properties:
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Bold
+                              Height: =22
+                              Size: =14.25
+                              Text: =gvarTxMan.Name
+                              Width: =Parent.Width - 130
+                              X: =16
+                              Y: =12
       - btnCargarMan:
           Control: Classic/Button@2.2.0
           Properties:
