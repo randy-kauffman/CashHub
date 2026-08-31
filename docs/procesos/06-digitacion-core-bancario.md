@@ -411,7 +411,7 @@ en [digitization-rebuild/06-backend.md](../digitization-rebuild/06-backend.md).
 | **Cuándo** | `scrLotes`, lote en estado `Generado` **o** `Ingresado` (los rechazos del core ocurren durante la carga, con el lote ya subido) |
 | **Por qué / para qué** | El core rechazó esa transacción puntual (cuenta inválida, etc.); hay que sacarla del lote sin tocar el resto y dejar registrado el motivo |
 | **Cómo** | `scrLotes` → seleccionar la transacción en el grid del lote → *Sacar del lote* → diálogo con textarea de motivo → confirmar |
-| **Qué valida el servidor** | `sanic_CHRemoveFromCut`: relee el estado real del lote, valida `TransactionGuard.CanRemoveFromCut` (**solo** `Generado`/`Ingresado`), desasigna, estampa `sanic_motivorechazocore` si vino motivo, recalcula totales — atómico, cero carrera |
+| **Qué valida el servidor** | `sanic_CHRemoveFromCut`: relee el estado real del lote, valida `TransactionGuard.CanRemoveFromCut` (**solo** `Generado`/`Devuelto` — en `Ingresado` el lote lo tiene el aprobador en el IBS), desasigna, estampa `sanic_motivorechazocore` si vino motivo, recalcula totales — atómico, cero carrera |
 | **Qué pasa si falla / deshacer** | Sobre un lote `Aplicado`: el guard **rebota**, intocable. La transacción sacada vuelve siempre a **Manual** (`TransactionRouting.ResolveOnUnassign`, nunca a un corte automático) — "deshacer" es re-cortarla manualmente si corresponde |
 
 ### Descargar el CSV del lote
@@ -431,7 +431,7 @@ en [digitization-rebuild/06-backend.md](../digitization-rebuild/06-backend.md).
 |---|---|
 | **Quién** | Digitador |
 | **Cuándo** | Lote en `Generado`, **después** de subir el CSV manualmente a IBS Branch (paso externo, sin verificación automática) |
-| **Por qué / para qué** | Deja constancia de que el archivo ya se cargó al core; habilita la transición final y la desasignación por rechazos del core (§9 anterior) |
+| **Por qué / para qué** | Deja constancia de que el archivo ya se cargó al core y habilita el veredicto del aprobador: `Aplicado` o `Devuelto`. **Cierra** la edición del lote — mientras está `Ingresado` no se le sacan transacciones; para corregirlo hay que devolverlo primero |
 | **Cómo** | `scrLotes` → botón *Marcar Ingresado* (visible solo si `BatchStatus = Generado`) |
 | **Qué valida el servidor** | `TransactionGuard.EvaluateBatchUpdate`: transición hacia adelante únicamente. `BatchTransitionStampPlugin` estampa `sanic_ingresadopor` + `sanic_ingresadoon` — insumo de la segregación de funciones de la acción siguiente |
 | **Qué pasa si falla / deshacer** | Sobre un lote que no está `Generado`, el `Patch` rebota. Sin deshacer: no hay transición `Ingresado → Generado` en el dominio |
