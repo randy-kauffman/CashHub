@@ -1,7 +1,20 @@
 # Análisis de las 23 variables de entorno — CashHub
 
-> Categoría B de [`limpieza-candidatos.md`](limpieza-candidatos.md). **Análisis, no ejecución.**
-> Nada de lo que sigue se aplicó al ambiente.
+> Categoría B de [`limpieza-candidatos.md`](limpieza-candidatos.md).
+>
+> ## ✅ EJECUTADO el 2026-08-31 — 21 de 23 eliminadas
+>
+> Aplicado contra DEV (`org36e60d9d`) con
+> [`scripts/cleanup-env-vars.py`](../../scripts/cleanup-env-vars.py) tras confirmación explícita.
+> **21 de 21 eliminadas, 0 bloqueadas.** Sobreviven exactamente dos:
+> `sanic_CHEVSharedMailboxAddress` y `sanic_CHEVOpsTeamsGroupId`.
+>
+> Verificado después de ejecutar: `CH-Flow-MailboxSweep` sigue **Activated**, y ningún flujo
+> declaraba una variable borrada como parámetro (la única referencia superviviente es el
+> `$filter` por string de `CH-Flow-RFCWatchdog`, que no es dependencia dura).
+>
+> **Único valor perdido**: `CHEVEnvironmentURL` = `https://org36e60d9d.crm.dynamics.com/`.
+> Las otras 20 no tenían registro de valor.
 >
 > Verificado el 2026-08-31 contra DEV (`org36e60d9d`): definiciones en
 > `solutions/unpacked/core/environmentvariabledefinitions/`, valores por ambiente en la tabla

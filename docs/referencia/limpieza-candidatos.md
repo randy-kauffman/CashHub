@@ -12,8 +12,12 @@
 
 **Categoría A ejecutada el 2026-08-31** contra DEV (`org36e60d9d`) con
 [`scripts/cleanup-categoria-a.py`](../../scripts/cleanup-categoria-a.py) — dry-run primero,
-`--apply` después. **10 de 11 componentes eliminados.** Queda 1 solo pendiente: `AppCatalog.sanic_tags`,
-bloqueado por un límite de la plataforma que exige un paso manual (ver B.4).
+`--apply` después. **Categoría A: 11 de 11 ✅ COMPLETA.** `AppCatalog.sanic_tags` se cerró el 2026-08-31 con el
+paso manual en el maker portal (ver B.4).
+
+**Categoría B — variables de entorno: ✅ COMPLETA.** 21 de 23 eliminadas; sobreviven
+`CHEVSharedMailboxAddress` y `CHEVOpsTeamsGroupId`. Detalle en
+[`limpieza-env-vars.md`](limpieza-env-vars.md).
 
 El dry-run desmintió tres de mis propias conclusiones, y vale documentarlo porque explica por qué
 el script verifica en vez de confiar en el análisis estático:
@@ -288,8 +292,8 @@ borrarla: cero, por definición. Y nadie la leía.
 
 | Categoría | Componentes | Estado |
 |---|---|---|
-| **A — Borrar directo** | 1 tabla + 1 relación + 3 columnas propias + 7 columnas | ✅ **ELIMINADO** el 2026-08-31 en DEV |
-| **B — Borrar con ajuste** | 20 env vars, 1 Custom API, 1 librería de componentes | Pendiente: requiere cambio previo |
+| **A — Borrar directo** | 1 tabla + 1 relación + 3 columnas propias + 8 columnas | ✅ **COMPLETA** — 11 de 11 el 2026-08-31 |
+| **B — Borrar con ajuste** | ~~20 env vars~~ ✅, 1 Custom API, 1 librería de componentes | Env vars hechas; faltan las otras dos |
 | **C — Decisión de producto** | 7 flows, 2 roles | Pendiente: riesgo de negocio, no de limpieza |
 
 Lo eliminado en DEV: la tabla `CH-Tbl-ClientDepositHistory` (con sus 3 columnas, su relación con

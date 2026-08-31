@@ -1,5 +1,73 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <FieldSecurityProfiles xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <FieldSecurityProfile name="CashHub | FLS | Cajero Lectura" description="Lectura del numero de cuenta para el cajero de recuento. Sin update ni create. La columna CUENTA de los depositos declarados salia vacia porque esos campos tienen seguridad a nivel de campo y el unico perfil que los habilitaba estaba asignado al equipo aprobador." fieldsecurityprofileid="{e253c66b-20a4-f111-aaac-000d3a3425f0}">
+    <FieldPermissions>
+      <FieldPermission>
+        <EntityName>sanic_chtbldeclareddeposits</EntityName>
+        <AttributeName>sanic_accountnumber</AttributeName>
+        <CanRead>4</CanRead>
+        <CanUpdate>0</CanUpdate>
+        <CanCreate>0</CanCreate>
+        <CanReadUnmasked>0</CanReadUnmasked>
+      </FieldPermission>
+      <FieldPermission>
+        <EntityName>sanic_chtbldepositsrecounting</EntityName>
+        <AttributeName>sanic_accountnumber</AttributeName>
+        <CanRead>4</CanRead>
+        <CanUpdate>4</CanUpdate>
+        <CanCreate>4</CanCreate>
+        <CanReadUnmasked>0</CanReadUnmasked>
+      </FieldPermission>
+      <FieldPermission>
+        <EntityName>sanic_chtbldeclaredchecks</EntityName>
+        <AttributeName>sanic_checknumber</AttributeName>
+        <CanRead>4</CanRead>
+        <CanUpdate>0</CanUpdate>
+        <CanCreate>0</CanCreate>
+        <CanReadUnmasked>0</CanReadUnmasked>
+      </FieldPermission>
+    </FieldPermissions>
+  </FieldSecurityProfile>
+  <FieldSecurityProfile name="CashHub | FLS | Consola Ingesta" description="Lectura del asunto y el remitente de los correos recibidos, para que la consola de ingesta pueda mostrarlos y buscarlos. RepliedBy lleva ademas update porque &quot;Omitir respuesta&quot; graba quien omitio el correo." fieldsecurityprofileid="{508d1f5b-0ba5-f111-aaac-000d3a3425f0}">
+    <FieldPermissions>
+      <FieldPermission>
+        <EntityName>sanic_chtblreceivedemails</EntityName>
+        <AttributeName>sanic_subject</AttributeName>
+        <CanRead>4</CanRead>
+        <CanUpdate>0</CanUpdate>
+        <CanCreate>0</CanCreate>
+        <CanReadUnmasked>0</CanReadUnmasked>
+      </FieldPermission>
+      <FieldPermission>
+        <EntityName>sanic_chtblreceivedemails</EntityName>
+        <AttributeName>sanic_sourceemailaddress</AttributeName>
+        <CanRead>4</CanRead>
+        <CanUpdate>0</CanUpdate>
+        <CanCreate>0</CanCreate>
+        <CanReadUnmasked>0</CanReadUnmasked>
+      </FieldPermission>
+      <FieldPermission>
+        <EntityName>sanic_chtblreceivedemails</EntityName>
+        <AttributeName>sanic_repliedby</AttributeName>
+        <CanRead>4</CanRead>
+        <CanUpdate>4</CanUpdate>
+        <CanCreate>0</CanCreate>
+        <CanReadUnmasked>0</CanReadUnmasked>
+      </FieldPermission>
+    </FieldPermissions>
+  </FieldSecurityProfile>
+  <FieldSecurityProfile name="CashHub | FLS | Digitador Lectura Cuenta" description="Lectura de la cuenta destino en los asientos contables, para que el digitador pueda ver y exportar lo que manda al core. SOLO LECTURA: no puede modificarla ni crearla." fieldsecurityprofileid="{80bbdc70-d3a4-f111-aaac-000d3a3425f0}">
+    <FieldPermissions>
+      <FieldPermission>
+        <EntityName>sanic_chtbltransactions</EntityName>
+        <AttributeName>sanic_accountnumber</AttributeName>
+        <CanRead>4</CanRead>
+        <CanUpdate>0</CanUpdate>
+        <CanCreate>0</CanCreate>
+        <CanReadUnmasked>0</CanReadUnmasked>
+      </FieldPermission>
+    </FieldPermissions>
+  </FieldSecurityProfile>
   <FieldSecurityProfile name="CashHub | FLS | Supervisor Cuentas" description="Lectura de sanic_accountnumber para el circuito de aprobacion del supervisor; escritura en Transactions (asientos)." fieldsecurityprofileid="{23a28f26-f498-f111-b8dd-7ced8d7091fc}">
     <FieldPermissions>
       <FieldPermission>

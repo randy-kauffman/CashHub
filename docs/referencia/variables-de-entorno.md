@@ -1,5 +1,12 @@
 # Variables de entorno — CashHubCore
 
+> ⚠️ **OBSOLETO desde el 2026-08-31.** Este documento describe 19 variables; llegaron a ser 23 y
+> hoy **quedan 2**: `sanic_CHEVSharedMailboxAddress` y `sanic_CHEVOpsTeamsGroupId`. Las otras 21 se
+> eliminaron tras verificar que ningún flujo, plugin ni app las consumía. El análisis que sostuvo
+> ese borrado —agrupado por causa de no-uso, con el reemplazo de cada una— está en
+> [`limpieza-env-vars.md`](limpieza-env-vars.md). Lo que sigue se conserva como registro histórico
+> de la configuración previa; **no lo uses como referencia del estado actual**.
+
 Fuente: `solutions/unpacked/core/environmentvariabledefinitions/<nombre>/environmentvariabledefinition.xml`.
 19 variables, todas `iscustomizable=1`, `isrequired=0`, `secretstore=0` (ninguna se
 guarda en Azure Key Vault). Tipo `100000000` = String, `100000001` = Number (valores

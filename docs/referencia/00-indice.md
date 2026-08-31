@@ -2,8 +2,7 @@
 
 > ⚠️ **Parcialmente desactualizada (agosto 2026).** Estos documentos se
 > escribieron antes del rediseño del pipeline de correo. Los números actuales:
-> **40 tablas** (no 38), **8 roles** (no 6), **21 variables de entorno** (no
-> 19), **16 flujos** (no 19) y un plugin C# con 28 reglas que reemplazó al
+> **40 tablas** (no 38), **8 roles** (no 6), **2 variables de entorno** (eran 23 hasta el 2026-08-31), **16 flujos** (no 19) y un plugin C# con 28 reglas que reemplazó al
 > motor Power Fx de la Console. La referencia al día, solución por solución,
 > está en [`../soluciones/`](../soluciones/00-vision-general.md); usá esta
 > carpeta para el detalle fino (campos, choices, typos) sabiendo que puede
@@ -32,7 +31,7 @@ y más corta, pensada para consultarse mientras se trabaja sobre el código.
 | [`limpieza-env-vars.md`](limpieza-env-vars.md) | Análisis caso por caso de las 23 variables de entorno: cuáles se consumen, cuáles migraron a `CH-Tbl-Parameter` o `CH-Tbl-ValidationRules`, y cuáles nunca se cablearon. Agrupadas por causa, con recomendación por grupo. |
 | [`modelo-de-datos.md`](modelo-de-datos.md) | Las 38 tablas Dataverse agrupadas por dominio funcional: propósito, campos clave, relaciones, diagrama ER. |
 | [`roles-y-seguridad.md`](roles-y-seguridad.md) | Los 6 roles de seguridad `CH-SR-*`, matriz rol × entidad, grupos AAD, y las brechas de seguridad conocidas. |
-| [`variables-de-entorno.md`](variables-de-entorno.md) | Las 19 variables `sanic_CHEV*`: tipo, default, quién las consume y cuáles no se usan hoy. |
+| [`variables-de-entorno.md`](variables-de-entorno.md) | ⚠️ **Obsoleto** — describe 19 variables de una época en que había 23. Hoy quedan 2. Se conserva como registro histórico; el estado real está en [`limpieza-env-vars.md`](limpieza-env-vars.md). |
 | [`conexiones-y-flujos.md`](conexiones-y-flujos.md) | Los 19 flujos Power Automate: trigger, estado, conectores, cadena real de orquestación, flujos stub/bugueados. |
 | [`catalogo-de-choices.md`](catalogo-de-choices.md) | Option sets globales y locales relevantes, con valores y las máquinas de estado que forman. |
 | [`convenciones-nomenclatura.md`](convenciones-nomenclatura.md) | Prefijos y patrones de nombrado observados, y las excepciones/violaciones detectadas. |
