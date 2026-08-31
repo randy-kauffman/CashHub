@@ -15,9 +15,11 @@
 `--apply` después. **Categoría A: 11 de 11 ✅ COMPLETA.** `AppCatalog.sanic_tags` se cerró el 2026-08-31 con el
 paso manual en el maker portal (ver B.4).
 
-**Categoría B — variables de entorno: ✅ COMPLETA.** 21 de 23 eliminadas; sobreviven
-`CHEVSharedMailboxAddress` y `CHEVOpsTeamsGroupId`. Detalle en
-[`limpieza-env-vars.md`](limpieza-env-vars.md).
+**Categoría B: ✅ COMPLETA.**
+- Variables de entorno: 21 de 23 eliminadas; sobreviven `CHEVSharedMailboxAddress` y
+  `CHEVOpsTeamsGroupId`. Detalle en [`limpieza-env-vars.md`](limpieza-env-vars.md).
+- `sanic_CHCanResolveApproval`: eliminada tras reverificar contra un export fresco (ver B.2).
+- `CH-CL-SharedComponents`: eliminada por decisión del usuario (ver B.3).
 
 El dry-run desmintió tres de mis propias conclusiones, y vale documentarlo porque explica por qué
 el script verifica en vez de confiar en el análisis estático:
@@ -133,62 +135,48 @@ de descompresión pasó a `CH-Tbl-Parameter`, pero eso hay que confirmarlo antes
 > borrás en DEV y después importás la solución a TEST/PROD, desaparece también allá **junto con
 > su valor**. Confirmá que ningún ambiente downstream la esté usando, no solo DEV.
 
-### B.2 — Custom API `sanic_CHCanResolveApproval`
+### B.2 — Custom API `sanic_CHCanResolveApproval` ✅ ELIMINADA
 
-| Aspecto | Dato |
+**Reverificada el 2026-08-31 contra un export FRESCO de `CashHubApps`**, no contra la foto del
+repo: se reexportó la solución, se desempaquetaron los 9 `.msapp` a YAML y se buscó en los tres
+árboles de fuente más los flujos.
+
+**Cero invocaciones en Power Fx ejecutable.** Los únicos hits están en `DataSources/Users.json` y
+`pkgs/Wadl/Environment.xml`, que son catálogos autogenerados del conector y listan *todas* las
+acciones del ambiente — no son invocaciones.
+
+La desambiguación importa, porque hay tres APIs con nombres parecidos:
+
+| API | Quién la invoca |
 |---|---|
-| **Propósito** | Chequeo de permiso *antes* de actuar: "¿este usuario puede resolver esta aprobación?". Sirve para habilitar o esconder un botón. |
-| **Uso** | **Ninguno.** Confirmado sin invocador en los tres árboles de canvas, todos los flows y el backend. La acción real la hace `sanic_CHResolveApprovalRequest`, que sí se invoca desde `scrAprobaciones.fx.yaml`. |
-| **El ajuste** | No es borrar una fila: hay que desregistrar el step y sacar la clase backing `CanResolveApprovalPlugin`. |
+| `sanic_CHCanResolveApproval` | **nadie** ← eliminada |
+| `sanic_CHResolveApprovalRequest` | `CH-App-Supervisor` |
+| `sanic_CHResolveChangeRequest` | `CH-App-ClientAdministration` — el botón de resolver que funciona hoy |
 
-**Mi lectura**: no es basura acumulada, es una **pieza de UX que nunca se cableó**. Se construyó
-el chequeo previo y la pantalla terminó sin usarlo. Antes de borrarla, una pregunta de producto:
-¿hoy el botón de resolver se le muestra a todo el mundo y falla del lado servidor si no tiene
-permiso? Si es así, la API no sobra — **falta cablearla**. Borrarla consolidaría una peor UX.
+Se eliminaron el parámetro de entrada (`ApprovalRequestId`), las dos propiedades de salida
+(`Message`, `Outcome`) y la definición. Verificado después: las otras dos APIs siguen intactas.
 
-### B.3 — Librería `CH-CL-SharedComponents` que nadie importa
+> **Pendiente de código**: la clase C# `CanResolveApprovalPlugin` sigue en el assembly. Sacarla
+> exige recompilar y desplegar, que es una operación aparte. Borrar el `plugintype` por API no
+> serviría: se re-sincroniza desde el DLL mientras la clase siga compilada.
 
-Los 9 `ComponentReferences.json` (8 apps + la propia librería) están **vacíos**. La librería
-existe, está en la solución como `RootComponent type="300"`, y **ninguna app la consume**.
+### B.3 — Librería `CH-CL-SharedComponents` ✅ ELIMINADA
 
-Pero el problema real no es la librería — es lo que su ausencia de uso revela: **las 8 apps
-tienen copias LOCALES de los mismos componentes** (`cmpDialogo`, `cmpKpi`, etc.) en su propio
-`Src/Components/`. Eso es duplicación pura: un cambio en el diálogo hay que hacerlo ocho veces.
+Los 9 `ComponentReferences.json` (8 apps + la propia librería) estaban **vacíos** — reconfirmado
+contra el export fresco del 2026-08-31. Ninguna app la importaba.
 
-Dos caminos, y son opuestos:
-- **Borrar la librería** y aceptar la duplicación. Limpia el inventario, no arregla la deuda.
-- **Adoptar la librería** y deduplicar las 8 copias. Más trabajo, ataca la causa.
+**Decisión del usuario**: borrarla y convivir con la duplicación. Adoptarla habría implicado un
+refactor grande de las apps que hoy no se va a hacer.
 
-Es una decisión tuya. Yo no la tomo por vos, pero te digo cuál me parece: si esas apps se van a
-seguir tocando, la duplicación te va a seguir costando.
+**Corrección a un análisis previo**: este documento afirmaba que las 8 apps tenían "copias locales
+de los mismos componentes". Al abrir la librería resultó tener **solo 2**: `cmpAppHeader`, que
+`CH-App-ClientAdministration` sí tiene duplicado en local, y `cmpTheme` — 28 líneas de design
+tokens (paleta, spacing, radios, tipografía, z-index) que **no existían en ninguna otra app**. La
+duplicación real era mucho menor de lo que se dijo.
 
-### B.4 — Reclasificados desde A por la verificación en vivo
-
-**`CH-Tbl-ClientAccount.sanic_chchrecordstatus` — ✅ ELIMINADA**
-
-2240 filas con dato, **las 2240 con el mismo valor**: `PendingApproval`. Un picklist con un
-único valor en el 100% de los registros no contiene información.
-
-Era una columna creada por error: convivía con `sanic_recordstatus` en la misma tabla —esa sí se
-usa— y su nombre es el del *option set global* (`CH-Ch-RecordStatus`), no el del concepto.
-Alguien creó la columna tomando el nombre del choice en vez del nombre del campo. Confirmado
-después de borrarla: la única mención que queda de `sanic_chchrecordstatus` en el `Entity.xml` de
-ClientAccount es el `<OptionSetName>` al que se enlaza `sanic_recordstatus`. El option set global
-sigue vivo y en uso.
-
-**`CH-Tbl-AppCatalog.sanic_tags` — ⏳ PENDIENTE, requiere un paso manual**
-
-Sin datos (las 7 filas de la tabla la tienen nula) y sin lectores. Estaba en 5 vistas y 1
-formulario. El script despejó **4 vistas y el formulario `Information`**. Queda una sola:
-
-> **`Quick Find Active CH-Tbl-AppCatalogs`.** El `fetchxml` de una vista Quick Find **no es
-> escribible por la Web API**: devuelve HTTP 400 incluso mandándolo IDÉNTICO, sin un solo cambio.
-> Lo verifiqué aislando el caso — el `layoutxml` de esa misma vista sí acepta el PATCH, el
-> `fetchxml` no. Es un límite de la plataforma, no un problema del XML generado.
-
-**El paso manual**: en el maker portal, abrir la tabla `CH-Tbl-AppCatalog` → vistas → *Quick Find
-Active CH-Tbl-AppCatalogs* → quitar la columna *Tags* de las columnas de búsqueda → guardar y
-publicar. Después, correr `./scripts/cleanup-categoria-a.py --apply` y la columna cae sola.
+> **El fuente no se pierde**: la librería está commiteada en
+> `solutions/unpacked/apps/CanvasApps/src/sanic_chclsharedcomponents_85fca/` y sigue recuperable
+> desde git. Si algún día se quiere un design system compartido, `cmpTheme` es el punto de partida.
 
 ---
 
@@ -293,7 +281,7 @@ borrarla: cero, por definición. Y nadie la leía.
 | Categoría | Componentes | Estado |
 |---|---|---|
 | **A — Borrar directo** | 1 tabla + 1 relación + 3 columnas propias + 8 columnas | ✅ **COMPLETA** — 11 de 11 el 2026-08-31 |
-| **B — Borrar con ajuste** | ~~20 env vars~~ ✅, 1 Custom API, 1 librería de componentes | Env vars hechas; faltan las otras dos |
+| **B — Borrar con ajuste** | 21 env vars, 1 Custom API, 1 librería de componentes | ✅ **COMPLETA** el 2026-08-31 |
 | **C — Decisión de producto** | 7 flows, 2 roles | Pendiente: riesgo de negocio, no de limpieza |
 
 Lo eliminado en DEV: la tabla `CH-Tbl-ClientDepositHistory` (con sus 3 columnas, su relación con
