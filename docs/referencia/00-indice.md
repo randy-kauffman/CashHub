@@ -34,6 +34,7 @@ y más corta, pensada para consultarse mientras se trabaja sobre el código.
 | [`analisis-roles-seguridad.md`](analisis-roles-seguridad.md) | Para qué sirve cada uno de los 11 roles y si tiene los privilegios que su función necesita. Cruza la matriz de privilegios contra las tablas que consume cada app (datasources, dot-walks y flows), lectura y escritura. Verificado contra DEV el 2026-08-31. |
 | [`variables-de-entorno.md`](variables-de-entorno.md) | ⚠️ **Obsoleto** — describe 19 variables de una época en que había 23. Hoy quedan 2. Se conserva como registro histórico; el estado real está en [`limpieza-env-vars.md`](limpieza-env-vars.md). |
 | [`conexiones-y-flujos.md`](conexiones-y-flujos.md) | Los 19 flujos Power Automate: trigger, estado, conectores, cadena real de orquestación, flujos stub/bugueados. |
+| [`conexiones-de-flujos.md`](conexiones-de-flujos.md) | Estado real de las connection references de los 11 flujos: cuáles son de CashHub, cuáles son de otros proyectos, cuáles faltan crear y el mapa de los 14 reemplazos. Verificado contra DEV el 2026-08-31. |
 | [`catalogo-de-choices.md`](catalogo-de-choices.md) | Option sets globales y locales relevantes, con valores y las máquinas de estado que forman. |
 | [`convenciones-nomenclatura.md`](convenciones-nomenclatura.md) | Prefijos y patrones de nombrado observados, y las excepciones/violaciones detectadas. |
 | [`typos-conocidos.md`](typos-conocidos.md) | Typos grabados en `LogicalName` que no se pueden corregir sin recrear el campo, y su impacto. |
