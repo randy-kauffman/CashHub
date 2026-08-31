@@ -53,7 +53,7 @@
 #     #12 de 01-app.md §2). Sin el privilegio la pantalla no rompe pero degrada
 #     al texto plano. Es lectura de nombre: Global es aceptable.
 #
-# CH-Role (83 -> 82) / CH-SR-ClientAdminContributor (67 -> 66) /
+# CH-SR-Hub (ex CH-Role) (83 -> 82) / CH-SR-ClientAdminContributor (67 -> 66) /
 # CH-SR-ClientAdminApprover (67 -> 66):
 #   QUITA prvReadPluginTraceLog (cada uno -1).
 #   Queda SOLO en CH-SR-ConfigAdmin, que desde 2026-08-31 es el rol de soporte
@@ -110,7 +110,7 @@ ROLES_DIR = 'solutions/unpacked/core/Roles'
 # ConfigAdmin NO va en esta lista: conserva prvReadPluginTraceLog a proposito, igual
 # que antes lo hacia OpsAdmin, y esta remediacion no lo cambia.
 ROLE_FILES = [
-    'CH-SR-Cashier', 'CH-SR-CountingSupervisor', 'CH-Role',
+    'CH-SR-Cashier', 'CH-SR-CountingSupervisor', 'CH-SR-Hub',
     'CH-SR-ClientAdminContributor', 'CH-SR-ClientAdminApprover',
 ]
 

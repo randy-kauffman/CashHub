@@ -5,7 +5,7 @@
 #   2. columna  sanic_aadgroupid (un GUID de grupo AAD por fila)
 #   3. relacion 1:N sanic_chtblappcatalog -> access (lookup sanic_appcatalog, delete cascade)
 #   4. publish de la entidad
-#   5. prvRead Global para los 8 roles CH (todos los usuarios del hub leen esta tabla)
+#   5. prvRead Global para los 9 roles CH-SR-* (todos los usuarios del hub leen esta tabla)
 #   6. migracion: filas de acceso desde el sanic_aadgroupid multi-valor del catalogo
 #      (';'-separado) y limpieza de esa columna
 #
@@ -38,7 +38,7 @@ ENTITY = 'sanic_chtblappcatalogaccess'
 #   - CH-SR-OpsAdmin   -> eliminado; su capacidad de diagnostico paso a CH-SR-ConfigAdmin
 #   - CH-SR-AnalyticsRead -> eliminado
 # Esta lista refleja los 9 roles que HOY tienen prvReadsanic_CHTblAppCatalogAccess.
-ROLES = ['CH-Role', 'CH-SR-Cashier', 'CH-SR-Receptionist', 'CH-SR-CountingSupervisor',
+ROLES = ['CH-SR-Hub', 'CH-SR-Cashier', 'CH-SR-Receptionist', 'CH-SR-CountingSupervisor',
          'CH-SR-ClientAdminApprover', 'CH-SR-ClientAdminContributor',
          'CH-SR-ConfigAdmin', 'CH-SR-DepositsTracker', 'CH-SR-Digitizer']
 

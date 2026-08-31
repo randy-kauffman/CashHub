@@ -31,7 +31,7 @@ RecountingSessionDetail).
 
 | Tabla | Objetivo | Dónde se ocupa |
 |---|---|---|
-| `sanic_CHTblAppCatalog` (CH-Tbl-AppCatalog) | Catálogo data-driven de las apps que muestra el Hub: título, descripción, ícono (única tabla con columna imagen), URL, grupo AAD que la habilita, orden. Clave alterna `sanic_appkey`. | App **Hub** (galería de lanzamiento). Rol `CH-Role` da el Read. |
+| `sanic_CHTblAppCatalog` (CH-Tbl-AppCatalog) | Catálogo data-driven de las apps que muestra el Hub: título, descripción, ícono (única tabla con columna imagen), URL, grupo AAD que la habilita, orden. Clave alterna `sanic_appkey`. | App **Hub** (galería de lanzamiento). Rol `CH-SR-Hub` da el Read. |
 | `sanic_CHTblPlaybook` (CH-Tbl-Playbook) | Instructivo "Qué hacer" por categoría de la bandeja de contingencia (`cliente-sin-registrar`, `sospechoso`, `error-sistema`, `respuesta-sin-enviar`). Editable por negocio sin desplegar la app. | App **Email Validation Console** (bloque "Que hacer"). |
 | `sanic_CHTblSystemHeartbeat` (CH-Tbl-SystemHeartbeat) | Latido de procesos automáticos: `sanic_lastrunon` + `sanic_details`. Hoy una sola fila lógica: `ingesta-correos`. | Escribe **CH-Flow-MailboxSweep**; lee la **Console** (semáforo de salud del pipeline). |
 | `sanic_CHTblEmailTemplate` (CH-Tbl-EmailTemplate) | Plantillas editables de la respuesta al cliente (`reply-accepted`, `reply-rejected`): asunto + HTML con tokens `{{...}}`. | Backend **ClientReplyComposer** (con fallback embebido si no hay plantilla activa). Declarada como datasource en la Console pero sin uso en pantalla. |
@@ -131,7 +131,7 @@ RecountingSessionDetail).
 
 | Rol | Para qué sirve | Cobertura |
 |---|---|---|
-| `CH-Role` | Rol mínimo "poder abrir el Hub": baseline de plataforma + Read de AppCatalog. | 1 tabla |
+| `CH-SR-Hub` | Rol mínimo "poder abrir el Hub": baseline de plataforma + Read de AppCatalog y AppCatalogAccess. Renombrado desde `CH-Role` el 2026-08-31 (mismo GUID). | 2 tablas |
 | `CH-SR-Receptionist` | Recepción de valores. | AppCatalog, ApprovalRequest, Bags, DeclaredBags, Locations, ReceptionBatch, Receptions, TransportCompany |
 | `CH-SR-Counter` | Cajero de recuento. | 18 tablas: todo recepción + recuento + transacciones, incl. CountedMoneyDetails |
 | `CH-SR-CountingSupervisor` | Supervisor de recuento. | 17 tablas (las de Counter menos CountedMoneyDetails, más ApprovalRequest con Append/Assign) |
@@ -217,7 +217,7 @@ Detalle completo del motor en [04-backend.md](04-backend.md).
 ## 8. Deuda técnica e inconsistencias grabadas (verificadas)
 
 1. Nombres lógicos fuera de convención: `sanic_TransactionBatches` y
-   `sanic_ValidationRules` (sin `CHTbl`); rol `CH-Role` (sin `CH-SR-`); option
+   `sanic_ValidationRules` (sin `CHTbl`); option
    set `ch-recountingDetailsStatus` (sin `CH-Ch-`).
 2. Typos grabados en LogicalName (no corregibles sin recrear el campo):
    `sanic_opeationtype`, `sanic_otherlocacheckamount`, `sanic_fileextention`,

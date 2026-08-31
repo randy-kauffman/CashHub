@@ -11,7 +11,7 @@
 
 | Rol | Para qué sirve | Consumidor | Tablas custom |
 |---|---|---|---|
-| `CH-Role` | Rol base: solo abrir el Hub | `CH-App-Hub` | 2 |
+| `CH-SR-Hub` | Rol base: solo abrir el Hub | `CH-App-Hub` | 2 |
 | `CH-SR-Cashier` | Cajero de recuento: cuenta bolsas, cheques y efectivo | `CH-App-Recounting` | 21 |
 | `CH-SR-CountingSupervisor` | Supervisor: aprueba, reasigna y cierra sesiones de recuento | `CH-App-Supervisor` | 20 |
 | `CH-SR-Receptionist` | Oficial de bóveda: recibe tulas en esclusa | `CH-App-Reception` | 11 |
@@ -31,7 +31,7 @@ portador de `prvReadPluginTraceLog`, heredado del eliminado `CH-SR-OpsAdmin`.
 
 ---
 
-## Brechas encontradas: 2
+## Brechas encontradas: 2 — ✅ AMBAS CORREGIDAS el 2026-08-31
 
 ### 1. `CH-SR-Receptionist` no puede leer `CH-Tbl-Client`
 
@@ -58,8 +58,8 @@ el rol de Tracker:
 > `Coalesce(ReceptionID.RemitentClient.Name, ReceptionID.RemitentName, "—")`… **Sin el privilegio la
 > pantalla no rompe pero degrada al texto plano.** Es lectura de nombre: Global es aceptable."*
 
-El mismo razonamiento aplica acá y no se aplicó. **Arreglo**: agregar
-`prvReadsanic_CHTblClient` nivel Global a `CH-SR-Receptionist`.
+El mismo razonamiento aplica acá y no se aplicó. **✅ APLICADO**: se agrego `prvReadsanic_CHTblClient` nivel Global a `CH-SR-Receptionist`
+con `scripts/fix-roles-seguridad.py`.
 
 ### 2. `CH-SR-EmailIngestionFlow` no puede leer `CH-Tbl-ValidationRuns`
 
@@ -75,12 +75,36 @@ Pero `CH-Flow-MailboxSweep` —que está **ACTIVO**— consulta una cuarta:
 
 `ListRecords` es lectura, y el rol tiene **cero** privilegios sobre esa tabla.
 
-**Arreglo**: agregar `prvReadsanic_CHTblValidationRuns` nivel Global.
+**✅ APLICADO**: se agrego `prvReadsanic_CHTblValidationRuns` nivel Global con
+`scripts/fix-roles-seguridad.py`.
 
 > **Matiz importante**: un cloud flow corre bajo la identidad del dueño de su conexión, no bajo un
 > rol de seguridad. Si esa cuenta de servicio tiene además un rol amplio, la brecha no se
 > manifiesta hoy. Pero el rol que lleva el nombre de estos flujos no alcanza para correrlos, y eso
 > es deuda: el día que se restrinja la cuenta, el barrido falla.
+
+---
+
+## Renombre: `CH-Role` → `CH-SR-Hub` ✅ APLICADO
+
+El rol se llamaba `CH-Role`, sin el sufijo `CH-SR-` del resto — era la única excepción de
+nomenclatura entre los 11. Y el nombre no decía qué hacía.
+
+Verificado antes de renombrar: sus únicos privilegios sobre tablas custom son **Read sobre
+`AppCatalog` y `AppCatalogAccess`** — exactamente lo necesario para abrir el Hub y ver el catálogo.
+El nombre `CH-SR-Hub` describe eso.
+
+**Estaba en uso**: 3 usuarios y 2 equipos aprobadores (`CashHub - Banca de Empresas -Approver` y
+`CashHub Aprobadores - sanic_chtblclientbranch`).
+
+> El renombre **conserva el `roleid`** (`1ca520f9-c294-f011-b41b-6045bda7f41e`), así que las
+> asignaciones sobreviven. Verificado después de aplicar: 3 usuarios y 2 equipos, los mismos.
+> Mismo mecanismo que `CH-SR-Counter` → `CH-SR-Cashier`.
+
+Se actualizaron las referencias por nombre en `provision-appcatalog-access.sh`,
+`apply-supervisor-role-remediation.sh`, `cleanup-roles-vacios.py`, `docs/soluciones/01-core.md` y
+`docs/soluciones/00-vision-general.md`. Sin ese cambio, esos scripts habrían fallado al no
+encontrar el rol.
 
 ---
 

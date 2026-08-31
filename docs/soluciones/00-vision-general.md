@@ -18,7 +18,7 @@ recepción física (esclusa → bóveda → recuento) → carga masiva al core b
 
 | Pieza | Versión | Qué contiene | Para qué sirve |
 |---|---|---|---|
-| **CashHubCore** (`solutions/unpacked/core`) | 1.6.0.0 | 40 tablas `sanic_*`, 8 roles `CH-SR-*`/`CH-Role`, 3 option sets globales, 21 variables de entorno `sanic_CHEV*`, 4 connection references | El **modelo de datos y la seguridad**. Todo lo demás depende de esta solución; se importa primero. |
+| **CashHubCore** (`solutions/unpacked/core`) | 1.6.0.0 | 40 tablas `sanic_*`, 11 roles `CH-SR-*`, 3 option sets globales, 21 variables de entorno `sanic_CHEV*`, 4 connection references | El **modelo de datos y la seguridad**. Todo lo demás depende de esta solución; se importa primero. |
 | **CashHubFlows** (`solutions/unpacked/flow`) | 1.6.5.0 | 16 flujos Power Automate `CH-Flow-*` (5 apagados), 13 connection references, réplica de los 3 option sets | La **automatización**: pipeline de ingesta de correos, aplicación de RFCs de datos de cliente, utilidades invocables desde las apps, notificaciones Teams y mantenimiento. |
 | **CashHubApps** (`solutions/unpacked/apps`) | 1.15.3.0 | 8 canvas apps `CH-App-*` + 2 component libraries. Sin model-driven apps. | La **interfaz por rol**: recepción, recuento, supervisión, digitación, trazabilidad, administración de clientes, consola de correos y el Hub lanzadera. |
 | **Backend C#** (`src/backend/`) | — (no es solución; se registra por script) | `CashHub.Plugins` (plugin + Custom API), `CashHub.Validation` (motor de 28 reglas, parser XLSX, triage, plantillas), `CashHub.Validation.Tests` (xUnit, ~91 casos) | El **motor de validación de correos**: una sola DLL firmada detrás del Custom API `sanic_CHValidateReceivedEmail`. |
