@@ -182,26 +182,28 @@ duplicación real era mucho menor de lo que se dijo.
 
 ## C — No tocar sin tu decisión
 
-### C.1 — 7 cloud flows sin invocador
+### C.1 — 7 cloud flows sin invocador ✅ ELIMINADOS
 
-**5 en Draft (OFF)**: `Applyclientdatachanges`, `Createclientdata`, `Activaterow`,
-`Deactivaterow`, `RFCWatchdog`.
-**2 en ON pero sin invocador**: `ExtractedTablesFromExcel`, `GetJSONdatafromattachment`.
+Confirmado por el usuario el 2026-08-31: `CH-Flow-Create client data` **se apagó a propósito**
+porque la Custom API `sanic_CHResolveChangeRequest` lo reemplazó. No fue una desactivación
+accidental — que era la duda que había frenado este borrado.
 
-**Acá freno, y te explico por qué.** `CH-Flow-Createclientdata` **es parte de un proceso de
-negocio vivo**: el RFC de creación aprobado es lo que mueve `recordstatus` de `PendingApproval`
-a `Active`. Y pasó de ON a OFF **después del 24 de agosto**.
+Eliminados por dos causas distintas:
 
-Hay dos lecturas y llevan a acciones opuestas:
-- Se retiró a propósito, reemplazado por el Custom API `sanic_CHResolveChangeRequest` — mismo
-  patrón que `CreateCut` → `CHCreateTransactionCut`. Entonces se puede borrar.
-- Se desactivó sin querer. Entonces **hay un proceso de negocio caído** y borrarlo lo sepulta.
+**(a) Retirados y reemplazados por Custom API (5, en Draft)**
+`CH-Flow-Create client data`, `CH-Flow-Apply client data changes`, `CH-Flow-Activate row`,
+`CH-Flow-Deactivate row`, `CH-Flow-RFCWatchdog`.
 
-Lo mismo con `RFCWatchdog`, que además arrastra un acoplamiento: la env var
-`CHEVRfcApplyTimeoutMinutes` figura como USADA **solo porque este flow la lee**. Si el flow está
-muerto, la variable se suma a la lista de bajas. Si no, ninguna de las dos se toca.
+**(b) Encendidos pero imposibles de disparar (2)**
+`CH-Flow-ExtractedTablesFromExcel` y `CH-Flow-Get JSON data from attachment`. Los dos tienen
+trigger **`PowerAppV2`**, o sea que *solo* pueden ejecutarse si una canvas app los invoca. Se
+verificaron los tres árboles de fuente: **ninguna app los llama**. No es que "no se usen" — es
+que no pueden correr.
 
-No borro flujos de proceso de negocio por un veredicto de grep. Decime vos.
+> **Detalle de ejecución**: Dataverse rechaza el `DELETE` de un workflow activo. El script pone
+> `statecode=0` primero y después borra. Los dos encendidos se desactivaron en ese paso.
+
+**Resultado**: de 18 flujos se pasó a **11, todos ON**. No queda un solo Draft en el sistema.
 
 ### C.2 — 2 roles funcionalmente vacíos
 
