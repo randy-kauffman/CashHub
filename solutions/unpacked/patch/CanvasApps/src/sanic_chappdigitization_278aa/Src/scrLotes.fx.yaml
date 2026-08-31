@@ -897,7 +897,17 @@ scrLotes As screen:
                         RadiusTopRight: =7
                         Size: =8.25
                         Text: ="Sacar del lote"
-                        Visible: =Or(gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado, gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado)
+                        Visible: |-
+                            =// MIENTRAS ESTA EN EL IBS NO SE TOCA. Un lote 'Ingresado' esta en manos
+                            // del aprobador esperando veredicto: sacarle una transaccion por atras
+                            // dejaria el archivo que el tiene en pantalla diciendo una cosa y el lote
+                            // de CashHub diciendo otra. Si hay algo que corregir, el aprobador lo
+                            // DEVUELVE, y ahi si vuelve a ser editable.
+                            //
+                            // El servidor lo vuelve a exigir igual (TransactionGuard.CanRemoveFromCut):
+                            // esconder el boton es cortesia, no seguridad.
+                            gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
+                            || gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
                         Width: =108
                         X: =btnDescargarCsvLot.X - 8 - Self.Width
                         Y: =11

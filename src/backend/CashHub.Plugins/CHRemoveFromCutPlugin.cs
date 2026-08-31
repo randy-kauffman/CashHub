@@ -72,13 +72,31 @@ namespace CashHub.Plugins
                     new ColumnSet(Schema.TransactionBatch.BatchStatus));
                 var batchStatus = batch.GetAttributeValue<OptionSetValue>(Schema.TransactionBatch.BatchStatus)?.Value;
 
-                // 2. Regla del dominio: solo Generado o Ingresado (la misma que el guard).
+                // 2. Regla del dominio: solo Generado o Devuelto (la misma que el guard).
+                //    El mensaje NOMBRA el estado que estorba: "no se puede" a secas obliga
+                //    al operador a adivinar si el problema es el lote, la transaccion o un
+                //    permiso.
                 if (!TransactionGuard.CanRemoveFromCut(batchStatus))
                 {
+                    if (batchStatus == TransactionGuard.BatchIngresado)
+                    {
+                        throw new InvalidPluginExecutionException(
+                            "La transaccion no puede sacarse del lote: el lote esta 'Ingresado', o sea " +
+                            "en manos del aprobador en el IBS. Si hay algo que corregir, el aprobador " +
+                            "tiene que devolverlo primero.");
+                    }
+
+                    if (batchStatus == TransactionGuard.BatchAplicado)
+                    {
+                        throw new InvalidPluginExecutionException(
+                            "La transaccion no puede sacarse del lote: el lote ya esta Aplicado en el " +
+                            "Core y es intocable. Una correccion contable se hace con un asiento nuevo.");
+                    }
+
                     throw new InvalidPluginExecutionException(
                         "La transaccion no puede sacarse del lote: solo se saca de un lote en estado " +
-                        "'Generado' (antes de subir al Core) o 'Ingresado' (rechazos del Core durante la " +
-                        "carga). Un lote Aplicado es intocable.");
+                        "'Generado' (antes de subirlo al Core) o 'Devuelto' (el IBS lo rechazo y hay " +
+                        "que corregirlo).");
                 }
 
                 tracing.Trace("RemoveFromCut: tx {0} del lote {1} (estado {2}), actor {3}.",

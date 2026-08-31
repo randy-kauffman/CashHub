@@ -301,11 +301,11 @@ namespace CashHub.Validation.Tests
                 targetBatchStatus: BatchGenerado, hadBatch: false).IsAllowed);
         }
 
-        // ---- Transaccion: desasignacion (rechazo del Core durante la carga) ----
+        // ---- Transaccion: desasignacion (antes de subir al Core, o si el IBS devolvio) ----
 
         [Theory]
         [InlineData(BatchGenerado)]
-        [InlineData(BatchIngresado)]
+        [InlineData(BatchDevuelto)]
         public void TxUpdate_DesasignarDeLoteAbierto_IsAllowed(int currentBatchStatus)
         {
             Assert.True(EvalTx(
@@ -315,6 +315,7 @@ namespace CashHub.Validation.Tests
 
         [Theory]
         [InlineData(BatchAprobado)]
+        [InlineData(BatchIngresado)]  // en manos del aprobador: no se toca hasta que devuelva
         [InlineData(null)]
         public void TxUpdate_DesasignarDeLoteFueraDeCiclo_IsBlocked(int? currentBatchStatus)
         {
@@ -326,8 +327,8 @@ namespace CashHub.Validation.Tests
         [Fact]
         public void TxUpdate_DesasignarDeLoteAplicado_IsBlocked()
         {
-            // Regla del negocio: los rechazos del Core ocurren durante la carga,
-            // ANTES de Aplicado; un lote Aplicado es intocable.
+            // Un lote Aplicado es intocable, y el mensaje lo NOMBRA: el operador tiene
+            // que saber cual es el estado que estorba, no solo que no se pudo.
             var result = EvalTx(
                 batchInTarget: true, newBatchIsNull: true,
                 hadBatch: true, currentBatchStatus: BatchAplicado);
@@ -418,14 +419,25 @@ namespace CashHub.Validation.Tests
             Assert.True(EvalTx().IsAllowed);
         }
 
-        // ---- Sacar del lote (Custom API sanic_CHRemoveFromCut): Generado o Ingresado ----
+        // ---- Sacar del lote (Custom API sanic_CHRemoveFromCut): Generado o Devuelto ----
 
         [Theory]
         [InlineData(BatchGenerado)]  // revisar/quitar antes de subir al Core
-        [InlineData(BatchIngresado)] // rechazos del Core durante la carga
+        [InlineData(BatchDevuelto)]  // el IBS lo devolvio: es el momento de corregirlo
         public void CanRemoveFromCut_LoteAbierto_True(int currentBatchStatus)
         {
             Assert.True(CanRemoveFromCut(currentBatchStatus));
+        }
+
+        [Fact]
+        public void CanRemoveFromCut_Ingresado_False()
+        {
+            // MIENTRAS ESTA EN EL IBS NO SE TOCA. El lote ya se presento y esta esperando
+            // el veredicto del aprobador: sacarle una transaccion por atras dejaria al
+            // archivo que el aprobador tiene en pantalla diciendo una cosa y al lote de
+            // CashHub diciendo otra. Si hay algo que corregir, el aprobador lo DEVUELVE y
+            // recien ahi el lote vuelve a ser editable.
+            Assert.False(CanRemoveFromCut(BatchIngresado));
         }
 
         [Theory]
@@ -441,9 +453,12 @@ namespace CashHub.Validation.Tests
         public void CanRemoveFromCut_CoincideConLaDesasignacionDelGuard()
         {
             // La regla del Custom API y la que impone el guard en la desasignacion son
-            // la misma fuente: desasignar (batch -> null) de un lote Ingresado se permite,
-            // de un lote Aplicado se bloquea.
+            // la misma fuente: desasignar (batch -> null) de un lote Devuelto se permite,
+            // de uno Ingresado o Aplicado se bloquea.
             Assert.True(EvalTx(
+                batchInTarget: true, newBatchIsNull: true, hadBatch: true,
+                currentBatchStatus: BatchDevuelto).IsAllowed);
+            Assert.False(EvalTx(
                 batchInTarget: true, newBatchIsNull: true, hadBatch: true,
                 currentBatchStatus: BatchIngresado).IsAllowed);
             Assert.False(EvalTx(

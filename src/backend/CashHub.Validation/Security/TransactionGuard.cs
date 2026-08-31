@@ -191,9 +191,15 @@ namespace CashHub.Validation.Security
 
         /// <summary>
         /// true si una transaccion puede SACARSE de su lote (desasignarse y volver al
-        /// circuito Manual): solo mientras el lote esta Generado (revisar/quitar antes de
-        /// subir al Core) o Ingresado (los rechazos del Core ocurren durante la carga, con
-        /// el lote ya Ingresado). Un lote Aplicado — o cualquier otro estado — es intocable.
+        /// circuito Manual): solo con el lote Generado (revisar/quitar antes de subirlo al
+        /// Core) o Devuelto (el IBS lo rechazo y hay que corregirlo).
+        ///
+        /// MIENTRAS ESTA EN EL IBS NO SE TOCA. Un lote Ingresado esta en manos del
+        /// aprobador esperando veredicto: sacarle una transaccion por atras dejaria el
+        /// archivo que el aprobador tiene en pantalla diciendo una cosa y el lote de
+        /// CashHub diciendo otra. Si hay algo que corregir, el aprobador lo DEVUELVE — y
+        /// recien entonces el lote vuelve a ser editable. Un lote Aplicado, o cualquier
+        /// otro estado, es intocable.
         ///
         /// Es la MISMA condicion que EvaluateTransactionUpdate impone en la desasignacion;
         /// existe como metodo propio para que el Custom API sanic_CHRemoveFromCut falle
@@ -202,9 +208,6 @@ namespace CashHub.Validation.Security
         public static bool CanRemoveFromCut(int? currentBatchStatus)
         {
             return currentBatchStatus == BatchGenerado
-                || currentBatchStatus == BatchIngresado
-                // Devuelto es JUSTO el momento de sacar transacciones: el IBS rechazo la
-                // carga y hay que quitarle lo que la hizo rebotar antes de recargarla.
                 || currentBatchStatus == BatchDevuelto;
         }
 
@@ -329,9 +332,28 @@ namespace CashHub.Validation.Security
             {
                 if (!CanRemoveFromCut(currentBatchStatus))
                 {
+                    // El mensaje NOMBRA el estado que estorba. "No se puede desasignar" a
+                    // secas obliga al operador a adivinar si el problema es el lote, la
+                    // transaccion o un permiso; diciendo en que estado esta, sabe que hacer.
+                    if (currentBatchStatus == BatchIngresado)
+                    {
+                        return TransactionGuardResult.Block(
+                            "La transaccion no puede desasignarse: el lote esta 'Ingresado', o sea " +
+                            "en manos del aprobador en el IBS. Si hay algo que corregir, el " +
+                            "aprobador tiene que devolverlo primero.");
+                    }
+
+                    if (currentBatchStatus == BatchAplicado)
+                    {
+                        return TransactionGuardResult.Block(
+                            "La transaccion no puede desasignarse: el lote ya esta Aplicado en el " +
+                            "Core y es intocable. Una correccion contable se hace con un asiento " +
+                            "nuevo.");
+                    }
+
                     return TransactionGuardResult.Block(
-                        "La transaccion no puede desasignarse: su lote ya esta Aplicado (o fuera " +
-                        "del ciclo) y es intocable. Los rechazos del Core ocurren durante la carga.");
+                        "La transaccion no puede desasignarse: solo se saca de un lote 'Generado' " +
+                        "o 'Devuelto'.");
                 }
             }
 

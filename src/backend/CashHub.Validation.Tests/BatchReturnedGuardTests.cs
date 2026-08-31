@@ -171,11 +171,20 @@ namespace CashHub.Validation.Tests
         // ---- Sacar transacciones del lote ----
 
         [Fact]
-        public void SacarDelLote_SePermiteEnGeneradoIngresadoYDevuelto()
+        public void SacarDelLote_SePermiteEnGeneradoYDevuelto()
         {
             Assert.True(TransactionGuard.CanRemoveFromCut(TransactionGuard.BatchGenerado));
-            Assert.True(TransactionGuard.CanRemoveFromCut(TransactionGuard.BatchIngresado));
             Assert.True(TransactionGuard.CanRemoveFromCut(TransactionGuard.BatchDevuelto));
+        }
+
+        [Fact]
+        public void SacarDelLote_NoSePermiteMientrasEstaEnElIBS()
+        {
+            // Un lote Ingresado esta EN MANOS DEL APROBADOR. Sacarle una transaccion por
+            // atras dejaria el archivo que el tiene en pantalla diciendo una cosa y el
+            // lote de CashHub diciendo otra. Si hay algo que corregir, el aprobador lo
+            // DEVUELVE — y recien ahi el lote vuelve a ser editable.
+            Assert.False(TransactionGuard.CanRemoveFromCut(TransactionGuard.BatchIngresado));
         }
 
         [Fact]

@@ -30,7 +30,10 @@
 #     del aprobador con distinto signo.
 #   - MOTIVO OBLIGATORIO: quien tenga que corregir necesita saber que rechazo el
 #     IBS. Una devolucion sin motivo dice "esta mal" y nada mas.
-#   - Se pueden SACAR transacciones del lote en Generado, Ingresado y Devuelto.
+#   - Se pueden SACAR transacciones del lote SOLO en Generado y Devuelto. En
+#     Ingresado NO: el lote esta en manos del aprobador en el IBS, y sacarle una
+#     transaccion por atras dejaria el archivo que el tiene en pantalla diciendo
+#     una cosa y el lote de CashHub diciendo otra.
 #   - Los montos siguen congelados en Devuelto: el lote ya se mando al Core una
 #     vez, y la correccion es sacar la transaccion, no reescribirle el importe.
 #
