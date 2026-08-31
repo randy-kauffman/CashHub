@@ -1,28 +1,28 @@
 {
   "properties": {
     "connectionReferences": {
-      "shared_office365groups": {
+      "shared_office365groups_1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "sanic_sharedoffice365groups_cff38"
+          "connectionReferenceLogicalName": "sanic_chcroffice365groups"
         },
         "api": {
           "name": "shared_office365groups"
         }
       },
-      "shared_teams": {
+      "shared_teams_1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "new_sharedteams_084e4"
+          "connectionReferenceLogicalName": "sanic_chcrteams"
         },
         "api": {
           "name": "shared_teams"
         }
       },
-      "shared_office365users_1": {
+      "shared_office365users": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "sanic_sharedoffice365users_dd86c"
+          "connectionReferenceLogicalName": "sanic_chcroffice365users"
         },
         "api": {
           "name": "shared_office365users"
@@ -33,13 +33,13 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$connections": {
-          "defaultValue": {},
-          "type": "Object"
-        },
         "$authentication": {
           "defaultValue": {},
           "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
         }
       },
       "triggers": {
@@ -88,17 +88,13 @@
           },
           "type": "OpenApiConnection",
           "inputs": {
-            "host": {
-              "connectionName": "shared_office365groups",
-              "operationId": "ListGroupMembers",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365groups"
-            },
             "parameters": {
               "groupId": "@triggerBody()['text']"
             },
-            "authentication": {
-              "type": "Raw",
-              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']"
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365groups",
+              "operationId": "ListGroupMembers",
+              "connectionName": "shared_office365groups_1"
             }
           }
         },
@@ -125,18 +121,14 @@
           },
           "type": "OpenApiConnection",
           "inputs": {
-            "host": {
-              "connectionName": "shared_teams",
-              "operationId": "CreateChat",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
-            },
             "parameters": {
               "item/members": "@outputs('Compose')",
               "item/topic": "@triggerBody()['text_1']"
             },
-            "authentication": {
-              "type": "Raw",
-              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']"
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+              "operationId": "CreateChat",
+              "connectionName": "shared_teams_1"
             }
           }
         },
@@ -152,10 +144,6 @@
           "type": "Response",
           "kind": "PowerApp",
           "inputs": {
-            "statusCode": 200,
-            "body": {
-              "chatid": "@outputs('Create_a_chat')?['body/id']"
-            },
             "schema": {
               "type": "object",
               "properties": {
@@ -164,7 +152,12 @@
                   "x-ms-dynamically-added": true,
                   "type": "string"
                 }
-              }
+              },
+              "additionalProperties": {}
+            },
+            "statusCode": 200,
+            "body": {
+              "chatid": "@outputs('Create_a_chat')?['body/id']"
             }
           }
         },
@@ -191,14 +184,9 @@
           "type": "OpenApiConnection",
           "inputs": {
             "host": {
-              "connectionName": "shared_office365users_1",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365users",
               "operationId": "MyProfile_V2",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365users"
-            },
-            "parameters": {},
-            "authentication": {
-              "type": "Raw",
-              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']"
+              "connectionName": "shared_office365users"
             }
           }
         },

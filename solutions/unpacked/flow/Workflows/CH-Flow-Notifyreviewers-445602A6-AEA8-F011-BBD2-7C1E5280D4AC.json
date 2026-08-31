@@ -10,19 +10,10 @@
           "name": "shared_commondataserviceforapps"
         }
       },
-      "shared_commondataserviceforapps": {
+      "shared_teams_1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "sanic_AEDDConnDataverse"
-        },
-        "api": {
-          "name": "shared_commondataserviceforapps"
-        }
-      },
-      "shared_teams": {
-        "runtimeSource": "embedded",
-        "connection": {
-          "connectionReferenceLogicalName": "new_sharedteams_084e4"
+          "connectionReferenceLogicalName": "sanic_chcrteams"
         },
         "api": {
           "name": "shared_teams"
@@ -33,13 +24,13 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$authentication": {
-          "defaultValue": {},
-          "type": "SecureObject"
-        },
         "$connections": {
           "defaultValue": {},
           "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
         }
       },
       "triggers": {
@@ -49,17 +40,18 @@
           },
           "type": "OpenApiConnectionWebhook",
           "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "SubscribeWebhookTrigger",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
             "parameters": {
               "subscriptionRequest/message": 4,
               "subscriptionRequest/entityname": "sanic_chtblclientdatachangerequest",
               "subscriptionRequest/scope": 4,
               "subscriptionRequest/filterexpression": "sanic_changestatus eq 159460001"
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "SubscribeWebhookTrigger",
-              "connectionName": "shared_commondataserviceforapps_1"
-            }
+            "authentication": "@parameters('$authentication')"
           }
         }
       },
@@ -75,15 +67,16 @@
           },
           "type": "OpenApiConnection",
           "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
             "parameters": {
               "entityName": "sanic_chtblclientdatachangerequestlines",
               "$filter": "_sanic_changerequestid_value eq @{triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']}"
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "ListRecords",
-              "connectionName": "shared_commondataserviceforapps_1"
-            }
+            "authentication": "@parameters('$authentication')"
           }
         },
         "Inicializar_variable_varField": {
@@ -91,6 +84,9 @@
             "Obtener_lineas_del_RFC_(CRL)": [
               "Succeeded"
             ]
+          },
+          "metadata": {
+            "operationMetadataId": "aeff1c1b-7fd9-46c0-9161-1a34477f8183"
           },
           "type": "InitializeVariable",
           "inputs": {
@@ -106,6 +102,10 @@
           "foreach": "@outputs('Obtener_lineas_del_RFC_(CRL)')?['body/value']",
           "actions": {
             "Añadir_campo_que_se_cambiarai": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "7a9e5114-6a60-4f04-90ad-a2c8dbb66951"
+              },
               "type": "AppendToArrayVariable",
               "inputs": {
                 "name": "varField",
@@ -117,6 +117,10 @@
               }
             },
             "Añadir_antiguo_valor": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "0114e909-6742-49f4-a290-bdde37fecca8"
+              },
               "type": "AppendToArrayVariable",
               "inputs": {
                 "name": "varNewValue",
@@ -128,6 +132,10 @@
               }
             },
             "Añadir_nuevo_valor": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "7103aa72-485f-41fb-aba1-5850aa5601eb"
+              },
               "type": "AppendToArrayVariable",
               "inputs": {
                 "name": "varOldValue",
@@ -144,6 +152,9 @@
               "Succeeded"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "791e671d-24bc-4c74-b78c-86229b2a7a88"
+          },
           "type": "Foreach"
         },
         "inicializar_variable_varNewValue": {
@@ -151,6 +162,9 @@
             "Inicializar_variable_varField": [
               "Succeeded"
             ]
+          },
+          "metadata": {
+            "operationMetadataId": "0d5d5841-83e7-46e1-946e-bd265b0c167a"
           },
           "type": "InitializeVariable",
           "inputs": {
@@ -168,6 +182,9 @@
               "Succeeded"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "9d7134ca-e6e5-47de-bd8f-4ee425d1aee4"
+          },
           "type": "InitializeVariable",
           "inputs": {
             "variables": [
@@ -184,35 +201,43 @@
               "Succeeded"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "6bda0f4d-abb0-4026-8a6b-71896d3da600"
+          },
           "type": "OpenApiConnection",
           "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "GetItem",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
             "parameters": {
               "entityName": "sanic_chtblclientdatachangerequests",
               "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']",
               "$expand": "createdby($select=fullname)"
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "GetItem",
-              "connectionName": "shared_commondataserviceforapps_1"
-            }
+            "authentication": "@parameters('$authentication')"
           }
         },
         "Obtener_enlace_a_la_app_de_adminsitracion_de_clientes": {
           "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "68daec13-3e64-489d-b169-52093c2a1c35"
+          },
           "type": "OpenApiConnection",
           "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
             "parameters": {
               "entityName": "sanic_chtblparameters",
               "$select": "sanic_value",
               "$filter": "sanic_name eq 'Apps.ClientAdministration.Url' and sanic_isactive eq true",
               "$top": 1
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "ListRecords",
-              "connectionName": "shared_commondataserviceforapps"
-            }
+            "authentication": "@parameters('$authentication')"
           }
         },
         "Construir_adaptive_card": {
@@ -220,6 +245,9 @@
             "Por_cada_CRL": [
               "Succeeded"
             ]
+          },
+          "metadata": {
+            "operationMetadataId": "23d312a7-d49a-4f52-ae88-d3a02e6c98c3"
           },
           "type": "Compose",
           "inputs": {
@@ -360,17 +388,21 @@
               "Succeeded"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "5a1fba30-0681-4819-907e-ddd675b6ea70"
+          },
           "type": "OpenApiConnection",
           "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
             "parameters": {
               "entityName": "sanic_chtblclientdatachangepermissions",
               "$filter": "sanic_name eq '@{triggerOutputs()?['body/sanic_targettable']}' and sanic_type eq 159460001"
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "ListRecords",
-              "connectionName": "shared_commondataserviceforapps"
-            }
+            "authentication": "@parameters('$authentication')"
           }
         },
         "For_each": {
@@ -379,6 +411,10 @@
             "Condition": {
               "actions": {
                 "Run_a_Child_Flow": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "c8cc6340-57fd-4ee0-a219-b848c310b022"
+                  },
                   "type": "Workflow",
                   "inputs": {
                     "host": {
@@ -396,18 +432,22 @@
                       "Succeeded"
                     ]
                   },
+                  "metadata": {
+                    "operationMetadataId": "93d0112c-1c39-46f7-86ea-2b5512441b4b"
+                  },
                   "type": "OpenApiConnection",
                   "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps_1",
+                      "operationId": "UpdateOnlyRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
                     "parameters": {
                       "entityName": "sanic_chtblclientdatachangepermissions",
                       "recordId": "@items('For_each')?['sanic_chtblclientdatachangepermissionid']",
                       "item/sanic_teamsgroupid": "@body('Run_a_Child_Flow')?['chatid']"
                     },
-                    "host": {
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-                      "operationId": "UpdateOnlyRecord",
-                      "connectionName": "shared_commondataserviceforapps"
-                    }
+                    "authentication": "@parameters('$authentication')"
                   }
                 },
                 "Enviar_adaptive_card_a_aprobadores_1": {
@@ -416,38 +456,48 @@
                       "Succeeded"
                     ]
                   },
+                  "metadata": {
+                    "operationMetadataId": "e047dffd-adc5-4f77-9d04-68a8cb310229"
+                  },
                   "type": "OpenApiConnection",
                   "inputs": {
+                    "host": {
+                      "connectionName": "shared_teams_1",
+                      "operationId": "PostCardToConversation",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+                    },
                     "parameters": {
                       "poster": "Flow bot",
                       "location": "Group chat",
                       "body/recipient": "@body('Run_a_Child_Flow')?['chatid']",
                       "body/messageBody": "@outputs('Construir_adaptive_card')"
                     },
-                    "host": {
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
-                      "operationId": "PostCardToConversation",
-                      "connectionName": "shared_teams"
-                    }
+                    "authentication": "@parameters('$authentication')"
                   }
                 }
               },
+              "runAfter": {},
               "else": {
                 "actions": {
                   "Enviar_adaptive_card_a_aprobadores": {
+                    "runAfter": {},
+                    "metadata": {
+                      "operationMetadataId": "808cf582-d680-4602-9e7e-8ef3c1522dc0"
+                    },
                     "type": "OpenApiConnection",
                     "inputs": {
+                      "host": {
+                        "connectionName": "shared_teams_1",
+                        "operationId": "PostCardToConversation",
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
+                      },
                       "parameters": {
                         "poster": "Flow bot",
                         "location": "Group chat",
                         "body/recipient": "@items('For_each')?['sanic_teamsgroupid']",
                         "body/messageBody": "@outputs('Construir_adaptive_card')"
                       },
-                      "host": {
-                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
-                        "operationId": "PostCardToConversation",
-                        "connectionName": "shared_teams"
-                      }
+                      "authentication": "@parameters('$authentication')"
                     }
                   }
                 }
@@ -462,6 +512,9 @@
                   }
                 ]
               },
+              "metadata": {
+                "operationMetadataId": "0ad9b324-6a3c-4a4b-b086-7e2bc456a4b0"
+              },
               "type": "If"
             }
           },
@@ -470,11 +523,14 @@
               "Succeeded"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "ecb38ce2-6c31-4352-a0b7-64cda54f7e78"
+          },
           "type": "Foreach"
         }
       }
     },
-    "templateName": null
+    "templateName": ""
   },
   "schemaVersion": "1.0.0.0"
 }

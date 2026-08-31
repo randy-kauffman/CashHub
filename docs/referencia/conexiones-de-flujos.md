@@ -1,4 +1,11 @@
-# Conexiones de los cloud flows — estado y plan de normalización
+# Conexiones de los cloud flows — ✅ NORMALIZADAS
+
+> **Cerrado el 2026-08-31.** Las 3 referencias faltantes se crearon y los 14 reemplazos se
+> aplicaron desde el Studio. Verificado contra el export: **20 de 20 usos apuntan a `CH-CR-*`,
+> cero ajenas**; las 7 referencias viven en **CashHubCore** y `CashHubFlows` quedó en **cero**.
+> Las 7 tienen conexión asociada y los 11 flujos siguen **ON**.
+>
+> El detalle de abajo se conserva como registro del estado previo y del plan que se ejecutó.
 
 > Inventario de las connection references que usan los 11 flujos de CashHub, verificado el
 > 2026-08-31 contra DEV (`org36e60d9d`).

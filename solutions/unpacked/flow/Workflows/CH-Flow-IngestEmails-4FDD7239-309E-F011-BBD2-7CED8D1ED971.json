@@ -1,10 +1,10 @@
 {
   "properties": {
     "connectionReferences": {
-      "shared_office365_2": {
+      "shared_office365": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "sanic_conn_wfe_office365outlook"
+          "connectionReferenceLogicalName": "sanic_CHCROutlook"
         },
         "api": {
           "name": "shared_office365"
@@ -15,13 +15,13 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$authentication": {
-          "defaultValue": {},
-          "type": "SecureObject"
-        },
         "$connections": {
           "defaultValue": {},
           "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
         },
         "CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)": {
           "defaultValue": "cashhub@55xljh.onmicrosoft.com",
@@ -38,27 +38,34 @@
             "frequency": "Minute"
           },
           "splitOn": "@triggerOutputs()?['body/value']",
+          "metadata": {
+            "operationMetadataId": "cf94db45-aa06-467b-9521-8ac4c61b17a2"
+          },
           "type": "OpenApiConnection",
           "inputs": {
+            "host": {
+              "connectionName": "shared_office365",
+              "operationId": "SharedMailboxOnNewEmailV2",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365"
+            },
             "parameters": {
               "mailboxAddress": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')",
+              "folderId": "Inbox",
               "toOrCc": "@parameters('CH-EV-SharedMailboxAddress (sanic_CHEVSharedMailboxAddress)')",
               "importance": "Any",
               "hasAttachments": false,
-              "includeAttachments": false,
-              "folderId": "Inbox"
+              "includeAttachments": false
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_office365",
-              "operationId": "SharedMailboxOnNewEmailV2",
-              "connectionName": "shared_office365_2"
-            }
+            "authentication": "@parameters('$authentication')"
           }
         }
       },
       "actions": {
         "Procesar_correo": {
           "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "1f0bc79d-01c0-40c7-b9b1-1acd06cd2246"
+          },
           "type": "Workflow",
           "inputs": {
             "host": {
@@ -71,7 +78,7 @@
         }
       }
     },
-    "templateName": null
+    "templateName": ""
   },
   "schemaVersion": "1.0.0.0"
 }

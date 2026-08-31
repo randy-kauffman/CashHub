@@ -1,19 +1,10 @@
 {
   "properties": {
     "connectionReferences": {
-      "shared_commondataserviceforapps": {
+      "shared_commondataserviceforapps_1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "sanic_hb_conr_dataverse"
-        },
-        "api": {
-          "name": "shared_commondataserviceforapps"
-        }
-      },
-      "shared_commondataserviceforapps-1": {
-        "runtimeSource": "embedded",
-        "connection": {
-          "connectionReferenceLogicalName": "wf_sharedcommondataserviceforapps_3bc81"
+          "connectionReferenceLogicalName": "sanic_CHCRDataverse"
         },
         "api": {
           "name": "shared_commondataserviceforapps"
@@ -24,13 +15,13 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$authentication": {
-          "defaultValue": {},
-          "type": "SecureObject"
-        },
         "$connections": {
           "defaultValue": {},
           "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
         }
       },
       "triggers": {
@@ -74,6 +65,7 @@
           "else": {
             "actions": {
               "Terminate_lote_invalido": {
+                "runAfter": {},
                 "metadata": {
                   "operationMetadataId": "f38223ab-d28b-4e51-9455-a0ed010ec2ac"
                 },
@@ -120,17 +112,18 @@
           },
           "type": "OpenApiConnection",
           "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
             "parameters": {
               "entityName": "sanic_chtblparameters",
               "$select": "sanic_value",
               "$filter": "sanic_name eq 'Export.Core.Identidad'",
               "$top": 1
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "ListRecords",
-              "connectionName": "shared_commondataserviceforapps"
-            },
+            "authentication": "@parameters('$authentication')",
             "retryPolicy": {
               "type": "exponential",
               "count": 4,
@@ -161,16 +154,17 @@
           },
           "type": "OpenApiConnection",
           "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
             "parameters": {
               "entityName": "sanic_chtbltransactionses",
               "$select": "sanic_accountnumber,sanic_total,sanic_transactionid,sanic_transactionreference,sanic_currency,sanic_cashamount",
               "$filter": "_sanic_transactionbatch_value eq @{triggerBody()['text']}"
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "ListRecords",
-              "connectionName": "shared_commondataserviceforapps"
-            },
+            "authentication": "@parameters('$authentication')",
             "retryPolicy": {
               "type": "exponential",
               "count": 4,
@@ -243,21 +237,19 @@
           "type": "Response",
           "kind": "PowerApp",
           "inputs": {
+            "statusCode": 200,
+            "body": {
+              "notaid": "@{outputs('Lote_CSV')?['body/annotationid']}"
+            },
             "schema": {
               "type": "object",
               "properties": {
                 "notaid": {
                   "title": "NotaId",
-                  "type": "string",
-                  "x-ms-content-hint": "TEXT",
-                  "x-ms-dynamically-added": true
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
                 }
-              },
-              "additionalProperties": {}
-            },
-            "statusCode": 200,
-            "body": {
-              "notaid": "@{outputs('Lote_CSV')?['body/annotationid']}"
+              }
             }
           }
         },
@@ -267,8 +259,16 @@
               "Succeeded"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "a896958b-baac-49b7-807b-a2e6470049ec"
+          },
           "type": "OpenApiConnection",
           "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "CreateRecord",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
             "parameters": {
               "entityName": "annotations",
               "item/subject": "Lote CSV",
@@ -277,11 +277,7 @@
               "item/mimetype": "text/csv",
               "item/objectid_sanic_transactionbatches@odata.bind": "/sanic_transactionbatcheses(@{triggerBody()?['text']})"
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "CreateRecord",
-              "connectionName": "shared_commondataserviceforapps"
-            }
+            "authentication": "@parameters('$authentication')"
           }
         },
         "Upload_a_file_or_an_image": {
@@ -290,26 +286,30 @@
               "Succeeded"
             ]
           },
+          "metadata": {
+            "operationMetadataId": "61172146-1b4b-49ca-8f95-995cdb413323"
+          },
           "type": "OpenApiConnection",
           "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps_1",
+              "operationId": "UpdateEntityFileImageFieldContent",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
             "parameters": {
-              "x-ms-file-name": "@{triggerBody()?['text_1']}.csv",
               "entityName": "sanic_transactionbatcheses",
               "recordId": "@triggerBody()?['text']",
               "fileImageFieldName": "sanic_csvcore",
-              "item": "@base64ToBinary(base64(body('Create_CSV_table')))"
+              "item": "@base64ToBinary(base64(body('Create_CSV_table')))",
+              "x-ms-file-name": "@{triggerBody()?['text_1']}.csv"
             },
-            "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
-              "operationId": "UpdateEntityFileImageFieldContent",
-              "connectionName": "shared_commondataserviceforapps-1"
-            }
+            "authentication": "@parameters('$authentication')"
           }
         }
       },
       "outputs": {}
     },
-    "templateName": null
+    "templateName": ""
   },
   "schemaVersion": "1.0.0.0"
 }

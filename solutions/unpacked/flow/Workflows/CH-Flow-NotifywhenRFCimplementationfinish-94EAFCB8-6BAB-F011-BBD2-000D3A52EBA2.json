@@ -10,10 +10,10 @@
           "name": "shared_commondataserviceforapps"
         }
       },
-      "shared_teams": {
+      "shared_teams-1": {
         "runtimeSource": "embedded",
         "connection": {
-          "connectionReferenceLogicalName": "new_sharedteams_084e4"
+          "connectionReferenceLogicalName": "sanic_chcrteams"
         },
         "api": {
           "name": "shared_teams"
@@ -24,13 +24,13 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$connections": {
-          "defaultValue": {},
-          "type": "Object"
-        },
         "$authentication": {
           "defaultValue": {},
           "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
         }
       },
       "triggers": {
@@ -40,18 +40,17 @@
           },
           "type": "OpenApiConnectionWebhook",
           "inputs": {
-            "host": {
-              "connectionName": "shared_commondataserviceforapps_1",
-              "operationId": "SubscribeWebhookTrigger",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-            },
             "parameters": {
               "subscriptionRequest/message": 3,
               "subscriptionRequest/entityname": "sanic_chtblclientdatachangerequest",
               "subscriptionRequest/scope": 4,
               "subscriptionRequest/filterexpression": "sanic_changestatus eq 159460004 or sanic_changestatus eq 159460005 or sanic_changestatus eq 159460003"
             },
-            "authentication": "@parameters('$authentication')"
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
           }
         }
       },
@@ -67,18 +66,17 @@
           },
           "type": "OpenApiConnection",
           "inputs": {
-            "host": {
-              "connectionName": "shared_commondataserviceforapps_1",
-              "operationId": "ListRecords",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-            },
             "parameters": {
               "entityName": "sanic_chtblparameters",
               "$select": "sanic_value",
               "$filter": "sanic_name eq 'Apps.ClientAdministration.Url' and sanic_isactive eq true",
               "$top": 1
             },
-            "authentication": "@parameters('$authentication')"
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
           }
         },
         "Estructurar_HTML": {
@@ -104,18 +102,17 @@
           },
           "type": "OpenApiConnection",
           "inputs": {
-            "host": {
-              "connectionName": "shared_teams",
-              "operationId": "PostMessageToConversation",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
-            },
             "parameters": {
               "poster": "Flow bot",
               "location": "Chat with Flow bot",
               "body/recipient": "@{outputs('Obtener_mas_detalles_del_RFC')?['body/createdby/internalemailaddress']};",
               "body/messageBody": "<p>@{outputs('Estructurar_HTML')}</p>"
             },
-            "authentication": "@parameters('$authentication')"
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+              "operationId": "PostMessageToConversation",
+              "connectionName": "shared_teams-1"
+            }
           }
         },
         "Obtener_mas_detalles_del_RFC": {
@@ -125,17 +122,16 @@
           },
           "type": "OpenApiConnection",
           "inputs": {
-            "host": {
-              "connectionName": "shared_commondataserviceforapps_1",
-              "operationId": "GetItem",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-            },
             "parameters": {
               "entityName": "sanic_chtblclientdatachangerequests",
               "recordId": "@triggerOutputs()?['body/sanic_chtblclientdatachangerequestid']",
               "$expand": "sanic_SolvedBy($select=fullname,internalemailaddress),createdby($select=fullname,internalemailaddress),sanic_RelatedClient($select=sanic_name)"
             },
-            "authentication": "@parameters('$authentication')"
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "GetItem",
+              "connectionName": "shared_commondataserviceforapps_1"
+            }
           }
         },
         "Enviar_mensaje_a_aprobador": {
@@ -149,18 +145,17 @@
           },
           "type": "OpenApiConnection",
           "inputs": {
-            "host": {
-              "connectionName": "shared_teams",
-              "operationId": "PostMessageToConversation",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams"
-            },
             "parameters": {
               "poster": "Flow bot",
               "location": "Chat with Flow bot",
               "body/recipient": "@{outputs('Obtener_mas_detalles_del_RFC')?['body/sanic_solvedby/internalemailaddress']};",
               "body/messageBody": "<p>@{outputs('Estructurar_HTML')}</p>"
             },
-            "authentication": "@parameters('$authentication')"
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+              "operationId": "PostMessageToConversation",
+              "connectionName": "shared_teams-1"
+            }
           }
         }
       }

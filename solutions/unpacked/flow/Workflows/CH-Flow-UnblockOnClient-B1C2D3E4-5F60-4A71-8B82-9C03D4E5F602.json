@@ -15,17 +15,20 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$authentication": {
-          "defaultValue": {},
-          "type": "SecureObject"
-        },
         "$connections": {
           "defaultValue": {},
           "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
         }
       },
       "triggers": {
         "Cuando_Banca_toca_los_datos": {
+          "metadata": {
+            "operationMetadataId": "787c129c-0e01-4721-8565-9bcc8efa1771"
+          },
           "type": "OpenApiConnectionWebhook",
           "inputs": {
             "parameters": {
@@ -34,9 +37,9 @@
               "subscriptionRequest/scope": 4
             },
             "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "connectionName": "shared_commondataserviceforapps-1",
               "operationId": "SubscribeWebhookTrigger",
-              "connectionName": "shared_commondataserviceforapps-1"
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
             },
             "authentication": "@parameters('$authentication')"
           }
@@ -44,6 +47,10 @@
       },
       "actions": {
         "Buscar_correos_bloqueados": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "ece71dde-2921-4a43-84e8-1a39c91e5935"
+          },
           "type": "OpenApiConnection",
           "inputs": {
             "parameters": {
@@ -53,28 +60,25 @@
               "$top": 50
             },
             "host": {
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "connectionName": "shared_commondataserviceforapps-1",
               "operationId": "ListRecords",
-              "connectionName": "shared_commondataserviceforapps-1"
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
             },
             "retryPolicy": {
               "type": "exponential",
               "count": 4,
               "interval": "PT10S"
             }
-          },
-          "runAfter": {}
+          }
         },
         "Por_cada_bloqueado": {
-          "type": "Foreach",
           "foreach": "@outputs('Buscar_correos_bloqueados')?['body/value']",
-          "runAfter": {
-            "Buscar_correos_bloqueados": [
-              "Succeeded"
-            ]
-          },
           "actions": {
             "Reprocesar": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "3d614cbd-9a5d-4935-985a-67e9038cb050"
+              },
               "type": "OpenApiConnection",
               "inputs": {
                 "parameters": {
@@ -84,23 +88,31 @@
                   "item/sanic_emailreviewstatus": 159460000
                 },
                 "host": {
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "connectionName": "shared_commondataserviceforapps-1",
                   "operationId": "UpdateOnlyRecord",
-                  "connectionName": "shared_commondataserviceforapps-1"
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
                 },
                 "retryPolicy": {
                   "type": "exponential",
                   "count": 4,
                   "interval": "PT10S"
                 }
-              },
-              "runAfter": {}
+              }
             }
-          }
+          },
+          "runAfter": {
+            "Buscar_correos_bloqueados": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "52754459-5185-4892-b67d-3f62df051e6a"
+          },
+          "type": "Foreach"
         }
       }
     },
-    "templateName": null
+    "templateName": ""
   },
   "schemaVersion": "1.0.0.0"
 }
