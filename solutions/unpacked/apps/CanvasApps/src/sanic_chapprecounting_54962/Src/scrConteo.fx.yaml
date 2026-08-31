@@ -392,49 +392,6 @@ scrConteo As screen:
         Y: =lblMetaPlanLabCon.Y + (lblMetaPlanLabCon.Height - Self.Height) / 2
         ZIndex: =9
 
-    shpChipMesaCon As button:
-        BorderColor: =ThemeLine
-        BorderThickness: =1
-        Color: =ThemeInk
-        DisplayMode: =DisplayMode.View
-        Fill: =ThemeSurface2
-        FontWeight: =FontWeight.Semibold
-        Height: =32
-        HoverFill: =ThemeSurface2
-        PaddingBottom: =0
-        PaddingLeft: =0
-        PaddingRight: =0
-        PaddingTop: =0
-        PressedFill: =ThemeSurface2
-        RadiusBottomLeft: =16
-        RadiusBottomRight: =16
-        RadiusTopLeft: =16
-        RadiusTopRight: =16
-        Size: =9
-        Text: =""
-        Width: =28 + lblChipMesaCon.Width
-        X: =btnCerrarTulaCon.X - 14 - Self.Width
-        Y: =17
-        ZIndex: =10
-
-    lblChipMesaCon As label:
-        Color: =ThemeInk
-        FontWeight: =FontWeight.Semibold
-        Height: =shpChipMesaCon.Height
-        PaddingBottom: =0
-        PaddingLeft: =0
-        PaddingRight: =0
-        PaddingTop: =0
-        Size: =9
-        Text: |-
-            =gvarMesa.Name &
-            If(IsBlank(gvarSesion.Name), "", "   ·   " & gvarSesion.Name)
-        Width: =6.2 * Len(Self.Text) + 4
-        Wrap: =false
-        X: =shpChipMesaCon.X + 14
-        Y: =shpChipMesaCon.Y
-        ZIndex: =11
-
     shpChipChequesCon As button:
         BorderColor: =ThemeLine
         BorderThickness: =1
@@ -458,6 +415,31 @@ scrConteo As screen:
         Visible: =!IsBlank(gvarSesion.'CH-Tbl-RecountingSession')
         Width: =28 + lblChipChequesCon.Width
         X: =shpChipMesaCon.X - 10 - Self.Width
+        Y: =17
+        ZIndex: =10
+
+    shpChipMesaCon As button:
+        BorderColor: =ThemeLine
+        BorderThickness: =1
+        Color: =ThemeInk
+        DisplayMode: =DisplayMode.View
+        Fill: =ThemeSurface2
+        FontWeight: =FontWeight.Semibold
+        Height: =32
+        HoverFill: =ThemeSurface2
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        PressedFill: =ThemeSurface2
+        RadiusBottomLeft: =16
+        RadiusBottomRight: =16
+        RadiusTopLeft: =16
+        RadiusTopRight: =16
+        Size: =9
+        Text: =""
+        Width: =28 + lblChipMesaCon.Width
+        X: =btnCerrarTulaCon.X - 14 - Self.Width
         Y: =17
         ZIndex: =10
 
@@ -488,6 +470,24 @@ scrConteo As screen:
         Wrap: =false
         X: =shpChipChequesCon.X + 14
         Y: =shpChipChequesCon.Y
+        ZIndex: =11
+
+    lblChipMesaCon As label:
+        Color: =ThemeInk
+        FontWeight: =FontWeight.Semibold
+        Height: =shpChipMesaCon.Height
+        PaddingBottom: =0
+        PaddingLeft: =0
+        PaddingRight: =0
+        PaddingTop: =0
+        Size: =9
+        Text: |-
+            =gvarMesa.Name &
+            If(IsBlank(gvarSesion.Name), "", "   ·   " & gvarSesion.Name)
+        Width: =6.2 * Len(Self.Text) + 4
+        Wrap: =false
+        X: =shpChipMesaCon.X + 14
+        Y: =shpChipMesaCon.Y
         ZIndex: =11
 
     btnCerrarTulaCon As button:
@@ -778,7 +778,6 @@ scrConteo As screen:
         ZIndex: =13
 
     cmpMatNIOCon As cmpMatrizMoneda:
-        Width: =(Parent.Width - 60) / 3
         ChequesDec: =CountRows(Filter(colChequesDeclaradosCon, CheckCurrency = 'CH-Ch-Currency'.NIO))
         ChequesRec: =CountRows(Filter(colChecksTulaCon, CheckCurrency = 'CH-Ch-Currency'.NIO))
         EfectivoDec: =Sum(Filter(colDepDeclaradosCon, Currency = 'CH-Ch-Currency'.NIO), CashAmount)
@@ -786,12 +785,12 @@ scrConteo As screen:
         MontoChequesDec: =Sum(Filter(colChequesDeclaradosCon, CheckCurrency = 'CH-Ch-Currency'.NIO), CheckAmount)
         MontoChequesRec: =Sum(Filter(colChecksTulaCon, CheckCurrency = 'CH-Ch-Currency'.NIO), CheckAmount)
         Simbolo: =SimboloNIO
+        Width: =(Parent.Width - 60) / 3
         X: =18
         Y: =78
         ZIndex: =14
 
     cmpMatUSDCon As cmpMatrizMoneda:
-        Width: =(Parent.Width - 60) / 3
         ChequesDec: =CountRows(Filter(colChequesDeclaradosCon, CheckCurrency = 'CH-Ch-Currency'.USD))
         ChequesRec: =CountRows(Filter(colChecksTulaCon, CheckCurrency = 'CH-Ch-Currency'.USD))
         EfectivoDec: =Sum(Filter(colDepDeclaradosCon, Currency = 'CH-Ch-Currency'.USD), CashAmount)
@@ -801,12 +800,12 @@ scrConteo As screen:
         MontoChequesDec: =Sum(Filter(colChequesDeclaradosCon, CheckCurrency = 'CH-Ch-Currency'.USD), CheckAmount)
         MontoChequesRec: =Sum(Filter(colChecksTulaCon, CheckCurrency = 'CH-Ch-Currency'.USD), CheckAmount)
         Simbolo: =SimboloUSD
+        Width: =(Parent.Width - 60) / 3
         X: =cmpMatNIOCon.X + cmpMatNIOCon.Width + 12
         Y: =78
         ZIndex: =15
 
     cmpMatEURCon As cmpMatrizMoneda:
-        Width: =(Parent.Width - 60) / 3
         ChequesDec: =CountRows(Filter(colChequesDeclaradosCon, CheckCurrency = 'CH-Ch-Currency'.EUR))
         ChequesRec: =CountRows(Filter(colChecksTulaCon, CheckCurrency = 'CH-Ch-Currency'.EUR))
         EfectivoDec: =Sum(Filter(colDepDeclaradosCon, Currency = 'CH-Ch-Currency'.EUR), CashAmount)
@@ -816,6 +815,7 @@ scrConteo As screen:
         MontoChequesDec: =Sum(Filter(colChequesDeclaradosCon, CheckCurrency = 'CH-Ch-Currency'.EUR), CheckAmount)
         MontoChequesRec: =Sum(Filter(colChecksTulaCon, CheckCurrency = 'CH-Ch-Currency'.EUR), CheckAmount)
         Simbolo: =SimboloEUR
+        Width: =(Parent.Width - 60) / 3
         X: =cmpMatUSDCon.X + cmpMatUSDCon.Width + 12
         Y: =78
         ZIndex: =16
@@ -2432,10 +2432,10 @@ scrConteo As screen:
             !IsBlank(ctxDepDecSelCon.'CH-Tbl-DeclaredDeposits') &&
             Text(ctxDepDecSelCon.Currency) <> ctxMonedaCon
         Width: =shpCardCurCon.X + shpCardCurCon.Width - 16 - Self.X
-        Wrap: =true
         X: =inpCuentaCon.X + inpCuentaCon.Width + 20
         Y: =233
         ZIndex: =55
+
     shpLineaCurRowCon As rectangle:
         BorderStyle: =BorderStyle.None
         Fill: =ThemeLineSoft
@@ -3322,8 +3322,8 @@ scrConteo As screen:
             Color: =ThemeInk
             Default: =ThisItem.Numero
             DisplayMode: =If(gvarIdentidadOk && !ctxSoloLecturaCon, DisplayMode.Edit, DisplayMode.Disabled)
-            Format: =TextFormat.Number
             Fill: =ThemeSurface
+            Format: =TextFormat.Number
             Height: =26
             HintText: ="N° cheque"
             MaxLength: =30
@@ -4047,8 +4047,8 @@ scrConteo As screen:
             "Los cheques ya marcados se desmarcan."
         TextoConfirmar: ="Cambiar moneda"
         Titulo: ="Cambiar la moneda del depósito"
-        Width: =Parent.Width
         Visible: =ctxDlgMonedaCon
+        Width: =Parent.Width
         ZIndex: =105
 
     cmpDlgEliminarCon As cmpDialogo:
@@ -4070,14 +4070,14 @@ scrConteo As screen:
         TextoConfirmar: ="Eliminar"
         Titulo: ="Eliminar el depósito " & Text(ctxDepSelCon.AccountNumber)
         Tono: ="danger"
-        Width: =Parent.Width
         Visible: =ctxDlgEliminarCon
+        Width: =Parent.Width
         ZIndex: =106
 
     cmpDlgDescartarCon As cmpDialogo:
         AnchoCard: =330
-        Height: =Parent.Height
         Contorno: =true
+        Height: =Parent.Height
         Icono: ="sync"
         MostrarCerrar: =false
         OnCancelar: |-
@@ -4111,8 +4111,8 @@ scrConteo As screen:
         TextoConfirmar: ="Descartar"
         Titulo: ="Descartar los cambios del depósito"
         Tono: ="warn"
-        Width: =Parent.Width
         Visible: =ctxDlgDescartarCon
+        Width: =Parent.Width
         ZIndex: =107
 
     cntDlgGuardandoCon As groupContainer.manualLayoutContainer:
@@ -6678,83 +6678,6 @@ scrConteo As screen:
         Y: =767
         ZIndex: =118
 
-    tmrVigilaTulaCon As timer:
-        Duration: =20000
-        Height: =1
-        OnTimerEnd: |-
-            =// VIGILA QUE LA TULA SIGA SIENDO DEL CAJERO.
-            //   El servidor YA impide escribir sobre una tula devuelta: el guard
-            //   rechaza depositos, cheques y denominaciones, y la maquina de estados
-            //   rechaza el cierre. O sea que los datos nunca corren peligro.
-            //
-            //   Lo que faltaba era AVISAR. Sin esto el cajero seguia contando efectivo
-            //   contra una tula que ya no es suya, y se enteraba recien al guardar,
-            //   con un error que no explica que paso. Veinte segundos de retraso es
-            //   mucho mejor que veinte minutos de conteo tirado.
-            //
-            //   Se pregunta por la SESION, no por el estado: una devolucion deja la
-            //   sesion en blanco y si otro cajero la tomo, la sesion es la de el. Una
-            //   tula que el propio cajero acaba de cerrar conserva su sesion, asi que
-            //   cerrar bien NO dispara este aviso.
-            //   Refresh ANTES del LookUp: sin invalidar el cache, "Fresca" no tiene nada
-            //   de fresca —es la misma copia local que ya teniamos— y el vigilante no
-            //   detecta nunca la devolucion.
-            Refresh('CH-Tbl-Bags');
-            Refresh('CH-Tbl-RecountingSessions');
-            With(
-                {
-                    Fresca: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags'),
-                    SesionFresca: LookUp(
-                        'CH-Tbl-RecountingSessions',
-                        'CH-Tbl-RecountingSession' = gvarSesion.'CH-Tbl-RecountingSession'
-                    )
-                },
-                If(
-                    // (a) LA SESION MURIO. Va primero: si el supervisor la cerro, ya no
-                    //     importa de quien era la tula. El servidor ya rechaza todo, pero
-                    //     sin este aviso el cajero se enteraba recien al guardar.
-                    SesionFresca.SessionForciblyClosed,
-                        Notify(
-                            "Su sesión de recuento fue cerrada por un supervisor. Lo que no se " &
-                            "haya guardado se pierde. Abra una sesión nueva para seguir trabajando.",
-                            NotificationType.Error,
-                            6000
-                        );
-                        Set(gvarTula, Blank());
-                        Set(gvarSesionDetalle, Blank());
-                        Set(gvarSesion, Blank());
-                        Navigate(scrSesion),
-            
-                    // (b) la tula dejo de ser suya (devuelta, o la tomo otro)
-                    !IsBlank(Fresca.'CH-Tbl-Bags') &&
-                    (
-                        IsBlank(Fresca.RecountingSession.'CH-Tbl-RecountingSession') ||
-                        Fresca.RecountingSession.'CH-Tbl-RecountingSession'
-                            <> gvarSesion.'CH-Tbl-RecountingSession'
-                    ),
-                        Notify(
-                            "La tula " & Trim(gvarTula.BagID) & " fue devuelta para reasignación y ya no " &
-                            "está en su sesión. Lo que no se haya guardado se pierde: el servidor ya no " &
-                            "acepta escrituras sobre ella.",
-                            NotificationType.Error,
-                            6000
-                        );
-                        Set(gvarTula, Blank());
-                        Set(gvarSesionDetalle, Blank());
-                        Navigate(scrTulas)
-                )
-            )
-        Repeat: =true
-        Start: |-
-            =!IsBlank(gvarTula.'CH-Tbl-Bags') &&
-            !IsBlank(gvarSesion.'CH-Tbl-RecountingSession') &&
-            !ctxEsperandoCon
-        Visible: =false
-        Width: =1
-        X: =10
-        Y: =767
-        ZIndex: =121
-
     tmrPollCon As timer:
         Duration: =15000
         Height: =1
@@ -6850,4 +6773,81 @@ scrConteo As screen:
         X: =1
         Y: =1
         ZIndex: =120
+
+    tmrVigilaTulaCon As timer:
+        Duration: =20000
+        Height: =1
+        OnTimerEnd: |-
+            =// VIGILA QUE LA TULA SIGA SIENDO DEL CAJERO.
+            //   El servidor YA impide escribir sobre una tula devuelta: el guard
+            //   rechaza depositos, cheques y denominaciones, y la maquina de estados
+            //   rechaza el cierre. O sea que los datos nunca corren peligro.
+            //
+            //   Lo que faltaba era AVISAR. Sin esto el cajero seguia contando efectivo
+            //   contra una tula que ya no es suya, y se enteraba recien al guardar,
+            //   con un error que no explica que paso. Veinte segundos de retraso es
+            //   mucho mejor que veinte minutos de conteo tirado.
+            //
+            //   Se pregunta por la SESION, no por el estado: una devolucion deja la
+            //   sesion en blanco y si otro cajero la tomo, la sesion es la de el. Una
+            //   tula que el propio cajero acaba de cerrar conserva su sesion, asi que
+            //   cerrar bien NO dispara este aviso.
+            //   Refresh ANTES del LookUp: sin invalidar el cache, "Fresca" no tiene nada
+            //   de fresca —es la misma copia local que ya teniamos— y el vigilante no
+            //   detecta nunca la devolucion.
+            Refresh('CH-Tbl-Bags');
+            Refresh('CH-Tbl-RecountingSessions');
+            With(
+                {
+                    Fresca: LookUp('CH-Tbl-Bags', 'CH-Tbl-Bags' = gvarTula.'CH-Tbl-Bags'),
+                    SesionFresca: LookUp(
+                        'CH-Tbl-RecountingSessions',
+                        'CH-Tbl-RecountingSession' = gvarSesion.'CH-Tbl-RecountingSession'
+                    )
+                },
+                If(
+                    // (a) LA SESION MURIO. Va primero: si el supervisor la cerro, ya no
+                    //     importa de quien era la tula. El servidor ya rechaza todo, pero
+                    //     sin este aviso el cajero se enteraba recien al guardar.
+                    SesionFresca.SessionForciblyClosed,
+                        Notify(
+                            "Su sesión de recuento fue cerrada por un supervisor. Lo que no se " &
+                            "haya guardado se pierde. Abra una sesión nueva para seguir trabajando.",
+                            NotificationType.Error,
+                            6000
+                        );
+                        Set(gvarTula, Blank());
+                        Set(gvarSesionDetalle, Blank());
+                        Set(gvarSesion, Blank());
+                        Navigate(scrSesion),
+            
+                    // (b) la tula dejo de ser suya (devuelta, o la tomo otro)
+                    !IsBlank(Fresca.'CH-Tbl-Bags') &&
+                    (
+                        IsBlank(Fresca.RecountingSession.'CH-Tbl-RecountingSession') ||
+                        Fresca.RecountingSession.'CH-Tbl-RecountingSession'
+                            <> gvarSesion.'CH-Tbl-RecountingSession'
+                    ),
+                        Notify(
+                            "La tula " & Trim(gvarTula.BagID) & " fue devuelta para reasignación y ya no " &
+                            "está en su sesión. Lo que no se haya guardado se pierde: el servidor ya no " &
+                            "acepta escrituras sobre ella.",
+                            NotificationType.Error,
+                            6000
+                        );
+                        Set(gvarTula, Blank());
+                        Set(gvarSesionDetalle, Blank());
+                        Navigate(scrTulas)
+                )
+            )
+        Repeat: =true
+        Start: |-
+            =!IsBlank(gvarTula.'CH-Tbl-Bags') &&
+            !IsBlank(gvarSesion.'CH-Tbl-RecountingSession') &&
+            !ctxEsperandoCon
+        Visible: =false
+        Width: =1
+        X: =10
+        Y: =767
+        ZIndex: =121
 

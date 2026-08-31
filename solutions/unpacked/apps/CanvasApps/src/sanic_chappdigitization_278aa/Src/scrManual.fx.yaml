@@ -5,6 +5,7 @@ scrManual As screen:
     OnVisible: |-
         =UpdateContext({
             ctxSegManual: "Pendientes",
+            ctxOrdenMan: "Fecha",
             ctxMotivoMan: "Todos",
             ctxErrorMan: Blank()
         });
@@ -181,7 +182,7 @@ scrManual As screen:
                         RadiusTopLeft: =7
                         RadiusTopRight: =7
                         Size: =9
-                        Text: ="Aplicadas" & If(ctxSegManual = "Aplicadas", " (" & If(CountRows(galTxMan.AllItems) >= 500, "500+", Text(CountRows(galTxMan.AllItems))) & ")", "")
+                        Text: ="Aplicadas" & If(ctxSegManual = "Aplicadas", " (" & If(CountRows(galTxMan.AllItems) >= 2000, "2000+", Text(CountRows(galTxMan.AllItems))) & ")", "")
                         Width: =(Parent.Width - 6) / 2
                         X: =btnSegPendientesMan.X + btnSegPendientesMan.Width
                         Y: =3
@@ -229,7 +230,7 @@ scrManual As screen:
                         RadiusTopLeft: =7
                         RadiusTopRight: =7
                         Size: =9
-                        Text: ="Pendientes" & If(ctxSegManual = "Pendientes", " (" & If(CountRows(galTxMan.AllItems) >= 500, "500+", Text(CountRows(galTxMan.AllItems))) & ")", "")
+                        Text: ="Pendientes" & If(ctxSegManual = "Pendientes", " (" & If(CountRows(galTxMan.AllItems) >= 2000, "2000+", Text(CountRows(galTxMan.AllItems))) & ")", "")
                         Width: =(Parent.Width - 6) / 2
                         X: =3
                         Y: =3
@@ -243,7 +244,7 @@ scrManual As screen:
                     Height: =18
                     Size: =13
                     Text: |-
-                        ="Orden: " & If(ctxSegManual = "Aplicadas", "Aplicada ↓", "Fecha ↑")
+                        ="Orden: " & If(ctxSegManual = "Aplicadas", "Aplicada ↓", If(ctxOrdenMan = "Motivo", "Motivo", "Fecha"))
                     Width: =170
                     X: =Parent.Width - 16 - Self.Width
                     Y: =18
@@ -297,6 +298,17 @@ scrManual As screen:
                     Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =6
 
+                lblHdrTipoMan As label:
+                    Color: =ThemeInk3
+                    FontWeight: =FontWeight.Semibold
+                    Height: =30
+                    Size: =7.5
+                    Text: ="TIPO"
+                    Width: =Parent.Width*0.10
+                    X: =Parent.Width*0.60
+                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
+                    ZIndex: =7
+
                 lblHdrMontoMan As label:
                     Align: =Align.Right
                     BorderColor: =App.Theme.Colors.Darker40
@@ -311,17 +323,6 @@ scrManual As screen:
                     Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =7
 
-                lblHdrTipoMan As label:
-                    Color: =ThemeInk3
-                    FontWeight: =FontWeight.Semibold
-                    Height: =30
-                    Size: =7.5
-                    Text: ="TIPO"
-                    Width: =Parent.Width*0.10
-                    X: =Parent.Width*0.60
-                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
-                    ZIndex: =7
-
                 btnHdrMotivoMan As button:
                     Align: =Align.Left
                     BorderColor: =App.Theme.Colors.Primary
@@ -330,7 +331,6 @@ scrManual As screen:
                     DisabledBorderColor: =RGBA(244, 244, 244, 1)
                     DisabledColor: =RGBA(166, 166, 166, 1)
                     DisabledFill: =RGBA(244, 244, 244, 1)
-                    DisplayMode: =DisplayMode.View
                     Fill: =Color.Transparent
                     FontWeight: =FontWeight.Bold
                     Height: =30
@@ -468,7 +468,7 @@ scrManual As screen:
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
                                     && AccountNumber <> Blank()
-                                    && (BACLocalCheckAmount > 0 || OtherLocalCheckAmount > 0) 
+                                    && !IsBlank(RelatedDepositRecounting) 
                                 ), 'Created On', SortOrder.Descending),
                                 "Sin motivo",
                                 Sort(Filter(
@@ -481,8 +481,7 @@ scrManual As screen:
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
                                     && AccountNumber <> Blank()
-                                    && (BACLocalCheckAmount = 0 || BACLocalCheckAmount  = Blank())
-                                    && (OtherLocalCheckAmount = 0 || OtherLocalCheckAmount = Blank())
+                                    && IsBlank(RelatedDepositRecounting)
                                 ), 'Created On', SortOrder.Descending),
                                 Sort(Filter(
                                     'CH-Tbl-Transactions',
@@ -492,6 +491,28 @@ scrManual As screen:
                                     && Cajero.User = gvarCajeroMan.cajero
                                 ), 'Created On', SortOrder.Descending)
                             ),
+                            If(
+                                ctxOrdenMan = "Motivo" && ctxMotivoMan = "Todos",
+                                Sort(
+                                    Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                ),
+                                    Switch(
+                                        true,
+                                        MotivoRechazoCore <> Blank(), 6,
+                                        TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Faltante, 5,
+                                        TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Sobrante, 4,
+                                        TransactionType = 'TransactionType (CH-Tbl-Transactions)'.'Sin declaracion', 3,
+                                        AccountNumber = Blank(), 2,
+                                        !IsBlank(RelatedDepositRecounting), 1,
+                                        0
+                                    ),
+                                    SortOrder.Descending
+                                ),
                                 Switch(
                                 ctxMotivoMan,
                                 "Rechazo core",
@@ -556,7 +577,7 @@ scrManual As screen:
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
                                     && AccountNumber <> Blank()
-                                    && (BACLocalCheckAmount > 0 || OtherLocalCheckAmount > 0)
+                                    && !IsBlank(RelatedDepositRecounting)
                                 ), 'Created On', SortOrder.Ascending),
                                 "Sin motivo",
                                 Sort(Filter(
@@ -569,7 +590,7 @@ scrManual As screen:
                                     && (TransactionType = 'TransactionType (CH-Tbl-Transactions)'.Deposito
                                         || TransactionType = Blank())
                                     && AccountNumber <> Blank()
-                                    && (BACLocalCheckAmount > 0 || OtherLocalCheckAmount > 0)
+                                    && !IsBlank(RelatedDepositRecounting)
                                 ), 'Created On', SortOrder.Ascending),
                                 Sort(Filter(
                                     'CH-Tbl-Transactions',
@@ -579,7 +600,7 @@ scrManual As screen:
                                     && Cajero.User = gvarCajeroMan.cajero
                                 ), 'Created On', SortOrder.Ascending)
                             )
-                            
+                            )
                         )
                     Layout: =Layout.Vertical
                     LoadingSpinner: =LoadingSpinner.Data

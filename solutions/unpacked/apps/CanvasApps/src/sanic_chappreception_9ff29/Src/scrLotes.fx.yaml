@@ -2540,8 +2540,7 @@ scrLotes As screen:
                                 'CH-Tbl-Bags',
                                 ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
                                 && BagID = Trim(inpTulaEditarLot.Text)
-                                && 'CH-Tbl-Bags' <> ctxTulaSelLot.'CH-Tbl-Bags'
-                            ).'CH-Tbl-Bags'
+                            )
                         ),
                         Notify("La tula " & Trim(inpTulaEditarLot.Text) & " ya existe en este lote.", NotificationType.Error),
                         UpdateContext({ctxDlgEditarTulaLot: false});
@@ -3972,15 +3971,7 @@ scrLotes As screen:
             Height: =26
             HoverFill: =ThemeSurface2
             OnSelect: |-
-                =If(
-                    !IsBlank(
-                        LookUp(
-                            'CH-Tbl-Bags',
-                            ReceptionBatchId.'CH-Tbl-ReceptionBatch' = galPlanillasLot.Selected.ReceptionBatch.'CH-Tbl-ReceptionBatch'
-                            && BagID = Trim(inpTulaAgregarLot.Text)
-                        ).'CH-Tbl-Bags'
-                    ),
-                    Notify("La tula " & Trim(inpTulaAgregarLot.Text) & " ya existe en este lote.", NotificationType.Error),UpdateContext({ctxDlgEditarTulaLot: true}); Reset(inpTulaEditarLot))
+                =UpdateContext({ctxDlgEditarTulaLot: true}); Reset(inpTulaEditarLot)
             PaddingBottom: =0
             PaddingLeft: =0
             PaddingRight: =0

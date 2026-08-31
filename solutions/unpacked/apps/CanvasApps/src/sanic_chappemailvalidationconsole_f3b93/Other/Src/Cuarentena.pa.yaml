@@ -1,0 +1,473 @@
+# ************************************************************************************************
+# Warning: YAML source code for Canvas Apps should only be used to review changes made within Power Apps Studio and for minor edits (Preview).
+# Use the maker portal to create and edit your Power Apps.
+# 
+# The schema file for Canvas Apps is available at https://go.microsoft.com/fwlink/?linkid=2304907
+# 
+# For more information, visit https://go.microsoft.com/fwlink/?linkid=2292623
+# ************************************************************************************************
+Screens:
+  Cuarentena:
+    Properties:
+      OnVisible: |-
+        =UpdateContext({varFiltroCua: "TODOS"});
+        Refresh('CH-Tbl-Received Emails');
+        // ESTA PANTALLA EXISTE PORQUE OMITIR NO ES BORRAR. Un correo que se deja sin
+        // responder desaparecia de las cinco vistas de la cola y no habia forma de
+        // buscarlo: quedaban 25 correos afuera, sin puerta de vuelta. Aca se ven, se
+        // buscan y se devuelven a la cola.
+        UpdateContext(
+            {
+                varTotalCua: CountRows(
+                    Filter('CH-Tbl-Received Emails',
+                        EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido))
+            }
+        );
+    Children:
+      - CuaRoot:
+          Control: GroupContainer@1.5.0
+          Variant: AutoLayout
+          Properties:
+            Fill: =RGBA(245, 245, 245, 1)
+            Height: =Parent.Height
+            LayoutAlignItems: =LayoutAlignItems.Stretch
+            LayoutDirection: =LayoutDirection.Vertical
+            LayoutGap: =16
+            PaddingBottom: =16
+            PaddingLeft: =16
+            PaddingRight: =16
+            PaddingTop: =16
+            Width: =Parent.Width - Self.X
+          Children:
+            - CuaEncabezado:
+                Control: GroupContainer@1.5.0
+                Variant: ManualLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  Fill: =RGBA(255, 255, 255, 1)
+                  FillPortions: =0
+                  Height: =60
+                  LayoutMinHeight: =60
+                  LayoutMinWidth: =32
+                  RadiusBottomLeft: =6
+                  RadiusBottomRight: =6
+                  RadiusTopLeft: =6
+                  RadiusTopRight: =6
+                Children:
+                  - htmlCuaTitulo:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                        Height: =Parent.Height - 10
+                        HtmlText: |-
+                          ="<div style='font-size:14px;font-weight:600;color:rgb(28,21,23)'>Cuarentena</div>" &
+                           "<div style='font-size:11.5px;color:rgb(120,106,109)'>" &
+                           varTotalCua & " correo(s) que se dejaron sin responder. Omitir no es borrar: desde aca se devuelven a la cola.</div>"
+                        Size: =11
+                        Width: =Parent.Width - 240
+                        X: =16
+                        Y: =10
+                  - btnCuaVolver:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        Height: =34
+                        OnSelect: =Navigate('screen ColaDeProcesamiento', ScreenTransition.None)
+                        Text: ="Volver a la cola"
+                        Width: =160
+                        X: =Parent.Width - 216
+                        Y: =13
+                  - btnCuaRefrescar:
+                      Control: Classic/Icon@2.5.0
+                      Properties:
+                        BorderColor: =RGBA(0, 0, 0, 1)
+                        Color: =RGBA(97, 97, 97, 1)
+                        DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                        DisabledColor: =RGBA(119, 119, 119, 1)
+                        Height: =24
+                        Icon: =Icon.Reload
+                        OnSelect: |-
+                          =Refresh('CH-Tbl-Received Emails');
+                          UpdateContext(
+                              {
+                                  varTotalCua: CountRows(
+                                      Filter('CH-Tbl-Received Emails',
+                                          EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido))
+                              }
+                          );
+                          Notify("Cuarentena actualizada.", NotificationType.Success);
+                        Tooltip: ="Actualizar la lista"
+                        Width: =24
+                        X: =Parent.Width - 44
+                        Y: =18
+            - CuaFiltros:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  Fill: =RGBA(245, 245, 245, 1)
+                  FillPortions: =0
+                  Height: =44
+                  LayoutAlignItems: =LayoutAlignItems.Center
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  PaddingRight: =5
+                Children:
+                  - SearchCua:
+                      Control: TextInput@0.0.54
+                      Properties:
+                        BorderColor: =RGBA(214, 221, 224, 1)
+                        BorderStyle: =BorderStyle.Solid
+                        BorderThickness: =1
+                        Fill: =RGBA(255, 255, 255, 1)
+                        FillPortions: =1
+                        Height: =44
+                        Placeholder: ="Buscar por asunto o remitente"
+                        TriggerOutput: ="Delayed"
+                  - btnCuaTodos:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: =If(varFiltroCua = "TODOS", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =110
+                        OnSelect: |-
+                          =UpdateContext({varFiltroCua: "TODOS"})
+                        Text: ="Todos (" & varTotalCua & ")"
+                        Width: =140
+                  - btnCuaDenegado:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: =If(varFiltroCua = "DENEGADO", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =110
+                        OnSelect: |-
+                          =UpdateContext({varFiltroCua: "DENEGADO"})
+                        Text: ="Denegados"
+                        Width: =140
+                  - btnCuaRevision:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: =If(varFiltroCua = "REVISION", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =110
+                        OnSelect: |-
+                          =UpdateContext({varFiltroCua: "REVISION"})
+                        Text: ="Revision manual"
+                        Width: =160
+                  - btnCuaError:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: =If(varFiltroCua = "ERROR", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =110
+                        OnSelect: |-
+                          =UpdateContext({varFiltroCua: "ERROR"})
+                        Text: ="Con error"
+                        Width: =140
+            - CuaCuerpo:
+                Control: GroupContainer@1.5.0
+                Variant: AutoLayout
+                Properties:
+                  DropShadow: =DropShadow.None
+                  Fill: =RGBA(245, 245, 245, 1)
+                  LayoutAlignItems: =LayoutAlignItems.Stretch
+                  LayoutDirection: =LayoutDirection.Horizontal
+                  LayoutGap: =16
+                  PaddingBottom: =2
+                  PaddingLeft: =2
+                  PaddingRight: =2
+                  PaddingTop: =2
+                Children:
+                  - galCuarentena:
+                      Control: Gallery@2.15.0
+                      Variant: Vertical
+                      Properties:
+                        FillPortions: =3
+                        Items: |-
+                          =// LA CUARENTENA ES UNA SOLA COSA: EmailReplyStatus = Omitido. Los chips
+                          // reparten por el MOTIVO de revision, que es lo que cambia entre un
+                          // correo y otro. Cada rama es un Filter completo, no un Switch adentro
+                          // del Filter, porque de esa forma cada rama delega por su cuenta.
+                          Search(
+                              Switch(
+                                  varFiltroCua,
+                                  "DENEGADO",
+                                  Sort(Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido && EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Denegado), 'Created On', SortOrder.Descending),
+                                  "REVISION",
+                                  Sort(Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido && EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'), 'Created On', SortOrder.Descending),
+                                  "ERROR",
+                                  Sort(Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido && EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error), 'Created On', SortOrder.Descending),
+                                  Sort(Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido), 'Created On', SortOrder.Descending)
+                              ),
+                              SearchCua.Value,
+                              Subject,
+                              SourceEmailAddress
+                          )
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =260
+                        TemplatePadding: =0
+                        TemplateSize: =84
+                      Children:
+                        - recCuaFondo:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 255, 1)
+                              Fill: =If(ThisItem.IsSelected, Color.White, Color.Transparent)
+                              Height: =Parent.TemplateHeight
+                              OnSelect: =Select(Parent)
+                              Width: =Parent.TemplateWidth
+                        - recCuaFranja:
+                            Control: Rectangle@2.3.0
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 255, 1)
+                              Fill: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, RGBA(110, 22, 34, 1), RGBA(138, 128, 130, 1))
+                              Height: =Parent.TemplateHeight
+                              OnSelect: =Select(Parent)
+                              Width: =3
+                        - lblCuaAsunto:
+                            Control: Label@2.5.1
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =RGBA(28, 21, 23, 1)
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingLeft: =0
+                              Size: =11
+                              Text: =Coalesce(ThisItem.Subject, "(sin asunto)")
+                              Width: =Parent.TemplateWidth - 112
+                              X: =16
+                              Y: =11
+                        - lblCuaCuando:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Right
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =RGBA(120, 106, 109, 1)
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              Height: =18
+                              OnSelect: =Select(Parent)
+                              Size: =9
+                              Text: =Text(ThisItem.ReceptionDateTime, "dd/mm hh:mm")
+                              Width: =92
+                              X: =Parent.TemplateWidth - 104
+                              Y: =12
+                        - lblCuaRemitente:
+                            Control: Label@2.5.1
+                            Properties:
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =RGBA(120, 106, 109, 1)
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Font: =Font.'Open Sans'
+                              Height: =18
+                              OnSelect: =Select(Parent)
+                              PaddingLeft: =0
+                              Size: =10
+                              Text: =ThisItem.SourceEmailAddress
+                              Width: =Parent.TemplateWidth - 30
+                              X: =16
+                              Y: =31
+                        - lblCuaChip:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, RGBA(110, 22, 34, 1), RGBA(70, 59, 62, 1))
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Fill: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error, RGBA(246, 233, 235, 1), RGBA(240, 240, 240, 1))
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              Size: =8
+                              Text: =Coalesce(Text(ThisItem.EmailReviewStatus), "Sin revisar")
+                              Width: =152
+                              X: =16
+                              Y: =54
+                  - CuaDetalle:
+                      Control: GroupContainer@1.5.0
+                      Variant: AutoLayout
+                      Properties:
+                        Fill: =RGBA(255, 255, 255, 1)
+                        FillPortions: =5
+                        LayoutDirection: =LayoutDirection.Horizontal
+                        LayoutGap: =16
+                        LayoutMinHeight: =16
+                        LayoutMinWidth: =420
+                        LayoutOverflowY: =LayoutOverflow.Scroll
+                        LayoutWrap: =true
+                        PaddingBottom: =24
+                        PaddingLeft: =24
+                        PaddingRight: =24
+                        PaddingTop: =18
+                        Visible: =And(!IsBlank(galCuarentena.Selected), galCuarentena.AllItemsCount > 0)
+                      Children:
+                        - htmlCuaCabecera:
+                            Control: HtmlViewer@2.1.0
+                            Properties:
+                              AutoHeight: =true
+                              DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                              Height: =58
+                              HtmlText: |-
+                                ="<table width='100%' cellpadding='0' cellspacing='0' style='color:rgb(28,21,23);border-bottom:1px solid rgb(230,223,224);padding-bottom:10px'><tr>" &
+                                 "<td width='1%' nowrap style='font-size:19px;font-weight:650;color:rgb(28,21,23)'>" & Substitute(Substitute(Coalesce(galCuarentena.Selected.Name, ""), "&", "&amp;"), "<", "&lt;") & "</td>" &
+                                 "<td width='1%' nowrap style='font-size:13.5px;color:rgb(70,59,62);padding-left:14px'>" & Substitute(Substitute(Coalesce(galCuarentena.Selected.SourceEmailAddress, ""), "&", "&amp;"), "<", "&lt;") & "</td>" &
+                                 "<td width='1%' nowrap style='padding-left:14px'><span style='font-size:11px;font-weight:650;padding:3px 9px;border-radius:11px;background:rgb(240,240,240);color:rgb(70,59,62)'>" &
+                                 Coalesce(Text(galCuarentena.Selected.EmailReviewStatus), "Sin revisar") & "</span></td>" &
+                                 "<td align='right' style='font-size:11.5px;color:rgb(120,106,109)'>Recibido " &
+                                 Text(galCuarentena.Selected.ReceptionDateTime, "dd/mm/yyyy hh:mm") & "</td></tr></table>"
+                              Size: =11
+                              Width: =Parent.Width - 48
+                        - htmlCuaPorQue:
+                            Control: HtmlViewer@2.1.0
+                            Properties:
+                              AutoHeight: =true
+                              DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                              Height: =128
+                              HtmlText: |-
+                                =// QUIEN Y CUANDO LO OMITIO. Los 25 correos que ya estaban en cuarentena
+                                // se omitieron sin dejar rastro, asi que el cartel tiene que decir
+                                // explicitamente que no se sabe, en vez de mostrar un espacio vacio que
+                                // se lee como "no paso nada".
+                                "<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Por que quedo afuera</p>" &
+                                "<div style='font-size:13.5px;line-height:1.5;background:rgb(250,248,248);border:1px solid rgb(230,223,224);padding:14px 16px;color:rgb(70,59,62);margin:0;border-left:3px solid rgb(138,128,130)'>" &
+                                Substitute(Substitute(Coalesce(galCuarentena.Selected.TriageNotes, galCuarentena.Selected.ErrorText, "Este correo no dejo explicacion del motor."), "&", "&amp;"), "<", "&lt;") &
+                                "<div style='font-size:11.5px;color:rgb(120,106,109);margin-top:10px'>" &
+                                If(
+                                    IsBlank(galCuarentena.Selected.ReplyDateTime),
+                                    "No quedo registrado quien lo omitio ni cuando: se omitio antes de que la consola guardara ese dato.",
+                                    "Omitido por " & Coalesce(galCuarentena.Selected.RepliedBy, "usuario no registrado") & " el " & Text(galCuarentena.Selected.ReplyDateTime, "dd/mm/yyyy hh:mm")
+                                ) &
+                                "</div></div>"
+                              Size: =11
+                              Width: =Parent.Width - 48
+                        - CuaBotones:
+                            Control: GroupContainer@1.5.0
+                            Variant: AutoLayout
+                            Properties:
+                              AlignInContainer: =AlignInContainer.SetByContainer
+                              DropShadow: =DropShadow.None
+                              Height: =56
+                              LayoutAlignItems: =LayoutAlignItems.Center
+                              LayoutDirection: =LayoutDirection.Horizontal
+                              LayoutGap: =10
+                              LayoutMinHeight: =32
+                              LayoutMinWidth: =Parent.Width - 48
+                              LayoutOverflowX: =LayoutOverflow.Scroll
+                              RadiusBottomLeft: =0
+                              RadiusBottomRight: =0
+                              RadiusTopLeft: =0
+                              RadiusTopRight: =0
+                              Width: =Parent.Width - 48
+                            Children:
+                              - btnCuaDevolver:
+                                  Control: Button@0.0.45
+                                  Properties:
+                                    Appearance: ='ButtonCanvas.Appearance'.Primary
+                                    Height: =36
+                                    LayoutMinHeight: =0
+                                    LayoutMinWidth: =0
+                                    OnSelect: |-
+                                      =// DEVOLVER ES DESHACER LA OMISION Y PEDIR REVALIDACION. Se limpian las
+                                      // tres marcas juntas: si solo se soltara la respuesta, el correo
+                                      // volveria a la cola con el mismo veredicto viejo y nadie sabria por
+                                      // que sigue ahi.
+                                      With(
+                                          {ges: galCuarentena.Selected.Name},
+                                          Patch(
+                                              'CH-Tbl-Received Emails',
+                                              galCuarentena.Selected,
+                                              {
+                                                  EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente,
+                                                  ValidationStatus: 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente,
+                                                  EmailReviewStatus: 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente
+                                              }
+                                          );
+                                          Refresh('CH-Tbl-Received Emails');
+                                          UpdateContext(
+                                              {
+                                                  varTotalCua: CountRows(
+                                                      Filter('CH-Tbl-Received Emails',
+                                                          EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido))
+                                              }
+                                          );
+                                          Notify(ges & " volvio a la cola. El barrido lo revalida en su proxima corrida, dentro de 10 minutos como maximo.", NotificationType.Success)
+                                      );
+                                    Text: ="Devolver a la cola"
+                                    Width: =200
+                              - btnCuaAdjunto:
+                                  Control: Button@0.0.45
+                                  Properties:
+                                    Appearance: ='ButtonCanvas.Appearance'.Secondary
+                                    DisplayMode: =If(IsBlank(LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galCuarentena.Selected.'CH-Tbl-Received Emails')), DisplayMode.Disabled, DisplayMode.Edit)
+                                    Height: =36
+                                    LayoutMinHeight: =0
+                                    LayoutMinWidth: =0
+                                    OnSelect: |-
+                                      =With(
+                                          {a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galCuarentena.Selected.'CH-Tbl-Received Emails')},
+                                          If(
+                                              IsBlank(a),
+                                              Notify("Este correo no tiene adjunto guardado.", NotificationType.Warning),
+                                              Download(a.FileContent.Value)
+                                          )
+                                      );
+                                    Text: |-
+                                      ="Ver el archivo adjunto" & With({a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galCuarentena.Selected.'CH-Tbl-Received Emails')}, If(IsBlank(a), "", " (" & a.Filename & ")"))
+                                    Width: =260
+                        - htmlCuaTecnico:
+                            Control: HtmlViewer@2.1.0
+                            Properties:
+                              AutoHeight: =true
+                              DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                              Height: =150
+                              HtmlText: |-
+                                ="<p style='font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109);font-weight:700;margin:0 0 10px 0'>Detalle tecnico</p>" &
+                                 "<table cellpadding='0' cellspacing='0' style='font-size:12.5px'>" &
+                                 Concat(
+                                     Table(
+                                         {k: "Clasificacion del remitente", v: Coalesce(Text(galCuarentena.Selected.SenderClassification), "sin clasificar")},
+                                         {k: "Cliente atribuido", v: Coalesce(galCuarentena.Selected.'Cliente atribuido'.Name, "ninguno")},
+                                         {k: "CIF declarado", v: Coalesce(galCuarentena.Selected.DeclaredCif, "ninguno")},
+                                         {k: "Codigo de error", v: Coalesce(galCuarentena.Selected.ErrorCode, "-")},
+                                         {k: "Mensaje del motor", v: Coalesce(galCuarentena.Selected.ErrorText, "sin mensaje")},
+                                         {k: "Estado de validacion", v: Coalesce(Text(galCuarentena.Selected.ValidationStatus), "-")},
+                                         {k: "Numero de gestion", v: Coalesce(galCuarentena.Selected.Name, "-")}
+                                     ),
+                                     "<tr><td valign='top' style='color:rgb(120,106,109);padding:0 20px 7px 0;white-space:nowrap'>" & k &
+                                     "</td><td valign='top' style='color:rgb(28,21,23);padding:0 0 7px 0'>" &
+                                     Substitute(Substitute(v, "&", "&amp;"), "<", "&lt;") & "</td></tr>"
+                                 ) & "</table>"
+                              Size: =11
+                              Width: =Parent.Width - 48
+                  - htmlCuaVacio:
+                      Control: HtmlViewer@2.1.0
+                      Properties:
+                        AlignInContainer: =AlignInContainer.Stretch
+                        DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                        FillPortions: =8
+                        Height: =300
+                        HtmlText: |-
+                          =With(
+                              {buscando: Len(Trim(SearchCua.Value)) > 0},
+                              "<div style='text-align:center;padding-top:90px'>" &
+                              "<div style='display:inline-block;width:52px;height:52px;line-height:52px;border-radius:26px;background:rgb(240,240,240);color:rgb(120,106,109);font-size:24px;font-weight:700'>" &
+                              If(buscando, "?", "&check;") & "</div>" &
+                              "<div style='font-size:19px;font-weight:650;color:rgb(28,21,23);margin-top:14px'>" &
+                              If(buscando, "Sin resultados", "Cuarentena vacia") & "</div>" &
+                              "<div style='font-size:13.5px;color:rgb(120,106,109);margin-top:6px'>" &
+                              If(
+                                  buscando,
+                                  "Ningun correo omitido coincide con la busqueda.",
+                                  varFiltroCua = "TODOS",
+                                  "No hay correos omitidos. Todo lo que llego sigue en la cola o ya se respondio.",
+                                  "No hay correos omitidos con ese motivo."
+                              ) &
+                              "</div></div>"
+                          )
+                        Size: =11
+                        Visible: =galCuarentena.AllItemsCount = 0

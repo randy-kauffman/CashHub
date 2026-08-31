@@ -498,6 +498,43 @@ scrCheques As screen:
                 Y: =10
                 ZIndex: =2
 
+            btnReenviarChq As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                DisplayMode: |-
+                    =If(CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido')) = 0,
+                        DisplayMode.Disabled,
+                        DisplayMode.Edit)
+                Fill: =ThemeSurface2
+                Font: =Font.'Segoe UI'
+                FontWeight: =FontWeight.Semibold
+                Height: =34
+                HoverBorderColor: =ThemeLine
+                HoverColor: =ThemeInk2
+                HoverFill: =ThemeSunk
+                OnSelect: |-
+                    =UpdateContext({ctxConfirmReenvChq: true})
+                PressedBorderColor: =ThemeLine
+                PressedColor: =ThemeInk2
+                PressedFill: =ThemeSunk
+                RadiusBottomLeft: =8
+                RadiusBottomRight: =8
+                RadiusTopLeft: =8
+                RadiusTopRight: =8
+                Size: =9.5
+                Text: |-
+                    =If(scrCheques.Width >= 1100,
+                        "↩  Reenviar " & CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido')) & " no recibidos",
+                        "↩  " & CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido')))
+                Width: =If(scrCheques.Width >= 1100, 216, 150)
+                X: =cardChequesChq.Width - 16 - If(scrCheques.Width >= 1100, 224, 160) - 8 - Self.Width
+                Y: =8
+                ZIndex: =8
+
             btnSelTodosChq As button:
                 BorderColor: =ThemeLine
                 BorderThickness: =1
@@ -584,43 +621,6 @@ scrCheques As screen:
                 X: =220 + If(pilSelCountChq.Visible, pilSelCountChq.Width + 10, 0)
                 Y: =7
                 ZIndex: =9
-
-            btnReenviarChq As button:
-                BorderColor: =ThemeLine
-                BorderThickness: =1
-                Color: =ThemeInk2
-                DisabledBorderColor: =RGBA(244, 244, 244, 1)
-                DisabledColor: =RGBA(166, 166, 166, 1)
-                DisabledFill: =RGBA(244, 244, 244, 1)
-                DisplayMode: |-
-                    =If(CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido')) = 0,
-                        DisplayMode.Disabled,
-                        DisplayMode.Edit)
-                Fill: =ThemeSurface2
-                Font: =Font.'Segoe UI'
-                FontWeight: =FontWeight.Semibold
-                Height: =34
-                HoverBorderColor: =ThemeLine
-                HoverColor: =ThemeInk2
-                HoverFill: =ThemeSunk
-                OnSelect: |-
-                    =UpdateContext({ctxConfirmReenvChq: true})
-                PressedBorderColor: =ThemeLine
-                PressedColor: =ThemeInk2
-                PressedFill: =ThemeSunk
-                RadiusBottomLeft: =8
-                RadiusBottomRight: =8
-                RadiusTopLeft: =8
-                RadiusTopRight: =8
-                Size: =9.5
-                Text: |-
-                    =If(scrCheques.Width >= 1100,
-                        "↩  Reenviar " & CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido')) & " no recibidos",
-                        "↩  " & CountRows(Filter(colChequesChq, CheckStatus = 'CheckStatus (CH-Tbl-Checks)'.'No Recibido')))
-                Width: =If(scrCheques.Width >= 1100, 216, 150)
-                X: =cardChequesChq.Width - 16 - If(scrCheques.Width >= 1100, 224, 160) - 8 - Self.Width
-                Y: =8
-                ZIndex: =8
 
             btnEnviarChq As button:
                 BorderColor: =App.Theme.Colors.Primary

@@ -1,4 +1,4 @@
-Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
+"Cuarentena As screen.'autoLayout_Sidebar_ver1.0'":
     Fill: =Color.White
     LoadingSpinnerColor: =App.Theme.Colors.Primary
     OnVisible: |-
@@ -39,6 +39,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
             Fill: =RGBA(255, 255, 255, 1)
             FillPortions: =0
             Height: =60
+            LayoutMaxHeight: =0
+            LayoutMaxWidth: =0
             LayoutMinHeight: =60
             RadiusBottomLeft: =6
             RadiusBottomRight: =6
@@ -65,8 +67,7 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                 DisplayMode: =DisplayMode.Edit
                 FontColor: =
                 Height: =34
-                OnSelect: |-
-                    =Navigate('screen ColaDeProcesamiento', ScreenTransition.None)
+                OnSelect: =Navigate('screen ColaDeProcesamiento', ScreenTransition.None)
                 Text: ="Volver a la cola"
                 Tooltip: ="Vuelve a la cola de procesamiento."
                 Width: =160
@@ -99,6 +100,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
             FillPortions: =0
             Height: =44
             LayoutAlignItems: =LayoutAlignItems.Center
+            LayoutMaxHeight: =0
+            LayoutMaxWidth: =0
             LayoutMinHeight: =100
             LayoutMinWidth: =250
             LayoutMode: =LayoutMode.Auto
@@ -129,6 +132,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                 FontUnderline: =false
                 FontWeight: =""
                 Height: =44
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
                 LayoutMinHeight: =32
                 LayoutMinWidth: =320
                 MaxLength: =-1
@@ -155,6 +160,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                 DisplayMode: =DisplayMode.Edit
                 FontColor: =
                 Height: =32
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
                 LayoutMinWidth: =110
                 OnSelect: |-
                     =UpdateContext({varFiltroCua: "TODOS"})
@@ -172,6 +179,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                 DisplayMode: =DisplayMode.Edit
                 FontColor: =
                 Height: =32
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
                 LayoutMinWidth: =110
                 OnSelect: |-
                     =UpdateContext({varFiltroCua: "DENEGADO"})
@@ -189,6 +198,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                 DisplayMode: =DisplayMode.Edit
                 FontColor: =
                 Height: =32
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
                 LayoutMinWidth: =110
                 OnSelect: |-
                     =UpdateContext({varFiltroCua: "REVISION"})
@@ -206,6 +217,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                 DisplayMode: =DisplayMode.Edit
                 FontColor: =
                 Height: =32
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
                 LayoutMinWidth: =110
                 OnSelect: |-
                     =UpdateContext({varFiltroCua: "ERROR"})
@@ -220,6 +233,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
             Fill: =RGBA(245, 245, 245, 1)
             LayoutAlignItems: =LayoutAlignItems.Stretch
             LayoutGap: =16
+            LayoutMaxHeight: =0
+            LayoutMaxWidth: =0
             LayoutMinHeight: =100
             LayoutMinWidth: =250
             LayoutMode: =LayoutMode.Auto
@@ -258,6 +273,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                         SourceEmailAddress
                     )
                 Layout: =Layout.Vertical
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
                 LayoutMinHeight: =16
                 LayoutMinWidth: =260
                 LoadingSpinner: =LoadingSpinner.Data
@@ -298,7 +315,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                     Height: =18
                     OnSelect: =Select(Parent)
                     Size: =9
-                    Text: =Text(ThisItem.ReceptionDateTime, "dd/mm hh:mm")
+                    Text: |-
+                        =Text(ThisItem.ReceptionDateTime, "dd/mm hh:mm")
                     Width: =92
                     X: =Parent.TemplateWidth - 104
                     Y: =12
@@ -337,6 +355,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                 Fill: =RGBA(255, 255, 255, 1)
                 FillPortions: =5
                 LayoutGap: =16
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
                 LayoutMinHeight: =16
                 LayoutMinWidth: =420
                 LayoutMode: =LayoutMode.Auto
@@ -365,6 +385,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                          Coalesce(Text(galCuarentena.Selected.EmailReviewStatus), "Sin revisar") & "</span></td>" &
                          "<td align='right' style='font-size:11.5px;color:rgb(120,106,109)'>Recibido " &
                          Text(galCuarentena.Selected.ReceptionDateTime, "dd/mm/yyyy hh:mm") & "</td></tr></table>"
+                    LayoutMaxHeight: =0
+                    LayoutMaxWidth: =0
                     Width: =Parent.Width - 48
                     ZIndex: =1
 
@@ -387,6 +409,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                             "Omitido por " & Coalesce(galCuarentena.Selected.RepliedBy, "usuario no registrado") & " el " & Text(galCuarentena.Selected.ReplyDateTime, "dd/mm/yyyy hh:mm")
                         ) &
                         "</div></div>"
+                    LayoutMaxHeight: =0
+                    LayoutMaxWidth: =0
                     Width: =Parent.Width - 48
                     ZIndex: =2
 
@@ -395,6 +419,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                     Height: =56
                     LayoutAlignItems: =LayoutAlignItems.Center
                     LayoutGap: =10
+                    LayoutMaxHeight: =0
+                    LayoutMaxWidth: =0
                     LayoutMinWidth: =Parent.Width - 48
                     LayoutMode: =LayoutMode.Auto
                     LayoutOverflowX: =LayoutOverflow.Scroll
@@ -408,6 +434,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                         DisplayMode: =DisplayMode.Edit
                         FontColor: =
                         Height: =36
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
                         OnSelect: |-
                             =// DEVOLVER ES DESHACER LA OMISION Y PEDIR REVALIDACION. Se limpian las
                             // tres marcas juntas: si solo se soltara la respuesta, el correo
@@ -448,6 +476,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                         DisplayMode: =If(IsBlank(LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galCuarentena.Selected.'CH-Tbl-Received Emails')), DisplayMode.Disabled, DisplayMode.Edit)
                         FontColor: =
                         Height: =36
+                        LayoutMaxHeight: =0
+                        LayoutMaxWidth: =0
                         OnSelect: |-
                             =With(
                                 {a: LookUp('CH-Tbl-EmailsAttachments', Email.'CH-Tbl-Received Emails' = galCuarentena.Selected.'CH-Tbl-Received Emails')},
@@ -486,6 +516,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                              "</td><td valign='top' style='color:rgb(28,21,23);padding:0 0 7px 0'>" &
                              Substitute(Substitute(v, "&", "&amp;"), "<", "&lt;") & "</td></tr>"
                          ) & "</table>"
+                    LayoutMaxHeight: =0
+                    LayoutMaxWidth: =0
                     Width: =Parent.Width - 48
                     ZIndex: =4
 
@@ -512,5 +544,8 @@ Cuarentena As screen.'autoLayout_Sidebar_ver1.0':
                         ) &
                         "</div></div>"
                     )
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
                 Visible: =galCuarentena.AllItemsCount = 0
                 ZIndex: =3
+

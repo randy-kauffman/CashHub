@@ -104,8 +104,7 @@
                 DisplayMode: =DisplayMode.Edit
                 FontColor: =
                 Height: =34
-                OnSelect: |-
-                    =Navigate(Cuarentena, ScreenTransition.None)
+                OnSelect: =Navigate(Cuarentena, ScreenTransition.None)
                 Text: ="Cuarentena (" & varOmitidos & ")"
                 Tooltip: ="Los correos que se dejaron sin responder. Se pueden buscar y devolver a la cola."
                 Width: =170
@@ -218,6 +217,25 @@
                 Y: =0
                 ZIndex: =1
 
+            btnVistaPendiente As Button:
+                Appearance: =If(varVista = "SINVALIDAR", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                BasePaletteColor: =
+                BorderColor: =
+                DisplayMode: =DisplayMode.Edit
+                FontColor: =
+                Height: =32
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                LayoutMinWidth: =110
+                OnSelect: |-
+                    =UpdateContext({varVista: "SINVALIDAR"})
+                Text: ="Sin validar (" & varPendientes & ")"
+                Tooltip: ="Llegaron pero el motor todavia no los evaluo. Si se quedan aca, el barrido no los esta tomando."
+                Width: =150
+                X: =0
+                Y: =0
+                ZIndex: =1
+
             btnVistaTodo As Button:
                 Appearance: =If(varVista = "TODO", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
                 BasePaletteColor: =
@@ -270,25 +288,6 @@
                     =UpdateContext({varVista: "SOSPECHOSO"})
                 Text: ="Sospechosos (" & varSospechosos & ")"
                 Tooltip: ="Alguien uso nuestra plantilla oficial con un CIF que no existe. Revisar antes de descartar."
-                Width: =150
-                X: =0
-                Y: =0
-                ZIndex: =1
-
-            btnVistaPendiente As Button:
-                Appearance: =If(varVista = "SINVALIDAR", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
-                BasePaletteColor: =
-                BorderColor: =
-                DisplayMode: =DisplayMode.Edit
-                FontColor: =
-                Height: =32
-                LayoutMaxHeight: =0
-                LayoutMaxWidth: =0
-                LayoutMinWidth: =110
-                OnSelect: |-
-                    =UpdateContext({varVista: "SINVALIDAR"})
-                Text: ="Sin validar (" & varPendientes & ")"
-                Tooltip: ="Llegaron pero el motor todavia no los evaluo. Si se quedan aca, el barrido no los esta tomando."
                 Width: =150
                 X: =0
                 Y: =0
@@ -498,7 +497,8 @@
                             }
                         );
                     Size: =9
-                    Text: =Text(ThisItem.ReceptionDateTime, "dd/mm hh:mm")
+                    Text: |-
+                        =Text(ThisItem.ReceptionDateTime, "dd/mm hh:mm")
                     Width: =92
                     X: =Parent.TemplateWidth - 104
                     Y: =12
@@ -577,7 +577,6 @@
                         // que tambien marca los correos nuevos que el barrido todavia no evaluo.
                         ThisItem.ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
                             && ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente
-                    Width: =150
                     X: =174
                     Y: =54
                     ZIndex: =7
@@ -708,7 +707,7 @@
                         OnSelect: |-
                             =With(
                                 {
-                                    destino: LookUp('CH-Tbl-Parameters', Key = "Email.Banca.Mailbox" && 'Is Active' = true, Value),
+                                    destino: LookUp('CH-Tbl-Parameters', Key = "Email.Banca.Mailbox"  && 'Is Active' = true, Value),
                                     urlAdmin: LookUp('CH-Tbl-Parameters', Key = "Apps.ClientAdministration.Url" && 'Is Active' = true, Value),
                                     cli: galBandeja.Selected.'Cliente atribuido',
                                     dir: galBandeja.Selected.SourceEmailAddress,
@@ -716,7 +715,7 @@
                                 },
                                 If(
                                     IsBlank(destino),
-                                    Notify("Falta configurar el parametro Email.Banca.Mailbox en CH-App-Configuration: no se sabe a que buzon avisarle a Banca de Empresas.", NotificationType.Error),
+                                    Notify("Falta configurar CH-EV-BancaMailbox: no se sabe a que buzon avisarle a Banca de Empresas.", NotificationType.Error),
                                     Office365Outlook.SendEmailV2(
                                         destino,
                                         If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso,
@@ -1019,3 +1018,4 @@
                 LayoutMaxWidth: =0
                 Visible: =galBandeja.AllItemsCount = 0
                 ZIndex: =3
+

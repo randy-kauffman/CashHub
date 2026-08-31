@@ -10,18 +10,21 @@
     <layoutxml>
       <grid name="resultset" jump="sanic_name" select="1" icon="1" preview="1">
         <row name="result" id="sanic_chtblappcatalogaccessid">
-          <cell name="sanic_name" width="300" />
-          <cell name="createdon" width="125" />
+          <cell name="sanic_appcatalog" width="240" />
+          <cell name="sanic_name" width="220" />
+          <cell name="sanic_aadgroupid" width="320" />
         </row>
       </grid>
     </layoutxml>
     <querytype>0</querytype>
     <fetchxml>
-      <fetch version="1.0" mapping="logical">
+      <fetch version="1.0" mapping="logical" output-format="xml-platform" distinct="false">
         <entity name="sanic_chtblappcatalogaccess">
           <attribute name="sanic_chtblappcatalogaccessid" />
+          <attribute name="sanic_appcatalog" />
           <attribute name="sanic_name" />
-          <attribute name="createdon" />
+          <attribute name="sanic_aadgroupid" />
+          <order attribute="sanic_appcatalog" descending="false" />
           <order attribute="sanic_name" descending="false" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="0" />

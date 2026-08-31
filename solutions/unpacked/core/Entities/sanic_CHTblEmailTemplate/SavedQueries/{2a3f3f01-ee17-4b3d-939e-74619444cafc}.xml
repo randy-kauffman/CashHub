@@ -10,18 +10,24 @@
     <layoutxml>
       <grid name="resultset" jump="sanic_name" select="1" icon="1" preview="1">
         <row name="result" id="sanic_chtblemailtemplateid">
-          <cell name="sanic_name" width="300" />
-          <cell name="createdon" width="125" />
+          <cell name="sanic_name" width="240" />
+          <cell name="sanic_subject" width="360" />
+          <cell name="sanic_isactive" width="90" />
+          <cell name="modifiedon" width="140" />
+          <cell name="modifiedby" width="180" />
         </row>
       </grid>
     </layoutxml>
     <querytype>0</querytype>
     <fetchxml>
-      <fetch version="1.0" mapping="logical">
+      <fetch version="1.0" mapping="logical" output-format="xml-platform" distinct="false">
         <entity name="sanic_chtblemailtemplate">
           <attribute name="sanic_chtblemailtemplateid" />
           <attribute name="sanic_name" />
-          <attribute name="createdon" />
+          <attribute name="sanic_subject" />
+          <attribute name="sanic_isactive" />
+          <attribute name="modifiedon" />
+          <attribute name="modifiedby" />
           <order attribute="sanic_name" descending="false" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="0" />

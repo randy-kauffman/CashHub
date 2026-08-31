@@ -10,18 +10,27 @@
     <layoutxml>
       <grid name="resultset" jump="sanic_name" select="1" icon="1" preview="1">
         <row name="result" id="sanic_chtblparameterid">
-          <cell name="sanic_name" width="300" />
-          <cell name="createdon" width="125" />
+          <cell name="sanic_name" width="260" />
+          <cell name="sanic_value" width="300" />
+          <cell name="sanic_category" width="120" />
+          <cell name="sanic_datatype" width="110" />
+          <cell name="sanic_isactive" width="90" />
+          <cell name="sanic_description" width="280" />
         </row>
       </grid>
     </layoutxml>
     <querytype>0</querytype>
     <fetchxml>
-      <fetch version="1.0" mapping="logical">
+      <fetch version="1.0" mapping="logical" output-format="xml-platform" distinct="false">
         <entity name="sanic_chtblparameter">
           <attribute name="sanic_chtblparameterid" />
           <attribute name="sanic_name" />
-          <attribute name="createdon" />
+          <attribute name="sanic_value" />
+          <attribute name="sanic_category" />
+          <attribute name="sanic_datatype" />
+          <attribute name="sanic_isactive" />
+          <attribute name="sanic_description" />
+          <order attribute="sanic_category" descending="false" />
           <order attribute="sanic_name" descending="false" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="0" />

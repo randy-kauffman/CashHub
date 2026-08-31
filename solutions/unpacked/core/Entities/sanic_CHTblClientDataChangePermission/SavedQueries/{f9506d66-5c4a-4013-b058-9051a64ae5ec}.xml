@@ -10,19 +10,24 @@
     <layoutxml>
       <grid name="resultset" jump="sanic_name" select="1" icon="1" preview="1">
         <row name="result" id="sanic_chtblclientdatachangepermissionid">
-          <cell name="sanic_name" width="300" />
-          <cell name="createdon" width="125" />
+          <cell name="sanic_name" width="200" />
+          <cell name="sanic_type" width="140" />
+          <cell name="sanic_aadgroupid" width="320" />
+          <cell name="sanic_teamsgroupid" width="320" />
         </row>
       </grid>
     </layoutxml>
     <querytype>0</querytype>
     <fetchxml>
-      <fetch version="1.0" mapping="logical">
+      <fetch version="1.0" mapping="logical" output-format="xml-platform" distinct="false">
         <entity name="sanic_chtblclientdatachangepermission">
           <attribute name="sanic_chtblclientdatachangepermissionid" />
           <attribute name="sanic_name" />
-          <attribute name="createdon" />
+          <attribute name="sanic_type" />
+          <attribute name="sanic_aadgroupid" />
+          <attribute name="sanic_teamsgroupid" />
           <order attribute="sanic_name" descending="false" />
+          <order attribute="sanic_type" descending="false" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="0" />
           </filter>

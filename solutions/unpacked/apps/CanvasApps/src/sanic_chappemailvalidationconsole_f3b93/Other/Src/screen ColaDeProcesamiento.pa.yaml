@@ -26,7 +26,10 @@ Screens:
                         SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
                 varPendientes: CountRows(
                     Filter('CH-Tbl-Received Emails',
-                        ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente)),
+                        ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
+                varOmitidos: CountRows(
+                    Filter('CH-Tbl-Received Emails',
+                        EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido)),
                 varErroresSistema: CountRows(
                     Filter('CH-Tbl-Received Emails',
                         EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
@@ -89,13 +92,24 @@ Screens:
                                                "</div></td>" &
                                                "<td align='right' style='padding-left:34px'>" & "<div style='font-size:19px;font-weight:650;color:" & If(varEsperandoBanca > 0, "rgb(154,97,0)", "rgb(120,106,109)") & "'>" & varEsperandoBanca & "</div>" & "<div style='font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109)'>" & "Esperando a Banca" & "</div></td>" &
                                                "<td align='right' style='padding-left:34px'>" & "<div style='font-size:19px;font-weight:650;color:" & If(varPendientes > 0, "rgb(154,97,0)", "rgb(120,106,109)") & "'>" & varPendientes & "</div>" & "<div style='font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109)'>" & "Sin validar" & "</div></td>" &
-                                               "<td align='right' style='padding-left:34px'>" & "<div style='font-size:19px;font-weight:650;color:" & If(varErroresSistema > 0, "rgb(110,22,34)", "rgb(120,106,109)") & "'>" & varErroresSistema & "</div>" & "<div style='font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109)'>" & "Errores" & "</div></td>" &
+                                               "<td align='right' style='padding-left:34px'>" & "<div style='font-size:19px;font-weight:650;color:" & If(varSospechosos > 0, "rgb(110,22,34)", "rgb(120,106,109)") & "'>" & varSospechosos & "</div>" & "<div style='font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109)'>" & "Sospechosos" & "</div></td>" &
+                                           "<td align='right' style='padding-left:34px'>" & "<div style='font-size:19px;font-weight:650;color:" & If(varErroresSistema > 0, "rgb(110,22,34)", "rgb(120,106,109)") & "'>" & varErroresSistema & "</div>" & "<div style='font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109)'>" & "Errores" & "</div></td>" &
                                                "<td align='right' style='padding-left:34px'>" & "<div style='font-size:19px;font-weight:650;color:" & If(varRespuestasPendientes > 0, "rgb(154,97,0)", "rgb(120,106,109)") & "'>" & varRespuestasPendientes & "</div>" & "<div style='font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:rgb(120,106,109)'>" & "Sin responder" & "</div></td>" &
                                                "</tr></table>"
                         Size: =11
-                        Width: =Parent.Width - 80
+                        Width: =Parent.Width - 250
                         X: =16
                         Y: =6
+                  - btnCuarentena:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: ='ButtonCanvas.Appearance'.Secondary
+                        Height: =34
+                        OnSelect: =Navigate(Cuarentena, ScreenTransition.None)
+                        Text: ="Cuarentena (" & varOmitidos & ")"
+                        Width: =170
+                        X: =Parent.Width - 226
+                        Y: =13
                   - btnRefrescarSalud:
                       Control: Classic/Icon@2.5.0
                       Properties:
@@ -119,7 +133,10 @@ Screens:
                                           SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
                                   varPendientes: CountRows(
                                       Filter('CH-Tbl-Received Emails',
-                                          ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente)),
+                                          ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
+                                  varOmitidos: CountRows(
+                                      Filter('CH-Tbl-Received Emails',
+                                          EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido)),
                                   varErroresSistema: CountRows(
                                       Filter('CH-Tbl-Received Emails',
                                           EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente)),
@@ -153,6 +170,16 @@ Screens:
                   LayoutMaxWidth: =
                   PaddingRight: =5
                 Children:
+                  - btnVistaPendiente:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: =If(varVista = "SINVALIDAR", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =110
+                        OnSelect: |-
+                          =UpdateContext({varVista: "SINVALIDAR"})
+                        Text: ="Sin validar (" & varPendientes & ")"
+                        Width: =150
                   - SearchInput1_1:
                       Control: TextInput@0.0.54
                       Properties:
@@ -249,10 +276,13 @@ Screens:
                                   Filter('CH-Tbl-Received Emails', EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente),
                                   "SINRESP",
                                   Filter('CH-Tbl-Received Emails', EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3),
+                                  "SINVALIDAR",
+                                  Filter('CH-Tbl-Received Emails', ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente),
                                   Filter('CH-Tbl-Received Emails',
                                       EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.'Revision manual'&& EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente
                                       || EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente
                                       || ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente
+                                      || SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso && EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente
                                       || EmailReplyStatus = 'EmailReplyStatus (CH-Tbl-Received Emails)'.Pendiente And ReplyAttempts >= 3)
                               ),
                               SearchInput1_1.Value,
@@ -278,8 +308,6 @@ Screens:
                                   ).'CH-Tbl-ValidationRuns'
                               }
                           );
-
-                          Notify( Text(ThisItem.'CH-Tbl-Received Emails'));
                         TemplatePadding: =0
                         TemplateSize: =84
                       Children:
@@ -289,7 +317,7 @@ Screens:
                               BorderColor: =RGBA(0, 0, 255, 1)
                               Fill: =If(ThisItem.IsSelected,Color.White,Color.Transparent)
                               Height: =Parent.TemplateHeight
-                              OnSelect: |+
+                              OnSelect: |
                                 =UpdateContext(
                                     {
                                         varRunId: First(
@@ -311,7 +339,7 @@ Screens:
                               BorderColor: =RGBA(0, 0, 255, 1)
                               Fill: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error || ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, RGBA(110, 22, 34, 1), RGBA(154, 97, 0, 1))
                               Height: =Parent.TemplateHeight
-                              OnSelect: |+
+                              OnSelect: |
                                 =UpdateContext(
                                     {
                                         varRunId: First(
@@ -336,7 +364,7 @@ Screens:
                               Font: =Font.'Open Sans'
                               FontWeight: =FontWeight.Semibold
                               Height: =20
-                              OnSelect: |+
+                              OnSelect: |
                                 =UpdateContext(
                                     {
                                         varRunId: First(
@@ -353,7 +381,7 @@ Screens:
                                 );
                               PaddingLeft: =0
                               Size: =11
-                              Text: =ThisItem.'Email Address'
+                              Text: =Coalesce(ThisItem.Subject, "(sin asunto)")
                               Width: =Parent.TemplateWidth - 112
                               X: =16
                               Y: =11
@@ -366,7 +394,7 @@ Screens:
                               DisabledColor: =RGBA(186, 186, 186, 1)
                               Font: =Font.'Open Sans'
                               Height: =18
-                              OnSelect: |+
+                              OnSelect: |
                                 =UpdateContext(
                                     {
                                         varRunId: First(
@@ -382,7 +410,7 @@ Screens:
                                     }
                                 );
                               Size: =9
-                              Text: =ThisItem.DeclaredCif
+                              Text: =Text(ThisItem.ReceptionDateTime, "dd/mm hh:mm")
                               Width: =92
                               X: =Parent.TemplateWidth - 104
                               Y: =12
@@ -394,7 +422,7 @@ Screens:
                               DisabledColor: =RGBA(186, 186, 186, 1)
                               Font: =Font.'Open Sans'
                               Height: =18
-                              OnSelect: |+
+                              OnSelect: |
                                 =UpdateContext(
                                     {
                                         varRunId: First(
@@ -411,7 +439,7 @@ Screens:
                                 );
                               PaddingLeft: =0
                               Size: =10
-                              Text: =ThisItem.ErrorCode
+                              Text: =ThisItem.SourceEmailAddress
                               Width: =Parent.TemplateWidth - 30
                               X: =16
                               Y: =31
@@ -426,7 +454,7 @@ Screens:
                               Font: =Font.'Open Sans'
                               FontWeight: =FontWeight.Semibold
                               Height: =20
-                              OnSelect: |+
+                              OnSelect: |
                                 =UpdateContext(
                                     {
                                         varRunId: First(
@@ -448,24 +476,30 @@ Screens:
                               Width: =152
                               X: =16
                               Y: =54
-                  - htmlVacio:
-                      Control: HtmlViewer@2.1.0
-                      Properties:
-                        AlignInContainer: =AlignInContainer.Stretch
-                        DisabledBorderColor: =RGBA(56, 56, 56, 1)
-                        FillPortions: =8
-                        Height: =300
-                        HtmlText: |-
-                          ="<div style='text-align:center;padding-top:90px'>" &
-                           "<div style='display:inline-block;width:52px;height:52px;line-height:52px;border-radius:26px;background:rgb(232,242,236);color:rgb(20,107,58);font-size:24px;font-weight:700'>&check;</div>" &
-                           "<div style='font-size:19px;font-weight:650;color:rgb(28,21,23);margin-top:14px'>Todo al dia</div>" &
-                           "<div style='font-size:13.5px;color:rgb(120,106,109);margin-top:6px'>" &
-                           If(varVista = "TODO",
-                              "No hay nada esperando una decision. Si aparece algo, va a estar aca.",
-                              "Sin casos en esta vista.") &
-                           "</div></div>"
-                        Size: =11
-                        Visible: =galBandeja.AllItemsCount = 0
+                        - lblGalEnCola:
+                            Control: Label@2.5.1
+                            Properties:
+                              Align: =Align.Center
+                              BorderColor: =RGBA(0, 0, 0, 1)
+                              Color: =RGBA(20, 107, 58, 1)
+                              DisabledColor: =RGBA(186, 186, 186, 1)
+                              Fill: =RGBA(232, 242, 236, 1)
+                              Font: =Font.'Open Sans'
+                              FontWeight: =FontWeight.Semibold
+                              Height: =20
+                              OnSelect: =Select(Parent)
+                              PaddingLeft: =8
+                              PaddingRight: =8
+                              Size: =8
+                              Text: ="En cola del barrido"
+                              Visible: |-
+                                =// Verde y no ambar: no es algo que el operador tenga que atender, es algo
+                                // que ya esta encaminado. Sale del dato, no de haber apretado el boton, asi
+                                // que tambien marca los correos nuevos que el barrido todavia no evaluo.
+                                ThisItem.ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
+                                    && ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente
+                              X: =174
+                              Y: =54
                   - container Detalle:
                       Control: GroupContainer@1.5.0
                       Variant: AutoLayout
@@ -582,7 +616,7 @@ Screens:
                                     OnSelect: |-
                                       =With(
                                           {
-                                              destino: LookUp('CH-Tbl-Parameters', Key = "Email.Banca.Mailbox" && 'Is Active' = true, Value),
+                                              destino: LookUp('CH-Tbl-Parameters', Key = "Email.Banca.Mailbox"  && 'Is Active' = true, Value),
                                               urlAdmin: LookUp('CH-Tbl-Parameters', Key = "Apps.ClientAdministration.Url" && 'Is Active' = true, Value),
                                               cli: galBandeja.Selected.'Cliente atribuido',
                                               dir: galBandeja.Selected.SourceEmailAddress,
@@ -590,7 +624,7 @@ Screens:
                                           },
                                           If(
                                               IsBlank(destino),
-                                              Notify("Falta configurar el parametro Email.Banca.Mailbox en CH-App-Configuration: no se sabe a que buzon avisarle a Banca de Empresas.", NotificationType.Error),
+                                              Notify("Falta configurar CH-EV-BancaMailbox: no se sabe a que buzon avisarle a Banca de Empresas.", NotificationType.Error),
                                               Office365Outlook.SendEmailV2(
                                                   destino,
                                                   If(galBandeja.Selected.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso,
@@ -630,6 +664,17 @@ Screens:
                                   Control: Button@0.0.45
                                   Properties:
                                     Appearance: ='ButtonCanvas.Appearance'.Secondary
+                                    DisplayMode: |-
+                                      =// YA ENCOLADO = NO SE PUEDE VOLVER A MARCAR. El estado vive en los datos,
+                                      // no en una variable de pantalla: si el operador se va y vuelve, o si lo
+                                      // marco otro, el boton sigue apagado. Se reactiva solo cuando el barrido
+                                      // valida y ValidationStatus deja de ser Pendiente.
+                                      If(
+                                          galBandeja.Selected.ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
+                                              && galBandeja.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente,
+                                          DisplayMode.Disabled,
+                                          DisplayMode.Edit
+                                      )
                                     Height: =36
                                     OnSelect: |-
                                       =Patch(
@@ -642,8 +687,14 @@ Screens:
                                       );
                                       Refresh('CH-Tbl-Received Emails');
                                       Notify("Marcado para reproceso. El barrido lo revalida en su proxima corrida, dentro de 10 minutos como maximo.", NotificationType.Success);
-                                    Text: ="Marcar para reproceso"
-                                    Width: =190
+                                    Text: |-
+                                      =If(
+                                          galBandeja.Selected.ValidationStatus = 'ValidationStatus (CH-Tbl-Received Emails)'.Pendiente
+                                              && galBandeja.Selected.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Pendiente,
+                                          "Ya esta en la cola del barrido",
+                                          "Marcar para reproceso"
+                                      )
+                                    Width: =230
                               - btnMover:
                                   Control: Button@0.0.45
                                   Properties:
@@ -652,15 +703,21 @@ Screens:
                                     LayoutMinHeight: =0
                                     LayoutMinWidth: =0
                                     OnSelect: |-
-                                      =
-                                      Patch(
-                                          'CH-Tbl-Received Emails',
-                                          galBandeja.Selected,
-                                          {
-                                              EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido
-                                          }
+                                      =With(
+                                          {ges: galBandeja.Selected.Name},
+                                          Patch(
+                                              'CH-Tbl-Received Emails',
+                                              galBandeja.Selected,
+                                              {
+                                                  EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido,
+                                                  RepliedBy: User().Email,
+                                                  ReplyDateTime: Now()
+                                              }
+                                          );
+                                          Refresh('CH-Tbl-Received Emails');
+                                          UpdateContext({varOmitidos: varOmitidos + 1});
+                                          Notify(ges & " queda sin responder. Se puede buscar y devolver a la cola desde Cuarentena.", NotificationType.Success)
                                       );
-                                      Refresh('CH-Tbl-Received Emails');
                                     Text: ="Omitir respuesta"
                                     Width: =190
                               - btnVerAdjunto:
@@ -757,6 +814,8 @@ Screens:
                                      Table(
                                          {k: "Clasificacion del remitente", v: Coalesce(Text(galBandeja.Selected.SenderClassification), "sin clasificar — el motor no llego a esa etapa")},
                                          {k: "Cliente atribuido", v: Coalesce(galBandeja.Selected.'Cliente atribuido'.Name, "ninguno")},
+                                         {k: "CIF declarado", v: Coalesce(galBandeja.Selected.DeclaredCif, "ninguno")},
+                                         {k: "Codigo de error", v: Coalesce(galBandeja.Selected.ErrorCode, "-")},
                                          {k: "Mensaje del motor", v: Coalesce(galBandeja.Selected.ErrorText, "sin mensaje")},
                                          {k: "Respuesta al cliente", v: Coalesce(Text(galBandeja.Selected.EmailReplyStatus), "-")},
                                          {k: "Numero de gestion", v: Coalesce(galBandeja.Selected.Name, "-")}
@@ -768,116 +827,31 @@ Screens:
                               Size: =11
                               Visible: =Coalesce(varTecnicoAbierto, false)
                               Width: =Parent.Width - 48
-      - container CierreFuera:
-          Control: GroupContainer@1.5.0
-          Variant: ManualLayout
-          Properties:
-            DropShadow: =DropShadow.None
-            Fill: =RGBA(0, 0, 0, 0.70)
-            Height: =Parent.Height
-            Visible: =Coalesce(varCierreAbierto, false)
-            Width: =Parent.Width
-          Children:
-            - container CierreFuera Dialog:
-                Control: GroupContainer@1.5.0
-                Variant: ManualLayout
-                Properties:
-                  DropShadow: =DropShadow.Bold
-                  Fill: =RGBA(255, 255, 255, 1)
-                  Height: =320
-                  RadiusBottomLeft: =8
-                  RadiusBottomRight: =8
-                  RadiusTopLeft: =8
-                  RadiusTopRight: =8
-                  Visible: =Coalesce(varCierreAbierto, false)
-                  Width: =560
-                  X: =(Parent.Width - 560) / 2
-                  Y: =(Parent.Height - 320) / 2
-                Children:
-                  - lblCierreTitulo:
-                      Control: Label@2.5.1
+                  - htmlVacio:
+                      Control: HtmlViewer@2.1.0
                       Properties:
-                        BorderColor: =RGBA(0, 0, 0, 1)
-                        Color: =RGBA(28, 21, 23, 1)
-                        DisabledColor: =RGBA(186, 186, 186, 1)
-                        Font: =Font.'Open Sans'
-                        FontWeight: =FontWeight.Semibold
-                        Height: =32
-                        Size: =15
-                        Text: ="Marcar como resuelto por fuera"
-                        Width: =520
-                        X: =20
-                        Y: =16
-                  - lblCierreAviso:
-                      Control: Label@2.5.1
-                      Properties:
-                        BorderColor: =RGBA(0, 0, 0, 1)
-                        Color: =RGBA(120, 106, 109, 1)
-                        DisabledColor: =RGBA(186, 186, 186, 1)
-                        Font: =Font.'Open Sans'
-                        Height: =72
+                        AlignInContainer: =AlignInContainer.Stretch
+                        DisabledBorderColor: =RGBA(56, 56, 56, 1)
+                        FillPortions: =8
+                        Height: =300
+                        HtmlText: |-
+                          =With(
+                               {buscando: Len(Trim(SearchInput1_1.Value)) > 0},
+                               "<div style='text-align:center;padding-top:90px'>" &
+                               "<div style='display:inline-block;width:52px;height:52px;line-height:52px;border-radius:26px;background:" &
+                               If(buscando, "rgb(240,240,240);color:rgb(120,106,109)", "rgb(232,242,236);color:rgb(20,107,58)") &
+                               ";font-size:24px;font-weight:700'>" & If(buscando, "?", "&check;") & "</div>" &
+                               "<div style='font-size:19px;font-weight:650;color:rgb(28,21,23);margin-top:14px'>" &
+                               If(buscando, "Sin resultados", "Todo al dia") & "</div>" &
+                               "<div style='font-size:13.5px;color:rgb(120,106,109);margin-top:6px'>" &
+                               If(
+                                   buscando,
+                                   "Ningun correo de esta vista coincide con la busqueda. Los correos ya omitidos no estan aca: estan en Cuarentena.",
+                                   varVista = "TODO",
+                                   "No hay nada esperando una decision. Si aparece algo, va a estar aca.",
+                                   "Sin casos en esta vista."
+                               ) &
+                               "</div></div>"
+                           )
                         Size: =11
-                        Text: |-
-                          ="La respuesta a " & galBandeja.Selected.Name & " deja de estar pendiente porque alguien ya le escribio al cliente por fuera del sistema. A partir de aca, lo que se le dijo NO queda registrado en CashHub: por eso el motivo es obligatorio."
-                        Width: =520
-                        X: =20
-                        Y: =48
-                  - txtCierreMotivo:
-                      Control: TextInput@0.0.54
-                      Properties:
-                        Height: =100
-                        Mode: ="MultiLine"
-                        OnChange: |-
-                          =UpdateContext({varCierreMotivo: Self.Value})
-                        Placeholder: ="A quien se le escribio, por que medio y que se le dijo. Minimo 10 caracteres."
-                        Width: =520
-                        X: =20
-                        Y: =126
-                  - lblCierreValidacion:
-                      Control: Label@2.5.1
-                      Properties:
-                        BorderColor: =RGBA(0, 0, 0, 1)
-                        Color: =RGBA(110, 22, 34, 1)
-                        DisabledColor: =RGBA(186, 186, 186, 1)
-                        Font: =Font.'Open Sans'
-                        Height: =20
-                        Size: =10
-                        Text: =If(Len(Trim(Coalesce(varCierreMotivo, ""))) < 10, "Escriba al menos 10 caracteres explicando como se resolvio.", "")
-                        Width: =520
-                        X: =20
-                        Y: =230
-                  - btnCierreCancelar:
-                      Control: Button@0.0.45
-                      Properties:
-                        Appearance: ='ButtonCanvas.Appearance'.Secondary
-                        Height: =36
-                        OnSelect: |-
-                          =UpdateContext({varCierreAbierto: false})
-                        Text: ="Cancelar"
-                        Width: =140
-                        X: =240
-                        Y: =258
-                  - btnCierreConfirmar:
-                      Control: Button@0.0.45
-                      Properties:
-                        Appearance: ='ButtonCanvas.Appearance'.Primary
-                        DisplayMode: =If(Len(Trim(Coalesce(varCierreMotivo, ""))) < 10, DisplayMode.Disabled, DisplayMode.Edit)
-                        Height: =36
-                        OnSelect: |-
-                          =Patch(
-                              'CH-Tbl-Received Emails',
-                              galBandeja.Selected,
-                              {
-                                  EmailReplyStatus: 'EmailReplyStatus (CH-Tbl-Received Emails)'.Omitido,
-                                  RepliedBy: User().Email,
-                                  ReplyDateTime: Now(),
-                                  ReplyCloseNote: Trim(varCierreMotivo)
-                              }
-                          );
-                          Refresh('CH-Tbl-Received Emails');
-                          UpdateContext({varCierreAbierto: false});
-                          Notify("Cerrado a nombre de " & User().Email & ".", NotificationType.Success);
-                        Text: ="Confirmar"
-                        Width: =160
-                        X: =390
-                        Y: =258
+                        Visible: =galBandeja.AllItemsCount = 0

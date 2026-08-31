@@ -818,32 +818,6 @@ scrResumen As screen:
                     Y: =12
                     ZIndex: =2
 
-                lblCelSesEstadoRes As label:
-                    Color: =If(ThisItem.SessionForciblyClosed, ThemeDanger, ThemeOk)
-                    Height: =13
-                    PaddingBottom: =0
-                    PaddingLeft: =0
-                    PaddingRight: =0
-                    PaddingTop: =0
-                    Size: =7.5
-                    Text: =If(ThisItem.SessionForciblyClosed, "Cerrada a la fuerza", "Abierta")
-                    Tooltip: |-
-                        =If(
-                            ThisItem.SessionForciblyClosed,
-                            "Cerrada por " & ThisItem.ForcedClosureBy.'Full Name' &
-                            If(
-                                IsBlank(ThisItem.ReasonForForcedFlosure),
-                                " (sin motivo registrado)",
-                                ". Motivo: " & ThisItem.ReasonForForcedFlosure
-                            ),
-                            "La sesión sigue abierta. Hoy NO existe un cierre automático de jornada: " &
-                            "una sesión solo se cierra si un supervisor la cierra a la fuerza."
-                        )
-                    Width: =Parent.Width * 0.10
-                    Wrap: =false
-                    Y: =29
-                    ZIndex: =11
-
                 lblCelCajeroRes As label:
                     BorderColor: =App.Theme.Colors.Darker40
                     Color: =ThemeInk
@@ -986,6 +960,80 @@ scrResumen As screen:
                     Y: =12
                     ZIndex: =9
 
+                pilCelEstadoRes As button:
+                    BorderColor: =ThemeLine
+                    BorderThickness: =If(Self.Fill = ThemeSunk, 1, 0)
+                    Color: |-
+                        =With({d: CountRows(Filter(colDetallesRes,
+                                SesDetGUID = ThisItem.'CH-Tbl-RecountingSession'
+                                && RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias'))},
+                            If(d > 0, ThemeNeg, ThemeInk3))
+                    DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    DisabledFill: =RGBA(244, 244, 244, 1)
+                    DisplayMode: =DisplayMode.View
+                    Fill: |-
+                        =With({d: CountRows(Filter(colDetallesRes,
+                                SesDetGUID = ThisItem.'CH-Tbl-RecountingSession'
+                                && RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias'))},
+                            If(d > 0, ThemeNegSoft, ThemeSunk))
+                    Font: =Font.'Segoe UI'
+                    FontWeight: =FontWeight.Semibold
+                    Height: =22
+                    HoverBorderColor: =Self.BorderColor
+                    HoverFill: =Self.Fill
+                    OnSelect: =Select(Parent)
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PressedBorderColor: =Self.BorderColor
+                    PressedColor: =Self.Color
+                    PressedFill: =Self.Fill
+                    Size: =9
+                    Text: |-
+                        =With({d: CountRows(Filter(colDetallesRes,
+                                SesDetGUID = ThisItem.'CH-Tbl-RecountingSession'
+                                && RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias'))},
+                            If(d > 0, "Diferencias ×" & d, "Cuadrado"))
+                    Width: =Min(12 + 7 * Len(Self.Text), Parent.Width * 0.15 - 84)
+                    X: =Parent.Width * 0.85
+                    Y: =10
+                    ZIndex: =10
+
+                lblCelSesEstadoRes As label:
+                    Color: =If(ThisItem.SessionForciblyClosed, ThemeDanger, ThemeOk)
+                    Height: =13
+                    PaddingBottom: =0
+                    PaddingLeft: =0
+                    PaddingRight: =0
+                    PaddingTop: =0
+                    Size: =7.5
+                    Text: =If(ThisItem.SessionForciblyClosed, "Cerrada a la fuerza", "Abierta")
+                    Tooltip: |-
+                        =If(
+                            ThisItem.SessionForciblyClosed,
+                            "Cerrada por " & ThisItem.ForcedClosureBy.'Full Name' &
+                            If(
+                                IsBlank(ThisItem.ReasonForForcedFlosure),
+                                " (sin motivo registrado)",
+                                ". Motivo: " & ThisItem.ReasonForForcedFlosure
+                            ),
+                            "La sesión sigue abierta. Hoy NO existe un cierre automático de jornada: " &
+                            "una sesión solo se cierra si un supervisor la cierra a la fuerza."
+                        )
+                    Width: =Parent.Width * 0.10
+                    Wrap: =false
+                    Y: =29
+                    ZIndex: =11
+
+                shpSepSesRes As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    OnSelect: =Select(Parent)
+                    Width: =Parent.Width
+                    Y: =43
+                    ZIndex: =11
+
                 btnCerrarSesRes As button:
                     BorderColor: =ThemeDangerLine
                     BorderThickness: =1
@@ -993,15 +1041,15 @@ scrResumen As screen:
                     DisabledBorderColor: =RGBA(244, 244, 244, 1)
                     DisabledColor: =RGBA(166, 166, 166, 1)
                     DisabledFill: =RGBA(244, 244, 244, 1)
-                    Fill: =ThemeSurface
-                    Font: =Font.'Segoe UI'
-                    FontWeight: =FontWeight.Semibold
                     DisplayMode: |-
                         =If(
                             ThisItem.SessionForciblyClosed,
                             DisplayMode.Disabled,
                             DisplayMode.Edit
                         )
+                    Fill: =ThemeSurface
+                    Font: =Font.'Segoe UI'
+                    FontWeight: =FontWeight.Semibold
                     Height: =26
                     HoverBorderColor: =ThemeDanger
                     HoverColor: =ThemeDanger
@@ -1082,54 +1130,6 @@ scrResumen As screen:
                     X: =Parent.Width - 74
                     Y: =9
                     ZIndex: =12
-
-                pilCelEstadoRes As button:
-                    BorderColor: =ThemeLine
-                    BorderThickness: =If(Self.Fill = ThemeSunk, 1, 0)
-                    Color: |-
-                        =With({d: CountRows(Filter(colDetallesRes,
-                                SesDetGUID = ThisItem.'CH-Tbl-RecountingSession'
-                                && RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias'))},
-                            If(d > 0, ThemeNeg, ThemeInk3))
-                    DisabledBorderColor: =RGBA(244, 244, 244, 1)
-                    DisabledColor: =RGBA(166, 166, 166, 1)
-                    DisabledFill: =RGBA(244, 244, 244, 1)
-                    DisplayMode: =DisplayMode.View
-                    Fill: |-
-                        =With({d: CountRows(Filter(colDetallesRes,
-                                SesDetGUID = ThisItem.'CH-Tbl-RecountingSession'
-                                && RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias'))},
-                            If(d > 0, ThemeNegSoft, ThemeSunk))
-                    Font: =Font.'Segoe UI'
-                    FontWeight: =FontWeight.Semibold
-                    Height: =22
-                    HoverBorderColor: =Self.BorderColor
-                    HoverFill: =Self.Fill
-                    OnSelect: =Select(Parent)
-                    PaddingLeft: =0
-                    PaddingRight: =0
-                    PressedBorderColor: =Self.BorderColor
-                    PressedColor: =Self.Color
-                    PressedFill: =Self.Fill
-                    Size: =9
-                    Text: |-
-                        =With({d: CountRows(Filter(colDetallesRes,
-                                SesDetGUID = ThisItem.'CH-Tbl-RecountingSession'
-                                && RecountingSessionDetailStatus = 'ch-recountingDetailsStatus'.'Cerrado con diferencias'))},
-                            If(d > 0, "Diferencias ×" & d, "Cuadrado"))
-                    Width: =Min(12 + 7 * Len(Self.Text), Parent.Width * 0.15 - 84)
-                    X: =Parent.Width * 0.85
-                    Y: =10
-                    ZIndex: =10
-
-                shpSepSesRes As rectangle:
-                    BorderColor: =App.Theme.Colors.Darker40
-                    Fill: =ThemeLine
-                    Height: =1
-                    OnSelect: =Select(Parent)
-                    Width: =Parent.Width
-                    Y: =43
-                    ZIndex: =11
 
             shpBandTotRes As rectangle:
                 BorderColor: =App.Theme.Colors.Darker40
@@ -1327,6 +1327,34 @@ scrResumen As screen:
                 Y: =cardSesionesRes.Height / 2 + 6
                 ZIndex: =26
 
+    cntCargandoRes As groupContainer.manualLayoutContainer:
+        Fill: =RGBA(0, 0, 0, 0.35)
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        Visible: =ctxCargandoRes
+        Width: =Parent.Width
+        ZIndex: =3
+
+        lblCargandoRes As label:
+            Align: =Align.Center
+            BorderColor: =App.Theme.Colors.Darker40
+            Color: |-
+                =ColorValue("#FFFFFF")
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            Font: =Font.'Segoe UI'
+            PaddingBottom: =0
+            PaddingLeft: =0
+            PaddingRight: =0
+            PaddingTop: =0
+            Size: =12
+            Text: ="Actualizando..."
+            Width: =cntCargandoRes.Width
+            Y: =cntCargandoRes.Height / 2 - 20
+            ZIndex: =1
+
     cntDlgCierreRes As groupContainer.manualLayoutContainer:
         Fill: =RGBA(0, 0, 0, 0.45)
         Height: =Parent.Height
@@ -1399,7 +1427,6 @@ scrResumen As screen:
                         If(CountRows(colPrevSolRes) = 1, " solicitud sin resolver", " solicitudes sin resolver")
                     )
                 Width: =cardDlgCierreRes.Width - 48
-                Wrap: =true
                 X: =24
                 Y: =50
                 ZIndex: =2
@@ -1435,7 +1462,6 @@ scrResumen As screen:
                     )
                 Visible: =CountRows(Filter(colPrevueloRes, FrenaRes)) + CountRows(colPrevSolRes) > 0
                 Width: =cardDlgCierreRes.Width - 48
-                Wrap: =true
                 X: =24
                 Y: =92
                 ZIndex: =3
@@ -1481,16 +1507,13 @@ scrResumen As screen:
 
             lblDlgCieNotaRes As label:
                 Color: =ThemeInk3
-                Height: =40
                 PaddingBottom: =0
                 PaddingLeft: =0
                 PaddingRight: =0
                 PaddingTop: =0
                 Size: =9
-                Text: |-
-                    ="Las tulas liberadas pierden depósitos, cheques y denominaciones, y su declaración vuelve a quedar disponible. Las ya recontadas no se tocan."
+                Text: ="Las tulas liberadas pierden depósitos, cheques y denominaciones, y su declaración vuelve a quedar disponible. Las ya recontadas no se tocan."
                 Width: =cardDlgCierreRes.Width - 48
-                Wrap: =true
                 X: =24
                 Y: =cardDlgCierreRes.Height - 108
                 ZIndex: =5
@@ -1506,7 +1529,8 @@ scrResumen As screen:
                 HoverBorderColor: =ThemeLineStrong
                 HoverColor: =ThemeInk
                 HoverFill: =ThemeSurface2
-                OnSelect: =UpdateContext({ctxDlgCierreRes: false})
+                OnSelect: |-
+                    =UpdateContext({ctxDlgCierreRes: false})
                 PressedBorderColor: =ThemeLineStrong
                 PressedColor: =ThemeInk
                 PressedFill: =ThemeSurface2
@@ -1578,32 +1602,4 @@ scrResumen As screen:
                 X: =cardDlgCierreRes.Width - 24 - 190
                 Y: =cardDlgCierreRes.Height - 58
                 ZIndex: =7
-
-    cntCargandoRes As groupContainer.manualLayoutContainer:
-        Fill: =RGBA(0, 0, 0, 0.35)
-        Height: =Parent.Height
-        LayoutGridColumnMinWidth: =0
-        LayoutGridColumns: =6
-        LayoutGridRowMinHeight: =0
-        LayoutGridRows: =6
-        Visible: =ctxCargandoRes
-        Width: =Parent.Width
-        ZIndex: =3
-
-        lblCargandoRes As label:
-            Align: =Align.Center
-            BorderColor: =App.Theme.Colors.Darker40
-            Color: |-
-                =ColorValue("#FFFFFF")
-            DisabledColor: =RGBA(166, 166, 166, 1)
-            Font: =Font.'Segoe UI'
-            PaddingBottom: =0
-            PaddingLeft: =0
-            PaddingRight: =0
-            PaddingTop: =0
-            Size: =12
-            Text: ="Actualizando..."
-            Width: =cntCargandoRes.Width
-            Y: =cntCargandoRes.Height / 2 - 20
-            ZIndex: =1
 

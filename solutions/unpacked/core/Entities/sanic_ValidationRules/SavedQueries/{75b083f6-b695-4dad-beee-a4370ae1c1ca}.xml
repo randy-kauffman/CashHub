@@ -10,19 +10,29 @@
     <layoutxml>
       <grid name="resultset" jump="sanic_name" select="1" icon="1" preview="1">
         <row name="result" id="sanic_validationrulesid">
-          <cell name="sanic_name" width="300" />
-          <cell name="createdon" width="125" />
+          <cell name="sanic_validationorder" width="90" />
+          <cell name="sanic_validationname" width="180" />
+          <cell name="sanic_name" width="220" />
+          <cell name="sanic_validationoperation" width="150" />
+          <cell name="sanic_validationvalue" width="170" />
+          <cell name="sanic_isactive" width="90" />
+          <cell name="sanic_validationfailmessage" width="320" />
         </row>
       </grid>
     </layoutxml>
     <querytype>0</querytype>
     <fetchxml>
-      <fetch version="1.0" mapping="logical">
+      <fetch version="1.0" mapping="logical" output-format="xml-platform" distinct="false">
         <entity name="sanic_validationrules">
           <attribute name="sanic_validationrulesid" />
+          <attribute name="sanic_validationorder" />
+          <attribute name="sanic_validationname" />
           <attribute name="sanic_name" />
-          <attribute name="createdon" />
-          <order attribute="sanic_name" descending="false" />
+          <attribute name="sanic_validationoperation" />
+          <attribute name="sanic_validationvalue" />
+          <attribute name="sanic_isactive" />
+          <attribute name="sanic_validationfailmessage" />
+          <order attribute="sanic_validationorder" descending="false" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="0" />
           </filter>
