@@ -126,7 +126,7 @@ ComponentDefinitions:
             RadiusBottomRight: =16
             RadiusTopLeft: =16
             RadiusTopRight: =16
-            Width: =360
+            Width: =460
             X: =lblTituloHdr.X + 190
             Y: =(Parent.Height-32)/2
           Children:
@@ -147,7 +147,7 @@ ComponentDefinitions:
                   RadiusTopRight: =13
                   Size: =9
                   Text: ="Corte"
-                  Width: =(Parent.Width - 6)/4
+                  Width: =(Parent.Width - 6)/5
                   X: =3
                   Y: =3
             - btnNavManualHdr:
@@ -167,7 +167,7 @@ ComponentDefinitions:
                   RadiusTopRight: =13
                   Size: =9
                   Text: ="Manual"
-                  Width: =(Parent.Width - 6)/4
+                  Width: =(Parent.Width - 6)/5
                   X: =btnNavCorteHdr.X + btnNavCorteHdr.Width
                   Y: =3
             - btnNavLotesHdr:
@@ -187,7 +187,7 @@ ComponentDefinitions:
                   RadiusTopRight: =13
                   Size: =9
                   Text: ="Lotes"
-                  Width: =(Parent.Width - 6)/4
+                  Width: =(Parent.Width - 6)/5
                   X: =btnNavManualHdr.X + btnNavManualHdr.Width
                   Y: =3
             - btnNavChequesHdr:
@@ -207,8 +207,28 @@ ComponentDefinitions:
                   RadiusTopRight: =13
                   Size: =9
                   Text: ="Cheques"
-                  Width: =(Parent.Width - 6)/4
+                  Width: =(Parent.Width - 6)/5
                   X: =btnNavLotesHdr.X + btnNavLotesHdr.Width
+                  Y: =3
+            - btnNavMovimientosHdr:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderThickness: =0
+                  Color: =If(cmpHeader.Activo = "Movimientos", ThemeAccent, ThemeInk2)
+                  Fill: =If(cmpHeader.Activo = "Movimientos", ThemeSurface, Color.Transparent)
+                  Font: =Font.'Open Sans'
+                  FontWeight: =If(cmpHeader.Activo = "Movimientos", FontWeight.Semibold, FontWeight.Normal)
+                  Height: =26
+                  HoverFill: =If(cmpHeader.Activo = "Movimientos", ThemeSurface, ThemeSurface2)
+                  OnSelect: =cmpHeader.OnMovimientos()
+                  RadiusBottomLeft: =13
+                  RadiusBottomRight: =13
+                  RadiusTopLeft: =13
+                  RadiusTopRight: =13
+                  Size: =9
+                  Text: ="Movimientos"
+                  Width: =(Parent.Width - 6)/5
+                  X: =btnNavChequesHdr.X + btnNavChequesHdr.Width
                   Y: =3
       - cntUserHdr:
           Control: GroupContainer@1.5.0
@@ -222,8 +242,19 @@ ComponentDefinitions:
             RadiusBottomRight: =17
             RadiusTopLeft: =17
             RadiusTopRight: =17
-            Width: =lblUsuarioHdr.X + lblUsuarioHdr.Width + 12
-            X: =Parent.Width - LayGutter - Self.Width
+            Width: |-
+              =// ANCHO FIJO, A PROPOSITO. Este contenedor arrastro dos versiones del mismo
+              // error "The function - returned a non-finite number" sobre cntUserHdr.X:
+              //
+              //   1a) Width miraba a un hijo (lblUsuarioHdr) mientras X restaba Self.Width.
+              //   1b) corregido eso, X SEGUIA dependiendo de Self.Width.
+              //
+              // Una geometria que se mide a si misma no tiene por que resolverse en el primer
+              // render, y cuando no resuelve devuelve un no-finito. Se corta de raiz: el chip
+              // mide 210 (38 del avatar + 160 del nombre + 12 de margen) y la etiqueta de
+              // adentro recorta sola si el nombre es largo. Nada aca depende del contenido.
+              210
+            X: =IfError(Parent.Width - LayGutter - 210,300)
             Y: =(Parent.Height-34)/2
           Children:
             - btnAvatarHdr:
@@ -253,5 +284,5 @@ ComponentDefinitions:
                   Height: =Parent.Height
                   Size: =8.63
                   Text: =UsuarioNombre
-                  Width: =Min(160, Len(UsuarioNombre)*6 + 20)
+                  Width: =160
                   X: =btnAvatarHdr.X + btnAvatarHdr.Width + 8

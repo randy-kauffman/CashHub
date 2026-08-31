@@ -6,6 +6,7 @@ scrManual As screen:
         =UpdateContext({
             ctxSegManual: "Pendientes",
             ctxOrdenMan: "Fecha",
+            ctxMotivoMan: "Todos",
             ctxErrorMan: Blank()
         });
         Select(btnCargarMan);
@@ -249,12 +250,60 @@ scrManual As screen:
                     Y: =18
                     ZIndex: =2
 
+                galMotivoMan As gallery.galleryHorizontal:
+                    DelayItemLoading: =true
+                    Height: =28
+                    Items: |-
+                        =// Los cinco motivos posibles, incluido el "—" que en la fila se ve como
+                        // guion: si no se pudiera filtrar por el, las transacciones sin ningun
+                        // motivo particular serian las unicas inalcanzables.
+                        Table(
+                            { clave: "Todos",        texto: "Todos" },
+                            { clave: "Con cheques",  texto: "Con cheques" },
+                            { clave: "Sin cuenta",   texto: "Sin cuenta" },
+                            { clave: "Rechazo core", texto: "Rechazo core" },
+                            { clave: "Sin motivo",   texto: "Sin motivo" }
+                        )
+                    Layout: =Layout.Horizontal
+                    ShowScrollbar: =false
+                    TemplateSize: =124
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =cntSegMan.Y + cntSegMan.Height + 10
+                    ZIndex: =13
+
+                    btnMotivoMan As button:
+                        BorderColor: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeLine)
+                        BorderThickness: =1
+                        Color: =If(ThisItem.clave = ctxMotivoMan, ThemeSurface, ThemeInk2)
+                        Fill: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeSurface)
+                        FontWeight: =FontWeight.Semibold
+                        Height: =26
+                        HoverColor: =If(ThisItem.clave = ctxMotivoMan, ThemeSurface, ThemeInk)
+                        HoverFill: =If(ThisItem.clave = ctxMotivoMan, ThemeInk, ThemeSurface2)
+                        OnSelect: |-
+                            =// Se limpia la seleccion: la transaccion abierta puede no pertenecer al
+                            // motivo elegido, y dejar el panel derecho mostrando una fila que ya no
+                            // esta en la lista es la clase de mentira que venimos sacando.
+                            UpdateContext({ctxMotivoMan: ThisItem.clave});
+                            Set(gvarTxMan, Blank())
+                        PressedFill: =ThemeInk
+                        RadiusBottomLeft: =13
+                        RadiusBottomRight: =13
+                        RadiusTopLeft: =13
+                        RadiusTopRight: =13
+                        Size: =8.25
+                        Text: =ThisItem.texto
+                        Width: =116
+                        X: =0
+                        ZIndex: =1
+
                 shpGridHeadBgMan As rectangle:
                     BorderColor: =App.Theme.Colors.Darker40
                     Fill: =ThemeSurface2
                     Height: =30
                     Width: =Parent.Width
-                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =3
 
                 lblHdrRefMan As label:
@@ -267,7 +316,7 @@ scrManual As screen:
                     Text: ="REFERENCIA"
                     Width: =Parent.Width*0.13
                     X: =Parent.Width*0.03
-                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =4
 
                 lblHdrDepMan As label:
@@ -280,7 +329,7 @@ scrManual As screen:
                     Text: ="DEPÓSITO / CLIENTE"
                     Width: =Parent.Width*0.26
                     X: =Parent.Width*0.16
-                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =5
 
                 lblHdrCtaMan As label:
@@ -294,7 +343,7 @@ scrManual As screen:
                     Text: ="CUENTA"
                     Width: =Parent.Width*0.13
                     X: =Parent.Width*0.43
-                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =6
 
                 lblHdrMontoMan As label:
@@ -308,7 +357,7 @@ scrManual As screen:
                     Text: ="MONTO"
                     Width: =Parent.Width*0.12
                     X: =Parent.Width*0.57
-                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =7
 
                 btnHdrMotivoMan As button:
@@ -335,7 +384,7 @@ scrManual As screen:
                     Text: ="MOTIVO " & If(ctxOrdenMan = "Motivo", "▼", "")
                     Width: =Parent.Width*0.14
                     X: =Parent.Width*0.70
-                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =8
 
                 lblHdrEstadoMan As label:
@@ -348,7 +397,7 @@ scrManual As screen:
                     Text: =If(ctxSegManual = "Aplicadas", "APLICADA", "ESTADO")
                     Width: =Parent.Width*0.14
                     X: =Parent.Width*0.84
-                    Y: =cntSegMan.Y + cntSegMan.Height + 12
+                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10
                     ZIndex: =9
 
                 shpGridLineaMan As rectangle:
@@ -356,7 +405,7 @@ scrManual As screen:
                     Fill: =ThemeLine
                     Height: =1
                     Width: =Parent.Width
-                    Y: =cntSegMan.Y + cntSegMan.Height + 12 + 30
+                    Y: =galMotivoMan.Y + galMotivoMan.Height + 10 + 30
                     ZIndex: =10
 
                 cmpEmptyListaMan As cmpEmpty:
@@ -374,29 +423,127 @@ scrManual As screen:
                     DelayItemLoading: =true
                     Height: =Parent.Height - (shpGridLineaMan.Y + 1)
                     Items: |-
-                        =If(
+                        =// FILTRO POR MOTIVO, TANTO EN PENDIENTES COMO EN APLICADAS.
+                        //
+                        // El motivo NO es una columna: se deduce, y con PRIORIDAD —rechazo del
+                        // core gana sobre sin cuenta, y esa sobre con cheques—. Por eso cada
+                        // rama repite en negativo las condiciones de las de mayor rango: si
+                        // "Sin cuenta" preguntara solo por IsBlank(AccountNumber), se llevaria
+                        // tambien las que son rechazo del core y el filtro mentiria.
+                        //
+                        // Cada rama es un Filter COMPLETO y delegable en vez de un OR sobre una
+                        // variable de contexto: mezclar constantes con columnas en un OR rompe
+                        // la delegacion y volveriamos al tope de 500 filas.
+                        If(
                             ctxSegManual = "Aplicadas",
-                            // --- APLICADAS: más recientes primero ---
                             Sort(
+                                Switch(
+                                ctxMotivoMan,
+                                "Rechazo core",
                                 Filter(
                                     'CH-Tbl-Transactions',
                                     TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
-                                        && BatchStatus = Blank()
-                                        && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
-                                        && Cajero.User = gvarCajeroMan.cajero
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && !IsBlank(MotivoRechazoCore)
                                 ),
+                                "Sin cuenta",
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && IsBlank(MotivoRechazoCore)
+                                    && IsBlank(AccountNumber)
+                                ),
+                                "Con cheques",
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && IsBlank(MotivoRechazoCore)
+                                    && !IsBlank(AccountNumber)
+                                    && !IsBlank(RelatedDepositRecounting)
+                                ),
+                                "Sin motivo",
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && IsBlank(MotivoRechazoCore)
+                                    && !IsBlank(AccountNumber)
+                                    && IsBlank(RelatedDepositRecounting)
+                                ),
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = 'TransactionStatus (CH-Tbl-Transactions)'.Aplicada
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                )
+                            ),
                                 'Created On', SortOrder.Descending
                             ),
-                            // --- PENDIENTES ---
                             If(
-                                ctxOrdenMan = "Motivo",
+                                ctxOrdenMan = "Motivo" && ctxMotivoMan = "Todos",
                                 Sort(
-                                    Filter(
-                                        'CH-Tbl-Transactions',
-                                        TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
-                                            && BatchStatus = Blank() && TransactionStatus = Blank()
-                                            && Cajero.User = gvarCajeroMan.cajero
-                                    ),
+                                    Switch(
+                                ctxMotivoMan,
+                                "Rechazo core",
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && !IsBlank(MotivoRechazoCore)
+                                ),
+                                "Sin cuenta",
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && IsBlank(MotivoRechazoCore)
+                                    && IsBlank(AccountNumber)
+                                ),
+                                "Con cheques",
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && IsBlank(MotivoRechazoCore)
+                                    && !IsBlank(AccountNumber)
+                                    && !IsBlank(RelatedDepositRecounting)
+                                ),
+                                "Sin motivo",
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && IsBlank(MotivoRechazoCore)
+                                    && !IsBlank(AccountNumber)
+                                    && IsBlank(RelatedDepositRecounting)
+                                ),
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                )
+                            ),
                                     // rango de motivo (Rechazo core > Sin cuenta > Con cheques > —)
                                     Switch(
                                         true,
@@ -407,13 +554,60 @@ scrManual As screen:
                                     ),
                                     SortOrder.Descending
                                 ),
+                                // Con un motivo ya elegido, ordenar POR motivo no dice nada:
+                                // todas las filas comparten el mismo. Manda la fecha.
                                 Sort(
-                                    Filter(
-                                        'CH-Tbl-Transactions',
-                                        TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
-                                            && BatchStatus = Blank() && TransactionStatus = Blank()
-                                            && Cajero.User = gvarCajeroMan.cajero
-                                    ),
+                                    Switch(
+                                ctxMotivoMan,
+                                "Rechazo core",
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && !IsBlank(MotivoRechazoCore)
+                                ),
+                                "Sin cuenta",
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && IsBlank(MotivoRechazoCore)
+                                    && IsBlank(AccountNumber)
+                                ),
+                                "Con cheques",
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && IsBlank(MotivoRechazoCore)
+                                    && !IsBlank(AccountNumber)
+                                    && !IsBlank(RelatedDepositRecounting)
+                                ),
+                                "Sin motivo",
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                    && IsBlank(MotivoRechazoCore)
+                                    && !IsBlank(AccountNumber)
+                                    && IsBlank(RelatedDepositRecounting)
+                                ),
+                                Filter(
+                                    'CH-Tbl-Transactions',
+                                    TransactionProcessingType = 'TransactionProcessingType (CH-Tbl-Transactions)'.Manual
+                                    && BatchStatus = Blank()
+                                    && TransactionStatus = Blank()
+                                    && Cajero.User = gvarCajeroMan.cajero
+                                )
+                            ),
                                     'Created On', SortOrder.Ascending
                                 )
                             )
@@ -828,15 +1022,21 @@ scrManual As screen:
                             X: =Parent.TemplateWidth*0.85
                             ZIndex: =3
 
+                        shpChqSepMan As rectangle:
+                            BorderColor: =App.Theme.Colors.Darker40
+                            Fill: =ThemeLineSoft
+                            Height: =1
+                            Width: =Parent.TemplateWidth
+                            Y: =Parent.TemplateHeight - 1
+                            ZIndex: =4
+
                         lblChqTipoMan As label:
-                            BorderRadius: =999
                             Color: |-
                                 =// BAC y otros bancos se pagan distinto, asi que se distinguen por
                                 // color y no solo por texto: en una lista de cheques hay que poder
                                 // separarlos de un vistazo.
                                 If(Text(ThisItem.CheckTypes) = "BAC Local", ThemeInfo, ThemeWarn)
-                            Fill: |-
-                                =If(Text(ThisItem.CheckTypes) = "BAC Local", ThemeInfoSoft, ThemeWarnSoft)
+                            Fill: =If(Text(ThisItem.CheckTypes) = "BAC Local", ThemeInfoSoft, ThemeWarnSoft)
                             FontWeight: =FontWeight.Semibold
                             Height: =22
                             PaddingLeft: =8
@@ -846,30 +1046,10 @@ scrManual As screen:
                                 =// La etiqueta cruda dice "BAC Local" / "Otros Local". Se acorta a lo
                                 // que el operador necesita distinguir.
                                 If(Text(ThisItem.CheckTypes) = "BAC Local", "BAC", "Otros bancos")
-                            VerticalAlign: =VerticalAlign.Middle
                             Width: =Parent.TemplateWidth * 0.24
                             X: =Parent.TemplateWidth * 0.31
                             Y: =(Parent.TemplateHeight - 22) / 2
                             ZIndex: =5
-
-                        shpChqSepMan As rectangle:
-                            BorderColor: =App.Theme.Colors.Darker40
-                            Fill: =ThemeLineSoft
-                            Height: =1
-                            Width: =Parent.TemplateWidth
-                            Y: =Parent.TemplateHeight - 1
-                            ZIndex: =4
-
-                    lblChqHdrTipoMan As label:
-                        Color: =ThemeInk3
-                        FontWeight: =FontWeight.Semibold
-                        Height: =26
-                        Size: =7.5
-                        Text: ="TIPO"
-                        VerticalAlign: =VerticalAlign.Middle
-                        Width: =Parent.Width * 0.27
-                        X: =Parent.Width * 0.31
-                        ZIndex: =7
 
                     shpChqHeadLineaMan As rectangle:
                         BorderColor: =App.Theme.Colors.Darker40
@@ -923,6 +1103,16 @@ scrManual As screen:
                         Height: =26
                         Width: =Parent.Width
                         ZIndex: =6
+
+                    lblChqHdrTipoMan As label:
+                        Color: =ThemeInk3
+                        FontWeight: =FontWeight.Semibold
+                        Height: =26
+                        Size: =7.5
+                        Text: ="TIPO"
+                        Width: =Parent.Width * 0.27
+                        X: =Parent.Width * 0.31
+                        ZIndex: =7
 
                 cntDangerMan As groupContainer.manualLayoutContainer:
                     DropShadow: =DropShadow.Light
@@ -1334,13 +1524,56 @@ scrManual As screen:
                     Y: =inpCampoRefMan.Y + inpCampoRefMan.Height + 16
                     ZIndex: =12
 
+                cmpEmptyDetMan As cmpEmpty:
+                    Glifo: ="⌨"
+                    Height: =Parent.Height - 53
+                    Mensaje: ="Seleccioná una transacción para grabarla."
+                    Visible: =IsBlank(gvarTxMan)
+                    Width: =Parent.Width
+                    Y: =53
+                    ZIndex: =21
 
+                shpDetLineaMan As rectangle:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Fill: =ThemeLine
+                    Height: =1
+                    Width: =Parent.Width
+                    Y: =52
+                    ZIndex: =22
 
+                cmpPilDetEstadoMan As cmpPildora:
+                    Height: =22
+                    Texto: =If(ctxSegManual = "Aplicadas", "Aplicada", Switch(true, !IsBlank(gvarTxMan.MotivoRechazoCore), "Rechazo core", IsBlank(gvarTxMan.AccountNumber), "Sin cuenta", !IsBlank(gvarTxMan.RelatedDepositRecounting), "Con cheques", "—"))
+                    Tono: =If(ctxSegManual = "Aplicadas", "ok", Switch(Self.Texto, "Rechazo core", "danger", "Sin cuenta", "warn", "Con cheques", "info", "neutro"))
+                    Width: =40 + 7*Len(Self.Texto)
+                    X: =Parent.Width - 16 - Self.Width
+                    Y: =16
+                    ZIndex: =23
 
+                lblDetSubMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeInk3
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =16
+                    Size: =8.25
+                    Text: =Coalesce(gvarTxMan.RelatedDepositRecounting.Name, "—")
+                    Width: =Parent.Width - 130
+                    X: =16
+                    Y: =34
+                    ZIndex: =24
 
-
-
-
+                lblDetRefMan As label:
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =RGBA(0, 0, 0, 1)
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    FontWeight: =FontWeight.Bold
+                    Height: =22
+                    Size: =14.25
+                    Text: =gvarTxMan.Name
+                    Width: =Parent.Width - 130
+                    X: =16
+                    Y: =12
+                    ZIndex: =25
 
                 lblCampoCuentaLabMan As label:
                     Color: =ThemeInk2
@@ -1354,12 +1587,42 @@ scrManual As screen:
                     Y: =cntKbHintMan.Y + cntKbHintMan.Height + 12 + 0
                     ZIndex: =42
 
+                inpFocoMan As text:
+                    BorderColor: =Color.Transparent
+                    BorderThickness: =0
+                    Color: =Color.Transparent
+                    Default: =""
+                    Fill: =Color.Transparent
+                    FocusedBorderThickness: =0
+                    Height: =32
+                    HintText: =""
+                    HoverBorderColor: =Color.Transparent
+                    HoverFill: =Color.Transparent
+                    Size: =6
+                    TabIndex: |-
+                        =// EL TRAMPOLIN, AHORA COMO TEXT INPUT Y NO COMO BOTON.
+                        //
+                        // SetFocus() sobre el boton de 1x1 no hacia nada: el foco quedaba fuera
+                        // del documento y el primer TAB se iba a la barra del navegador. La pista
+                        // la dio el usuario: SetFocus SI funcionaba sobre inpCampoCuentaMan —el
+                        // cursor llegaba, solo que sin seleccionar—. O sea que el tipo de control
+                        // que acepta el foco es el text input, asi que el trampolin es uno.
+                        //
+                        // Vive tapado por el campo de cuenta (ZIndex 42 contra 43) y con TabIndex
+                        // 1, para que el PRIMER TAB aterrice en la cuenta ya seleccionada: la
+                        // seleccion la hace el navegador al tabular, no SetFocus.
+                        1
+                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
+                    Width: =Parent.Width - 32
+                    X: =16
+                    Y: =lblCampoCuentaLabMan.Y + 18
+                    ZIndex: =42
+
                 inpCampoCuentaMan As text:
                     BorderColor: =ThemeLine
                     BorderThickness: =2
                     Color: =RGBA(0, 0, 0, 1)
-                    Default: |-
-                        =If(IsBlank(gvarTxMan.AccountNumber), "— sin cuenta —", Text(gvarTxMan.AccountNumber, "[$-en-US]0"))
+                    Default: =If(IsBlank(gvarTxMan.AccountNumber), "— sin cuenta —", Text(gvarTxMan.AccountNumber, "[$-en-US]0"))
                     DisabledBorderColor: =RGBA(166, 166, 166, 1)
                     DisabledColor: =RGBA(166, 166, 166, 1)
                     DisabledFill: =RGBA(244, 244, 244, 1)
@@ -1408,8 +1671,7 @@ scrManual As screen:
                     BorderColor: =ThemeLine
                     BorderThickness: =2
                     Color: =RGBA(0, 0, 0, 1)
-                    Default: |-
-                        =gvarTxMan.Currency
+                    Default: =gvarTxMan.Currency
                     DisabledBorderColor: =RGBA(166, 166, 166, 1)
                     DisabledColor: =RGBA(166, 166, 166, 1)
                     DisabledFill: =RGBA(244, 244, 244, 1)
@@ -1458,8 +1720,7 @@ scrManual As screen:
                     BorderColor: =ThemeLine
                     BorderThickness: =2
                     Color: =RGBA(0, 0, 0, 1)
-                    Default: |-
-                        =Text(gvarTxMan.CashAmount, FmtMoney)
+                    Default: =Text(gvarTxMan.CashAmount, FmtMoney)
                     DisabledBorderColor: =RGBA(166, 166, 166, 1)
                     DisabledColor: =RGBA(166, 166, 166, 1)
                     DisabledFill: =RGBA(244, 244, 244, 1)
@@ -1508,8 +1769,7 @@ scrManual As screen:
                     BorderColor: =ThemeLine
                     BorderThickness: =2
                     Color: =RGBA(0, 0, 0, 1)
-                    Default: |-
-                        =Text(gvarTxMan.BACLocalCheckAmount, FmtMoney)
+                    Default: =Text(gvarTxMan.BACLocalCheckAmount, FmtMoney)
                     DisabledBorderColor: =RGBA(166, 166, 166, 1)
                     DisabledColor: =RGBA(166, 166, 166, 1)
                     DisabledFill: =RGBA(244, 244, 244, 1)
@@ -1558,8 +1818,7 @@ scrManual As screen:
                     BorderColor: =ThemeLine
                     BorderThickness: =2
                     Color: =RGBA(0, 0, 0, 1)
-                    Default: |-
-                        =Text(gvarTxMan.OtherLocalCheckAmount, FmtMoney)
+                    Default: =Text(gvarTxMan.OtherLocalCheckAmount, FmtMoney)
                     DisabledBorderColor: =RGBA(166, 166, 166, 1)
                     DisabledColor: =RGBA(166, 166, 166, 1)
                     DisabledFill: =RGBA(244, 244, 244, 1)
@@ -1608,8 +1867,7 @@ scrManual As screen:
                     BorderColor: =ThemeLine
                     BorderThickness: =2
                     Color: =RGBA(0, 0, 0, 1)
-                    Default: |-
-                        =Text(gvarTxMan.Total, FmtMoney)
+                    Default: =Text(gvarTxMan.Total, FmtMoney)
                     DisabledBorderColor: =RGBA(166, 166, 166, 1)
                     DisabledColor: =RGBA(166, 166, 166, 1)
                     DisabledFill: =RGBA(244, 244, 244, 1)
@@ -1694,87 +1952,6 @@ scrManual As screen:
                     X: =16
                     Y: =lblCampoRefLabMan.Y + 18
                     ZIndex: =55
-
-                inpFocoMan As text:
-                    BorderColor: =Color.Transparent
-                    BorderThickness: =0
-                    Color: =Color.Transparent
-                    Default: =""
-                    Fill: =Color.Transparent
-                    FocusedBorderThickness: =0
-                    Height: =32
-                    HintText: =""
-                    HoverBorderColor: =Color.Transparent
-                    HoverFill: =Color.Transparent
-                    Size: =6
-                    TabIndex: |-
-                        =// EL TRAMPOLIN, AHORA COMO TEXT INPUT Y NO COMO BOTON.
-                        //
-                        // SetFocus() sobre el boton de 1x1 no hacia nada: el foco quedaba fuera
-                        // del documento y el primer TAB se iba a la barra del navegador. La pista
-                        // la dio el usuario: SetFocus SI funcionaba sobre inpCampoCuentaMan —el
-                        // cursor llegaba, solo que sin seleccionar—. O sea que el tipo de control
-                        // que acepta el foco es el text input, asi que el trampolin es uno.
-                        //
-                        // Vive tapado por el campo de cuenta (ZIndex 42 contra 43) y con TabIndex
-                        // 1, para que el PRIMER TAB aterrice en la cuenta ya seleccionada: la
-                        // seleccion la hace el navegador al tabular, no SetFocus.
-                        1
-                    Visible: =ctxSegManual = "Pendientes" && IsBlank(ctxErrorMan) && !IsBlank(gvarTxMan)
-                    Width: =Parent.Width - 32
-                    X: =16
-                    Y: =lblCampoCuentaLabMan.Y + 18
-                    ZIndex: =42
-                cmpEmptyDetMan As cmpEmpty:
-                    Glifo: ="⌨"
-                    Height: =Parent.Height - 53
-                    Mensaje: ="Seleccioná una transacción para grabarla."
-                    Visible: =IsBlank(gvarTxMan)
-                    Width: =Parent.Width
-                    Y: =53
-                    ZIndex: =21
-
-                shpDetLineaMan As rectangle:
-                    BorderColor: =App.Theme.Colors.Darker40
-                    Fill: =ThemeLine
-                    Height: =1
-                    Width: =Parent.Width
-                    Y: =52
-                    ZIndex: =22
-
-                cmpPilDetEstadoMan As cmpPildora:
-                    Height: =22
-                    Texto: =If(ctxSegManual = "Aplicadas", "Aplicada", Switch(true, !IsBlank(gvarTxMan.MotivoRechazoCore), "Rechazo core", IsBlank(gvarTxMan.AccountNumber), "Sin cuenta", !IsBlank(gvarTxMan.RelatedDepositRecounting), "Con cheques", "—"))
-                    Tono: =If(ctxSegManual = "Aplicadas", "ok", Switch(Self.Texto, "Rechazo core", "danger", "Sin cuenta", "warn", "Con cheques", "info", "neutro"))
-                    Width: =40 + 7*Len(Self.Texto)
-                    X: =Parent.Width - 16 - Self.Width
-                    Y: =16
-                    ZIndex: =23
-
-                lblDetSubMan As label:
-                    BorderColor: =App.Theme.Colors.Darker40
-                    Color: =ThemeInk3
-                    DisabledColor: =RGBA(166, 166, 166, 1)
-                    Height: =16
-                    Size: =8.25
-                    Text: =Coalesce(gvarTxMan.RelatedDepositRecounting.Name, "—")
-                    Width: =Parent.Width - 130
-                    X: =16
-                    Y: =34
-                    ZIndex: =24
-
-                lblDetRefMan As label:
-                    BorderColor: =App.Theme.Colors.Darker40
-                    Color: =RGBA(0, 0, 0, 1)
-                    DisabledColor: =RGBA(166, 166, 166, 1)
-                    FontWeight: =FontWeight.Bold
-                    Height: =22
-                    Size: =14.25
-                    Text: =gvarTxMan.Name
-                    Width: =Parent.Width - 130
-                    X: =16
-                    Y: =12
-                    ZIndex: =25
 
     btnCargarMan As button:
         BorderThickness: =0

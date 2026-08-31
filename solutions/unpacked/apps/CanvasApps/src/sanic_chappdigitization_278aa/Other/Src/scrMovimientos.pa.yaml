@@ -12,33 +12,33 @@ Screens:
       Fill: =ThemeBg
       LoadingSpinnerColor: =RGBA(0, 51, 102, 1)
       OnVisible: |-
-        =// UN DIA A LA VEZ, no un rango: asi lo pidio el negocio y ademas mantiene la
-        // consulta acotada. El dia arranca en HOY.
+        =// REFRESCAR ANTES DE LEER. Sin esto la galeria sirve el CACHE del cliente y una
+        // transaccion creada hace cinco minutos —o un lote recien aplicado— simplemente no
+        // aparece: la pantalla se ve bien y esta mintiendo. Todas las demas pantallas de la
+        // app ya lo hacen; esta era la unica que no.
+        Refresh('CH-Tbl-Transactions');
         UpdateContext({
             ctxDiaMov: Today(),
             ctxFiltroMov: "Todas",
-            ctxCargandoMov: false
+            ctxCargandoMov: false,
+            ctxUltimaActMov: Blank()
         });
         Set(gvarCajeroMov, Blank());
         Clear(colCuboMov);
+        Clear(colDiasMov);
         Select(btnCargarCajerosMov)
     Children:
       - cmpHeaderMov:
           Control: CanvasComponent
           ComponentName: cmpHeader
           Properties:
-            Activo: |-
-              =// Ninguna de las cuatro pestañas queda marcada: esta pantalla todavia no tiene
-              // la suya. Agregarle un quinto tab al componente exige una propiedad nueva
-              // (OnMovimientos) y `pac canvas pack` no puede crear propiedades de componente
-              // —PA3004—: eso se agrega una vez desde Studio.
-              ""
+            Activo: ="Movimientos"
             Height: =LayHeaderH
             OnCheques: =Navigate(scrCheques, ScreenTransition.None)
             OnCorte: =Navigate(scrCorte, ScreenTransition.None)
             OnLotes: =Navigate(scrLotes, ScreenTransition.None)
             OnManual: =Navigate(scrManual, ScreenTransition.None)
-            OnMovimientos: =
+            OnMovimientos: =Select(btnCargarCuboMov)
             Subtitulo: ="Movimientos"
             Titulo: ="Digitación"
             Width: =Parent.Width
@@ -50,8 +50,17 @@ Screens:
             Height: =Parent.Height - LayHeaderH
             Items: =colCajerosMov
             OnSelect: |-
-              =Set(gvarCajeroMov, ThisItem);
-              Select(btnCargarCuboMov)
+              =// AL ELEGIR UN CAJERO SE SALTA A SU ULTIMO DIA CON MOVIMIENTOS. Antes se
+              // quedaba en HOY, y un cajero cuyas transacciones son del 17/08 se veia
+              // completamente vacio: la pantalla decia la verdad y aun asi dejaba al operador
+              // sin saber donde mirar. Si el dia elegido ya tiene datos, no se toca.
+              Set(gvarCajeroMov, ThisItem);
+              Select(btnCargarCuboMov);
+              If(IsEmpty(colCuboMov) && !IsEmpty(colDiasMov),
+                  UpdateContext({ctxDiaMov: First(colDiasMov).fecha});
+                  Reset(dtpDiaMov);
+                  Select(btnCargarCuboMov)
+              )
             TemplateSize: =56
             Width: =236
             Y: =LayHeaderH
@@ -82,25 +91,16 @@ Screens:
                   DisabledColor: =RGBA(186, 186, 186, 1)
                   Font: =Font.'Open Sans'
                   FontWeight: =FontWeight.Semibold
-                  Height: =18
+                  Height: =56
                   Size: =9.5
-                  Text: =ThisItem.cajeroNombre
+                  Text: |-
+                    =// SOLO EL NOMBRE. La mesa se saco: la que devuelve el API es la mesa ACTUAL
+                    // del cajero, y esta es una vista historica — poner la mesa de hoy al lado de
+                    // los movimientos de otro dia es afirmar algo que no se sabe. Ademas hay
+                    // cajeros con la mesa vacia. Lo que identifica al cajero es su nombre.
+                    ThisItem.cajeroNombre
                   Width: =Parent.TemplateWidth - 24
                   X: =16
-                  Y: =10
-            - lblCajMesaMov:
-                Control: Label@2.5.1
-                Properties:
-                  BorderColor: =RGBA(0, 0, 0, 1)
-                  Color: =ThemeInk3
-                  DisabledColor: =RGBA(186, 186, 186, 1)
-                  Font: =Font.'Open Sans'
-                  Height: =16
-                  Size: =8.25
-                  Text: =ThisItem.mesa
-                  Width: =Parent.TemplateWidth - 24
-                  X: =16
-                  Y: =28
             - btnCajFilaMov:
                 Control: Classic/Button@2.2.0
                 Properties:
@@ -157,7 +157,7 @@ Screens:
             Size: =9
             Text: |-
               =If(IsBlank(gvarCajeroMov), "Seleccioná un cajero del panel izquierdo.",
-                  $"{gvarCajeroMov.mesa} · {Text(Sum(colCuboMov, cantidad))} transacciones el {Text(ctxDiaMov, ""dd/mm/yyyy"")}")
+                  Text(Coalesce(Sum(colCuboMov, cantidad), 0)) & " transacciones el " & Text(ctxDiaMov, "dd/mm/yyyy"))
             Width: =520
             X: =256
             Y: =LayHeaderH + 42
@@ -168,6 +168,11 @@ Screens:
             BorderStyle: =%BorderStyle.RESERVED%.Solid
             Color: =ThemeInk
             DateTimeZone: =%DateTimeZone.RESERVED%.Local
+            DefaultDate: |-
+              =// Sigue a la variable, no a Today(): cuando la pantalla salta sola al ultimo dia
+              // con movimientos del cajero, el selector tiene que mostrar ESE dia. Clavado en
+              // hoy diria una fecha y estaria mostrando otra.
+              ctxDiaMov
             DisabledBorderColor: =RGBA(56, 56, 56, 1)
             DisabledColor: =RGBA(70, 68, 64, 1)
             DisabledFill: =Self.Fill
@@ -241,10 +246,16 @@ Screens:
                           moneda:   mon.m,
                           simbolo:  mon.sim,
                           nombre:   mon.nom,
-                          efectivo: Sum(f, efectivo),
-                          cheques:  Sum(f, chequeBac) + Sum(f, chequeOtros),
-                          total:    Sum(f, total),
-                          cantidad: Sum(f, cantidad)
+                          // EL FALTANTE RESTA. El signo viene del servidor (+1 / -1) para
+                          // que la regla contable no viva en la pantalla. Sumar un faltante
+                          // seria inflar el cierre del cajero justo con lo que le falta.
+                          // Coalesce: Sum() sobre una tabla vacia devuelve BLANK, no cero, y
+                          // Text(blank) es cadena vacia. Las tarjetas salian con el simbolo de
+                          // la moneda y ningun numero — que se lee como "roto", no como "cero".
+                          efectivo: Coalesce(Sum(f, efectivo * signo), 0),
+                          cheques:  Coalesce(Sum(f, chequeBac * signo), 0) + Coalesce(Sum(f, chequeOtros * signo), 0),
+                          total:    Coalesce(Sum(f, total * signo), 0),
+                          cantidad: Coalesce(Sum(f, cantidad), 0)
                       }
                   )
               )
@@ -432,21 +443,6 @@ Screens:
             Width: =Parent.Width - 256 - 16
             X: =256
             Y: =LayHeaderH + 240
-      - lblCabMov:
-          Control: Label@2.5.1
-          Properties:
-            BorderColor: =RGBA(0, 0, 0, 1)
-            Color: =ThemeInk3
-            DisabledColor: =RGBA(186, 186, 186, 1)
-            Font: =Font.'Open Sans'
-            FontWeight: =FontWeight.Semibold
-            Height: =32
-            PaddingLeft: =12
-            Size: =7.5
-            Text: ="ID          REFERENCIA            TIPO             VÍA / LOTE          CUENTA      MON.        EFECTIVO       CHEQUE BAC     CHEQUE OTROS          TOTAL     HORA"
-            Width: =Parent.Width - 256 - 16
-            X: =256
-            Y: =LayHeaderH + 240
       - galMovMov:
           Control: Gallery@2.15.0
           Variant: Vertical
@@ -530,7 +526,8 @@ Screens:
                   PaddingLeft: =12
                   Size: =8.25
                   Text: ="T-" & Right("0000000000" & ThisItem.TransactionID, 10)
-                  Width: =Parent.TemplateWidth * 0.11
+                  Width: =Parent.TemplateWidth * 0.10
+                  X: =Parent.TemplateWidth * 0.00
             - lblMovRefMov:
                 Control: Label@2.5.1
                 Properties:
@@ -541,8 +538,8 @@ Screens:
                   Height: =38
                   Size: =8.25
                   Text: =Coalesce(ThisItem.TransactionReference, "—")
-                  Width: =Parent.TemplateWidth * 0.13
-                  X: =Parent.TemplateWidth * 0.11
+                  Width: =Parent.TemplateWidth * 0.12
+                  X: =Parent.TemplateWidth * 0.10
             - lblMovTipoMov:
                 Control: Label@2.5.1
                 Properties:
@@ -570,7 +567,7 @@ Screens:
                   Size: =7.5
                   Text: =Text(ThisItem.TransactionType)
                   Width: =Parent.TemplateWidth * 0.10
-                  X: =Parent.TemplateWidth * 0.24
+                  X: =Parent.TemplateWidth * 0.22
                   Y: =9
             - lblMovViaMov:
                 Control: Label@2.5.1
@@ -580,7 +577,7 @@ Screens:
                   DisabledColor: =RGBA(186, 186, 186, 1)
                   Font: =Font.'Open Sans'
                   FontWeight: =FontWeight.Semibold
-                  Height: =38
+                  Height: =20
                   Size: =8.25
                   Text: |-
                     =// La VIA se lee del hecho —tener lote o no—, no del ruteo. Es la unica de
@@ -589,7 +586,8 @@ Screens:
                        "Manual",
                        "Lote " & ThisItem.'Transaction Batch'.Name)
                   Width: =Parent.TemplateWidth * 0.12
-                  X: =Parent.TemplateWidth * 0.34
+                  X: =Parent.TemplateWidth * 0.32
+                  Y: =2
             - lblMovCuentaMov:
                 Control: Label@2.5.1
                 Properties:
@@ -600,8 +598,8 @@ Screens:
                   Height: =38
                   Size: =8.25
                   Text: =Text(ThisItem.AccountNumber, "[$-en-US]000000000")
-                  Width: =Parent.TemplateWidth * 0.09
-                  X: =Parent.TemplateWidth * 0.46
+                  Width: =Parent.TemplateWidth * 0.08
+                  X: =Parent.TemplateWidth * 0.44
             - lblMovMonMov:
                 Control: Label@2.5.1
                 Properties:
@@ -613,60 +611,82 @@ Screens:
                   Size: =8.25
                   Text: =Text(ThisItem.Currency)
                   Width: =Parent.TemplateWidth * 0.05
-                  X: =Parent.TemplateWidth * 0.55
+                  X: =Parent.TemplateWidth * 0.52
             - lblMovEfeMov:
                 Control: Label@2.5.1
                 Properties:
                   Align: =Align.Right
                   BorderColor: =RGBA(0, 0, 0, 1)
-                  Color: =If(ThisItem.CashAmount = 0, ThemeInk3, ThemeInk)
+                  Color: |-
+                    =If(Text(ThisItem.TransactionType) = "Faltante", ThemeDanger,
+                       If(ThisItem.CashAmount = 0, ThemeInk3, ThemeInk))
                   DisabledColor: =RGBA(186, 186, 186, 1)
                   Font: =Font.'Open Sans'
                   Height: =38
                   Size: =8.25
-                  Text: =Text(ThisItem.CashAmount, FmtMoney)
+                  Text: |-
+                    =// El faltante se muestra en NEGATIVO: el mismo signo con el que entra
+                    // al total de arriba. Verlo positivo en la fila y restando en el resumen
+                    // obligaria a hacer la traduccion mentalmente en cada linea.
+                    Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.CashAmount, ThisItem.CashAmount), FmtMoney)
                   Width: =Parent.TemplateWidth * 0.10
-                  X: =Parent.TemplateWidth * 0.60
+                  X: =Parent.TemplateWidth * 0.57
             - lblMovBacMov:
                 Control: Label@2.5.1
                 Properties:
                   Align: =Align.Right
                   BorderColor: =RGBA(0, 0, 0, 1)
-                  Color: =If(ThisItem.BACLocalCheckAmount = 0, ThemeInk3, ThemeInk)
+                  Color: |-
+                    =If(Text(ThisItem.TransactionType) = "Faltante", ThemeDanger,
+                       If(ThisItem.BACLocalCheckAmount = 0, ThemeInk3, ThemeInk))
                   DisabledColor: =RGBA(186, 186, 186, 1)
                   Font: =Font.'Open Sans'
                   Height: =38
                   Size: =8.25
-                  Text: =Text(ThisItem.BACLocalCheckAmount, FmtMoney)
+                  Text: |-
+                    =// El faltante se muestra en NEGATIVO: el mismo signo con el que entra
+                    // al total de arriba. Verlo positivo en la fila y restando en el resumen
+                    // obligaria a hacer la traduccion mentalmente en cada linea.
+                    Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.BACLocalCheckAmount, ThisItem.BACLocalCheckAmount), FmtMoney)
                   Width: =Parent.TemplateWidth * 0.10
-                  X: =Parent.TemplateWidth * 0.70
+                  X: =Parent.TemplateWidth * 0.67
             - lblMovOtrMov:
                 Control: Label@2.5.1
                 Properties:
                   Align: =Align.Right
                   BorderColor: =RGBA(0, 0, 0, 1)
-                  Color: =If(ThisItem.OtherLocalCheckAmount = 0, ThemeInk3, ThemeInk)
+                  Color: |-
+                    =If(Text(ThisItem.TransactionType) = "Faltante", ThemeDanger,
+                       If(ThisItem.OtherLocalCheckAmount = 0, ThemeInk3, ThemeInk))
                   DisabledColor: =RGBA(186, 186, 186, 1)
                   Font: =Font.'Open Sans'
                   Height: =38
                   Size: =8.25
-                  Text: =Text(ThisItem.OtherLocalCheckAmount, FmtMoney)
+                  Text: |-
+                    =// El faltante se muestra en NEGATIVO: el mismo signo con el que entra
+                    // al total de arriba. Verlo positivo en la fila y restando en el resumen
+                    // obligaria a hacer la traduccion mentalmente en cada linea.
+                    Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.OtherLocalCheckAmount, ThisItem.OtherLocalCheckAmount), FmtMoney)
                   Width: =Parent.TemplateWidth * 0.10
-                  X: =Parent.TemplateWidth * 0.80
+                  X: =Parent.TemplateWidth * 0.77
             - lblMovTotMov:
                 Control: Label@2.5.1
                 Properties:
                   Align: =Align.Right
                   BorderColor: =RGBA(0, 0, 0, 1)
-                  Color: =ThemeInk
+                  Color: =If(Text(ThisItem.TransactionType) = "Faltante", ThemeDanger, ThemeInk)
                   DisabledColor: =RGBA(186, 186, 186, 1)
                   Font: =Font.'Open Sans'
                   FontWeight: =FontWeight.Bold
                   Height: =38
                   Size: =8.25
-                  Text: =Text(ThisItem.Total, FmtMoney)
-                  Width: =Parent.TemplateWidth * 0.10
-                  X: =Parent.TemplateWidth * 0.90
+                  Text: |-
+                    =// El faltante se muestra en NEGATIVO: el mismo signo con el que entra
+                    // al total de arriba. Verlo positivo en la fila y restando en el resumen
+                    // obligaria a hacer la traduccion mentalmente en cada linea.
+                    Text(If(Text(ThisItem.TransactionType) = "Faltante", -ThisItem.Total, ThisItem.Total), FmtMoney)
+                  Width: =Parent.TemplateWidth * 0.08
+                  X: =Parent.TemplateWidth * 0.87
             - shpMovLineaMov:
                 Control: Rectangle@2.3.0
                 Properties:
@@ -675,6 +695,50 @@ Screens:
                   Height: =1
                   Width: =Parent.TemplateWidth
                   Y: =37
+            - lblMovEstadoMov:
+                Control: Label@2.5.1
+                Properties:
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: |-
+                    =// Verde SOLO cuando de verdad entro al Core. Un lote Generado o Ingresado
+                    // no es plata aplicada, y pintarlo igual seria decir que si.
+                    Switch(ThisItem.BatchStatus,
+                        159460003, ThemeOk,
+                        159460004, ThemeDanger,
+                        159460001, ThemeInfo,
+                        ThemeInk3)
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =16
+                  Size: =7.5
+                  Text: |-
+                    =// SIN ESTO, APLICAR UN LOTE NO SE NOTA. La fila decia "Lote TB-1048" y nada
+                    // mas, asi que un lote recien aplicado se veia identico a uno que todavia no
+                    // entro al Core. El espejo sanic_batchstatus ya viaja en la transaccion:
+                    // existe justo para no tener que dar dos saltos.
+                    Switch(ThisItem.BatchStatus,
+                        159460000, "Generado",
+                        159460001, "Ingresado",
+                        159460003, "Aplicado",
+                        159460004, "Devuelto",
+                        "")
+                  Width: =Parent.TemplateWidth * 0.12
+                  X: =Parent.TemplateWidth * 0.32
+                  Y: =19
+            - lblMovHoraMov:
+                Control: Label@2.5.1
+                Properties:
+                  Align: =Align.Right
+                  BorderColor: =RGBA(0, 0, 0, 1)
+                  Color: =ThemeInk3
+                  DisabledColor: =RGBA(186, 186, 186, 1)
+                  Font: =Font.'Open Sans'
+                  Height: =38
+                  PaddingRight: =8
+                  Size: =8.25
+                  Text: =Text(ThisItem.'Created On', "hh:mm")
+                  Width: =Parent.TemplateWidth * 0.05
+                  X: =Parent.TemplateWidth * 0.95
       - cmpVacioMov:
           Control: CanvasComponent
           ComponentName: cmpEmpty
@@ -684,7 +748,9 @@ Screens:
             Mensaje: |-
               =If(IsBlank(gvarCajeroMov),
                   "Elegí un cajero del panel izquierdo para ver sus movimientos.",
-                  "Este cajero no tiene movimientos con ese filtro en la fecha elegida.")
+                  If(!IsEmpty(colDiasMov),
+                     "Sin movimientos en esta fecha. Abajo están los días en que este cajero sí tuvo.",
+                     "Este cajero no tiene movimientos registrados."))
             Visible: =IsEmpty(galMovMov.AllItems)
             Width: =galMovMov.Width
             X: =galMovMov.X
@@ -714,8 +780,7 @@ Screens:
                       ParseJSON(Environment.sanic_CHWorkloadByCashier().Workload) As w,
                       {
                           cajero:       GUID(Text(w.cajero)),
-                          cajeroNombre: Text(w.cajeroNombre),
-                          mesa:         Text(w.mesa)
+                          cajeroNombre: Text(w.cajeroNombre)
                       }
                   )
               )
@@ -742,7 +807,12 @@ Screens:
             HoverColor: =Self.Color
             HoverFill: =Color.Transparent
             OnSelect: |-
-              =// El cubo: 12 filas como mucho, con TODO el dia agregado del lado del servidor.
+              =// Refresh primero, SIEMPRE: el cubo lo calcula el servidor y siempre viene
+              // fresco, pero la tabla de abajo lee del datasource y sin esto se queda con lo
+              // que habia en cache cuando se abrio la app.
+              Refresh('CH-Tbl-Transactions');
+              UpdateContext({ctxUltimaActMov: Now()});
+              // El cubo: 12 filas como mucho, con TODO el dia agregado del lado del servidor.
               // De ahi salen el resumen grande y los contadores de los chips sin volver a
               // consultar cada vez que se toca uno. Sumar en el cliente toparia en 500 filas y
               // daria un resumen incompleto sin avisar.
@@ -761,12 +831,16 @@ Screens:
                                       moneda:      Text(c.moneda),
                                       tipo:        Text(c.tipo),
                                       via:         Text(c.via),
+                                      signo:       Value(c.signo),
                                       efectivo:    Value(c.efectivo),
                                       chequeBac:   Value(c.chequeBac),
                                       chequeOtros: Value(c.chequeOtros),
                                       total:       Value(c.total),
                                       cantidad:    Value(c.cantidad)
-                                  }))
+                                  }));
+                          ClearCollect(colDiasMov,
+                              ForAll(ParseJSON(r.Days) As x,
+                                  { fecha: DateValue(Text(x.fecha)), cantidad: Value(x.cantidad) }))
                       ),
                       Clear(colCuboMov);
                       Notify("No se pudo cargar el resumen del cajero: " & FirstError.Message, NotificationType.Error)
@@ -779,3 +853,270 @@ Screens:
             Size: =13
             Text: =""
             Width: =1
+      - btnRefrescarMov:
+          Control: Classic/Button@2.2.0
+          Properties:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            Color: =ThemeInk2
+            DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+            DisabledColor: =ColorFade(Self.Fill, 90%)
+            DisabledFill: =ColorFade(Self.Fill, 70%)
+            Fill: =ThemeSurface
+            Font: =Font.'Open Sans'
+            Height: =32
+            HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+            HoverColor: =Self.Color
+            HoverFill: =ThemeSurface2
+            OnSelect: |-
+              =// Explicito y a mano, sin temporizador. Esta es una vista de auditoria, no una
+              // lista de trabajo pendiente: refrescar sola una grilla de 5.000 filas mientras
+              // el operador la esta recorriendo lo haria perder el lugar. El boton dice cuando
+              // fue la ultima vez, que es lo que hace falta para saber si mirar de nuevo.
+              Select(btnCargarCuboMov)
+            PressedBorderColor: =Self.Fill
+            PressedColor: =Self.Fill
+            PressedFill: =Self.Color
+            RadiusBottomLeft: =7
+            RadiusBottomRight: =7
+            RadiusTopLeft: =7
+            RadiusTopRight: =7
+            Size: =9
+            Text: |-
+              =If(IsBlank(ctxUltimaActMov), "Actualizar",
+                  "Actualizar · " & Text(ctxUltimaActMov, "hh:mm"))
+            Width: =150
+            X: =btnHoyMov.X - 8 - Self.Width
+            Y: =LayHeaderH + 16
+      - galDiasMov:
+          Control: Gallery@2.15.0
+          Variant: Vertical
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Height: =Min(CountRows(colDiasMov) * 30 + 24, 220)
+            Items: =colDiasMov
+            LoadingSpinner: =LoadingSpinner.None
+            TemplateSize: =30
+            Visible: |-
+              =// EL VACIO TIENE QUE SER UN CARTEL, NO UN CALLEJON. Que la fecha elegida no
+              // tenga nada es una respuesta legitima; dejar al operador probando fechas a mano
+              // hasta dar con la buena, no.
+              !IsBlank(gvarCajeroMov) && IsEmpty(colCuboMov) && !IsEmpty(colDiasMov)
+            Width: =420
+            X: =galMovMov.X + (galMovMov.Width - 420) / 2
+            Y: =galMovMov.Y + galMovMov.Height / 2 + 24
+          Children:
+            - btnDiaMov:
+                Control: Classic/Button@2.2.0
+                Properties:
+                  BorderColor: =ThemeLine
+                  BorderThickness: =1
+                  Color: =ThemeInk2
+                  DisabledBorderColor: =ColorFade(Self.BorderColor, 70%)
+                  DisabledColor: =ColorFade(Self.Fill, 90%)
+                  DisabledFill: =ColorFade(Self.Fill, 70%)
+                  Fill: =ThemeSurface
+                  Font: =Font.'Open Sans'
+                  Height: =26
+                  HoverBorderColor: =ColorFade(Self.BorderColor, 20%)
+                  HoverColor: =Self.Color
+                  HoverFill: =ThemeSurface2
+                  OnSelect: |-
+                    =UpdateContext({ctxDiaMov: ThisItem.fecha});
+                    Reset(dtpDiaMov);
+                    Select(btnCargarCuboMov)
+                  PressedBorderColor: =Self.Fill
+                  PressedColor: =Self.Fill
+                  PressedFill: =Self.Color
+                  RadiusBottomLeft: =7
+                  RadiusBottomRight: =7
+                  RadiusTopLeft: =7
+                  RadiusTopRight: =7
+                  Size: =8.25
+                  Text: |-
+                    =// Concatenacion en vez de interpolacion: un $"..." con comillas anidadas
+                    // adentro de {} no resolvia y el boton salia VACIO — se veia una caja blanca
+                    // sin texto, que es justo lo que reporto el usuario.
+                    Text(ThisItem.fecha, "dd/mm/yyyy") & "   ·   " & Text(ThisItem.cantidad) & " transacciones"
+                  Width: =420
+      - lblCabIdMov:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =8
+            PaddingRight: =0
+            Size: =7.5
+            Text: ="ID"
+            Width: =galMovMov.Width * 0.10
+            X: =galMovMov.X + galMovMov.Width * 0.00
+            Y: =LayHeaderH + 240
+      - lblCabRefMov:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =8
+            PaddingRight: =0
+            Size: =7.5
+            Text: ="REFERENCIA"
+            Width: =galMovMov.Width * 0.12
+            X: =galMovMov.X + galMovMov.Width * 0.10
+            Y: =LayHeaderH + 240
+      - lblCabTipoMov:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =8
+            PaddingRight: =0
+            Size: =7.5
+            Text: ="TIPO"
+            Width: =galMovMov.Width * 0.10
+            X: =galMovMov.X + galMovMov.Width * 0.22
+            Y: =LayHeaderH + 240
+      - lblCabViaMov:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =8
+            PaddingRight: =0
+            Size: =7.5
+            Text: ="VÍA / LOTE"
+            Width: =galMovMov.Width * 0.12
+            X: =galMovMov.X + galMovMov.Width * 0.32
+            Y: =LayHeaderH + 240
+      - lblCabCuentaMov:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =8
+            PaddingRight: =0
+            Size: =7.5
+            Text: ="CUENTA"
+            Width: =galMovMov.Width * 0.08
+            X: =galMovMov.X + galMovMov.Width * 0.44
+            Y: =LayHeaderH + 240
+      - lblCabMonMov:
+          Control: Label@2.5.1
+          Properties:
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =8
+            PaddingRight: =0
+            Size: =7.5
+            Text: ="MON."
+            Width: =galMovMov.Width * 0.05
+            X: =galMovMov.X + galMovMov.Width * 0.52
+            Y: =LayHeaderH + 240
+      - lblCabEfeMov:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =0
+            PaddingRight: =8
+            Size: =7.5
+            Text: ="EFECTIVO"
+            Width: =galMovMov.Width * 0.10
+            X: =galMovMov.X + galMovMov.Width * 0.57
+            Y: =LayHeaderH + 240
+      - lblCabBacMov:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =0
+            PaddingRight: =8
+            Size: =7.5
+            Text: ="CHEQUE BAC"
+            Width: =galMovMov.Width * 0.10
+            X: =galMovMov.X + galMovMov.Width * 0.67
+            Y: =LayHeaderH + 240
+      - lblCabOtrMov:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =0
+            PaddingRight: =8
+            Size: =7.5
+            Text: ="CHEQUE OTROS"
+            Width: =galMovMov.Width * 0.10
+            X: =galMovMov.X + galMovMov.Width * 0.77
+            Y: =LayHeaderH + 240
+      - lblCabTotMov:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =0
+            PaddingRight: =8
+            Size: =7.5
+            Text: ="TOTAL"
+            Width: =galMovMov.Width * 0.08
+            X: =galMovMov.X + galMovMov.Width * 0.87
+            Y: =LayHeaderH + 240
+      - lblCabHoraMov:
+          Control: Label@2.5.1
+          Properties:
+            Align: =Align.Right
+            BorderColor: =RGBA(0, 0, 0, 1)
+            Color: =ThemeInk3
+            DisabledColor: =RGBA(186, 186, 186, 1)
+            Font: =Font.'Open Sans'
+            FontWeight: =FontWeight.Semibold
+            Height: =32
+            PaddingLeft: =0
+            PaddingRight: =8
+            Size: =7.5
+            Text: ="HORA"
+            Width: =galMovMov.Width * 0.05
+            X: =galMovMov.X + galMovMov.Width * 0.95
+            Y: =LayHeaderH + 240
