@@ -396,7 +396,7 @@
                                 Sort(
                                     Filter(
                                         'CH-Tbl-ValidationRuns',
-                                        SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
+                                        ReceivedEmail.'CH-Tbl-Received Emails' = ThisItem.'CH-Tbl-Received Emails'
                                     ),
                                     'Created On',
                                     SortOrder.Descending
@@ -411,42 +411,14 @@
                 recBlandoFondo As rectangle:
                     Fill: =If(ThisItem.IsSelected,Color.White,Color.Transparent)
                     Height: =Parent.TemplateHeight
-                    OnSelect: |
-                        =UpdateContext(
-                            {
-                                varRunId: First(
-                                    Sort(
-                                        Filter(
-                                            'CH-Tbl-ValidationRuns',
-                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                        ),
-                                        'Created On',
-                                        SortOrder.Descending
-                                    )
-                                ).'CH-Tbl-ValidationRuns'
-                            }
-                        );
+                    OnSelect: =Select(Parent)
                     Width: =Parent.TemplateWidth
                     ZIndex: =1
 
                 recFranja As rectangle:
                     Fill: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error || ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, RGBA(110, 22, 34, 1), RGBA(154, 97, 0, 1))
                     Height: =Parent.TemplateHeight
-                    OnSelect: |
-                        =UpdateContext(
-                            {
-                                varRunId: First(
-                                    Sort(
-                                        Filter(
-                                            'CH-Tbl-ValidationRuns',
-                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                        ),
-                                        'Created On',
-                                        SortOrder.Descending
-                                    )
-                                ).'CH-Tbl-ValidationRuns'
-                            }
-                        );
+                    OnSelect: =Select(Parent)
                     Width: =3
                     ZIndex: =2
 
@@ -454,21 +426,7 @@
                     Color: =RGBA(28, 21, 23, 1)
                     FontWeight: =FontWeight.Semibold
                     Height: =20
-                    OnSelect: |
-                        =UpdateContext(
-                            {
-                                varRunId: First(
-                                    Sort(
-                                        Filter(
-                                            'CH-Tbl-ValidationRuns',
-                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                        ),
-                                        'Created On',
-                                        SortOrder.Descending
-                                    )
-                                ).'CH-Tbl-ValidationRuns'
-                            }
-                        );
+                    OnSelect: =Select(Parent)
                     PaddingLeft: =0
                     Size: =11
                     Text: =Coalesce(ThisItem.Subject, "(sin asunto)")
@@ -481,21 +439,7 @@
                     Align: =Align.Right
                     Color: =RGBA(120, 106, 109, 1)
                     Height: =18
-                    OnSelect: |
-                        =UpdateContext(
-                            {
-                                varRunId: First(
-                                    Sort(
-                                        Filter(
-                                            'CH-Tbl-ValidationRuns',
-                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                        ),
-                                        'Created On',
-                                        SortOrder.Descending
-                                    )
-                                ).'CH-Tbl-ValidationRuns'
-                            }
-                        );
+                    OnSelect: =Select(Parent)
                     Size: =9
                     Text: |-
                         =Text(ThisItem.ReceptionDateTime, "dd/mm hh:mm")
@@ -507,21 +451,7 @@
                 lblGalRemitente As label:
                     Color: =RGBA(120, 106, 109, 1)
                     Height: =18
-                    OnSelect: |
-                        =UpdateContext(
-                            {
-                                varRunId: First(
-                                    Sort(
-                                        Filter(
-                                            'CH-Tbl-ValidationRuns',
-                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                        ),
-                                        'Created On',
-                                        SortOrder.Descending
-                                    )
-                                ).'CH-Tbl-ValidationRuns'
-                            }
-                        );
+                    OnSelect: =Select(Parent)
                     PaddingLeft: =0
                     Size: =10
                     Text: =ThisItem.SourceEmailAddress
@@ -536,21 +466,7 @@
                     Fill: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error || ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, RGBA(246, 233, 235, 1), RGBA(253, 243, 227, 1))
                     FontWeight: =FontWeight.Semibold
                     Height: =20
-                    OnSelect: |
-                        =UpdateContext(
-                            {
-                                varRunId: First(
-                                    Sort(
-                                        Filter(
-                                            'CH-Tbl-ValidationRuns',
-                                            SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                        ),
-                                        'Created On',
-                                        SortOrder.Descending
-                                    )
-                                ).'CH-Tbl-ValidationRuns'
-                            }
-                        );
+                    OnSelect: =Select(Parent)
                     PaddingLeft: =8
                     PaddingRight: =8
                     Size: =8
@@ -580,6 +496,35 @@
                     X: =174
                     Y: =54
                     ZIndex: =7
+
+            htmlVacio As htmlViewer:
+                AlignInContainer: =AlignInContainer.Stretch
+                FillPortions: =8
+                Font: =App.Theme.Font
+                Height: =300
+                HtmlText: |-
+                    =With(
+                         {buscando: Len(Trim(SearchInput1_1.Value)) > 0},
+                         "<div style='text-align:center;padding-top:90px'>" &
+                         "<div style='display:inline-block;width:52px;height:52px;line-height:52px;border-radius:26px;background:" &
+                         If(buscando, "rgb(240,240,240);color:rgb(120,106,109)", "rgb(232,242,236);color:rgb(20,107,58)") &
+                         ";font-size:24px;font-weight:700'>" & If(buscando, "?", "&check;") & "</div>" &
+                         "<div style='font-size:19px;font-weight:650;color:rgb(28,21,23);margin-top:14px'>" &
+                         If(buscando, "Sin resultados", "Todo al dia") & "</div>" &
+                         "<div style='font-size:13.5px;color:rgb(120,106,109);margin-top:6px'>" &
+                         If(
+                             buscando,
+                             "Ningun correo de esta vista coincide con la busqueda. Los correos ya omitidos no estan aca: estan en Cuarentena.",
+                             varVista = "TODO",
+                             "No hay nada esperando una decision. Si aparece algo, va a estar aca.",
+                             "Sin casos en esta vista."
+                         ) &
+                         "</div></div>"
+                     )
+                LayoutMaxHeight: =0
+                LayoutMaxWidth: =0
+                Visible: =galBandeja.AllItemsCount = 0
+                ZIndex: =3
 
             "'container Detalle' As groupContainer.verticalAutoLayoutContainer":
                 DropShadow: =DropShadow.Light
@@ -989,33 +934,4 @@
                     Visible: =Coalesce(varTecnicoAbierto, false)
                     Width: =Parent.Width - 48
                     ZIndex: =11
-
-            htmlVacio As htmlViewer:
-                AlignInContainer: =AlignInContainer.Stretch
-                FillPortions: =8
-                Font: =App.Theme.Font
-                Height: =300
-                HtmlText: |-
-                    =With(
-                         {buscando: Len(Trim(SearchInput1_1.Value)) > 0},
-                         "<div style='text-align:center;padding-top:90px'>" &
-                         "<div style='display:inline-block;width:52px;height:52px;line-height:52px;border-radius:26px;background:" &
-                         If(buscando, "rgb(240,240,240);color:rgb(120,106,109)", "rgb(232,242,236);color:rgb(20,107,58)") &
-                         ";font-size:24px;font-weight:700'>" & If(buscando, "?", "&check;") & "</div>" &
-                         "<div style='font-size:19px;font-weight:650;color:rgb(28,21,23);margin-top:14px'>" &
-                         If(buscando, "Sin resultados", "Todo al dia") & "</div>" &
-                         "<div style='font-size:13.5px;color:rgb(120,106,109);margin-top:6px'>" &
-                         If(
-                             buscando,
-                             "Ningun correo de esta vista coincide con la busqueda. Los correos ya omitidos no estan aca: estan en Cuarentena.",
-                             varVista = "TODO",
-                             "No hay nada esperando una decision. Si aparece algo, va a estar aca.",
-                             "Sin casos en esta vista."
-                         ) &
-                         "</div></div>"
-                     )
-                LayoutMaxHeight: =0
-                LayoutMaxWidth: =0
-                Visible: =galBandeja.AllItemsCount = 0
-                ZIndex: =3
 

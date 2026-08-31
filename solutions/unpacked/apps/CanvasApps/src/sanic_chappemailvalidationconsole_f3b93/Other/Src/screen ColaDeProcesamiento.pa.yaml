@@ -170,16 +170,6 @@ Screens:
                   LayoutMaxWidth: =
                   PaddingRight: =5
                 Children:
-                  - btnVistaPendiente:
-                      Control: Button@0.0.45
-                      Properties:
-                        Appearance: =If(varVista = "SINVALIDAR", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
-                        LayoutMinHeight: =0
-                        LayoutMinWidth: =110
-                        OnSelect: |-
-                          =UpdateContext({varVista: "SINVALIDAR"})
-                        Text: ="Sin validar (" & varPendientes & ")"
-                        Width: =150
                   - SearchInput1_1:
                       Control: TextInput@0.0.54
                       Properties:
@@ -193,6 +183,16 @@ Screens:
                         LayoutMaxWidth: =
                         OnChange: =Reset(Self)
                         Placeholder: ="Buscar por asunto o remitente"
+                  - btnVistaPendiente:
+                      Control: Button@0.0.45
+                      Properties:
+                        Appearance: =If(varVista = "SINVALIDAR", 'ButtonCanvas.Appearance'.Primary, 'ButtonCanvas.Appearance'.Subtle)
+                        LayoutMinHeight: =0
+                        LayoutMinWidth: =110
+                        OnSelect: |-
+                          =UpdateContext({varVista: "SINVALIDAR"})
+                        Text: ="Sin validar (" & varPendientes & ")"
+                        Width: =150
                   - btnVistaTodo:
                       Control: Button@0.0.45
                       Properties:
@@ -300,7 +300,7 @@ Screens:
                                       Sort(
                                           Filter(
                                               'CH-Tbl-ValidationRuns',
-                                              SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
+                                              ReceivedEmail.'CH-Tbl-Received Emails' = ThisItem.'CH-Tbl-Received Emails'
                                           ),
                                           'Created On',
                                           SortOrder.Descending
@@ -317,21 +317,7 @@ Screens:
                               BorderColor: =RGBA(0, 0, 255, 1)
                               Fill: =If(ThisItem.IsSelected,Color.White,Color.Transparent)
                               Height: =Parent.TemplateHeight
-                              OnSelect: |
-                                =UpdateContext(
-                                    {
-                                        varRunId: First(
-                                            Sort(
-                                                Filter(
-                                                    'CH-Tbl-ValidationRuns',
-                                                    SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                                ),
-                                                'Created On',
-                                                SortOrder.Descending
-                                            )
-                                        ).'CH-Tbl-ValidationRuns'
-                                    }
-                                );
+                              OnSelect: =Select(Parent)
                               Width: =Parent.TemplateWidth
                         - recFranja:
                             Control: Rectangle@2.3.0
@@ -339,21 +325,7 @@ Screens:
                               BorderColor: =RGBA(0, 0, 255, 1)
                               Fill: =If(ThisItem.EmailReviewStatus = 'EmailReviewStatus (CH-Tbl-Received Emails)'.Error || ThisItem.SenderClassification = 'SenderClassification (CH-Tbl-Received Emails)'.Sospechoso, RGBA(110, 22, 34, 1), RGBA(154, 97, 0, 1))
                               Height: =Parent.TemplateHeight
-                              OnSelect: |
-                                =UpdateContext(
-                                    {
-                                        varRunId: First(
-                                            Sort(
-                                                Filter(
-                                                    'CH-Tbl-ValidationRuns',
-                                                    SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                                ),
-                                                'Created On',
-                                                SortOrder.Descending
-                                            )
-                                        ).'CH-Tbl-ValidationRuns'
-                                    }
-                                );
+                              OnSelect: =Select(Parent)
                               Width: =3
                         - lblGalAsunto:
                             Control: Label@2.5.1
@@ -364,21 +336,7 @@ Screens:
                               Font: =Font.'Open Sans'
                               FontWeight: =FontWeight.Semibold
                               Height: =20
-                              OnSelect: |
-                                =UpdateContext(
-                                    {
-                                        varRunId: First(
-                                            Sort(
-                                                Filter(
-                                                    'CH-Tbl-ValidationRuns',
-                                                    SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                                ),
-                                                'Created On',
-                                                SortOrder.Descending
-                                            )
-                                        ).'CH-Tbl-ValidationRuns'
-                                    }
-                                );
+                              OnSelect: =Select(Parent)
                               PaddingLeft: =0
                               Size: =11
                               Text: =Coalesce(ThisItem.Subject, "(sin asunto)")
@@ -394,21 +352,7 @@ Screens:
                               DisabledColor: =RGBA(186, 186, 186, 1)
                               Font: =Font.'Open Sans'
                               Height: =18
-                              OnSelect: |
-                                =UpdateContext(
-                                    {
-                                        varRunId: First(
-                                            Sort(
-                                                Filter(
-                                                    'CH-Tbl-ValidationRuns',
-                                                    SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                                ),
-                                                'Created On',
-                                                SortOrder.Descending
-                                            )
-                                        ).'CH-Tbl-ValidationRuns'
-                                    }
-                                );
+                              OnSelect: =Select(Parent)
                               Size: =9
                               Text: =Text(ThisItem.ReceptionDateTime, "dd/mm hh:mm")
                               Width: =92
@@ -422,21 +366,7 @@ Screens:
                               DisabledColor: =RGBA(186, 186, 186, 1)
                               Font: =Font.'Open Sans'
                               Height: =18
-                              OnSelect: |
-                                =UpdateContext(
-                                    {
-                                        varRunId: First(
-                                            Sort(
-                                                Filter(
-                                                    'CH-Tbl-ValidationRuns',
-                                                    SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                                ),
-                                                'Created On',
-                                                SortOrder.Descending
-                                            )
-                                        ).'CH-Tbl-ValidationRuns'
-                                    }
-                                );
+                              OnSelect: =Select(Parent)
                               PaddingLeft: =0
                               Size: =10
                               Text: =ThisItem.SourceEmailAddress
@@ -454,21 +384,7 @@ Screens:
                               Font: =Font.'Open Sans'
                               FontWeight: =FontWeight.Semibold
                               Height: =20
-                              OnSelect: |
-                                =UpdateContext(
-                                    {
-                                        varRunId: First(
-                                            Sort(
-                                                Filter(
-                                                    'CH-Tbl-ValidationRuns',
-                                                    SourceRecordID = Text(ThisItem.'CH-Tbl-Received Emails')
-                                                ),
-                                                'Created On',
-                                                SortOrder.Descending
-                                            )
-                                        ).'CH-Tbl-ValidationRuns'
-                                    }
-                                );
+                              OnSelect: =Select(Parent)
                               PaddingLeft: =8
                               PaddingRight: =8
                               Size: =8
