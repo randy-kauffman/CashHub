@@ -90,21 +90,30 @@ Valores numéricos confirmados contra `TransactionRouting`/`TransactionGuard`
 | `159460001` | Ingresado | El digitador, desde `scrLotes` (botón *Marcar Ingresado*, solo visible en `Generado`) | `TransactionGuard.EvaluateBatchUpdate` — transición hacia adelante únicamente |
 | `159460002` | Aprobado | — | **Dead-end prohibido**: no se entra ni se sale de este valor. Existe en el option set pero el dominio lo bloquea en cualquier dirección |
 | `159460003` | Aplicado | El digitador, desde `scrLotes` (botón *Marcar Aplicado*, solo visible en `Ingresado`) | Mismo guard + **segregación de funciones**: quien marcó `Ingresado` (estampado en `sanic_ingresadopor`) **no puede** marcar el mismo lote `Aplicado` — tiene que confirmarlo otro usuario. Un lote legado sin esa estampa no se bloquea |
+| `159460004` | Devuelto | Quien registra que **el aprobador devolvió la carga en el IBS Branch**, desde `scrLotes` (botón *Marcar Devuelto*, solo visible en `Ingresado`) | Mismo guard. **Segregación de funciones igual que `Aplicado`**: aplicar y devolver son las dos caras del mismo veredicto del aprobador, así que quien marcó `Ingresado` no puede registrar ninguna de las dos. Y exige **motivo** (`sanic_motivodevolucion`) en el **mismo request**: quien tenga que corregir necesita saber qué rechazó el Core |
 
 ```mermaid
 stateDiagram-v2
     [*] --> Generado: corte server-side\n(sanic_CHCreateTransactionCut)
     Generado --> Ingresado: digitador marca\n(distinto de quien aplica)
     Ingresado --> Aplicado: OTRO digitador marca\n(segregación de funciones)
+    Ingresado --> Devuelto: el IBS devolvió la carga\n(OTRO usuario + motivo)
+    Devuelto --> Ingresado: se corrige y se vuelve\na presentar al IBS
     Aplicado --> [*]: terminal, inmutable
 ```
 
-El ciclo es **estrictamente hacia adelante**: `Generado → Ingresado →
-Aplicado`. Saltos, retrocesos, el no-op, cualquier movimiento hacia/desde
-`Aprobado`, o cualquier escritura de estado sobre un lote `Aplicado` los
-bloquea `TransactionGuard.EvaluateBatchUpdate`. Un lote `Aplicado` es
-**inmutable**: ni su estado ni las transacciones que contiene (§2.2) admiten
-más cambios.
+El ciclo avanza `Generado → Ingresado → Aplicado`, con **un único retroceso
+legal**: `Ingresado → Devuelto → Ingresado`. Existe porque el aprobador revisa
+la carga en el IBS Branch y puede **devolverla**; sin ese estado el lote quedaba
+atrapado en `Ingresado` —un valor que afirma *"ya entró al Core"*— cuando en
+realidad no entró nada. La aplicación mentía sobre dónde estaba la plata.
+
+`Devuelto` **no tiene atajo a `Aplicado`**: un lote devuelto vuelve a pasar por
+el IBS o no se aplica. Saltos, el no-op, cualquier movimiento hacia/desde
+`Aprobado`, o cualquier escritura de estado sobre un lote `Aplicado` los bloquea
+`TransactionGuard.EvaluateBatchUpdate`. Un lote `Aplicado` sigue siendo
+**inmutable**: ni su estado ni las transacciones que contiene (§2.2) admiten más
+cambios.
 
 `BatchTransitionStampPlugin` (Pre-operation 20, `Update` de
 `sanic_transactionbatches`, filtrado en `sanic_batchstatus`, **después** del

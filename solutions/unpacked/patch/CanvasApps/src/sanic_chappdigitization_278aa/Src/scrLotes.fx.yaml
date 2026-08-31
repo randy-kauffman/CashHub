@@ -11,7 +11,9 @@ scrLotes As screen:
             ctxSacandoLot: false,
             ctxDlgAplicadoLot: false,
             ctxDlgSacarLot: false,
-            ctxDlTokenLot: ""
+            ctxDlTokenLot: "",
+            ctxDlgDevolverLot: false,
+            ctxDevolviendoLot: false
         });
         Reset(tabFechaLot);
         Reset(inpBuscarLot);
@@ -27,6 +29,7 @@ scrLotes As screen:
                     || ( ctxFiltroEstadoLot = "Por aplicar"
                          && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                               || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
+                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
                               || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                     ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                     ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
@@ -139,7 +142,8 @@ scrLotes As screen:
                             || ( ctxFiltroEstadoLot = "Por aplicar"
                                  && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                       || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                      || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                             ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                             ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                         ),
@@ -230,7 +234,8 @@ scrLotes As screen:
                                         || ( ctxFiltroEstadoLot = "Por aplicar"
                                              && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                                   || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                  || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                                  || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                         ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                         ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                                     ),
@@ -277,7 +282,8 @@ scrLotes As screen:
                                         || ( ctxFiltroEstadoLot = "Por aplicar"
                                              && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                                   || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                  || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                                  || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                         ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                         ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                                     ),
@@ -324,7 +330,8 @@ scrLotes As screen:
                                         || ( ctxFiltroEstadoLot = "Por aplicar"
                                              && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                                   || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                                  || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                                  || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                         ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                         ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                                     ),
@@ -393,7 +400,8 @@ scrLotes As screen:
                                     || ( ctxFiltroEstadoLot = "Por aplicar"
                                          && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                               || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                     ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                     ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                                 ),
@@ -434,7 +442,8 @@ scrLotes As screen:
                                 || ( ctxFiltroEstadoLot = "Por aplicar"
                                      && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                           || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                          || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                          || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                 ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                 ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                             ),
@@ -548,6 +557,7 @@ scrLotes As screen:
                             =Switch(ThisItem.BatchStatus,
                                 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado,  "Generado",
                                 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado, "Ingresado",
+                                'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto,  "Devuelto",
                                 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado,  "Aprobado",
                                 'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado,  "Aplicado", "—")
                         Width: =84
@@ -570,7 +580,8 @@ scrLotes As screen:
                                     || ( ctxFiltroEstadoLot = "Por aplicar"
                                          && ( BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
                                               || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
-                                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
+                                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
+                              || BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado ) ),
                                     ( IsBlank(inpBuscarLot.Text) || StartsWith(Name, inpBuscarLot.Text) ),
                                     ( tabFechaLot.Selected.Value = "Cualquier fecha" || 'Created On' >= ctxDesdeFechaLot )
                                 ),
@@ -648,6 +659,7 @@ scrLotes As screen:
                             =Switch(gvarLote.BatchStatus,
                                 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado,  "Generado",
                                 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado, "Ingresado",
+                                'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto,  "Devuelto",
                                 'BatchStatus (CH-Tbl-TransactionBatches)'.Aprobado,  "Aprobado",
                                 'BatchStatus (CH-Tbl-TransactionBatches)'.Aplicado,  "Aplicado", "—")
                         Tono: |-
@@ -710,8 +722,14 @@ scrLotes As screen:
                         PressedColor: =Self.Color
                         PressedFill: =App.Theme.Colors.Darker40
                         Size: =10
-                        Text: ="Marcar como Ingresado"
-                        Visible: =gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
+                        Text: |-
+                            =// Desde Devuelto el mismo boton es la RECARGA: se corrigio y se
+                            // vuelve a presentar al IBS.
+                            If(gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto,
+                               "Volver a marcar Ingresado", "Marcar como Ingresado")
+                        Visible: |-
+                            =gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Generado
+                            || gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto
                         Width: =176
                         X: =16
                         Y: =8
@@ -744,6 +762,41 @@ scrLotes As screen:
                         X: =16
                         Y: =8
                         ZIndex: =2
+
+                    btnMarcarDevueltoLot As button:
+                        BorderColor: =ThemeDangerLine
+                        BorderThickness: =1
+                        Color: =ThemeDanger
+                        DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                        DisabledColor: =RGBA(166, 166, 166, 1)
+                        DisabledFill: =RGBA(244, 244, 244, 1)
+                        Fill: =ThemeSurface
+                        FontWeight: =FontWeight.Semibold
+                        Height: =32
+                        HoverBorderColor: =App.Theme.Colors.Darker10
+                        HoverColor: =App.Theme.Colors.PrimaryForeground
+                        HoverFill: =ThemeDangerSoft
+                        OnSelect: |-
+                            =UpdateContext({ctxDlgDevolverLot: true})
+                        PressedBorderColor: =App.Theme.Colors.Darker40
+                        PressedColor: =Self.Color
+                        PressedFill: =App.Theme.Colors.Darker40
+                        Size: =10
+                        Text: ="Marcar como Devuelto"
+                        Visible: |-
+                            =// LAS DOS CARAS DEL MISMO VEREDICTO. El aprobador revisa la carga en
+                            // el IBS y o la aplica o la devuelve, asi que este boton aparece
+                            // exactamente cuando aparece "Marcar como Aplicado": con el lote
+                            // Ingresado y con alguien que NO sea quien lo subio.
+                            //
+                            // El servidor lo vuelve a exigir igual (segregacion de funciones en
+                            // TransactionGuard): esconder el boton es cortesia, no seguridad.
+                            gvarLote.BatchStatus = 'BatchStatus (CH-Tbl-TransactionBatches)'.Ingresado
+                            && Lower(Coalesce(gvarLote.'Ingresado por'.'Primary Email', "")) <> Lower(User().Email)
+                        Width: =176
+                        X: =btnMarcarAplicadoLot.X + btnMarcarAplicadoLot.Width + 8
+                        Y: =8
+                        ZIndex: =7
 
                     btnDescargarCsvLot As button:
                         BorderColor: =ThemeAccent
@@ -1521,6 +1574,250 @@ scrLotes As screen:
                 X: =Parent.Width - 20 - Self.Width
                 Y: =Parent.Height - 20 - 32
                 ZIndex: =9
+
+    cntDlgDevolverLot As groupContainer.manualLayoutContainer:
+        DropShadow: =DropShadow.Light
+        Fill: =ThemeOverlay
+        Height: =Parent.Height
+        LayoutGridColumnMinWidth: =0
+        LayoutGridColumns: =6
+        LayoutGridRowMinHeight: =0
+        LayoutGridRows: =6
+        RadiusBottomLeft: =4
+        RadiusBottomRight: =4
+        RadiusTopLeft: =4
+        RadiusTopRight: =4
+        Visible: =ctxDlgDevolverLot
+        Width: =Parent.Width
+        ZIndex: =5
+
+        btnDlgDevolverBloqueoLot As button:
+            BorderColor: =App.Theme.Colors.Primary
+            Color: =App.Theme.Colors.PrimaryForeground
+            DisabledBorderColor: =RGBA(244, 244, 244, 1)
+            DisabledColor: =RGBA(166, 166, 166, 1)
+            DisabledFill: =RGBA(244, 244, 244, 1)
+            Fill: =Color.Transparent
+            Font: =App.Theme.Font
+            FontWeight: =FontWeight.Semibold
+            Height: =Parent.Height
+            HoverBorderColor: =App.Theme.Colors.Darker10
+            HoverColor: =App.Theme.Colors.PrimaryForeground
+            HoverFill: =Color.Transparent
+            PressedBorderColor: =App.Theme.Colors.Darker40
+            PressedColor: =Self.Color
+            PressedFill: =Color.Transparent
+            Size: =15
+            Text: =""
+            Width: =Parent.Width
+            ZIndex: =1
+
+        cntDlgDevolverCardLot As groupContainer.manualLayoutContainer:
+            BorderColor: =ThemeLine
+            BorderThickness: =1
+            DropShadow: =DropShadow.Regular
+            Fill: =ThemeSurface
+            Height: =362
+            LayoutGridColumnMinWidth: =0
+            LayoutGridColumns: =6
+            LayoutGridRowMinHeight: =0
+            LayoutGridRows: =6
+            RadiusBottomLeft: =13
+            RadiusBottomRight: =13
+            RadiusTopLeft: =13
+            RadiusTopRight: =13
+            Width: =440
+            X: =(Parent.Width - Self.Width) / 2
+            Y: =(Parent.Height - Self.Height) / 2
+            ZIndex: =2
+
+            shpDlgDevolverIcoLot As rectangle:
+                BorderColor: =App.Theme.Colors.Darker40
+                Fill: =ThemeDangerSoft
+                Height: =34
+                Width: =34
+                X: =20
+                Y: =20
+                ZIndex: =1
+
+            lblDlgDevolverTitLot As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =RGBA(0, 0, 0, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Bold
+                Height: =22
+                Size: =10.88
+                Text: =$"¿Marcar {gvarLote.Name} como Devuelto?"
+                Width: =Parent.Width - Self.X - 44
+                X: =shpDlgDevolverIcoLot.X + shpDlgDevolverIcoLot.Width + 10
+                Y: =20
+                ZIndex: =2
+
+            lblDlgDevolverTxtLot As label:
+                AutoHeight: =true
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                Size: =13
+                Text: |-
+                    =$"El aprobador devolvió esta carga en el IBS Branch. El lote vuelve a quedar editable: se le pueden sacar transacciones, corregirlo y volver a marcarlo Ingresado. NO se puede saltar a Aplicado sin volver a presentarlo al IBS."
+                Width: =Parent.Width - Self.X - 20
+                X: =lblDlgDevolverTitLot.X
+                Y: =lblDlgDevolverTitLot.Y + 24
+                ZIndex: =3
+
+            icoDlgDevolverXLot As icon:
+                AccessibleLabel: ="Cancelar"
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk3
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(244, 244, 244, 1)
+                Height: =18
+                HoverColor: =ThemeInk
+                Icon: =Icon.Cancel
+                OnSelect: |-
+                    =UpdateContext({ctxDlgDevolverLot: false})
+                Width: =18
+                X: =Parent.Width - 20 - 18
+                Y: =20
+                ZIndex: =4
+
+            lblDlgDevolverMotivoLabLot As label:
+                BorderColor: =App.Theme.Colors.Darker40
+                Color: =ThemeInk2
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                FontWeight: =FontWeight.Semibold
+                Height: =16
+                Size: =8.25
+                Text: ="Motivo de la devolución (obligatorio)"
+                Width: =Parent.Width - 2*20
+                X: =20
+                Y: =116
+                ZIndex: =5
+
+            inpMotivoDevLot As text:
+                BorderColor: =ThemeLine
+                BorderThickness: =2
+                Color: =RGBA(0, 0, 0, 1)
+                Default: =
+                DisabledBorderColor: =RGBA(166, 166, 166, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =ThemeSurface
+                FocusedBorderThickness: =4
+                Height: =64
+                HintText: |-
+                    ="Ej: la cuenta 992983992 no existe en el IBS, faltan 2 depósitos…"
+                HoverBorderColor: =App.Theme.Colors.Darker40
+                HoverColor: =RGBA(0, 0, 0, 1)
+                HoverFill: =App.Theme.Colors.Lighter70
+                Mode: =TextMode.MultiLine
+                RadiusBottomLeft: =7
+                RadiusBottomRight: =7
+                RadiusTopLeft: =7
+                RadiusTopRight: =7
+                Size: =13
+                Width: =Parent.Width - 2*20
+                X: =20
+                Y: =136
+                ZIndex: =6
+
+            cntDlgDevolverBannerLot As groupContainer.manualLayoutContainer:
+                DropShadow: =DropShadow.Light
+                Fill: =ThemeWarnSoft
+                Height: =52
+                LayoutGridColumnMinWidth: =0
+                LayoutGridColumns: =6
+                LayoutGridRowMinHeight: =0
+                LayoutGridRows: =6
+                RadiusBottomLeft: =9
+                RadiusBottomRight: =9
+                RadiusTopLeft: =9
+                RadiusTopRight: =9
+                Width: =Parent.Width - 2*20
+                X: =20
+                Y: =208
+                ZIndex: =7
+
+                lblDlgDevolverBannerLot As label:
+                    AutoHeight: =true
+                    BorderColor: =App.Theme.Colors.Darker40
+                    Color: =ThemeWarn
+                    DisabledColor: =RGBA(166, 166, 166, 1)
+                    Height: =36
+                    Size: =8.25
+                    Text: ="El motivo queda registrado en la transacción para auditoría (se ve luego en su historial). Fuera del lote, la transacción no vuelve sola a un corte automático."
+                    Width: =Parent.Width - 26
+                    X: =13
+                    Y: =8
+                    ZIndex: =1
+
+            btnDlgDevolverCancelLot As button:
+                BorderColor: =ThemeLine
+                BorderThickness: =1
+                Color: =ThemeInk2
+                DisabledBorderColor: =RGBA(244, 244, 244, 1)
+                DisabledColor: =RGBA(166, 166, 166, 1)
+                DisabledFill: =RGBA(244, 244, 244, 1)
+                Fill: =Color.Transparent
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =ThemeSurface2
+                OnSelect: |-
+                    =UpdateContext({ctxDlgDevolverLot: false})
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                Size: =10
+                Text: ="Cancelar"
+                Width: =96
+                X: =btnDlgDevolverOkLot.X - 10 - Self.Width
+                Y: =btnDlgDevolverOkLot.Y
+                ZIndex: =8
+
+            btnDlgDevolverOkLot As button:
+                BorderColor: =App.Theme.Colors.Primary
+                BorderStyle: =BorderStyle.None
+                Color: =ThemeSurface
+                DisabledBorderColor: =Color.Transparent
+                DisabledColor: =ThemeInk3
+                DisabledFill: =ThemeLineSoft
+                DisplayMode: =If(ctxDevolviendoLot Or IsBlank(inpMotivoDevLot.Text), DisplayMode.Disabled, DisplayMode.Edit)
+                Fill: =ThemeDanger
+                FontWeight: =FontWeight.Semibold
+                Height: =32
+                HoverBorderColor: =App.Theme.Colors.Darker10
+                HoverColor: =App.Theme.Colors.PrimaryForeground
+                HoverFill: =App.Theme.Colors.Darker10
+                OnSelect: |-
+                    =// El motivo viaja EN EL MISMO Patch que el estado. El guard lo exige asi a
+                    // proposito: si se guardara aparte, un motivo viejo de una devolucion
+                    // anterior alcanzaria para colar una devolucion nueva sin explicar nada.
+                    UpdateContext({ctxDevolviendoLot: true});
+                    IfError(
+                        Patch('CH-Tbl-TransactionBatches',
+                            LookUp('CH-Tbl-TransactionBatches', TransactionBatches = gvarLote.TransactionBatches),
+                            { BatchStatus: 'BatchStatus (CH-Tbl-TransactionBatches)'.Devuelto,
+                              'Motivo de la devolucion': inpMotivoDevLot.Text });
+                        Set(gvarLote, LookUp('CH-Tbl-TransactionBatches',
+                            TransactionBatches = gvarLote.TransactionBatches));
+                        Reset(inpMotivoDevLot);
+                        Notify("Lote marcado como Devuelto. Ya se le pueden sacar transacciones.", NotificationType.Success),
+                        Notify("No se pudo devolver el lote: " & FirstError.Message, NotificationType.Error)
+                    );
+                    UpdateContext({ctxDevolviendoLot: false, ctxDlgDevolverLot: false})
+                PressedBorderColor: =App.Theme.Colors.Darker40
+                PressedColor: =Self.Color
+                PressedFill: =App.Theme.Colors.Darker40
+                Size: =10
+                Text: ="Marcar Devuelto"
+                Width: =130
+                X: =Parent.Width - 20 - Self.Width
+                Y: =Parent.Height - 20 - 32
+                ZIndex: =9
+
 
     btnActualizarLot As button:
         BorderThickness: =0

@@ -153,9 +153,18 @@ namespace CashHub.Plugins
                 pre.IngresadoPor.HasValue ? pre.IngresadoPor.Value.ToString() : "null",
                 context.InitiatingUserId);
 
+            // El motivo se lee del REQUEST, no del registro: la devolucion y su motivo
+            // tienen que viajar juntos. Si se leyera de la fila, un motivo viejo de una
+            // devolucion anterior alcanzaria para colar una devolucion nueva sin explicar
+            // nada.
+            var motivo = update.Contains(Schema.TransactionBatch.MotivoDevolucion)
+                ? update.GetAttributeValue<string>(Schema.TransactionBatch.MotivoDevolucion)
+                : null;
+
             return TransactionGuard.EvaluateBatchUpdate(
                 pre.Status, statusInTarget, newStatus, touchesOnlyTotals: false,
-                initiatingUserId: context.InitiatingUserId, ingresadoPor: pre.IngresadoPor);
+                initiatingUserId: context.InitiatingUserId, ingresadoPor: pre.IngresadoPor,
+                returnReason: motivo);
         }
 
         // ---- Transaccion ----

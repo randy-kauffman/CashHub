@@ -15,8 +15,8 @@ namespace CashHub.Plugins
     /// dentro de la misma operacion): Ingresado -> sanic_ingresadopor +
     /// sanic_ingresadoon; Aplicado -> sanic_aplicadopor + sanic_aplicadoon. El
     /// actor es context.InitiatingUserId y la hora la del servidor, asi el sello
-    /// no depende del reloj ni de la honestidad del cliente. Otros estados no
-    /// estampan nada.
+    /// no depende del reloj ni de la honestidad del cliente; Devuelto ->
+    /// sanic_devueltopor + sanic_devueltoon. Otros estados no estampan nada.
     ///
     /// La estampa de Ingresado es el insumo de la regla de segregacion de
     /// funciones del guard: quien marco Ingresado no puede marcar Aplicado.
@@ -52,6 +52,10 @@ namespace CashHub.Plugins
                     case TransactionGuard.BatchAplicado:
                         userAttribute = Schema.TransactionBatch.AplicadoPor;
                         dateAttribute = Schema.TransactionBatch.AplicadoOn;
+                        break;
+                    case TransactionGuard.BatchDevuelto:
+                        userAttribute = Schema.TransactionBatch.DevueltoPor;
+                        dateAttribute = Schema.TransactionBatch.DevueltoOn;
                         break;
                     default:
                         tracing.Trace("BatchStamp: lote {0}, estado {1} no estampa transicion.",

@@ -1002,6 +1002,18 @@ namespace CashHub.Plugins
             public const string AplicadoPor = "sanic_aplicadopor";
             public const string AplicadoOn = "sanic_aplicadoon";
 
+            /// <summary>
+            /// La devolucion del IBS: por que volvio, quien la registro y cuando.
+            ///
+            /// El motivo es OBLIGATORIO al marcar el lote Devuelto (lo exige
+            /// TransactionGuard.EvaluateBatchUpdate). Quien tenga que corregir el lote
+            /// necesita saber QUE rechazo el Core: una devolucion sin motivo dice "esta
+            /// mal" y nada mas, y manda a preguntar al IBS.
+            /// </summary>
+            public const string MotivoDevolucion = "sanic_motivodevolucion";
+            public const string DevueltoPor = "sanic_devueltopor";
+            public const string DevueltoOn = "sanic_devueltoon";
+
             public const string PreImageName = "PreImage";
         }
 

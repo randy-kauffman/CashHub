@@ -44,6 +44,14 @@ namespace CashHub.Validation.Security
         public const int BatchAprobado = 159460002;
         public const int BatchAplicado = 159460003;
 
+        /// <summary>
+        /// El aprobador devolvio la carga en el IBS Branch. Es el PRIMER retroceso legal
+        /// del ciclo del lote: sin el, un lote devuelto quedaba atrapado en 'Ingresado'
+        /// —un estado que afirma "ya entro al Core"— cuando en realidad no entro nada.
+        /// La aplicacion mentia sobre donde estaba la plata.
+        /// </summary>
+        public const int BatchDevuelto = 159460004;
+
         // Option set sanic_transactionstatus. Unico valor definido; pendiente = null.
         public const int StatusAplicada = TransactionRouting.StatusAplicada;
 
@@ -89,7 +97,8 @@ namespace CashHub.Validation.Security
             int? newStatus,
             bool touchesOnlyTotals,
             Guid initiatingUserId,
-            Guid? ingresadoPor)
+            Guid? ingresadoPor,
+            string returnReason = null)
         {
             if (touchesOnlyTotals)
             {
@@ -112,28 +121,49 @@ namespace CashHub.Validation.Security
 
             var isLegal =
                 (previousStatus == BatchGenerado && newStatus == BatchIngresado)
-                || (previousStatus == BatchIngresado && newStatus == BatchAplicado);
+                || (previousStatus == BatchIngresado && newStatus == BatchAplicado)
+                // EL VEREDICTO DEL APROBADOR TIENE DOS CARAS. Aplicado si la carga entro;
+                // Devuelto si el IBS la rechazo y hay que corregirla.
+                || (previousStatus == BatchIngresado && newStatus == BatchDevuelto)
+                // Y LA RECARGA. Un lote devuelto se corrige y se vuelve a presentar al
+                // IBS. No hay atajo a Aplicado: si lo hubiera, se estaria marcando como
+                // cargado algo que el Core rechazo y nadie volvio a presentar.
+                || (previousStatus == BatchDevuelto && newStatus == BatchIngresado);
 
             if (isLegal)
             {
-                // Segregacion de funciones, SOLO en Ingresado -> Aplicado: el que
-                // subio el lote no lo confirma. Sin estampa (legacy) no se bloquea.
-                if (previousStatus == BatchIngresado
-                    && newStatus == BatchAplicado
-                    && ingresadoPor.HasValue
-                    && ingresadoPor.Value == initiatingUserId)
+                // SEGREGACION DE FUNCIONES en las DOS caras del veredicto. Aplicar y
+                // devolver son la misma decision del aprobador con distinto signo: si
+                // quien cargo el lote pudiera registrar cualquiera de las dos, se estaria
+                // revisando a si mismo. Sin estampa (lotes legacy) no se bloquea.
+                var esVeredicto = previousStatus == BatchIngresado
+                    && (newStatus == BatchAplicado || newStatus == BatchDevuelto);
+
+                if (esVeredicto && ingresadoPor.HasValue && ingresadoPor.Value == initiatingUserId)
                 {
                     return TransactionGuardResult.Block(
                         "Segregacion de funciones: quien subio el lote al Core (lo marco " +
-                        "'Ingresado') no puede marcarlo 'Aplicado'; debe confirmarlo otro usuario.");
+                        "'Ingresado') no puede marcar el resultado de la revision; debe " +
+                        "registrarlo otro usuario.");
+                }
+
+                // MOTIVO OBLIGATORIO AL DEVOLVER. Quien tiene que corregir el lote
+                // necesita saber QUE corregir: una devolucion sin motivo le dice "esta
+                // mal" y nada mas, y lo manda a preguntar al IBS.
+                if (newStatus == BatchDevuelto && string.IsNullOrWhiteSpace(returnReason))
+                {
+                    return TransactionGuardResult.Block(
+                        "Para devolver el lote hay que registrar el motivo de la devolucion: " +
+                        "quien lo corrija necesita saber que fue lo que el IBS rechazo.");
                 }
 
                 return TransactionGuardResult.Allow();
             }
 
             return TransactionGuardResult.Block(
-                "Transicion de estado de lote no permitida. El ciclo es solo hacia adelante: " +
-                "Generado -> Ingresado -> Aplicado (Aprobado no se usa).");
+                "Transicion de estado de lote no permitida. El ciclo es Generado -> Ingresado " +
+                "-> Aplicado, con Ingresado -> Devuelto -> Ingresado cuando el IBS devuelve la " +
+                "carga (Aprobado no se usa).");
         }
 
         /// <summary>
@@ -171,7 +201,11 @@ namespace CashHub.Validation.Security
         /// </summary>
         public static bool CanRemoveFromCut(int? currentBatchStatus)
         {
-            return currentBatchStatus == BatchGenerado || currentBatchStatus == BatchIngresado;
+            return currentBatchStatus == BatchGenerado
+                || currentBatchStatus == BatchIngresado
+                // Devuelto es JUSTO el momento de sacar transacciones: el IBS rechazo la
+                // carga y hay que quitarle lo que la hizo rebotar antes de recargarla.
+                || currentBatchStatus == BatchDevuelto;
         }
 
         /// <summary>
@@ -237,7 +271,13 @@ namespace CashHub.Validation.Security
                         "lo ya aplicado.");
                 }
 
-                if (currentBatchStatus == BatchIngresado || currentBatchStatus == BatchAplicado)
+                // Devuelto entra a la lista: el lote YA se mando al Core una vez. La
+                // correccion es SACAR la transaccion del lote, no reescribirle el monto en
+                // el lugar — si no, el archivo que se mando y lo que queda en Dataverse
+                // dejan de decir lo mismo.
+                if (currentBatchStatus == BatchIngresado
+                    || currentBatchStatus == BatchDevuelto
+                    || currentBatchStatus == BatchAplicado)
                 {
                     return TransactionGuardResult.Block(
                         "El lote de la transaccion ya fue cargado al Core: sus montos y su cuenta no " +
